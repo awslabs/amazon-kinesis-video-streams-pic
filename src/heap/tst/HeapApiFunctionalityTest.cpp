@@ -735,7 +735,7 @@ TEST_F(HeapApiFunctionalityTest, randomAllocFreeWindowedPerf)
     EXPECT_TRUE(successCount >= (totalIteration / 2));
 }
 
-TEST_F(HeapApiFunctionalityTest, randomAllocFreeMultiStreamWindowedPerf)
+TEST_F(HeapApiFunctionalityTest, DISABLED_randomAllocFreeMultiStreamWindowedPerf)
 {
     PHeap pHeap;
     UINT64 time, endTime, duration, durationSystem;
