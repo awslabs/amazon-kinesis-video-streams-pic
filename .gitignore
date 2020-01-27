@@ -1,0 +1,9 @@
+*.iml
+.DS_Store
+.idea
+build
+cmake-build-debug/
+cmake-build-release/
+open-source/libgtest
+open-source/local
+outputs
