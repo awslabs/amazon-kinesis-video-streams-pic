@@ -94,7 +94,7 @@ UINT32 ClientTestBase::getRandomNumberConstFunc(UINT64 customData)
 
 VOID ClientTestBase::logPrintFunc(UINT32 level, PCHAR tag, PCHAR fmt, ...)
 {
-    if (level >= LOG_LEVEL_DEBUG) {
+    if (level >= loggerGetLogLevel()) {
         // Temp scratch buffer = 10KB
         CHAR tempBuf[10 * 1024];
         snprintf(tempBuf, SIZEOF(tempBuf), "\n[0x%016llx] [level %u] %s %s", GETTID(), level, tag, fmt);
