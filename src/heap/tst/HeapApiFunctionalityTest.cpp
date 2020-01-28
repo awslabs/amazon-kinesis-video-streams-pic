@@ -692,7 +692,7 @@ TEST_F(HeapApiFunctionalityTest, MultipleMapUnmapByteAlloc)
 ///////////////////////////////////////////////////////////////
 #ifndef CONSTRAINED_DEVICE
 
-TEST_F(HeapApiFunctionalityTest, randomAllocFreeWindowedPerf)
+TEST_F(HeapApiFunctionalityTest, DISABLED_randomAllocFreeWindowedPerf)
 {
     PHeap pHeap;
     UINT64 time, endTime, duration, durationSystem;
@@ -778,7 +778,7 @@ TEST_F(HeapApiFunctionalityTest, DISABLED_randomAllocFreeMultiStreamWindowedPerf
     EXPECT_TRUE(successCount >= (totalIteration / 2));
 }
 
-TEST_F(HeapApiFunctionalityTest, singleAllocFreePerf)
+TEST_F(HeapApiFunctionalityTest, DISABLED_singleAllocFreePerf)
 {
     PHeap pHeap;
     UINT64 time, endTime, duration, durationSystem;
