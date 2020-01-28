@@ -87,7 +87,7 @@ TEST_F(TimerQueueFunctionalityTest, createFreeApiTest)
     EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
 }
 
-TEST_F(TimerQueueFunctionalityTest, addRemoveTimerApiTest)
+TEST_F(TimerQueueFunctionalityTest, DISABLED_addRemoveTimerApiTest)
 {
     UINT64 startTime = 1 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     UINT64 period = 200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
@@ -238,7 +238,7 @@ TEST_F(TimerQueueFunctionalityTest, addedTimerFiresBeforeOlder)
     EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
 }
 
-TEST_F(TimerQueueFunctionalityTest, timerStartTime)
+TEST_F(TimerQueueFunctionalityTest, DISABLED_timerStartTime)
 {
     UINT64 startTime = 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     UINT64 period = 300 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
@@ -272,7 +272,7 @@ TEST_F(TimerQueueFunctionalityTest, timerStartTime)
     EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
 }
 
-TEST_F(TimerQueueFunctionalityTest, timerInterleavedSamePeriodDifferentStart)
+TEST_F(TimerQueueFunctionalityTest, DISABLED_timerInterleavedSamePeriodDifferentStart)
 {
     UINT64 startTime1 = 10 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     UINT64 startTime2 = 150 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
@@ -320,7 +320,7 @@ TEST_F(TimerQueueFunctionalityTest, timerInterleavedSamePeriodDifferentStart)
     EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
 }
 
-TEST_F(TimerQueueFunctionalityTest, timerCancelFromCallback)
+TEST_F(TimerQueueFunctionalityTest, DISABLED_timerCancelFromCallback)
 {
     UINT64 startTime = 50 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     UINT64 period = 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
@@ -365,7 +365,7 @@ TEST_F(TimerQueueFunctionalityTest, timerCancelFromCallback)
     EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
 }
 
-TEST_F(TimerQueueFunctionalityTest, timerCancelDirectly)
+TEST_F(TimerQueueFunctionalityTest, DISABLED_timerCancelDirectly)
 {
     UINT64 startTime = 10 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     UINT64 period = 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
@@ -443,7 +443,7 @@ TEST_F(TimerQueueFunctionalityTest, timerSingleInvokeTimer)
     EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
 }
 
-TEST_F(TimerQueueFunctionalityTest, timerDoesntCancelOnError)
+TEST_F(TimerQueueFunctionalityTest, DISABLED_timerDoesntCancelOnError)
 {
     UINT64 startTime = 10 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     UINT64 period = 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
@@ -484,7 +484,7 @@ TEST_F(TimerQueueFunctionalityTest, timerDoesntCancelOnError)
     EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
 }
 
-TEST_F(TimerQueueFunctionalityTest, timerCancelDirectlyOneLeaveAnotherStart)
+TEST_F(TimerQueueFunctionalityTest, DISABLED_timerCancelDirectlyOneLeaveAnotherStart)
 {
     UINT64 startTime1 = 10 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     UINT64 startTime2 = 500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
@@ -529,7 +529,7 @@ TEST_F(TimerQueueFunctionalityTest, timerCancelDirectlyOneLeaveAnotherStart)
     EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
 }
 
-TEST_F(TimerQueueFunctionalityTest, miniStressTest)
+TEST_F(TimerQueueFunctionalityTest, DISABLED_miniStressTest)
 {
     UINT64 period = 1 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     TIMER_QUEUE_HANDLE handle = INVALID_TIMER_QUEUE_HANDLE_VALUE;
@@ -590,7 +590,7 @@ TEST_F(TimerQueueFunctionalityTest, multiUserAddAndCancelTest)
     EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
 }
 
-TEST_F(TimerQueueFunctionalityTest, cancelTimerWithCustomData)
+TEST_F(TimerQueueFunctionalityTest, DISABLED_cancelTimerWithCustomData)
 {
     TIMER_QUEUE_HANDLE handle = INVALID_TIMER_QUEUE_HANDLE_VALUE;
     UINT32 timerId, timerCount = 0;
@@ -661,7 +661,7 @@ TEST_F(TimerQueueFunctionalityTest, cancelAllTimer)
     EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
 }
 
-TEST_F(TimerQueueFunctionalityTest, testGetTimersWithCustomData)
+TEST_F(TimerQueueFunctionalityTest, DISABLED_testGetTimersWithCustomData)
 {
     TIMER_QUEUE_HANDLE handle = INVALID_TIMER_QUEUE_HANDLE_VALUE;
     UINT32 timerId;
