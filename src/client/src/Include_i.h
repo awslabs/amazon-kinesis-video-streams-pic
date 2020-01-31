@@ -15,9 +15,6 @@ extern "C" {
 ////////////////////////////////////////////////////
 #include "com/amazonaws/kinesis/video/client/Include.h"
 
-// For tight packing
-#pragma pack(push, include_i, 1) // for byte alignment
-
 #define MAX_PIC_REENTRANCY_COUNT                    (1024 * 1024)
 
 /**
@@ -421,9 +418,6 @@ STATUS executeProvisionClientState(UINT64, UINT64);
 STATUS executeCreateClientState(UINT64, UINT64);
 STATUS executeTagClientState(UINT64, UINT64);
 STATUS executeReadyClientState(UINT64, UINT64);
-
-
-#pragma pack(pop, include_i)
 
 #ifdef  __cplusplus
 }
