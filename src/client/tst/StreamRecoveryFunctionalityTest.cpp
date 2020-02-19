@@ -101,6 +101,9 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionAft
             EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mStreamHandle,
                                                                    INVALID_UPLOAD_HANDLE_VALUE,
                                                                    SERVICE_CALL_RESULT_OK));
+            // restore slow speed after reset so all subsequent uploads are at normal speed
+            mMockConsumerConfig.mUploadSpeedBytesPerSecond = 1000000;
+            // restore speed for current active upload handles
             mStreamingSession.getActiveUploadHandles(currentUploadHandles);
             for (int i = 0; i < currentUploadHandles.size(); i++) {
                 UPLOAD_HANDLE uploadHandle = currentUploadHandles[i];

@@ -1497,14 +1497,16 @@ CleanUp:
     // Remove the upload handle if it is in UPLOAD_HANDLE_STATE_TERMINATED state
     if (NULL != pUploadHandleInfo && pUploadHandleInfo->state == UPLOAD_HANDLE_STATE_TERMINATED) {
         deleteStreamUploadInfo(pKinesisVideoStream, pUploadHandleInfo);
-        pUploadHandleInfo = NULL;
+
+        // if there is no more active upload handle and we still have bytes to transfer,
+        // call kinesisVideoStreamResetConnection to create new upload session.
         pUploadHandleInfo = getStreamUploadInfoWithState(pKinesisVideoStream, UPLOAD_HANDLE_STATE_ACTIVE);
 
         if (pUploadHandleInfo == NULL) {
             // Get the duration and the size
             getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize);
             if (viewByteSize != 0) {
-                streamTerminatedEvent(pKinesisVideoStream, INVALID_UPLOAD_HANDLE_VALUE, SERVICE_CALL_RESULT_OK, FALSE);
+                kinesisVideoStreamResetConnection(TO_STREAM_HANDLE(pKinesisVideoStream));
             }
         }
     }
@@ -1661,7 +1663,7 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
     // Check if we have enough space available. Adding maxFrameSizeSeen to handle fragmentation as well as when curl thread needs to alloc space for
     // sending data.
     availableHeapSize = pKinesisVideoClient->deviceInfo.storageInfo.storageSize - heapSize -
-                        MAX_ALLOCATION_OVERHEAD_SIZE - 
+                        MAX_ALLOCATION_OVERHEAD_SIZE -
 						(UINT64) (pKinesisVideoStream->maxFrameSizeSeen * FRAME_ALLOC_FRAGMENTATION_FACTOR);
 
     // Early return if storage space is unavailable.
@@ -2216,7 +2218,7 @@ PUploadHandleInfo getStreamUploadInfoWithState(PKinesisVideoStream pKinesisVideo
 
         pCurHandleInfo = (PUploadHandleInfo) data;
         CHK(pCurHandleInfo != NULL, STATUS_INTERNAL_ERROR);
-        if ((handleState & pCurHandleInfo->state) != UPLOAD_HANDLE_STATE_NONE) {
+        if (IS_UPLOAD_HANDLE_IN_STATE(pCurHandleInfo, handleState)) {
             pUploadHandleInfo = pCurHandleInfo;
 
             // Found the item - early exit
