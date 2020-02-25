@@ -23,6 +23,9 @@ extern "C" {
 #include <com/amazonaws/kinesis/video/heap/Include.h>
 #include <com/amazonaws/kinesis/video/state/Include.h>
 
+// For tight packing
+#pragma pack(push, include, 1) // for byte alignment
+
 /**
  * Device/Client state transitions
  *
@@ -2207,6 +2210,8 @@ PUBLIC_API STATUS kinesisVideoStreamDefaultStreamShutdown(UINT64 customData, STR
  * @return - STATUS Mapped status
  */
 PUBLIC_API STATUS serviceCallResultCheck(SERVICE_CALL_RESULT);
+
+#pragma pack(pop, include)
 
 #ifdef  __cplusplus
 }

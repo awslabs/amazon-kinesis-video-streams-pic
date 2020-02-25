@@ -10,6 +10,9 @@ PutFrameCoordinator internal include file
 extern "C" {
 #endif
 
+// For tight packing
+#pragma pack(push, include_i, 1) // for byte alignment
+
 typedef struct __FrameOrderTrackData FrameOrderTrackData;
 struct __FrameOrderTrackData {
     PTrackInfo pTrackInfo;
@@ -73,6 +76,8 @@ STATUS frameOrderCoordinatorFlush(PKinesisVideoStream);
  * @return - STATUS - status code of the operation.
  */
 STATUS audioVideoFrameTimestampComparator(PFrameOrderTrackData, PFrameOrderTrackData, UINT64, PBOOL);
+
+#pragma pack(pop, include_i)
 
 #ifdef  __cplusplus
 }

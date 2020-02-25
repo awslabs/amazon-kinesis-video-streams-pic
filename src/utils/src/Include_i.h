@@ -12,6 +12,9 @@ extern "C" {
 
 #include "com/amazonaws/kinesis/video/utils/Include.h"
 
+// For tight packing
+#pragma pack(push, include_i, 1) // for byte alignment
+
 /**
  * Thread wrapper for Windows
  */
@@ -195,6 +198,8 @@ STATUS semaphoreAcquireInternal(PSemaphore, UINT64);
 STATUS semaphoreReleaseInternal(PSemaphore);
 STATUS semaphoreSetLockInternal(PSemaphore, BOOL);
 STATUS semaphoreWaitUntilClearInternal(PSemaphore, UINT64);
+
+#pragma pack(pop, include_i)
 
 #ifdef __cplusplus
 }

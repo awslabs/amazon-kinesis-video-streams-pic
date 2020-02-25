@@ -15,6 +15,9 @@ extern "C" {
 #include "FrameOrderCoordinator.h"
 #include "AckParser.h"
 
+// For tight packing
+#pragma pack(push, include_i, 1) // for byte alignment
+
 ////////////////////////////////////////////////////
 // General defines and data structures
 ////////////////////////////////////////////////////
@@ -727,6 +730,8 @@ STATUS executePutStreamState(UINT64, UINT64);
 STATUS executeStreamingStreamState(UINT64, UINT64);
 STATUS executeStoppedStreamState(UINT64, UINT64);
 STATUS executeTagStreamState(UINT64, UINT64);
+
+#pragma pack(pop, include_i)
 
 #ifdef __cplusplus
 }
