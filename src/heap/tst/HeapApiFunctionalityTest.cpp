@@ -412,7 +412,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapBlockCoallesceAlloc)
     blockCoalesceAlloc(pHeap);
 }
 
-TEST_F(HeapApiFunctionalityTest, DISABLED_AivHeapMinBlockFitResize)
+TEST_F(HeapApiFunctionalityTest, AivHeapMinBlockFitResize)
 {
     PHeap pHeap;
 

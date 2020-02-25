@@ -155,7 +155,7 @@ TEST_F(ClientApiTest, createKinesisVideoClient_ValiateCallbacks)
     mClientCallbacks.putStreamFn = putStreamFunc;
 }
 
-TEST_F(ClientApiTest, DISABLED_createKinesisVideoClient_ValiateDeviceInfo)
+TEST_F(ClientApiTest, createKinesisVideoClient_ValiateDeviceInfo)
 {
     CLIENT_HANDLE clientHandle;
 
