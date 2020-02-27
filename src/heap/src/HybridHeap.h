@@ -11,7 +11,6 @@ extern "C" {
 
 #pragma once
 
-
 /**
  * VRAM function definitions with their symbol names
  */
@@ -147,8 +146,6 @@ DEFINE_HEADER_SIZE(hybridGetAllocationHeaderSize);
 DEFINE_FOOTER_SIZE(hybridGetAllocationFooterSize);
 DEFINE_ALLOC_SIZE(hybridGetAllocationSize);
 DEFINE_HEAP_LIMITS(hybridGetHeapLimits);
-
-
 
 #ifdef __cplusplus
 }

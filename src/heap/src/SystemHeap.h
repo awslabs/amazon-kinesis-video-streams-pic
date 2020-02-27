@@ -11,7 +11,6 @@ extern "C" {
 
 #pragma once
 
-
 #define SYS_ALLOCATION_TYPE 1
 
 /**
@@ -71,8 +70,6 @@ DEFINE_HEADER_SIZE(sysGetAllocationHeaderSize);
 DEFINE_FOOTER_SIZE(sysGetAllocationFooterSize);
 DEFINE_ALLOC_SIZE(sysGetAllocationSize);
 DEFINE_HEAP_LIMITS(sysGetHeapLimits);
-
-
 
 #ifdef __cplusplus
 }

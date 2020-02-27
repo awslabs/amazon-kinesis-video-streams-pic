@@ -321,7 +321,7 @@ DEFINE_HEAP_ALLOC(hybridHeapAlloc)
     pHeader->size = size;
 
     // Store the handle
-    pHeader->handle = handle;
+    pHeader->vramHandle = handle;
 
     // Un-map the range
     if (0 != pHybridHeap->vramUnlock(handle)) {
@@ -558,10 +558,10 @@ DEFINE_HEAP_UNMAP(hybridHeapUnmap)
 
     DLOGS("Indirect allocation");
     // Un-map from the vram
-    CHK_ERR(0 == (ret = pHybridHeap->vramUnlock(pHeader->handle)),
+    CHK_ERR(0 == (ret = pHybridHeap->vramUnlock(pHeader->vramHandle)),
             STATUS_HEAP_VRAM_UNMAP_FAILED,
             "Failed to un-map handle 0x%08x. Error returned %u",
-            pHeader->handle,
+            pHeader->vramHandle,
             ret);
 
 CleanUp:

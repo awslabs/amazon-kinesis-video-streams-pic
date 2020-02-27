@@ -6,11 +6,11 @@
 #include "Include_i.h"
 
 #ifdef HEAP_DEBUG
-    AIV_ALLOCATION_HEADER gAivHeader = {{0, AIV_ALLOCATION_TYPE, 0, ALLOCATION_HEADER_MAGIC}, 0, ALLOCATION_FLAGS_FREE, NULL, NULL};
-    AIV_ALLOCATION_FOOTER gAivFooter = {{0, ALLOCATION_FOOTER_MAGIC}};
+    AIV_ALLOCATION_HEADER gAivHeader = {{0, AIV_ALLOCATION_TYPE, ALLOCATION_FLAGS_FREE, ALLOCATION_HEADER_MAGIC}, 0, NULL, NULL};
+    ALLOCATION_FOOTER gAivFooter = {0, ALLOCATION_FOOTER_MAGIC};
 #else
-    struct AIV_ALLOCATION_HEADER gAivHeader = {{0, AIV_ALLOCATION_TYPE, 0}, 0, ALLOCATION_FLAGS_FREE, NULL, NULL};
-    AIV_ALLOCATION_FOOTER gAivFooter = {{0}};
+    struct AIV_ALLOCATION_HEADER gAivHeader = {{0, AIV_ALLOCATION_TYPE, ALLOCATION_FLAGS_FREE}, 0, NULL, NULL};
+    ALLOCATION_FOOTER gAivFooter = {0};
 #endif
 
 #define AIV_ALLOCATION_HEADER_SIZE      SIZEOF(gAivHeader)
@@ -52,7 +52,7 @@ DEFINE_HEAP_CHK(aivHeapDebugCheckAllocator)
             retStatus = STATUS_HEAP_CORRUPTED;
         }
 
-        if (pBlock->state != ALLOCATION_FLAGS_ALLOC) {
+        if (pBlock->header.flags != ALLOCATION_FLAGS_ALLOC) {
             DLOGE("Block %p is in allocated list but doesn't have it's flag set as allocated", pBlock);
             retStatus = STATUS_HEAP_CORRUPTED;
         }
@@ -91,7 +91,7 @@ DEFINE_HEAP_CHK(aivHeapDebugCheckAllocator)
             DLOGV("Block:\t%p\t\tsize:\t%" PRIu64, pBlock, GET_AIV_ALLOCATION_SIZE(pBlock));
         }
 
-        if (pBlock->state != ALLOCATION_FLAGS_FREE) {
+        if (pBlock->header.flags != ALLOCATION_FLAGS_FREE) {
             DLOGE("Block %p is in free list but doesn't have it's flag set as free", pBlock);
             retStatus = STATUS_HEAP_CORRUPTED;
         }
@@ -314,7 +314,7 @@ DEFINE_HEAP_FREE(aivHeapFree)
     // Perform the de-allocation
     pAlloc = (PAIV_ALLOCATION_HEADER)pAllocation - 1;
 
-    CHK_ERR(pAlloc->state == ALLOCATION_FLAGS_ALLOC && pAlloc->allocSize != 0, STATUS_INVALID_HANDLE_ERROR,
+    CHK_ERR(pAlloc->header.flags == ALLOCATION_FLAGS_ALLOC && pAlloc->allocSize != 0, STATUS_INVALID_HANDLE_ERROR,
             "Invalid block of memory passed to free.");
 
     // Call the common heap function
@@ -356,7 +356,7 @@ DEFINE_HEAP_GET_ALLOC_SIZE(aivHeapGetAllocSize)
     pHeader = (PAIV_ALLOCATION_HEADER)pAllocation - 1;
 
     // Check for the validity of the allocation
-    CHK_ERR(pHeader->state == ALLOCATION_FLAGS_ALLOC && pHeader->allocSize != 0, STATUS_INVALID_HANDLE_ERROR,
+    CHK_ERR(pHeader->header.flags == ALLOCATION_FLAGS_ALLOC && pHeader->allocSize != 0, STATUS_INVALID_HANDLE_ERROR,
             "Invalid handle or previously freed.");
 
     *pAllocSize = pHeader->allocSize;
@@ -392,7 +392,7 @@ DEFINE_HEAP_MAP(aivHeapMap)
     pHeader = (PAIV_ALLOCATION_HEADER)pAllocation - 1;
 
     // Check for the validity of the allocation
-    CHK_ERR(pHeader->state == ALLOCATION_FLAGS_ALLOC && pHeader->allocSize != 0, STATUS_INVALID_HANDLE_ERROR,
+    CHK_ERR(pHeader->header.flags == ALLOCATION_FLAGS_ALLOC && pHeader->allocSize != 0, STATUS_INVALID_HANDLE_ERROR,
             "Invalid handle or previously freed.");
 
     // Set the size from the previously stored requested allocation size as it might be
@@ -519,7 +519,7 @@ DEFINE_HEAP_SET_ALLOC_SIZE(aivHeapSetAllocSize) {
     // Get the right block and see if we are within the range and if it's free
     pCheckFree = getRightBlock(pAivHeap, pExistingHeader);
     if (pCheckFree != NULL &&
-        pCheckFree->state == ALLOCATION_FLAGS_FREE &&
+        pCheckFree->header.flags == ALLOCATION_FLAGS_FREE &&
         (GET_AIV_ALLOCATION_SIZE(pCheckFree) +
          AIV_ALLOCATION_FOOTER_SIZE +
          AIV_ALLOCATION_HEADER_SIZE +
@@ -639,7 +639,7 @@ VOID splitFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT64 siz
         SET_AIV_ALLOCATION_FOOTER_SIZE(pNewFree);
 
         // Set the type of the block
-        pNewFree->state = ALLOCATION_FLAGS_FREE;
+        pNewFree->header.flags = ALLOCATION_FLAGS_FREE;
 
         // Linking it in
         pNewFree->pNext = pBlock->pNext;
@@ -676,7 +676,7 @@ VOID splitFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT64 siz
     pBlock->pNext = pBlock->pPrev = NULL;
 
     // Set as undefined
-    pBlock->state = ALLOCATION_FLAGS_NONE;
+    pBlock->header.flags = ALLOCATION_FLAGS_NONE;
 
     // Set the actual allocation size which might be smaller than the overall block size
     pBlock->allocSize = size;
@@ -708,7 +708,7 @@ VOID splitAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT6
     pNewFree->pNext = pNewFree->pPrev = NULL;
 
     // Set the type of the block to NONE
-    pNewFree->state = ALLOCATION_FLAGS_NONE;
+    pNewFree->header.flags = ALLOCATION_FLAGS_NONE;
 
     // Set the blocks sizes
     pBlock->allocSize = size;
@@ -801,7 +801,7 @@ VOID coalesceFreeToAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pAll
         SET_AIV_ALLOCATION_FOOTER_SIZE(pNewFree);
 
         // Set the type of the block
-        pNewFree->state = ALLOCATION_FLAGS_FREE;
+        pNewFree->header.flags = ALLOCATION_FLAGS_FREE;
 
         // set the new footer for the allocated
         MEMCPY((PBYTE)pNewFree - AIV_ALLOCATION_FOOTER_SIZE, &gAivFooter, AIV_ALLOCATION_FOOTER_SIZE);
@@ -826,10 +826,10 @@ VOID addAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock)
     CHECK(pAivHeap != NULL &&
                   pBlock != NULL && ((PALLOCATION_HEADER)pBlock)->size > 0 &&
                   pBlock->pNext == NULL && pBlock->pPrev == NULL &&
-                  pBlock->state == ALLOCATION_FLAGS_NONE);
+                  pBlock->header.flags == ALLOCATION_FLAGS_NONE);
 
     // Set as allocated
-    pBlock->state = ALLOCATION_FLAGS_ALLOC;
+    pBlock->header.flags = ALLOCATION_FLAGS_ALLOC;
 
     if (pAivHeap->pAlloc != NULL) {
         // This is the case when we do have the allocated chain
@@ -846,12 +846,12 @@ VOID addAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock)
  */
 VOID removeChainedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock)
 {
-    CHECK(pAivHeap != NULL && pBlock != NULL && pBlock->state != ALLOCATION_FLAGS_NONE && GET_AIV_ALLOCATION_SIZE(pBlock) > 0);
+    CHECK(pAivHeap != NULL && pBlock != NULL && pBlock->header.flags != ALLOCATION_FLAGS_NONE && GET_AIV_ALLOCATION_SIZE(pBlock) > 0);
 
     // Fix-up the prev
     if (pBlock->pPrev == NULL) {
         // This is the case of the first block
-        if (pBlock->state == ALLOCATION_FLAGS_FREE) {
+        if (pBlock->header.flags == ALLOCATION_FLAGS_FREE) {
             CHECK_EXT(pAivHeap->pFree == pBlock, "Free Block pointer is invalid");
             pAivHeap->pFree = pBlock->pNext;
         } else {
@@ -868,7 +868,7 @@ VOID removeChainedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock)
     }
 
     // Set the status as undefined
-    pBlock->state = ALLOCATION_FLAGS_NONE;
+    pBlock->header.flags = ALLOCATION_FLAGS_NONE;
 
     // Nullify the links
     pBlock->pNext = pBlock->pPrev = NULL;
@@ -885,7 +885,7 @@ VOID addFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock)
     CHECK(pAivHeap != NULL &&
           pBlock != NULL && GET_AIV_ALLOCATION_SIZE(pBlock) > 0 &&
           pBlock->pNext == NULL && pBlock->pPrev == NULL &&
-          pBlock->state == ALLOCATION_FLAGS_NONE);
+          pBlock->header.flags == ALLOCATION_FLAGS_NONE);
 
     // Find the spot and add the block first
     // and then try to coalesce the neighboring blocks
@@ -893,7 +893,7 @@ VOID addFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock)
     // Special case with early return if it's the first block
     if (pAivHeap->pFree == NULL) {
         // Set as free
-        pBlock->state = ALLOCATION_FLAGS_FREE;
+        pBlock->header.flags = ALLOCATION_FLAGS_FREE;
 
         // Set the first free block
         pAivHeap->pFree = pBlock;
@@ -907,7 +907,7 @@ VOID addFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock)
     PAIV_ALLOCATION_HEADER pLeft = getLeftBlock(pAivHeap, pBlock);
 
     // Check for coalescence
-    if (pLeft != NULL && pLeft->state == ALLOCATION_FLAGS_FREE) {
+    if (pLeft != NULL && pLeft->header.flags == ALLOCATION_FLAGS_FREE) {
         overallSize = GET_AIV_ALLOCATION_SIZE(pLeft) + blockSize + AIV_ALLOCATION_HEADER_SIZE + AIV_ALLOCATION_FOOTER_SIZE;
         SET_AIV_ALLOCATION_SIZE(pLeft, overallSize);
         SET_AIV_ALLOCATION_FOOTER_SIZE(pLeft);
@@ -919,7 +919,7 @@ VOID addFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock)
 
     // Get the right block
     PAIV_ALLOCATION_HEADER pRight = getRightBlock(pAivHeap, pBlock);
-    if (pRight != NULL && pRight->state == ALLOCATION_FLAGS_FREE) {
+    if (pRight != NULL && pRight->header.flags == ALLOCATION_FLAGS_FREE) {
         // Remove the right block from free
         removeChainedBlock(pAivHeap, pRight);
 
@@ -929,8 +929,8 @@ VOID addFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock)
     }
 
     // Chain it in if needed hasn't been chained in
-    if (pBlock->state == ALLOCATION_FLAGS_NONE) {
-        pBlock->state = ALLOCATION_FLAGS_FREE;
+    if (pBlock->header.flags == ALLOCATION_FLAGS_NONE) {
+        pBlock->header.flags = ALLOCATION_FLAGS_FREE;
         pBlock->pNext = pAivHeap->pFree;
         pBlock->pPrev = NULL;
         if (pBlock->pNext != NULL) {
@@ -966,7 +966,7 @@ PAIV_ALLOCATION_HEADER getLeftBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pB
         return NULL;
     }
 
-    PAIV_ALLOCATION_FOOTER pFooter = ((PAIV_ALLOCATION_FOOTER) pBlock) - 1;
+    PALLOCATION_FOOTER pFooter = ((PALLOCATION_FOOTER) pBlock) - 1;
 
     UINT64 blockSize = ((PALLOCATION_FOOTER) pFooter)->size;
 

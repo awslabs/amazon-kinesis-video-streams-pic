@@ -11,40 +11,32 @@ extern "C" {
 
 #pragma once
 
+#define ALLOCATION_FLAGS_NONE           0x0000
+#define ALLOCATION_FLAGS_ALLOC          0x0001
+#define ALLOCATION_FLAGS_FREE           0x0002
 
-#define ALLOCATION_FLAGS_NONE 0x00
-#define ALLOCATION_FLAGS_ALLOC 0x01
-#define ALLOCATION_FLAGS_FREE 0x02
-
-#define AIV_ALLOCATION_TYPE 2
+#define AIV_ALLOCATION_TYPE             2
 
 /**
  * Minimum free block size in bytes
  */
-#define MIN_FREE_ALLOCATION_SIZE 16
+#define MIN_FREE_ALLOCATION_SIZE        16
 
 /**
- * Allocation header
+ * Allocation header for low fragmentation heap implementation.
+ *
+ * IMPORTANT!!! Make sure the structure is tightly packed without the tight packing directives
  */
 typedef struct AIV_ALLOCATION_HEADER
 {
     ALLOCATION_HEADER header;
     UINT64 allocSize;
-    BYTE state;
     struct AIV_ALLOCATION_HEADER* pNext;
     struct AIV_ALLOCATION_HEADER* pPrev;
 } *PAIV_ALLOCATION_HEADER;
 
-/**
- * Allocation footer
- */
-typedef struct
-{
-    ALLOCATION_FOOTER footer;
-} AIV_ALLOCATION_FOOTER, *PAIV_ALLOCATION_FOOTER;
-
 // Macros to convert to and from handle
-#define AIV_HANDLE_SHIFT_BITS 2
+#define AIV_HANDLE_SHIFT_BITS           2
 #define TO_AIV_HANDLE(pAiv, p) (ALLOCATION_HANDLE)((UINT64)(((PBYTE)(p) - (PBYTE)((pAiv)->pAllocation))) << AIV_HANDLE_SHIFT_BITS)
 #define FROM_AIV_HANDLE(pAiv, h) ((PVOID)((PBYTE)((pAiv)->pAllocation) + ((UINT64)(h) >> AIV_HANDLE_SHIFT_BITS)))
 
@@ -90,12 +82,12 @@ typedef struct
 /**
  * Retrieve the allocation size
  */
-#define GET_AIV_ALLOCATION_SIZE(pAlloc) (((PALLOCATION_HEADER)(pAlloc))->size)
+#define GET_AIV_ALLOCATION_SIZE(pAlloc) (GET_UNALIGNED((PINT64) GET_AIV_HEADER_SIZE_PTR(pAlloc)))
 
 /**
  * Sets the allocation size
  */
-#define SET_AIV_ALLOCATION_SIZE(pAlloc, s) (((PALLOCATION_HEADER)(pAlloc))->size = (UINT64)(s))
+#define SET_AIV_ALLOCATION_SIZE(pAlloc, s) (PUT_UNALIGNED((PINT64) GET_AIV_HEADER_SIZE_PTR(pAlloc), (UINT64) (s)))
 
 /**
  * Gets the pointer to the allocation itself
@@ -110,12 +102,12 @@ typedef struct
 /**
  * Gets the allocation footer size
  */
-#define GET_AIV_ALLOCATION_FOOTER_SIZE(pAlloc) (GET_AIV_ALLOCATION_FOOTER(pAlloc)->size)
+#define GET_AIV_ALLOCATION_FOOTER_SIZE(pAlloc) (GET_UNALIGNED((PINT64) GET_AIV_FOOTER_SIZE_PTR(pAlloc)))
 
 /**
  * Sets the allocation footer size
  */
-#define SET_AIV_ALLOCATION_FOOTER_SIZE(pAlloc) (GET_AIV_ALLOCATION_FOOTER(pAlloc)->size = GET_AIV_ALLOCATION_SIZE(pAlloc))
+#define SET_AIV_ALLOCATION_FOOTER_SIZE(pAlloc) (PUT_UNALIGNED((PINT64) GET_AIV_FOOTER_SIZE_PTR(pAlloc), (UINT64) GET_AIV_ALLOCATION_SIZE(pAlloc)))
 
 /**
  * Creates the heap
@@ -188,8 +180,6 @@ VOID coalesceFreeToAllocatedBlock(PAivHeap, PAIV_ALLOCATION_HEADER, PAIV_ALLOCAT
 BOOL checkOverlap(PAIV_ALLOCATION_HEADER, PAIV_ALLOCATION_HEADER);
 PAIV_ALLOCATION_HEADER getLeftBlock(PAivHeap, PAIV_ALLOCATION_HEADER);
 PAIV_ALLOCATION_HEADER getRightBlock(PAivHeap, PAIV_ALLOCATION_HEADER);
-
-
 
 #ifdef __cplusplus
 }

@@ -412,7 +412,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapBlockCoallesceAlloc)
     blockCoalesceAlloc(pHeap);
 }
 
-TEST_F(HeapApiFunctionalityTest, DISABLED_AivHeapMinBlockFitResize)
+TEST_F(HeapApiFunctionalityTest, AivHeapMinBlockFitResize)
 {
     PHeap pHeap;
 
@@ -690,9 +690,9 @@ TEST_F(HeapApiFunctionalityTest, MultipleMapUnmapByteAlloc)
 // executed on small footprint devices due to limited
 // memory and tighter overallocation protection.
 ///////////////////////////////////////////////////////////////
-#ifndef CONSTRAINED_DEVICE
+#ifdef RUN_HEAP_PERF_TESTS
 
-TEST_F(HeapApiFunctionalityTest, DISABLED_randomAllocFreeWindowedPerf)
+TEST_F(HeapApiFunctionalityTest, randomAllocFreeWindowedPerf)
 {
     PHeap pHeap;
     UINT64 time, endTime, duration, durationSystem;
@@ -735,7 +735,7 @@ TEST_F(HeapApiFunctionalityTest, DISABLED_randomAllocFreeWindowedPerf)
     EXPECT_TRUE(successCount >= (totalIteration / 2));
 }
 
-TEST_F(HeapApiFunctionalityTest, DISABLED_randomAllocFreeMultiStreamWindowedPerf)
+TEST_F(HeapApiFunctionalityTest, randomAllocFreeMultiStreamWindowedPerf)
 {
     PHeap pHeap;
     UINT64 time, endTime, duration, durationSystem;
@@ -778,7 +778,7 @@ TEST_F(HeapApiFunctionalityTest, DISABLED_randomAllocFreeMultiStreamWindowedPerf
     EXPECT_TRUE(successCount >= (totalIteration / 2));
 }
 
-TEST_F(HeapApiFunctionalityTest, DISABLED_singleAllocFreePerf)
+TEST_F(HeapApiFunctionalityTest, singleAllocFreePerf)
 {
     PHeap pHeap;
     UINT64 time, endTime, duration, durationSystem;

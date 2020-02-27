@@ -10,7 +10,6 @@ extern "C" {
 
 #pragma once
 
-
 /**
  * Including the headers
  */
@@ -150,8 +149,6 @@ typedef struct
 #include "SystemHeap.h"
 #include "AivHeap.h"
 #include "HybridHeap.h"
-
-
 
 #ifdef __cplusplus
 }
