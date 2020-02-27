@@ -93,6 +93,11 @@ typedef UINT64 (*GetAllocationHeaderSizeFunc)();
 typedef UINT64 (*GetAllocationFooterSizeFunc)();
 
 /**
+ * Returns the adjusted aligned alloc size
+ */
+typedef UINT64 (*GetAllocationAlignedSizeFunc)(UINT64);
+
+/**
  * Returns the allocation limits
  */
 typedef VOID (*GetHeapLimitsFunc)(PUINT64, PUINT64);
@@ -114,6 +119,7 @@ typedef VOID (*GetHeapLimitsFunc)(PUINT64, PUINT64);
 #define DEFINE_ALLOC_SIZE(name)           UINT64 name(PHeap pHeap, ALLOCATION_HANDLE handle)
 #define DEFINE_HEADER_SIZE(name)          UINT64 name()
 #define DEFINE_FOOTER_SIZE(name)          UINT64 name()
+#define DEFINE_ALIGNED_SIZE(name)         UINT64 name(UINT64 size)
 #define DEFINE_HEAP_LIMITS(name)          VOID name(PUINT64 pMinHeapSize, PUINT64 pMaxHeapSize)
 
 typedef struct
@@ -139,6 +145,7 @@ typedef struct
     GetAllocationSizeFunc getAllocationSizeFn;
     GetAllocationHeaderSizeFunc getAllocationHeaderSizeFn;
     GetAllocationFooterSizeFunc getAllocationFooterSizeFn;
+    GetAllocationAlignedSizeFunc getAllocationAlignedSizeFn;
     GetHeapLimitsFunc getHeapLimitsFn;
 } BaseHeap, *PBaseHeap;
 

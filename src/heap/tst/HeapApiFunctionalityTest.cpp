@@ -3,6 +3,13 @@
 class HeapApiFunctionalityTest : public HeapTestBase {
 };
 
+VOID zeroHandleArray(PALLOCATION_HANDLE handles, UINT32 count)
+{
+    for (UINT32 i = 0; i < count; i++) {
+        handles[i] = INVALID_ALLOCATION_HANDLE_VALUE;
+    }
+}
+
 VOID singleLargeAlloc(PHeap pHeap)
 {
     ALLOCATION_HANDLE handle = INVALID_ALLOCATION_HANDLE_VALUE;
@@ -66,14 +73,14 @@ VOID multipleLargeAlloc(PHeap pHeap)
 VOID minBlockFitAlloc(PHeap pHeap)
 {
     ALLOCATION_HANDLE handle = INVALID_ALLOCATION_HANDLE_VALUE;
-    UINT32 size = MIN_HEAP_SIZE / NUM_ITERATIONS;
+    UINT32 size = ROUND_UP(MIN_HEAP_SIZE / NUM_ITERATIONS, 8);
     ALLOCATION_HANDLE handles[NUM_ITERATIONS];
     UINT32 i;
     UINT64 retSize;
     PVOID pAlloc;
 
     // Set to default
-    MEMSET(handles, INVALID_ALLOCATION_HANDLE_VALUE, NUM_ITERATIONS);
+    zeroHandleArray(handles, NUM_ITERATIONS);
 
     // Iterate until we can't allocate a large block
     for (i = 0; i < NUM_ITERATIONS - 1; i++) {
@@ -136,7 +143,7 @@ VOID minBlockFitAllocResize(PHeap pHeap)
     UINT64 retSize, setSize;
 
     // Set to default
-    MEMSET(handles, INVALID_ALLOCATION_HANDLE_VALUE, NUM_ITERATIONS);
+    zeroHandleArray(handles, NUM_ITERATIONS);
 
     // Iterate until we can't allocate a large block
     for (i = 0; i < NUM_ITERATIONS - 1; i++) {
@@ -183,12 +190,12 @@ VOID minBlockFitAllocResize(PHeap pHeap)
 VOID blockCoalesceAlloc(PHeap pHeap)
 {
     ALLOCATION_HANDLE handle = INVALID_ALLOCATION_HANDLE_VALUE;
-    UINT32 size = MIN_HEAP_SIZE / NUM_ITERATIONS;
+    UINT32 size = ROUND_UP(MIN_HEAP_SIZE / NUM_ITERATIONS, 8);
     ALLOCATION_HANDLE handles[NUM_ITERATIONS];
     UINT32 i;
 
     // Set to default
-    MEMSET(handles, INVALID_ALLOCATION_HANDLE_VALUE, NUM_ITERATIONS);
+    zeroHandleArray(handles, NUM_ITERATIONS);
 
     // Iterate until we can't allocate a large block
     for (i = 0; i < NUM_ITERATIONS - 1; i++) {
@@ -220,17 +227,18 @@ VOID blockCoalesceAlloc(PHeap pHeap)
 VOID defragmentationAlloc(PHeap pHeap)
 {
     ALLOCATION_HANDLE handle = INVALID_ALLOCATION_HANDLE_VALUE;
-    UINT32 size = MIN_HEAP_SIZE / NUM_ITERATIONS;
+    UINT32 size = ROUND_DOWN(MIN_HEAP_SIZE / NUM_ITERATIONS, 8);
+    UINT32 smallSize = size - 8;
     ALLOCATION_HANDLE handles[NUM_ITERATIONS];
     UINT32 i, blocks;
 
     // Set to default
-    MEMSET(handles, INVALID_ALLOCATION_HANDLE_VALUE, NUM_ITERATIONS);
+    zeroHandleArray(handles, NUM_ITERATIONS);
 
     // Iterate until we can't allocate a large block
     for (blocks = 0; blocks < NUM_ITERATIONS; blocks++) {
         // Allocate a larger and then a smaller block
-        EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, blocks % 2 == 0 ? size : size - 1, &handle)));
+        EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, blocks % 2 == 0 ? size : smallSize, &handle)));
         if (!IS_VALID_ALLOCATION_HANDLE(handle)) {
             break;
         }
@@ -251,7 +259,7 @@ VOID defragmentationAlloc(PHeap pHeap)
     EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, size, &handle)));
     EXPECT_FALSE(IS_VALID_ALLOCATION_HANDLE(handle));
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, size - 1, &handle)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, smallSize, &handle)));
     EXPECT_TRUE(IS_VALID_ALLOCATION_HANDLE(handle));
     heapDebugCheckAllocator(pHeap, TRUE);
 
@@ -420,11 +428,19 @@ TEST_F(HeapApiFunctionalityTest, AivHeapMinBlockFitResize)
     minBlockFitAllocResize(pHeap);
 }
 
+TEST_F(HeapApiFunctionalityTest, AivHeapUnalignedHeapLimit)
+{
+    PHeap pHeap;
+
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE + 1, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
+    EXPECT_EQ(MIN_HEAP_SIZE + 8, pHeap->heapLimit);
+}
+
 TEST_F(HeapApiFunctionalityTest, AivHeapResizeEdgeCases)
 {
     PHeap pHeap;
     ALLOCATION_HANDLE handle = INVALID_ALLOCATION_HANDLE_VALUE;
-    UINT32 size = MIN_HEAP_SIZE / NUM_ITERATIONS;
+    UINT32 size = ROUND_UP(MIN_HEAP_SIZE / NUM_ITERATIONS, 8);
     ALLOCATION_HANDLE handles[NUM_ITERATIONS];
     UINT32 i;
     UINT64 setSize, iter;
@@ -433,7 +449,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeEdgeCases)
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
 
     // Set to default
-    MEMSET(handles, INVALID_ALLOCATION_HANDLE_VALUE, NUM_ITERATIONS);
+    zeroHandleArray(handles, NUM_ITERATIONS);
 
     // Iterate until we can't allocate a large block
     for (i = 0; i < NUM_ITERATIONS - 1; i++) {
@@ -538,7 +554,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeUpDownBottomUp)
 {
     PHeap pHeap;
     ALLOCATION_HANDLE handle = INVALID_ALLOCATION_HANDLE_VALUE;
-    UINT32 size = MIN_HEAP_SIZE / NUM_ITERATIONS;
+    UINT32 size = ROUND_UP(MIN_HEAP_SIZE / NUM_ITERATIONS, 8);
     ALLOCATION_HANDLE handles[NUM_ITERATIONS];
     UINT32 i, j;
     UINT64 setSize;
@@ -547,7 +563,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeUpDownBottomUp)
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
 
     // Set to default
-    MEMSET(handles, INVALID_ALLOCATION_HANDLE_VALUE, NUM_ITERATIONS);
+    zeroHandleArray(handles, NUM_ITERATIONS);
 
     // Iterate until we can't allocate a large block
     for (i = 0; i < NUM_ITERATIONS - 1; i++) {
@@ -584,7 +600,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeUpDownBottomUp)
     heapDebugCheckAllocator(pHeap, TRUE);
 
     for (i = 0; i < NUM_ITERATIONS - 1; i++) {
-        EXPECT_EQ(STATUS_SUCCESS, heapSetAllocSize(pHeap, &handles[i], size));
+        EXPECT_EQ(STATUS_SUCCESS, heapSetAllocSize(pHeap, &handles[i], size)) << "Iteration " << i;
         EXPECT_EQ(STATUS_SUCCESS, heapGetAllocSize(pHeap, handles[i], &setSize));
         EXPECT_EQ(size, setSize);
     }
@@ -608,7 +624,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeUpDownTopDown)
 {
     PHeap pHeap;
     ALLOCATION_HANDLE handle = INVALID_ALLOCATION_HANDLE_VALUE;
-    UINT32 size = MIN_HEAP_SIZE / NUM_ITERATIONS;
+    UINT32 size = ROUND_UP(MIN_HEAP_SIZE / NUM_ITERATIONS, 8);
     ALLOCATION_HANDLE handles[NUM_ITERATIONS];
     UINT32 i, j;
     UINT64 setSize;
@@ -617,7 +633,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeUpDownTopDown)
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
 
     // Set to default
-    MEMSET(handles, INVALID_ALLOCATION_HANDLE_VALUE, NUM_ITERATIONS);
+    zeroHandleArray(handles, NUM_ITERATIONS);
 
     // Iterate until we can't allocate a large block
     for (i = 0; i < NUM_ITERATIONS - 1; i++) {
@@ -654,7 +670,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeUpDownTopDown)
     heapDebugCheckAllocator(pHeap, TRUE);
 
     for (i = 0; i < NUM_ITERATIONS - 1; i++) {
-        EXPECT_EQ(STATUS_SUCCESS, heapSetAllocSize(pHeap, &handles[NUM_ITERATIONS - 2 - i], size));
+        EXPECT_EQ(STATUS_SUCCESS, heapSetAllocSize(pHeap, &handles[NUM_ITERATIONS - 2 - i], size)) << "Iteration " << i;
         EXPECT_EQ(STATUS_SUCCESS, heapGetAllocSize(pHeap, handles[NUM_ITERATIONS - 2 - i], &setSize));
         EXPECT_EQ(size, setSize);
     }

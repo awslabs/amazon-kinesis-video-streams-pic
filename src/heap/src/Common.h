@@ -18,6 +18,7 @@ extern "C" {
 #define ALLOCATION_FOOTER_MAGIC "__FOOTER_MAGIC_GUARD_BAND__"
 
 // Ensure it's more than the actual header and footer size
+// IMPORTANT!!! This must be a multiple of 8 for alignment
 #define ALLOCATION_HEADER_MAGIC_SIZE        32
 #define ALLOCATION_FOOTER_MAGIC_SIZE        32
 
@@ -29,8 +30,13 @@ extern "C" {
  */
 typedef struct
 {
+    // The aligned allocation size without the service structures - aka header and footer included
     UINT64 size;
+
+    // The type of the heap
     UINT32 type;
+
+    // Union used for flags or VRAM handler
     union {
         UINT32 vramHandle;
         UINT32 flags;
@@ -43,6 +49,8 @@ typedef struct
 
 typedef struct
 {
+    // The size of the allocation without the service structure - header and footer. This is the same
+    // as the size in the header structure needed for a back reference to the beginning of the allocation.
     UINT64 size;
 #ifdef HEAP_DEBUG
     BYTE magic[ALLOCATION_FOOTER_MAGIC_SIZE];

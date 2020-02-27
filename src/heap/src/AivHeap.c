@@ -151,6 +151,7 @@ DEFINE_CREATE_HEAP(aivHeapCreate)
     pBaseHeap->getAllocationSizeFn = aivGetAllocationSize;
     pBaseHeap->getAllocationHeaderSizeFn = aivGetAllocationHeaderSize;
     pBaseHeap->getAllocationFooterSizeFn = aivGetAllocationFooterSize;
+    pBaseHeap->getAllocationAlignedSizeFn = aivGetAllocationAlignedSize;
     pBaseHeap->getHeapLimitsFn = aivGetHeapLimits;
 
 CleanUp:
@@ -174,11 +175,14 @@ DEFINE_INIT_HEAP(aivHeapInit)
     pAivHeap->pFree = NULL;
     pAivHeap->pAlloc = NULL;
 
+    // We will align heap limit to ensure the allocations are always aligned
+    heapLimit = ROUND_UP(heapLimit, 8);
+
     // Call the base functionality
     CHK_STATUS(commonHeapInit(pHeap, heapLimit));
 
     // Allocate the entire heap backed by the process default heap.
-    pAivHeap->pAllocation = MEMALLOC((SIZE_T)heapLimit);
+    pAivHeap->pAllocation = MEMALLOC((SIZE_T) heapLimit);
     CHK_ERR(pAivHeap->pAllocation != NULL,
         STATUS_NOT_ENOUGH_MEMORY,
         "Failed to allocate heap with limit size %" PRIu64,
@@ -270,7 +274,7 @@ DEFINE_HEAP_ALLOC(aivHeapAlloc)
     // IMPORTANT! We will return success without setting the handle
     if (NULL == pFree) {
         // Make sure we decrement the counters by calling decrement
-        decrementUsage(pHeap, AIV_ALLOCATION_HEADER_SIZE + size + AIV_ALLOCATION_FOOTER_SIZE);
+        decrementUsage(pHeap, AIV_ALLOCATION_HEADER_SIZE + ROUND_UP(size, 8) + AIV_ALLOCATION_FOOTER_SIZE);
 
         CHK(FALSE, STATUS_SUCCESS);
     }
@@ -430,6 +434,11 @@ DEFINE_FOOTER_SIZE(aivGetAllocationFooterSize)
     return AIV_ALLOCATION_FOOTER_SIZE;
 }
 
+DEFINE_ALIGNED_SIZE(aivGetAllocationAlignedSize)
+{
+    return ROUND_UP(size, 8);
+}
+
 DEFINE_ALLOC_SIZE(aivGetAllocationSize)
 {
     // This is a direct allocation
@@ -583,7 +592,7 @@ PAIV_ALLOCATION_HEADER getFreeBlock(PAivHeap pAivHeap, UINT64 size)
     // Perform the allocation by looking for the first fit in the free list
     while (pFree != NULL) {
         // check for the fit
-        if (GET_AIV_ALLOCATION_SIZE(pFree) >= size) {
+        if (GET_AIV_ALLOCATION_SIZE(pFree) >= ROUND_UP(size, 8)) {
             // return the found block which will be further processed later
             return pFree;
         }
@@ -600,10 +609,11 @@ PAIV_ALLOCATION_HEADER getFreeBlock(PAivHeap pAivHeap, UINT64 size)
 VOID splitFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT64 size)
 {
     PAIV_ALLOCATION_HEADER pNewFree = NULL;
+    UINT64 alignedSize = ROUND_UP(size, 8);
 
     // There are two scenarios - whether the new header + minimal block size will fit or not
     // In case we end up with smaller block then we will just attach that to the allocated
-    if (GET_AIV_ALLOCATION_SIZE(pBlock) < size + MIN_FREE_BLOCK_SIZE) {
+    if (GET_AIV_ALLOCATION_SIZE(pBlock) < alignedSize + MIN_FREE_BLOCK_SIZE) {
         // use the entire block
         // Fix the next block
         if (pBlock->pNext != NULL) {
@@ -625,17 +635,17 @@ VOID splitFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT64 siz
 #endif
 
         // we also need to fix-up the heap size due to larger allocation
-        ((PHeap)pAivHeap)->heapSize += GET_AIV_ALLOCATION_SIZE(pBlock) - size;
+        ((PHeap)pAivHeap)->heapSize += GET_AIV_ALLOCATION_SIZE(pBlock) - alignedSize;
     } else {
         // split the block
         // Prepare the new free block
-        pNewFree = (PAIV_ALLOCATION_HEADER) ((PBYTE) (pBlock + 1) + size + AIV_ALLOCATION_FOOTER_SIZE);
+        pNewFree = (PAIV_ALLOCATION_HEADER) ((PBYTE) (pBlock + 1) + alignedSize + AIV_ALLOCATION_FOOTER_SIZE);
 
         // Set the header
         MEMCPY(pNewFree, &gAivHeader, AIV_ALLOCATION_HEADER_SIZE);
 
         // Set the header and footer size and link to the chain
-        SET_AIV_ALLOCATION_SIZE(pNewFree, GET_AIV_ALLOCATION_SIZE(pBlock) - size - AIV_ALLOCATION_HEADER_SIZE - AIV_ALLOCATION_FOOTER_SIZE);
+        SET_AIV_ALLOCATION_SIZE(pNewFree, GET_AIV_ALLOCATION_SIZE(pBlock) - alignedSize - AIV_ALLOCATION_HEADER_SIZE - AIV_ALLOCATION_FOOTER_SIZE);
         SET_AIV_ALLOCATION_FOOTER_SIZE(pNewFree);
 
         // Set the type of the block
@@ -665,7 +675,7 @@ VOID splitFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT64 siz
         }
 
         // adjust the free block size
-        SET_AIV_ALLOCATION_SIZE(pBlock, size);
+        SET_AIV_ALLOCATION_SIZE(pBlock, alignedSize);
 
         // set the existing allocations footer
         MEMCPY((PBYTE)(pBlock + 1) + GET_AIV_ALLOCATION_SIZE(pBlock), &gAivFooter, AIV_ALLOCATION_FOOTER_SIZE);
@@ -690,19 +700,20 @@ VOID splitFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT64 siz
 VOID splitAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT64 size)
 {
     PAIV_ALLOCATION_HEADER pNewFree = NULL;
+    UINT64 alignedSize = ROUND_UP(size, 8);
 
     CHECK_EXT(GET_AIV_ALLOCATION_SIZE(pBlock) >= size + MIN_FREE_BLOCK_SIZE,
               "Invalid block size to split.");
 
     // Prepare the new free block
-    pNewFree = (PAIV_ALLOCATION_HEADER) ((PBYTE) (pBlock + 1) + size + AIV_ALLOCATION_FOOTER_SIZE);
+    pNewFree = (PAIV_ALLOCATION_HEADER) ((PBYTE) (pBlock + 1) + alignedSize + AIV_ALLOCATION_FOOTER_SIZE);
 
     // Set the header
     MEMCPY(pNewFree, &gAivHeader, AIV_ALLOCATION_HEADER_SIZE);
 
     // Set the size and link to the chain
     // Set the header and footer size and link to the chain
-    SET_AIV_ALLOCATION_SIZE(pNewFree, GET_AIV_ALLOCATION_SIZE(pBlock) - size - AIV_ALLOCATION_HEADER_SIZE - AIV_ALLOCATION_FOOTER_SIZE);
+    SET_AIV_ALLOCATION_SIZE(pNewFree, GET_AIV_ALLOCATION_SIZE(pBlock) - alignedSize - AIV_ALLOCATION_HEADER_SIZE - AIV_ALLOCATION_FOOTER_SIZE);
     SET_AIV_ALLOCATION_FOOTER_SIZE(pNewFree);
 
     pNewFree->pNext = pNewFree->pPrev = NULL;
@@ -712,7 +723,7 @@ VOID splitAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT6
 
     // Set the blocks sizes
     pBlock->allocSize = size;
-    SET_AIV_ALLOCATION_SIZE(pBlock, size);
+    SET_AIV_ALLOCATION_SIZE(pBlock, alignedSize);
 
     // set the existing allocations footer
     MEMCPY((PBYTE)(pBlock + 1) + GET_AIV_ALLOCATION_SIZE(pBlock), &gAivFooter, AIV_ALLOCATION_FOOTER_SIZE);
@@ -735,10 +746,11 @@ VOID coalesceFreeToAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pAll
     PAIV_ALLOCATION_HEADER pNewFree = NULL, pNext, pPrev;
     UINT64 freeSize = GET_AIV_ALLOCATION_SIZE(pFree);
     UINT64 blockSize = GET_AIV_ALLOCATION_SIZE(pAlloc);
+    UINT64 alignedDiffSize = ROUND_UP(diffSize, 8);
 
     // There are two scenarios - whether the new header + minimal block size will fit or not
     // In case we end up with smaller block then we will just attach that to the allocated
-    if (freeSize < diffSize + MIN_FREE_ALLOCATION_SIZE) {
+    if (freeSize < alignedDiffSize + MIN_FREE_ALLOCATION_SIZE) {
         // use the entire block
         // Fix the next block
         if (pFree->pNext != NULL) {
@@ -769,7 +781,7 @@ VOID coalesceFreeToAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pAll
         // Prepare the new free block without accounting for the header.
         // The new footer will be accounted for from the allocated footer
         // to move to the new position and fixed up.
-        pNewFree = (PAIV_ALLOCATION_HEADER)((PBYTE) pFree + diffSize);
+        pNewFree = (PAIV_ALLOCATION_HEADER)((PBYTE) pFree + alignedDiffSize);
 
         // Store the existing next and prev
         pNext = pFree->pNext;
@@ -797,7 +809,7 @@ VOID coalesceFreeToAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pAll
         }
 
         // Set the size and link to the chain
-        SET_AIV_ALLOCATION_SIZE(pNewFree, freeSize - diffSize);
+        SET_AIV_ALLOCATION_SIZE(pNewFree, freeSize - alignedDiffSize);
         SET_AIV_ALLOCATION_FOOTER_SIZE(pNewFree);
 
         // Set the type of the block
@@ -808,12 +820,12 @@ VOID coalesceFreeToAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pAll
 
         // Set the alloc sizes
         pAlloc->allocSize += diffSize;
-        SET_AIV_ALLOCATION_SIZE(pAlloc, blockSize + diffSize);
+        SET_AIV_ALLOCATION_SIZE(pAlloc, blockSize + alignedDiffSize);
         SET_AIV_ALLOCATION_FOOTER_SIZE(pAlloc);
 
 #ifdef HEAP_DEBUG
         // Null the memory in debug mode
-        MEMSET((PBYTE)(pAlloc + 1) + blockSize, 0x00, (SIZE_T) diffSize);
+        MEMSET((PBYTE)(pAlloc + 1) + blockSize, 0x00, (SIZE_T) alignedDiffSize);
 #endif
     }
 }
@@ -968,7 +980,7 @@ PAIV_ALLOCATION_HEADER getLeftBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pB
 
     PALLOCATION_FOOTER pFooter = ((PALLOCATION_FOOTER) pBlock) - 1;
 
-    UINT64 blockSize = ((PALLOCATION_FOOTER) pFooter)->size;
+    UINT64 blockSize = pFooter->size;
 
     PAIV_ALLOCATION_HEADER pHeader = (PAIV_ALLOCATION_HEADER) ((PBYTE) pFooter - blockSize - AIV_ALLOCATION_HEADER_SIZE);
 

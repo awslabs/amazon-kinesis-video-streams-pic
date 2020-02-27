@@ -113,6 +113,7 @@ STATUS hybridCreateHeap(PHeap pHeap, UINT32 spillRatio, UINT32 behaviorFlags, PH
     pBaseHeap->getAllocationSizeFn = hybridGetAllocationSize;
     pBaseHeap->getAllocationHeaderSizeFn = hybridGetAllocationHeaderSize;
     pBaseHeap->getAllocationFooterSizeFn = hybridGetAllocationFooterSize;
+    pBaseHeap->getAllocationAlignedSizeFn = hybridGetAllocationAlignedSize;
     pBaseHeap->getHeapLimitsFn = hybridGetHeapLimits;
 
 CleanUp:
@@ -577,6 +578,11 @@ DEFINE_HEADER_SIZE(hybridGetAllocationHeaderSize)
 DEFINE_FOOTER_SIZE(hybridGetAllocationFooterSize)
 {
     return VRAM_ALLOCATION_FOOTER_SIZE;
+}
+
+DEFINE_ALIGNED_SIZE(hybridGetAllocationAlignedSize)
+{
+    return size;
 }
 
 DEFINE_ALLOC_SIZE(hybridGetAllocationSize)

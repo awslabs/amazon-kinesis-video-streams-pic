@@ -29,8 +29,13 @@ extern "C" {
  */
 typedef struct AIV_ALLOCATION_HEADER
 {
+    // Base structure
     ALLOCATION_HEADER header;
+
+    // The allocation size specified by the caller without alignment or padding
     UINT64 allocSize;
+
+    // Chaining left and right
     struct AIV_ALLOCATION_HEADER* pNext;
     struct AIV_ALLOCATION_HEADER* pPrev;
 } *PAIV_ALLOCATION_HEADER;
@@ -164,6 +169,7 @@ DEFINE_HEAP_CHK(aivHeapDebugCheckAllocator);
  */
 DEFINE_HEADER_SIZE(aivGetAllocationHeaderSize);
 DEFINE_FOOTER_SIZE(aivGetAllocationFooterSize);
+DEFINE_ALIGNED_SIZE(aivGetAllocationAlignedSize);
 DEFINE_ALLOC_SIZE(aivGetAllocationSize);
 DEFINE_HEAP_LIMITS(aivGetHeapLimits);
 

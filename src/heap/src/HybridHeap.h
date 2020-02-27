@@ -144,6 +144,7 @@ DEFINE_HEAP_CHK(hybridHeapDebugCheckAllocator);
  */
 DEFINE_HEADER_SIZE(hybridGetAllocationHeaderSize);
 DEFINE_FOOTER_SIZE(hybridGetAllocationFooterSize);
+DEFINE_ALIGNED_SIZE(hybridGetAllocationAlignedSize);
 DEFINE_ALLOC_SIZE(hybridGetAllocationSize);
 DEFINE_HEAP_LIMITS(hybridGetHeapLimits);
 

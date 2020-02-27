@@ -231,7 +231,9 @@ DEFINE_HEAP_ALLOC(commonHeapAlloc)
     CHK_ERR(pHeap->heapLimit != 0, STATUS_HEAP_NOT_INITIALIZED, "Heap has not been initialized.");
 
     // Check if we can allocate the chunk taking into account the allocation header and footer
-    overallSize = pBaseHeap->getAllocationHeaderSizeFn() + size + pBaseHeap->getAllocationFooterSizeFn();
+    overallSize = pBaseHeap->getAllocationHeaderSizeFn(size) +
+            pBaseHeap->getAllocationAlignedSizeFn(size) +
+            pBaseHeap->getAllocationFooterSizeFn(size);
     CHK_ERR(overallSize + pHeap->heapSize <= pHeap->heapLimit, STATUS_NOT_ENOUGH_MEMORY,
             "Allocating %" PRIu64 " bytes failed due to heap limit", size);
 
