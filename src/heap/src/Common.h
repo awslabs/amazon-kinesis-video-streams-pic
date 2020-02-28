@@ -58,19 +58,6 @@ typedef struct
 } ALLOCATION_FOOTER, *PALLOCATION_FOOTER;
 
 /**
- * The following macros are used to access various fields without de0referencing the structure
- * which would cause unaligned access in the generated code.
- */
-#define GET_AIV_HEADER_SIZE_PTR(p)              ((PBYTE)(PALLOCATION_HEADER)(p) + 0)
-#define GET_AIV_HEADER_TYPE_PTR(p)              (GET_AIV_HEADER_SIZE_PTR(p) + SIZEOF(UINT64))
-#define GET_AIV_HEADER_VRAM_HANDLE_PTR(p)       (GET_AIV_HEADER_TYPE_PTR(p) + SIZEOF(UINT32))
-#define GET_AIV_HEADER_FLAGS_PTR(p)             (GET_AIV_HEADER_TYPE_PTR(p) + SIZEOF(UINT32))
-#define GET_AIV_HEADER_MAGIC_PTR(p)             (GET_AIV_HEADER_FLAGS_PTR(p) + SIZEOF(UINT32))
-
-#define GET_AIV_FOOTER_SIZE_PTR(p)              ((PBYTE)(PALLOCATION_FOOTER)(p) + 0)
-#define GET_AIV_FOOTER_MAGIC_PTR(p)             (GET_AIV_FOOTER_SIZE_PTR(p) + SIZEOF(UINT64))
-
-/**
  * Allocate a buffer from the heap
  */
 DEFINE_HEAP_ALLOC(commonHeapAlloc);

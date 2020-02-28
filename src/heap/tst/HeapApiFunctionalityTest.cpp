@@ -62,7 +62,7 @@ VOID multipleLargeAlloc(PHeap pHeap)
 
     for (i = 0; i < NUM_ITERATIONS - 1; i++) {
         EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, size, &handle)));
-        EXPECT_TRUE(IS_VALID_ALLOCATION_HANDLE(handle));
+        EXPECT_TRUE(IS_VALID_ALLOCATION_HANDLE(handle)) << "Iteration " << i;
     }
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, size, &handle)));

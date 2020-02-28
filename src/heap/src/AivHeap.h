@@ -87,12 +87,12 @@ typedef struct
 /**
  * Retrieve the allocation size
  */
-#define GET_AIV_ALLOCATION_SIZE(pAlloc) (GET_UNALIGNED((PINT64) GET_AIV_HEADER_SIZE_PTR(pAlloc)))
+#define GET_AIV_ALLOCATION_SIZE(pAlloc) (((PALLOCATION_HEADER)(pAlloc))->size)
 
 /**
  * Sets the allocation size
  */
-#define SET_AIV_ALLOCATION_SIZE(pAlloc, s) (PUT_UNALIGNED((PINT64) GET_AIV_HEADER_SIZE_PTR(pAlloc), (UINT64) (s)))
+#define SET_AIV_ALLOCATION_SIZE(pAlloc, s) (((PALLOCATION_HEADER)(pAlloc))->size = (UINT64)(s))
 
 /**
  * Gets the pointer to the allocation itself
@@ -107,12 +107,12 @@ typedef struct
 /**
  * Gets the allocation footer size
  */
-#define GET_AIV_ALLOCATION_FOOTER_SIZE(pAlloc) (GET_UNALIGNED((PINT64) GET_AIV_FOOTER_SIZE_PTR(pAlloc)))
+#define GET_AIV_ALLOCATION_FOOTER_SIZE(pAlloc) (GET_AIV_ALLOCATION_FOOTER(pAlloc)->size)
 
 /**
  * Sets the allocation footer size
  */
-#define SET_AIV_ALLOCATION_FOOTER_SIZE(pAlloc) (PUT_UNALIGNED((PINT64) GET_AIV_FOOTER_SIZE_PTR(pAlloc), (UINT64) GET_AIV_ALLOCATION_SIZE(pAlloc)))
+#define SET_AIV_ALLOCATION_FOOTER_SIZE(pAlloc) (GET_AIV_ALLOCATION_FOOTER(pAlloc)->size = GET_AIV_ALLOCATION_SIZE(pAlloc))
 
 /**
  * Creates the heap

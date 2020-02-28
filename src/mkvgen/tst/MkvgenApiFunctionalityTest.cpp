@@ -954,7 +954,7 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenMkvTracksHeaderWithMultipleTrack)
     // Calculated size of the mkv Tracks element
     mkvTracksElementSize = mkvgenGetMkvTrackHeaderSize(testTrackInfo, testTrackInfoCount) - MKV_TRACKS_ELEM_BITS_SIZE;
 
-    // Jump to the acutal size of the mkv Tracks element stored in buffer
+    // Jump to the actual size of the mkv Tracks element stored in buffer
     pCurrentPnt += SIZEOF(mkvTracksElementSize);
 
     // Verify that the actual value matches calculation

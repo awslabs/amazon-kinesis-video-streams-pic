@@ -95,13 +95,13 @@ STATUS getVideoWidthAndHeightFromH265Sps(PBYTE codecPrivateData, UINT32 codecPri
 
         // Pass the VPS
         CHK(SIZEOF(UINT32) <= adaptedSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
-        naluSize = (UINT32) getInt32(*(PUINT32) pRun);
+        naluSize = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pRun);
         pRun += SIZEOF(UINT32) + naluSize;
         CHK((UINT32)(pRun - pAdaptedBits) <= adaptedSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
 
         // Get the SPS
         CHK(pRun - pAdaptedBits + SIZEOF(UINT32) <= adaptedSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
-        naluSize = (UINT32) getInt32(*(PUINT32) pRun);
+        naluSize = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pRun);
         pSps = pRun + SIZEOF(UINT32);
         size = naluSize;
         CHK(pSps - pAdaptedBits + naluSize <= adaptedSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);

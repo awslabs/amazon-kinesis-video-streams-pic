@@ -54,9 +54,6 @@ STATUS heapInitialize(UINT64 heapLimit, UINT32 spillRatio, UINT32 behaviorFlags,
 
     DLOGI("Initializing native heap with limit size %" PRIu64 ", spill ratio %u%% and flags 0x%08x", heapLimit, spillRatio, behaviorFlags);
 
-    // Initialize the endianness
-    initializeEndianness();
-
     // Need to dynamically decide the heap implementation
     // The logic is to check if we are allowed to use the hybrid implementation and
     // whether the system libraries are present.

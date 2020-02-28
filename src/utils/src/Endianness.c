@@ -193,6 +193,14 @@ putUnalignedInt16Func putUnalignedInt16 = putUnalignedInt16Be;
 putUnalignedInt32Func putUnalignedInt32 = putUnalignedInt32Be;
 putUnalignedInt64Func putUnalignedInt64 = putUnalignedInt64Be;
 
+// The Big-endian variants
+getUnalignedInt16Func getUnalignedInt16BigEndian = getUnalignedInt16Be;
+getUnalignedInt32Func getUnalignedInt32BigEndian = getUnalignedInt32Be;
+getUnalignedInt64Func getUnalignedInt64BigEndian = getUnalignedInt64Be;
+
+putUnalignedInt16Func putUnalignedInt16BigEndian = putUnalignedInt16Be;
+putUnalignedInt32Func putUnalignedInt32BigEndian = putUnalignedInt32Be;
+putUnalignedInt64Func putUnalignedInt64BigEndian = putUnalignedInt64Be;
 
 //////////////////////////////////////////////////////////
 // Public functions
