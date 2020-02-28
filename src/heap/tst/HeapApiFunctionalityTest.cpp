@@ -433,7 +433,11 @@ TEST_F(HeapApiFunctionalityTest, AivHeapUnalignedHeapLimit)
     PHeap pHeap;
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE + 1, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
+#ifdef ALIGNED_MEMORY_MODEL
     EXPECT_EQ(MIN_HEAP_SIZE + 8, pHeap->heapLimit);
+#else
+    EXPECT_EQ(MIN_HEAP_SIZE + 1, pHeap->heapLimit);
+#endif
 }
 
 TEST_F(HeapApiFunctionalityTest, AivHeapResizeEdgeCases)

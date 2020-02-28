@@ -79,6 +79,12 @@ typedef struct
                 "Invalid handle value."); \
     } while (FALSE)
 
+#ifdef ALIGNED_MEMORY_MODEL
+        #define HEAP_PACKED_SIZE(size)      ROUND_UP((size), 8)
+#else
+        #define HEAP_PACKED_SIZE(size)      (size)
+#endif
+
 /**
  * Gets the allocation header
  */

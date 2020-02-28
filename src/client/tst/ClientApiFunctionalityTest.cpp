@@ -117,13 +117,14 @@ VOID ClientApiFunctionalityTest::authIntegrationTest(BOOL sync)
     mClientCallbacks.getSecurityTokenFn = getEmptySecurityTokenFunc;
     if (!sync) {
         EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle));
+        pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);
         EXPECT_EQ(0, pKinesisVideoClient->tokenAuthInfo.expiration);
     } else {
         EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoClientSync(&mDeviceInfo, &mClientCallbacks, &clientHandle));
+        pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);
         EXPECT_EQ(TEST_AUTH_EXPIRATION, pKinesisVideoClient->tokenAuthInfo.expiration);
     }
 
-    pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);
     EXPECT_EQ(0, pKinesisVideoClient->tokenAuthInfo.data[0]);
     EXPECT_NE(0, pKinesisVideoClient->certAuthInfo.data[0]);
 

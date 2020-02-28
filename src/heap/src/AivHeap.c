@@ -176,7 +176,7 @@ DEFINE_INIT_HEAP(aivHeapInit)
     pAivHeap->pAlloc = NULL;
 
     // We will align heap limit to ensure the allocations are always aligned
-    heapLimit = ROUND_UP(heapLimit, 8);
+    heapLimit = HEAP_PACKED_SIZE(heapLimit);
 
     // Call the base functionality
     CHK_STATUS(commonHeapInit(pHeap, heapLimit));
@@ -274,7 +274,7 @@ DEFINE_HEAP_ALLOC(aivHeapAlloc)
     // IMPORTANT! We will return success without setting the handle
     if (NULL == pFree) {
         // Make sure we decrement the counters by calling decrement
-        decrementUsage(pHeap, AIV_ALLOCATION_HEADER_SIZE + ROUND_UP(size, 8) + AIV_ALLOCATION_FOOTER_SIZE);
+        decrementUsage(pHeap, AIV_ALLOCATION_HEADER_SIZE + HEAP_PACKED_SIZE(size) + AIV_ALLOCATION_FOOTER_SIZE);
 
         CHK(FALSE, STATUS_SUCCESS);
     }
@@ -436,7 +436,7 @@ DEFINE_FOOTER_SIZE(aivGetAllocationFooterSize)
 
 DEFINE_ALIGNED_SIZE(aivGetAllocationAlignedSize)
 {
-    return ROUND_UP(size, 8);
+    return HEAP_PACKED_SIZE(size);
 }
 
 DEFINE_ALLOC_SIZE(aivGetAllocationSize)
@@ -592,7 +592,7 @@ PAIV_ALLOCATION_HEADER getFreeBlock(PAivHeap pAivHeap, UINT64 size)
     // Perform the allocation by looking for the first fit in the free list
     while (pFree != NULL) {
         // check for the fit
-        if (GET_AIV_ALLOCATION_SIZE(pFree) >= ROUND_UP(size, 8)) {
+        if (GET_AIV_ALLOCATION_SIZE(pFree) >= HEAP_PACKED_SIZE(size)) {
             // return the found block which will be further processed later
             return pFree;
         }
@@ -609,7 +609,7 @@ PAIV_ALLOCATION_HEADER getFreeBlock(PAivHeap pAivHeap, UINT64 size)
 VOID splitFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT64 size)
 {
     PAIV_ALLOCATION_HEADER pNewFree = NULL;
-    UINT64 alignedSize = ROUND_UP(size, 8);
+    UINT64 alignedSize = HEAP_PACKED_SIZE(size);
 
     // There are two scenarios - whether the new header + minimal block size will fit or not
     // In case we end up with smaller block then we will just attach that to the allocated
@@ -700,7 +700,7 @@ VOID splitFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT64 siz
 VOID splitAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT64 size)
 {
     PAIV_ALLOCATION_HEADER pNewFree = NULL;
-    UINT64 alignedSize = ROUND_UP(size, 8);
+    UINT64 alignedSize = HEAP_PACKED_SIZE(size);
 
     CHECK_EXT(GET_AIV_ALLOCATION_SIZE(pBlock) >= size + MIN_FREE_BLOCK_SIZE,
               "Invalid block size to split.");
@@ -746,7 +746,7 @@ VOID coalesceFreeToAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pAll
     PAIV_ALLOCATION_HEADER pNewFree = NULL, pNext, pPrev;
     UINT64 freeSize = GET_AIV_ALLOCATION_SIZE(pFree);
     UINT64 blockSize = GET_AIV_ALLOCATION_SIZE(pAlloc);
-    UINT64 alignedDiffSize = ROUND_UP(diffSize, 8);
+    UINT64 alignedDiffSize = HEAP_PACKED_SIZE(diffSize);
 
     // There are two scenarios - whether the new header + minimal block size will fit or not
     // In case we end up with smaller block then we will just attach that to the allocated
