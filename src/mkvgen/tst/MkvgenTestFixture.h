@@ -66,13 +66,6 @@ protected:
 
     virtual void SetUp()
     {
-        UINT32 logLevel = 0;
-        auto logLevelStr = GETENV("AWS_KVS_LOG_LEVEL");
-        if (logLevelStr != NULL) {
-            assert(STRTOUI32(logLevelStr, NULL, 10, &logLevel) == STATUS_SUCCESS);
-            SET_LOGGER_LOG_LEVEL(logLevel);
-        }
-
         mTrackInfoCount = MKV_TEST_TRACK_INFO_COUNT;
         mTrackInfo.version = TRACK_INFO_CURRENT_VERSION;
         mTrackInfo.trackId = MKV_TEST_TRACKID;

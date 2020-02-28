@@ -67,13 +67,6 @@ VOID HeapTestBase::SetUpTestCase()
 
 VOID HeapTestBase::SetUp()
 {
-    UINT32 logLevel = 0;
-    auto logLevelStr = GETENV("AWS_KVS_LOG_LEVEL");
-    if (logLevelStr != NULL) {
-        assert(STRTOUI32(logLevelStr, NULL, 10, &logLevel) == STATUS_SUCCESS);
-        SET_LOGGER_LOG_LEVEL(logLevel);
-    }
-
     SetUpInternal();
 }
 

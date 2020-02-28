@@ -11,7 +11,6 @@ extern "C" {
 #pragma once
 #include <com/amazonaws/kinesis/video/common/CommonDefs.h>
 #include <com/amazonaws/kinesis/video/common/PlatformUtils.h>
-#include <com/amazonaws/kinesis/video/utils/Include.h>
 #pragma pack(push, include, 1) // for byte alignment
 
 /**

@@ -345,13 +345,6 @@ protected:
     volatile UINT32 mStreamShutdownFuncCount;
 
     void initTestMembers() {
-        UINT32 logLevel = 0;
-        auto logLevelStr = GETENV("AWS_KVS_LOG_LEVEL");
-        if (logLevelStr != NULL) {
-            assert(STRTOUI32(logLevelStr, NULL, 10, &logLevel) == STATUS_SUCCESS);
-        }
-
-
         // Zero things out
         mClientHandle = INVALID_CLIENT_HANDLE_VALUE;
         MEMSET(&mDeviceInfo, 0x00, SIZEOF(DeviceInfo));
@@ -386,7 +379,7 @@ protected:
         mDeviceInfo.clientInfo.createStreamTimeout = TEST_DEFAULT_CREATE_STREAM_TIMEOUT;
         mDeviceInfo.clientInfo.stopStreamTimeout = TEST_DEFAULT_STOP_STREAM_TIMEOUT;
         mDeviceInfo.clientInfo.offlineBufferAvailabilityTimeout = TEST_DEFAULT_BUFFER_AVAILABILITY_TIMEOUT;
-        mDeviceInfo.clientInfo.loggerLogLevel = logLevel;
+        mDeviceInfo.clientInfo.loggerLogLevel = LOG_LEVEL_DEBUG;
         mDeviceInfo.clientInfo.logMetric = FALSE;
 
         // Initialize stream info
@@ -850,13 +843,6 @@ protected:
 
     virtual void SetUp()
     {
-        UINT32 logLevel = 0;
-        auto logLevelStr = GETENV("AWS_KVS_LOG_LEVEL");
-        if (logLevelStr != NULL) {
-            assert(STRTOUI32(logLevelStr, NULL, 10, &logLevel) == STATUS_SUCCESS);
-            SET_LOGGER_LOG_LEVEL(logLevel);
-        }
-
         DLOGI("\nSetting up test: %s\n", GetTestName());
         mTestClientMutex = MUTEX_CREATE(TRUE);
         initTestMembers();
