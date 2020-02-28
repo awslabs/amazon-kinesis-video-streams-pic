@@ -123,7 +123,7 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData,
 
         // Also, handle the case where there is a last 001/0001 at the end of the frame - we will fill with 0s
         if (markerFound) {
-            *((PUINT32) pAdaptedCurPnt - 1) = 0;
+            PUT_UNALIGNED_BIG_ENDIAN((PUINT32) pAdaptedCurPnt - 1, 0);
         }
     }
 
