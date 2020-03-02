@@ -9,8 +9,6 @@
 extern "C" {
 #endif
 
-#pragma once
-
 #define SYS_ALLOCATION_TYPE 1
 
 /**

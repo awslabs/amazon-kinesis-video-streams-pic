@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#pragma once
-
 /**
  * Including the headers
  */

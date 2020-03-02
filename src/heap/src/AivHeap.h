@@ -9,8 +9,6 @@
 extern "C" {
 #endif
 
-#pragma once
-
 #define ALLOCATION_FLAGS_NONE           0x0000
 #define ALLOCATION_FLAGS_ALLOC          0x0001
 #define ALLOCATION_FLAGS_FREE           0x0002

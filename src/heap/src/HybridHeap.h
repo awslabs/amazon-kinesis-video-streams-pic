@@ -9,8 +9,6 @@
 extern "C" {
 #endif
 
-#pragma once
-
 /**
  * VRAM function definitions with their symbol names
  */

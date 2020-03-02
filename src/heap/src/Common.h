@@ -9,8 +9,6 @@
 extern "C" {
 #endif
 
-#pragma once
-
 /**
  * 'Magic' - aka a sentinel which will be added as a guard band for each allocation in debug mode
  */
