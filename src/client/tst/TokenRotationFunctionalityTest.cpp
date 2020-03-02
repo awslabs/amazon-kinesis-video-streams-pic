@@ -96,7 +96,7 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamWithResultEventAfterGrace
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
             EXPECT_EQ(STATUS_SUCCESS,
                       mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             if (retStatus == STATUS_END_OF_STREAM) {
                 tokenRotateCount++;
             }
@@ -161,7 +161,7 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamWithLargeBufferMultipleSe
 
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
             EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             if (retStatus == STATUS_END_OF_STREAM) {
                 tokenRotateCount++;
             }
@@ -198,7 +198,7 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamForMultipleRotationsStopS
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
             STATUS retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
             EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
         }
     } while(currentTime < testTerminationTime);
 
@@ -249,13 +249,13 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamNewPutStreamResultComesFa
                 mockConsumer = mStreamingSession.getConsumer(uploadHandle);
                 STATUS retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
                 EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
-                VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+                VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             } else {
                 mockConsumer = mStreamingSession.getConsumer(uploadHandle);
                 STATUS retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
                 EXPECT_EQ(STATUS_SUCCESS,
                           mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_ACK_INTERNAL_ERROR, &submittedAck));
-                VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+                VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             }
         }
     } while(currentTime < testTerminationTime);
@@ -294,7 +294,7 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamAtTokenRotationLongDelayF
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
             STATUS retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
             EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
         }
     } while (currentTime < streamStopTime);
 

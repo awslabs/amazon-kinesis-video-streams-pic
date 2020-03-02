@@ -79,11 +79,13 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, CreateStreamDelayACKsStaleCallbac
             UPLOAD_HANDLE uploadHandle = currentUploadHandles[i];
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
             STATUS retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
-            if (currentTime > streamStartTime + 3 * HUNDREDS_OF_NANOS_IN_A_SECOND) {
-                EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
+            if (mockConsumer != NULL) {
+                if (currentTime > streamStartTime + 3 * HUNDREDS_OF_NANOS_IN_A_SECOND) {
+                    EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
+                }
+                VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             }
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
         }
     } while (currentTime < streamStopTime);
 
@@ -159,7 +161,7 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, CheckBlockedOfflinePutFrameReturn
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
             STATUS retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
             EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
         }
 
         if (submittedAck && mFragmentAck.ackType == FRAGMENT_ACK_TYPE_PERSISTED) {

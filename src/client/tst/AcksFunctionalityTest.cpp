@@ -57,9 +57,11 @@ TEST_P(AcksFunctionalityTest, CheckRollbackFromErrorAckTime)
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
 
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
-            // right now, resetting current is irregardless of the service error code. There just testing SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR is enough
-            EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR, &submittedErrorAck));
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
+            if (mockConsumer != NULL) {
+                // right now, resetting current is irregardless of the service error code. There just testing SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR is enough
+                EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR, &submittedErrorAck));
+            }
         }
     } while(currentTime < stopTime && !submittedErrorAck);
 
@@ -108,9 +110,9 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitPersistedAckBeforeReceivedAckSuc
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
 
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             // sending acks but get order reversed for persisted ack and received ack
-            if (mockConsumer->mAckQueue.size() > 0) {
+            if (mockConsumer != NULL && mockConsumer->mAckQueue.size() > 0) {
                 switch (mockConsumer->mAckQueue.top().mFragmentAck.ackType) {
                     case FRAGMENT_ACK_TYPE_PERSISTED:
                         EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK,
@@ -167,9 +169,9 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitReceivedAckBeforeBufferingAckSuc
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
 
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             // sending acks but get order reversed for buffering ack and received ack
-            if (mockConsumer->mAckQueue.size() > 0) {
+            if (mockConsumer != NULL && mockConsumer->mAckQueue.size() > 0) {
                 switch (mockConsumer->mAckQueue.top().mFragmentAck.ackType) {
                     case FRAGMENT_ACK_TYPE_RECEIVED:
                         EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK,
@@ -226,9 +228,11 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsOutsideOfViewRangeFail) {
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
 
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
-            // send one persisted ack falling in future timestamp, should fail as out of content view
-            EXPECT_EQ(STATUS_ACK_TIMESTAMP_NOT_IN_VIEW_WINDOW, mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK, FRAGMENT_ACK_TYPE_PERSISTED, stopTime + 1 * HUNDREDS_OF_NANOS_IN_A_SECOND, &submittedAck));
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
+            if (mockConsumer != NULL) {
+                // send one persisted ack falling in future timestamp, should fail as out of content view
+                EXPECT_EQ(STATUS_ACK_TIMESTAMP_NOT_IN_VIEW_WINDOW, mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK, FRAGMENT_ACK_TYPE_PERSISTED, stopTime + 1 * HUNDREDS_OF_NANOS_IN_A_SECOND, &submittedAck));
+            }
         }
     } while(currentTime < stopTime && !submittedAck);
 }
