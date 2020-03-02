@@ -1216,6 +1216,87 @@ PUBLIC_API STATUS semaphoreUnlock(SEMAPHORE_HANDLE);
  */
 PUBLIC_API STATUS semaphoreWaitUntilClear(SEMAPHORE_HANDLE, UINT64);
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// SerialDispatchQueue functionality
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Definition of the SerialDispatchQueue handle
+ */
+typedef UINT64 SERIAL_DISPATCH_QUEUE_HANDLE;
+typedef SERIAL_DISPATCH_QUEUE_HANDLE* PSERIAL_DISPATCH_QUEUE_HANDLE;
+
+/**
+ * This is a sentinel indicating an invalid handle value
+ */
+#ifndef INVALID_SERIAL_DISPATCH_QUEUE_HANDLE_VALUE
+#define INVALID_SERIAL_DISPATCH_QUEUE_HANDLE_VALUE ((SERIAL_DISPATCH_QUEUE_HANDLE) INVALID_PIC_HANDLE_VALUE)
+#endif
+
+/**
+ * Checks for the handle validity
+ */
+#ifndef IS_VALID_SERIAL_DISPATCH_QUEUE_HANDLE_VALUE
+#define IS_VALID_SERIAL_DISPATCH_QUEUE_HANDLE_VALUE(h) ((h) != INVALID_SERIAL_DISPATCH_QUEUE_HANDLE_VALUE)
+#endif
+
+typedef enum {
+    DISPATCH_QUEUE_TASK_PRIORITY_DEFAULT,
+    DISPATCH_QUEUE_TASK_PRIORITY_HIGH,
+} DISPATCH_QUEUE_TASK_PRIORITY;
+
+/**
+ * DispatchQueue task function.
+ *
+ * User may try to acquire lock in the task function, but it may block the entire queue if lock is not available
+ *
+ * @UINT64 - User provided data
+ *
+ */
+typedef VOID (*DispatchQueueTaskFunc)(UINT64);
+
+/**
+ * @param - PSERIAL_DISPATCH_QUEUE_HANDLE - OUT - Serial dispatch queue handle
+ *
+ * @return  - STATUS code of the execution
+ */
+PUBLIC_API STATUS serialDispatchQueueCreate(PSERIAL_DISPATCH_QUEUE_HANDLE);
+
+/*
+ * Frees the serial dispatch queue object
+ *
+ * NOTE: The call is idempotent.
+ *
+ * @param - PSERIAL_DISPATCH_QUEUE_HANDLE - IN/OUT - serial dispatch queue handle to free
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS serialDispatchQueueFree(PSERIAL_DISPATCH_QUEUE_HANDLE);
+
+/*
+ * shutdown the serial dispatch queue object. No more task execution after this function returns. Any task dispatched
+ * after this call will be added to the queue..
+ *
+ * NOTE: The call is idempotent.
+ *
+ * @param - SERIAL_DISPATCH_QUEUE_HANDLE - IN - serial dispatch queue handle
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS serialDispatchQueueShutdown(SERIAL_DISPATCH_QUEUE_HANDLE);
+
+/*
+ * Dispatch a task to the dispatch queue
+ *
+ * @param - SERIAL_DISPATCH_QUEUE_HANDLE - IN - serial dispatch queue handle
+ * @param - DISPATCH_QUEUE_TASK_PRIORITY - IN - priority of the task. high priority task will run first.
+ * @param - DispatchQueueTaskFunc - IN - dispatch queue task function
+ * @param - UINT64 - IN - custom data for the dispatch queue task
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS serialDispatchQueueDispatchTask(SERIAL_DISPATCH_QUEUE_HANDLE, DISPATCH_QUEUE_TASK_PRIORITY,
+                                                  DispatchQueueTaskFunc, UINT64);
 
 
 #ifdef __cplusplus

@@ -196,6 +196,38 @@ STATUS semaphoreReleaseInternal(PSemaphore);
 STATUS semaphoreSetLockInternal(PSemaphore, BOOL);
 STATUS semaphoreWaitUntilClearInternal(PSemaphore, UINT64);
 
+//////////////////////////////////////////////////////////////////////////////////////////////
+// SerialDispatchQueue functionality
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+typedef struct {
+    UINT64 customData;
+    DispatchQueueTaskFunc dispatchQueueTaskFn;
+} DispatchQueueTask, *PDispatchQueueTask;
+
+/**
+ * Internal serial dispatch queue definition
+ */
+typedef struct {
+    volatile ATOMIC_BOOL shutdown;
+    PStackQueue taskqueuePriDefault;
+    PStackQueue taskqueuePriHigh;
+    TID executorTid;
+    CVAR executorCvar;
+    MUTEX lock;
+} SerialDispatchQueue, *PSerialDispatchQueue;
+
+// Public handle to and from object converters
+#define TO_SERIAL_DISPATCH_QUEUE_HANDLE(p) ((SERIAL_DISPATCH_QUEUE_HANDLE) (p))
+#define FROM_SERIAL_DISPATCH_QUEUE_HANDLE(h) (IS_VALID_SERIAL_DISPATCH_QUEUE_HANDLE_VALUE(h) ? (PSerialDispatchQueue) (h) : NULL)
+
+// Internal Functions
+STATUS serialDispatchQueueCreateInternal(PSerialDispatchQueue*);
+STATUS serialDispatchQueueFreeInternal(PSerialDispatchQueue*);
+
+// Executor routine
+PVOID serialDispatchQueueExecutor(PVOID);
+
 #ifdef __cplusplus
 }
 #endif
