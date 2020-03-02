@@ -11,8 +11,8 @@ TEST_F(TagsFunctionalityTest, basisTagsFunctionality)
 
     for (i = 0; i < tagsCount; i++) {
         tags[i].version = TAG_CURRENT_VERSION;
-        tags[i].name = (PCHAR) MEMALLOC((MAX_TAG_NAME_LEN + 1) * SIZEOF(CHAR));
-        tags[i].value = (PCHAR) MEMALLOC((MAX_TAG_VALUE_LEN + 1) * SIZEOF(CHAR));
+        tags[i].name = (PCHAR) MEMALLOC((MAX_TAG_NAME_LEN + 2) * SIZEOF(CHAR));
+        tags[i].value = (PCHAR) MEMALLOC((MAX_TAG_VALUE_LEN + 2) * SIZEOF(CHAR));
 
         SPRINTF(tags[i].name, "Tag Name %u", i);
         SPRINTF(tags[i].value, "Tag Value %u", i);
