@@ -73,7 +73,7 @@ matrix:
     - name: "Linux Clang UndefinedBehaviorSanitizer"
       os: linux
       compiler: clang
-      # env: UBSAN_OPTIONS=halt_on_error=1
+      env: UBSAN_OPTIONS=halt_on_error=1:suppressions=../src/utils/tst/suppressions/UBSAN.supp
       before_script: mkdir build && cd build && cmake .. -DBUILD_TEST=TRUE -DUNDEFINED_BEHAVIOR_SANITIZER=TRUE
 
     # MemorySanitizer

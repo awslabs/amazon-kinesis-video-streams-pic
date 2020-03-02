@@ -51,8 +51,13 @@ TEST_F(TagsFunctionalityTest, basisTagsFunctionality)
     // The actual storage should be less as our tag name/values are shorter than max
     EXPECT_TRUE(tagsCount * TAG_FULL_LENGTH > retSize);
 
-    // Less than required size
+    // Less than required size might succeed due to alignment.
+    // In this case, it will succeed as we have more storage.
     retSize -= 1;
+    EXPECT_EQ(STATUS_SUCCESS, packageTags(tagsCount, tags, retSize, pDstTags, &retSize));
+
+    // Now, it should fail as we are 8 bytes less than the storage size returned earlier.
+    retSize -= 7;
     EXPECT_NE(STATUS_SUCCESS, packageTags(tagsCount, tags, retSize, pDstTags, &retSize));
 
     for (i = 0; i < tagsCount; i++) {

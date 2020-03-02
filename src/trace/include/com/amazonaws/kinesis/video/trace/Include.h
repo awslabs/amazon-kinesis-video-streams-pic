@@ -11,7 +11,6 @@ extern "C" {
 #pragma once
 #include <com/amazonaws/kinesis/video/common/CommonDefs.h>
 #include <com/amazonaws/kinesis/video/common/PlatformUtils.h>
-#pragma pack(push, include, 1) // for byte alignment
 
 /**
  * Definition of the handles
@@ -193,8 +192,6 @@ PUBLIC_API DEFINE_TRACE_STOP(traceStop);
  * Including the headers
  */
 #include <com/amazonaws/kinesis/video/utils/Include.h>
-
-#pragma pack(pop, include) // pop the existing settings
 
 #ifdef __cplusplus
 }
