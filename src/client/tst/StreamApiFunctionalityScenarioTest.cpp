@@ -54,10 +54,12 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationBasicScenario)
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
 
             STATUS retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
-            EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             if (retStatus == STATUS_END_OF_STREAM) {
                 tokenRotateCount++;
+            }
+            if (mockConsumer != NULL) {
+                EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
             }
         }
     } while (currentTime < testTerminationTime);
@@ -93,15 +95,17 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationBasicScenarioFaultInject
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
 
             STATUS retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
-            EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             if (retStatus == STATUS_END_OF_STREAM) {
                 tokenRotateCount++;
             }
+            if (mockConsumer != NULL ) {
+                EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
 
-            // fault inject upload handle 1 once.
-            if (uploadHandle == 1 && !didSubmitErrorAck) {
-                mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR, &didSubmitErrorAck);
+                // fault inject upload handle 1 once.
+                if (uploadHandle == 1 && !didSubmitErrorAck) {
+                    mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR, &didSubmitErrorAck);
+                }
             }
         }
     } while (currentTime < testTerminationTime);
@@ -152,10 +156,12 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationBasicScenarioEOFR)
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
 
             STATUS retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
-            EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             if (retStatus == STATUS_END_OF_STREAM) {
                 tokenRotateCount++;
+            }
+            if (mockConsumer != NULL) {
+                EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
             }
         }
     } while (currentTime < testTerminationTime);

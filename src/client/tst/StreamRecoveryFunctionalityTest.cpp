@@ -49,7 +49,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionEns
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
             STATUS retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
             EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
         }
 
         if (IS_VALID_TIMESTAMP(resetConnectionTime) && currentTime >= resetConnectionTime) {
@@ -92,7 +92,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionAft
                 mockConsumer = mStreamingSession.getConsumer(uploadHandle);
                 STATUS retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
                 EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
-                VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+                VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             }
         }
 
@@ -179,7 +179,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamRollbackToLastRece
                 }
 
                 EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
-                VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+                VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             }
         } else {
             mStreamingSession.getActiveUploadHandles(currentUploadHandles);
@@ -187,13 +187,15 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamRollbackToLastRece
                 UPLOAD_HANDLE uploadHandle = currentUploadHandles[i];
                 mockConsumer = mStreamingSession.getConsumer(uploadHandle);
                 retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-                VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
-                mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck);
-                if (submittedAck) {
-                    if (mFragmentAck.ackType == FRAGMENT_ACK_TYPE_RECEIVED) {
-                        lastReceivedAckTime = mFragmentAck.timestamp;
-                    } else if (mFragmentAck.ackType == FRAGMENT_ACK_TYPE_PERSISTED) {
-                        lastPersistedAckTime = mFragmentAck.timestamp;
+                VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
+                if (mockConsumer != NULL) {
+                    mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck);
+                    if (submittedAck) {
+                        if (mFragmentAck.ackType == FRAGMENT_ACK_TYPE_RECEIVED) {
+                            lastReceivedAckTime = mFragmentAck.timestamp;
+                        } else if (mFragmentAck.ackType == FRAGMENT_ACK_TYPE_PERSISTED) {
+                            lastPersistedAckTime = mFragmentAck.timestamp;
+                        }
                     }
                 }
             }
@@ -260,7 +262,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
             UPLOAD_HANDLE uploadHandle = currentUploadHandles[i];
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData, &retrievedDataSize);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             if (gotStreamData) {
                 totalByteSent += retrievedDataSize;
             }
@@ -279,7 +281,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
 
         retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData, &retrievedDataSize);
-        VerifyGetStreamDataResult(retStatus, gotStreamData, mockConsumer->mUploadHandle, &currentTime);
+        VerifyGetStreamDataResult(retStatus, gotStreamData, mockConsumer->mUploadHandle, &currentTime, &mockConsumer);
     } while(!gotStreamData);
 
     // check that a new upload handle is created and the error handle is gone.
@@ -299,10 +301,12 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
             UPLOAD_HANDLE uploadHandle = currentUploadHandles[i];
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData, &retrievedDataSize);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
-            mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck);
-            if (submittedAck) {
-                ackReceived++;
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
+            if (mockConsumer != NULL) {
+                mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck);
+                if (submittedAck) {
+                    ackReceived++;
+                }
             }
         }
     } while (currentTime < stopTime && !currentUploadHandles.empty());
@@ -361,7 +365,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
             UPLOAD_HANDLE uploadHandle = currentUploadHandles[i];
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
         }
     } while (retStatus != STATUS_NO_MORE_DATA_AVAILABLE);
 
@@ -379,7 +383,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
 
         retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-        VerifyGetStreamDataResult(retStatus, gotStreamData, mockConsumer->mUploadHandle, &currentTime);
+        VerifyGetStreamDataResult(retStatus, gotStreamData, mockConsumer->mUploadHandle, &currentTime, &mockConsumer);
     } while(!gotStreamData);
 
     // finishing putting all frames for the first fragment.
@@ -409,10 +413,12 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
             UPLOAD_HANDLE uploadHandle = currentUploadHandles[i];
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
-            mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck);
-            if (submittedAck) {
-                ackReceived++;
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
+            if (mockConsumer != NULL) {
+                mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck);
+                if (submittedAck) {
+                    ackReceived++;
+                }
             }
         }
     } while (currentTime < stopTime && !currentUploadHandles.empty());
@@ -472,7 +478,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
             UPLOAD_HANDLE uploadHandle = currentUploadHandles[i];
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
         }
     } while (retStatus != STATUS_NO_MORE_DATA_AVAILABLE);
 
@@ -490,7 +496,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
 
         retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-        VerifyGetStreamDataResult(retStatus, gotStreamData, mockConsumer->mUploadHandle, &currentTime);
+        VerifyGetStreamDataResult(retStatus, gotStreamData, mockConsumer->mUploadHandle, &currentTime, &mockConsumer);
     } while(!gotStreamData);
 
     // put in more fragments. At the end we are expecting totalFragmentPut * 3 acks.
@@ -515,10 +521,12 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
             UPLOAD_HANDLE uploadHandle = currentUploadHandles[i];
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
-            mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck);
-            if (submittedAck) {
-                ackReceived++;
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
+            if (mockConsumer != NULL) {
+                mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck);
+                if (submittedAck) {
+                    ackReceived++;
+                }
             }
         }
     } while (currentTime < stopTime && !currentUploadHandles.empty());
