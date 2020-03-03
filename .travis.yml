@@ -18,7 +18,7 @@ script:
   - export AWS_KVS_LOG_LEVEL=7
   - make
   - ulimit -c unlimited -S
-  - timeout --signal=SIGABRT 20m ./kvspic_test
+  - timeout --signal=SIGABRT 20m ./kvspic_test --gtest_break_on_failure
 
 after_failure:
   - for i in $(find ./ -maxdepth 1 -name 'core*' -print); do gdb $(pwd)/kvspic_test core* -ex "thread apply all bt" -ex "set pagination 0" -batch; done;
@@ -37,7 +37,7 @@ matrix:
         - mkdir build && cd build && cmake .. -DBUILD_TEST=TRUE
       script:
         - make
-        - AWS_KVS_LOG_LEVEL=7 ./kvspic_test
+        - AWS_KVS_LOG_LEVEL=7 ./kvspic_test --gtest_break_on_failure
       after_failure: skip # timeout not available on MacOS
 
     - name: "OSX Clang"
@@ -48,7 +48,7 @@ matrix:
         - mkdir build && cd build && cmake .. -DBUILD_TEST=TRUE -DCOMPILER_WARNINGS=TRUE
       script:
         - make
-        - AWS_KVS_LOG_LEVEL=7 ./kvspic_test
+        - AWS_KVS_LOG_LEVEL=7 ./kvspic_test --gtest_break_on_failure
       after_failure: skip # timeout not available on MacOS
 
     # Code Coverage

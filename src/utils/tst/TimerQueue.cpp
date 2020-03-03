@@ -275,8 +275,8 @@ TEST_F(TimerQueueFunctionalityTest, timerStartTime)
 TEST_F(TimerQueueFunctionalityTest, timerInterleavedSamePeriodDifferentStart)
 {
     UINT64 startTime1 = 10 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
-    UINT64 startTime2 = 150 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
-    UINT64 period = 300 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    UINT64 startTime2 = 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    UINT64 period = 400 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     TIMER_QUEUE_HANDLE handle = INVALID_TIMER_QUEUE_HANDLE_VALUE;
     UINT32 timerId1, timerId2;
 
@@ -306,7 +306,7 @@ TEST_F(TimerQueueFunctionalityTest, timerInterleavedSamePeriodDifferentStart)
 
     // First timers period fires next
     ATOMIC_STORE(&testTimerId, (SIZE_T) timerId1);
-    THREAD_SLEEP(150 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(250 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     // Make sure it has fired after the period again
     EXPECT_EQ(3, ATOMIC_LOAD(&invokeCount));
 
@@ -323,7 +323,7 @@ TEST_F(TimerQueueFunctionalityTest, timerInterleavedSamePeriodDifferentStart)
 TEST_F(TimerQueueFunctionalityTest, timerCancelFromCallback)
 {
     UINT64 startTime = 50 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
-    UINT64 period = 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    UINT64 period = 200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     TIMER_QUEUE_HANDLE handle = INVALID_TIMER_QUEUE_HANDLE_VALUE;
     UINT32 timerId, count;
 
@@ -345,11 +345,11 @@ TEST_F(TimerQueueFunctionalityTest, timerCancelFromCallback)
     EXPECT_EQ(1, ATOMIC_LOAD(&invokeCount));
 
     // Starts firing regularly
-    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(2, ATOMIC_LOAD(&invokeCount));
-    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(3, ATOMIC_LOAD(&invokeCount));
-    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(4, ATOMIC_LOAD(&invokeCount));
 
     // Should be cancelled after the 3rd
@@ -367,8 +367,8 @@ TEST_F(TimerQueueFunctionalityTest, timerCancelFromCallback)
 
 TEST_F(TimerQueueFunctionalityTest, timerCancelDirectly)
 {
-    UINT64 startTime = 10 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
-    UINT64 period = 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    UINT64 startTime = 50 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    UINT64 period = 200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     TIMER_QUEUE_HANDLE handle = INVALID_TIMER_QUEUE_HANDLE_VALUE;
     UINT32 timerId, count;
 
@@ -381,20 +381,20 @@ TEST_F(TimerQueueFunctionalityTest, timerCancelDirectly)
 
     // Make sure it hasn't fired yet
     EXPECT_EQ(0, ATOMIC_LOAD(&invokeCount));
-    THREAD_SLEEP(50 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     // Starts firing regularly
     EXPECT_EQ(1, ATOMIC_LOAD(&invokeCount));
-    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(2, ATOMIC_LOAD(&invokeCount));
-    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(3, ATOMIC_LOAD(&invokeCount));
 
     timerId = (UINT32) ATOMIC_LOAD(&testTimerId);
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCancelTimer(handle, timerId, (UINT64) this));
 
     // Should be cancelled
-    THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(300 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     // Make sure it has not fired after the period again
     EXPECT_EQ(3, ATOMIC_LOAD(&invokeCount));
 
@@ -422,7 +422,7 @@ TEST_F(TimerQueueFunctionalityTest, timerSingleInvokeTimer)
 
     // Make sure it hasn't fired yet
     EXPECT_EQ(0, ATOMIC_LOAD(&invokeCount));
-    THREAD_SLEEP(50 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     // Fires once
     EXPECT_EQ(1, ATOMIC_LOAD(&invokeCount));
@@ -446,7 +446,7 @@ TEST_F(TimerQueueFunctionalityTest, timerSingleInvokeTimer)
 TEST_F(TimerQueueFunctionalityTest, timerDoesntCancelOnError)
 {
     UINT64 startTime = 10 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
-    UINT64 period = 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    UINT64 period = 200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     TIMER_QUEUE_HANDLE handle = INVALID_TIMER_QUEUE_HANDLE_VALUE;
     UINT32 timerId, count;
 
@@ -459,20 +459,20 @@ TEST_F(TimerQueueFunctionalityTest, timerDoesntCancelOnError)
 
     // Make sure it hasn't fired yet
     EXPECT_EQ(0, ATOMIC_LOAD(&invokeCount));
-    THREAD_SLEEP(50 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     // Starts firing regularly
     EXPECT_EQ(1, ATOMIC_LOAD(&invokeCount));
-    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(2, ATOMIC_LOAD(&invokeCount));
-    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(3, ATOMIC_LOAD(&invokeCount));
 
     // Make sure the timer return status is an error but it doesn't cancel the timer
     ATOMIC_STORE(&retStatus, (SIZE_T) STATUS_INVALID_OPERATION);
 
     // Should be cancelled
-    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     // Make sure it has fired after the period again
     EXPECT_EQ(4, ATOMIC_LOAD(&invokeCount));
 
@@ -508,9 +508,9 @@ TEST_F(TimerQueueFunctionalityTest, timerCancelDirectlyOneLeaveAnotherStart)
     THREAD_SLEEP(50 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(1, ATOMIC_LOAD(&invokeCount));
     // First starts firing regularly
-    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(120 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(2, ATOMIC_LOAD(&invokeCount));
-    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(120 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(3, ATOMIC_LOAD(&invokeCount));
 
     UINT32 timerId = (UINT32) ATOMIC_LOAD(&testTimerId);
