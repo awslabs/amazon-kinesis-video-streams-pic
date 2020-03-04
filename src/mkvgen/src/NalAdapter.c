@@ -42,7 +42,7 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData,
             // Check if we have previous run and fix it up
             if (pRunStart != NULL && pAdaptedFrameData != NULL) {
                 // Fix-up the previous run by recording the size in Big-Endian format
-                putInt32((PINT32) pRunStart, runSize);
+                PUT_UNALIGNED_BIG_ENDIAN((PINT32) pRunStart, runSize);
             }
 
             // Store the beginning of the run
@@ -118,12 +118,12 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData,
 
         // Fix-up the last run
         if (pRunStart != NULL) {
-            putInt32((PINT32) pRunStart, runSize);
+            PUT_UNALIGNED_BIG_ENDIAN((PINT32) pRunStart, runSize);
         }
 
         // Also, handle the case where there is a last 001/0001 at the end of the frame - we will fill with 0s
         if (markerFound) {
-            *((PUINT32) pAdaptedCurPnt - 1) = 0;
+            PUT_UNALIGNED_BIG_ENDIAN((PUINT32) pAdaptedCurPnt - 1, 0);
         }
     }
 
@@ -161,12 +161,12 @@ STATUS adaptFrameNalsFromAvccToAnnexB(PBYTE pFrameData,
         // Check if we can still read 32 bit
         CHK(pCurPnt + SIZEOF(UINT32) <= pEndPnt, STATUS_MKV_INVALID_AVCC_NALU_IN_FRAME_DATA);
 
-        runLen = (UINT32) getInt32(*(PUINT32) pCurPnt);
+        runLen = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pCurPnt);
 
         CHK(pCurPnt + runLen <= pEndPnt, STATUS_MKV_INVALID_AVCC_NALU_IN_FRAME_DATA);
 
         // Adapt with 4 byte version of the start sequence
-        putInt32((PINT32) pCurPnt, 0x0001);
+        PUT_UNALIGNED_BIG_ENDIAN((PINT32) pCurPnt, 0x0001);
 
         // Jump to the next NAL
         pCurPnt += runLen + SIZEOF(UINT32);
@@ -220,7 +220,7 @@ STATUS adaptH264CpdNalsFromAnnexBToAvcc(PBYTE pCpd,
     pSrcPnt = pAdaptedBits;
 
     // Get the size of the run
-    spsSize = (UINT32) getInt32(*(PUINT32) pSrcPnt);
+    spsSize = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pSrcPnt);
     pSrcPnt += SIZEOF(UINT32);
 
     // See if we are still in the buffer
@@ -236,7 +236,7 @@ STATUS adaptH264CpdNalsFromAnnexBToAvcc(PBYTE pCpd,
     *pCurPnt++ = AVCC_NUMBER_OF_SPS_ONE;
 
     // Write the SPS size in big-endian format
-    putInt16((PINT16) pCurPnt, (UINT16) spsSize);
+    PUT_UNALIGNED_BIG_ENDIAN((PINT16) pCurPnt, (UINT16) spsSize);
     pCurPnt += SIZEOF(UINT16);
 
     // Copy the actual bits
@@ -247,7 +247,7 @@ STATUS adaptH264CpdNalsFromAnnexBToAvcc(PBYTE pCpd,
     pSrcPnt += spsSize;
 
     // Get the pps size
-    ppsSize = (UINT32) getInt32(*(PUINT32) pSrcPnt);
+    ppsSize = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pSrcPnt);
     pSrcPnt += SIZEOF(UINT32);
 
     CHK(spsSize + 8 + 1 + ppsSize <= *pAdaptedCpdSize && spsSize + 4 + 4 + ppsSize <= adaptedRawSize, STATUS_MKV_INVALID_ANNEXB_NALU_IN_CPD);
@@ -256,7 +256,7 @@ STATUS adaptH264CpdNalsFromAnnexBToAvcc(PBYTE pCpd,
     *pCurPnt++ = 1; // One pps nal
 
     // write the size of the pps
-    putInt16((PINT16) pCurPnt, (UINT16) ppsSize);
+    PUT_UNALIGNED_BIG_ENDIAN((PINT16) pCurPnt, (UINT16) ppsSize);
     pCurPnt += SIZEOF(UINT16);
 
     // Write the PPS data
@@ -322,7 +322,7 @@ STATUS adaptH265CpdNalsFromAnnexBToHvcc(PBYTE pCpd,
     // In some cases the PPS might be missing
     while((UINT32)(pSrcPnt - pAdaptedBits) < adaptedRawSize) {
         CHK(pSrcPnt - pAdaptedBits + SIZEOF(UINT32) <= adaptedRawSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
-        naluSize = (UINT32) getInt32(*(PUINT32) pSrcPnt);
+        naluSize = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pSrcPnt);
 
         // Store the NALU pointer
         naluPtrs[naluCount] = pSrcPnt + SIZEOF(UINT32);
@@ -417,7 +417,7 @@ STATUS adaptH265CpdNalsFromAnnexBToHvcc(PBYTE pCpd,
         *pCurPnt++ = 0x01;
 
         // nalUnitLength
-        putInt16((PINT16) pCurPnt, (UINT16) naluSizes[i]);
+        PUT_UNALIGNED_BIG_ENDIAN((PINT16) pCurPnt, (UINT16) naluSizes[i]);
         pCurPnt += SIZEOF(UINT16);
 
         // Write the NALu data

@@ -276,7 +276,7 @@ TEST_F(StoIFunctionalityTest, EndOfStringBeforeEndPointer) {
     INT64 i64;
     UINT32 ui32;
     INT32 i32;
-    CHAR str[] = "+1000000000";
+    CHAR str[200] = "+1000000000";
     EXPECT_EQ(STATUS_SUCCESS, STRTOI64(str, str + 100, 10, &i64));
     EXPECT_EQ(STATUS_SUCCESS, STRTOUI64(str, str + 100, 10, &ui64));
     EXPECT_EQ(STATUS_SUCCESS, STRTOI32(str, str + 100, 10, &i32));

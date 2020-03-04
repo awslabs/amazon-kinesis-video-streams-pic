@@ -113,6 +113,7 @@ STATUS hybridCreateHeap(PHeap pHeap, UINT32 spillRatio, UINT32 behaviorFlags, PH
     pBaseHeap->getAllocationSizeFn = hybridGetAllocationSize;
     pBaseHeap->getAllocationHeaderSizeFn = hybridGetAllocationHeaderSize;
     pBaseHeap->getAllocationFooterSizeFn = hybridGetAllocationFooterSize;
+    pBaseHeap->getAllocationAlignedSizeFn = hybridGetAllocationAlignedSize;
     pBaseHeap->getHeapLimitsFn = hybridGetHeapLimits;
 
 CleanUp:
@@ -321,7 +322,7 @@ DEFINE_HEAP_ALLOC(hybridHeapAlloc)
     pHeader->size = size;
 
     // Store the handle
-    pHeader->handle = handle;
+    pHeader->vramHandle = handle;
 
     // Un-map the range
     if (0 != pHybridHeap->vramUnlock(handle)) {
@@ -558,10 +559,10 @@ DEFINE_HEAP_UNMAP(hybridHeapUnmap)
 
     DLOGS("Indirect allocation");
     // Un-map from the vram
-    CHK_ERR(0 == (ret = pHybridHeap->vramUnlock(pHeader->handle)),
+    CHK_ERR(0 == (ret = pHybridHeap->vramUnlock(pHeader->vramHandle)),
             STATUS_HEAP_VRAM_UNMAP_FAILED,
             "Failed to un-map handle 0x%08x. Error returned %u",
-            pHeader->handle,
+            pHeader->vramHandle,
             ret);
 
 CleanUp:
@@ -577,6 +578,11 @@ DEFINE_HEADER_SIZE(hybridGetAllocationHeaderSize)
 DEFINE_FOOTER_SIZE(hybridGetAllocationFooterSize)
 {
     return VRAM_ALLOCATION_FOOTER_SIZE;
+}
+
+DEFINE_ALIGNED_SIZE(hybridGetAllocationAlignedSize)
+{
+    return size;
 }
 
 DEFINE_ALLOC_SIZE(hybridGetAllocationSize)

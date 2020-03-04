@@ -62,6 +62,7 @@ DEFINE_CREATE_HEAP(sysHeapCreate)
     pBaseHeap->getAllocationSizeFn = sysGetAllocationSize;
     pBaseHeap->getAllocationHeaderSizeFn = sysGetAllocationHeaderSize;
     pBaseHeap->getAllocationFooterSizeFn = sysGetAllocationFooterSize;
+    pBaseHeap->getAllocationAlignedSizeFn = sysGetAllocationAlignedSize;
     pBaseHeap->getHeapLimitsFn = sysGetHeapLimits;
 
 CleanUp:
@@ -319,6 +320,11 @@ DEFINE_HEADER_SIZE(sysGetAllocationHeaderSize)
 DEFINE_FOOTER_SIZE(sysGetAllocationFooterSize)
 {
     return SYS_ALLOCATION_FOOTER_SIZE;
+}
+
+DEFINE_ALIGNED_SIZE(sysGetAllocationAlignedSize)
+{
+    return size;
 }
 
 DEFINE_ALLOC_SIZE(sysGetAllocationSize)

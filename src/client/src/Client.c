@@ -48,9 +48,6 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     // Report the creation after the validation as we might have the overwritten logger.
     DLOGI("Creating Kinesis Video Client");
 
-    // Set logger log level
-    SET_LOGGER_LOG_LEVEL(pDeviceInfo->clientInfo.loggerLogLevel);
-
     // Get the max tags structure size
     CHK_STATUS(packageTags(pDeviceInfo->tagCount, pDeviceInfo->tags, 0, NULL, &tagsSize));
 
@@ -83,7 +80,12 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
 
     // Copy the structures in their entirety
     MEMCPY(&pKinesisVideoClient->clientCallbacks, pClientCallbacks, SIZEOF(ClientCallbacks));
-    MEMCPY(&pKinesisVideoClient->deviceInfo, pDeviceInfo, sizeOfDeviceInfo(pDeviceInfo));
+
+    // Fix-up the defaults if needed
+    // IMPORTANT!!! The calloc allocator will zero the memory which will also act as a
+    // sentinel value in case of an earlier version of the structure
+    // is used and the remaining fields are not copied
+    fixupDeviceInfo(&pKinesisVideoClient->deviceInfo, pDeviceInfo);
 
     // Fix-up the name of the device if not specified
     if (pKinesisVideoClient->deviceInfo.name[0] == '\0') {
@@ -93,11 +95,8 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
                          pKinesisVideoClient->clientCallbacks.customData);
     }
 
-    // Fix-up the defaults if needed
-    // IMPORTANT!!! The calloc allocator will zero the memory which will also act as a
-    // sentinel value in case of an earlier version of the structure
-    // is used and the remaining fields are not copied
-    fixupClientInfo(&pKinesisVideoClient->deviceInfo.clientInfo);
+    // Set logger log level
+    SET_LOGGER_LOG_LEVEL(pKinesisVideoClient->deviceInfo.clientInfo.loggerLogLevel);
 
     // TODO pthread_cond_wait fail with "The futex facility returned an unexpected error code" on UBUNTU
     // when DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC is used. Ignore the setting for now.

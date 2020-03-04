@@ -1452,7 +1452,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetPreTagsStoreData)
     MEMFREE(getDataBuffer);
 }
 
-TEST_F(StreamPutGetTest, DISABLED_putFrame_PutGetTagsBeforeStoreData)
+TEST_F(StreamPutGetTest, putFrame_PutGetTagsBeforeStoreData)
 {
     UINT32 i, filledSize;
     BYTE tempBuffer[100];
@@ -1518,7 +1518,7 @@ TEST_F(StreamPutGetTest, DISABLED_putFrame_PutGetTagsBeforeStoreData)
     ASSERT_TRUE(retStatus == STATUS_SUCCESS || retStatus == STATUS_NO_MORE_DATA_AVAILABLE);
 
     // Manually pre-validated data file size
-    EXPECT_EQ(6700, filledSize);
+    EXPECT_EQ(6703, filledSize);
 
     // Store the data in a file
     EXPECT_EQ(STATUS_SUCCESS, writeFile((PCHAR) "test_insert_pre_tags.mkv", TRUE, FALSE, getDataBuffer, filledSize));

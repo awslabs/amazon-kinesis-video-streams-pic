@@ -271,6 +271,29 @@ CleanUp:
     return retStatus;
 }
 
+VOID fixupDeviceInfo(PDeviceInfo pClientDeviceInfo, PDeviceInfo pDeviceInfo)
+{
+    switch (pDeviceInfo->version) {
+        case 0:
+            // Copy and fixup individual fields
+            pClientDeviceInfo->version = DEVICE_INFO_CURRENT_VERSION;
+            MEMCPY(pClientDeviceInfo->name, pDeviceInfo->name, MAX_DEVICE_NAME_LEN + 1);
+            pClientDeviceInfo->tagCount = pDeviceInfo->tagCount;
+            pClientDeviceInfo->tags = pDeviceInfo->tags;
+            pClientDeviceInfo->storageInfo = pDeviceInfo->storageInfo;
+            pClientDeviceInfo->streamCount = pDeviceInfo->streamCount;
+
+            break;
+
+        case 1:
+            *pClientDeviceInfo = *pDeviceInfo;
+
+            break;
+    }
+
+    fixupClientInfo(&pClientDeviceInfo->clientInfo);
+}
+
 /**
  * The structure has been sanitized prior this call. We are setting defaults if needed
  */

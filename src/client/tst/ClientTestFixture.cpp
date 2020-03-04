@@ -97,7 +97,7 @@ VOID ClientTestBase::logPrintFunc(UINT32 level, PCHAR tag, PCHAR fmt, ...)
     if (level >= loggerGetLogLevel()) {
         // Temp scratch buffer = 10KB
         CHAR tempBuf[10 * 1024];
-        snprintf(tempBuf, SIZEOF(tempBuf), "\n[0x%016llx] [level %u] %s %s", GETTID(), level, tag, fmt);
+        SNPRINTF(tempBuf, SIZEOF(tempBuf), "\n[0x%016" PRIx64 "] [level %u] %s %s", GETTID(), level, tag, fmt);
         va_list valist;
         va_start(valist, fmt);
         vprintf(tempBuf, valist);

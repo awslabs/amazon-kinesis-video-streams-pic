@@ -75,9 +75,13 @@ STATUS packageTags(UINT32 tagCount, PTag pSrcTags, UINT32 tagsSize, PTag pDstTag
         curSize += nameSize + valueSize;
     }
 
+    // Round-up the allocation size to the 64 bit
+    curSize = ROUND_UP(curSize, 8);
+
 CleanUp:
 
     if (pSize != NULL) {
+        // Current size is always 64bit aligned whether we are calculating the max allocation or the actual allocation.
         *pSize = curSize;
     }
 

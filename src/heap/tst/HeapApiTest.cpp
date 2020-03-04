@@ -206,6 +206,7 @@ TEST_F(HeapApiTest, InvalidHeapFree_NullHeap) {
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP, &pHeap)));
     EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, 1000, &handle)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapFree(pHeap, handle)));
     EXPECT_TRUE(STATUS_FAILED(heapFree(NULL, handle)));
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
@@ -221,6 +222,7 @@ TEST_F(HeapApiTest, InvalidHeapFree_InvalidHandle) {
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP, &pHeap)));
     EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, 1000, &handle)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapFree(pHeap, handle)));
     EXPECT_TRUE(STATUS_FAILED(heapFree(pHeap, INVALID_ALLOCATION_HANDLE_VALUE)));
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }

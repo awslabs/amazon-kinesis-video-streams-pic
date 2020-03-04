@@ -9,42 +9,37 @@
 extern "C" {
 #endif
 
-#pragma once
-#pragma pack(push, include, 1) // for byte alignment
+#define ALLOCATION_FLAGS_NONE           0x0000
+#define ALLOCATION_FLAGS_ALLOC          0x0001
+#define ALLOCATION_FLAGS_FREE           0x0002
 
-#define ALLOCATION_FLAGS_NONE 0x00
-#define ALLOCATION_FLAGS_ALLOC 0x01
-#define ALLOCATION_FLAGS_FREE 0x02
-
-#define AIV_ALLOCATION_TYPE 2
+#define AIV_ALLOCATION_TYPE             2
 
 /**
  * Minimum free block size in bytes
  */
-#define MIN_FREE_ALLOCATION_SIZE 16
+#define MIN_FREE_ALLOCATION_SIZE        16
 
 /**
- * Allocation header
+ * Allocation header for low fragmentation heap implementation.
+ *
+ * IMPORTANT!!! Make sure the structure is tightly packed without the tight packing directives
  */
 typedef struct AIV_ALLOCATION_HEADER
 {
+    // Base structure
     ALLOCATION_HEADER header;
+
+    // The allocation size specified by the caller without alignment or padding
     UINT64 allocSize;
-    BYTE state;
+
+    // Chaining left and right
     struct AIV_ALLOCATION_HEADER* pNext;
     struct AIV_ALLOCATION_HEADER* pPrev;
 } *PAIV_ALLOCATION_HEADER;
 
-/**
- * Allocation footer
- */
-typedef struct
-{
-    ALLOCATION_FOOTER footer;
-} AIV_ALLOCATION_FOOTER, *PAIV_ALLOCATION_FOOTER;
-
 // Macros to convert to and from handle
-#define AIV_HANDLE_SHIFT_BITS 2
+#define AIV_HANDLE_SHIFT_BITS           2
 #define TO_AIV_HANDLE(pAiv, p) (ALLOCATION_HANDLE)((UINT64)(((PBYTE)(p) - (PBYTE)((pAiv)->pAllocation))) << AIV_HANDLE_SHIFT_BITS)
 #define FROM_AIV_HANDLE(pAiv, h) ((PVOID)((PBYTE)((pAiv)->pAllocation) + ((UINT64)(h) >> AIV_HANDLE_SHIFT_BITS)))
 
@@ -81,6 +76,12 @@ typedef struct
                 STATUS_INVALID_HANDLE_ERROR, \
                 "Invalid handle value."); \
     } while (FALSE)
+
+#ifdef ALIGNED_MEMORY_MODEL
+        #define HEAP_PACKED_SIZE(size)      ROUND_UP((size), 8)
+#else
+        #define HEAP_PACKED_SIZE(size)      (size)
+#endif
 
 /**
  * Gets the allocation header
@@ -172,6 +173,7 @@ DEFINE_HEAP_CHK(aivHeapDebugCheckAllocator);
  */
 DEFINE_HEADER_SIZE(aivGetAllocationHeaderSize);
 DEFINE_FOOTER_SIZE(aivGetAllocationFooterSize);
+DEFINE_ALIGNED_SIZE(aivGetAllocationAlignedSize);
 DEFINE_ALLOC_SIZE(aivGetAllocationSize);
 DEFINE_HEAP_LIMITS(aivGetHeapLimits);
 
@@ -188,8 +190,6 @@ VOID coalesceFreeToAllocatedBlock(PAivHeap, PAIV_ALLOCATION_HEADER, PAIV_ALLOCAT
 BOOL checkOverlap(PAIV_ALLOCATION_HEADER, PAIV_ALLOCATION_HEADER);
 PAIV_ALLOCATION_HEADER getLeftBlock(PAivHeap, PAIV_ALLOCATION_HEADER);
 PAIV_ALLOCATION_HEADER getRightBlock(PAivHeap, PAIV_ALLOCATION_HEADER);
-
-#pragma pack(pop, include) // pop the existing settings
 
 #ifdef __cplusplus
 }
