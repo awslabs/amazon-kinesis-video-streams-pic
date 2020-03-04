@@ -58,16 +58,27 @@ VOID multipleLargeAlloc(PHeap pHeap)
 {
     ALLOCATION_HANDLE handle = INVALID_ALLOCATION_HANDLE_VALUE;
     UINT64 size = MIN_HEAP_SIZE / NUM_ITERATIONS;
+    ALLOCATION_HANDLE handles[NUM_ITERATIONS];
     UINT32 i;
 
+    // Set to default
+    zeroHandleArray(handles, NUM_ITERATIONS);
+
     for (i = 0; i < NUM_ITERATIONS - 1; i++) {
-        EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, size, &handle)));
+        EXPECT_EQ(STATUS_SUCCESS, heapAlloc(pHeap, size, &handle));
         EXPECT_TRUE(IS_VALID_ALLOCATION_HANDLE(handle)) << "Iteration " << i;
+        handles[i] = handle;
     }
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, size, &handle)));
+    EXPECT_EQ(STATUS_SUCCESS,heapAlloc(pHeap, size, &handle));
     EXPECT_FALSE(IS_VALID_ALLOCATION_HANDLE(handle));
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
+
+    // Free the allocations as in system heap mode we will leak
+    for (i = 0; i < NUM_ITERATIONS - 1; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, heapFree(pHeap, handles[i]));
+    }
+
+    EXPECT_EQ(STATUS_SUCCESS,heapRelease(pHeap));
 }
 
 VOID minBlockFitAlloc(PHeap pHeap)
@@ -312,6 +323,7 @@ TEST_F(HeapApiFunctionalityTest, GetHeapSizeAndGetAllocSize)
     PHeap pHeap;
     UINT64 i, size, heapSize;
     ALLOCATION_HANDLE handle;
+    ALLOCATION_HANDLE handles[10];
 
     // AIV heap
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
@@ -335,10 +347,15 @@ TEST_F(HeapApiFunctionalityTest, GetHeapSizeAndGetAllocSize)
         EXPECT_TRUE(IS_VALID_ALLOCATION_HANDLE(handle));
         EXPECT_TRUE(STATUS_SUCCEEDED(heapGetAllocSize(pHeap, handle, &size)));
         EXPECT_EQ(1000, size);
+        handles[i] = handle;
     }
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapGetSize(pHeap, &heapSize)));
     EXPECT_EQ(10 * (1000 + sysGetAllocationHeaderSize() + sysGetAllocationFooterSize()), heapSize);
+
+    for (i = 0; i < 10; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, heapFree(pHeap, handles[i]));
+    }
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 
     // AIV hybrid heap
@@ -361,6 +378,12 @@ TEST_F(HeapApiFunctionalityTest, GetHeapSizeAndGetAllocSize)
         EXPECT_TRUE(IS_VALID_ALLOCATION_HANDLE(handle));
         EXPECT_TRUE(STATUS_SUCCEEDED(heapGetAllocSize(pHeap, handle, &size)));
         EXPECT_EQ(1000, size);
+
+        handles[i] = handle;
+    }
+
+    for (i = 0; i < 10; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, heapFree(pHeap, handles[i]));
     }
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
@@ -438,6 +461,8 @@ TEST_F(HeapApiFunctionalityTest, AivHeapUnalignedHeapLimit)
 #else
     EXPECT_EQ(MIN_HEAP_SIZE + 1, pHeap->heapLimit);
 #endif
+
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
 TEST_F(HeapApiFunctionalityTest, AivHeapResizeEdgeCases)

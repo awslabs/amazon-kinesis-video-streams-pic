@@ -166,5 +166,9 @@ if(BUILD_TEST)
           ${PIC_UTILS_SOURCE_FILES}
           ${PIC_VIEW_SOURCE_FILES})
   target_compile_definitions(kvspic_test PRIVATE ALIGNED_MEMORY_MODEL=TRUE)
-  target_link_libraries(kvspic_test GTest::GTest GTest::Main)
+  target_link_libraries(kvspic_test GTest::GTest GTest::Main ${CMAKE_DL_LIBS} Threads::Threads)
+  if(UNIX AND NOT APPLE)
+    # rt needed for clock_gettime
+    target_link_libraries(kvspic_test rt)
+  endif()
 endif()
