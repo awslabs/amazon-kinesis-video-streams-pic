@@ -52,12 +52,18 @@ You can pass the following options to `cmake ..`.
 * `-DADDRESS_SANITIZER` -- Build with AddressSanitizer
 * `-DMEMORY_SANITIZER` --  Build with MemorySanitizer
 * `-DTHREAD_SANITIZER` -- Build with ThreadSanitizer
-* `-DUNDEFINED_BEHAVIOR_SANITIZER` Build with UndefinedBehaviorSanitizer`
+* `-DUNDEFINED_BEHAVIOR_SANITIZER` Build with UndefinedBehaviorSanitizer
+* `-DBUILD_DEBUG_HEAP` Build debug heap with guard bands and validation. This is ONLY intended for low-level debugging purposes. Default is OFF
+* `-DALIGNED_MEMORY_MODEL` Build for aligned memory model only devices. Default is OFF.
 
 ### Build
 To build the library run make in the build directory you executed CMake.
 
 `make`
+
+### Note on alignment
+
+The entire PIC codebase is built with aligned memory access to machine native word (up-to 64 bit). The only exception is the heap implementation. In order to provide for tight packing and low-fragmentation, we default to unaligned heap access. For devices and OS-es that do not have unaligned access or unaligned access emulation, `-DALIGNED_MEMORY_MODEL` CMake argument should be passed in build-time to ensure heap is aligned.
 
 ## Documentation
 
