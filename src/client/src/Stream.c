@@ -38,6 +38,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
 
     // Validate the input structs
     CHK_STATUS(validateStreamInfo(pStreamInfo, &pKinesisVideoClient->clientCallbacks));
+    logStreamInfo(pStreamInfo);
 
     // Lock the client
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
@@ -3245,3 +3246,70 @@ CleanUp:
     return retStatus;
 }
 
+VOID logStreamInfo(PStreamInfo pStreamInfo)
+{
+    CHAR UUID[MKV_SEGMENT_UUID_LEN*2+1];
+    BOOL hasSegmentUUID = FALSE;
+    STATUS retStatus = STATUS_SUCCESS;
+    PCHAR hexEncodedCpd = NULL;
+    UINT32 hexEncodedCpdLen, i, UUIDSize = ARRAY_SIZE(UUID);
+    PTrackInfo pTrackInfoList = NULL;
+
+    if (pStreamInfo == NULL) {
+        return;
+    }
+
+    DLOGD("Kinesis Video Stream Info");
+    DLOGD("\tStream name: %s ", pStreamInfo->name);
+    DLOGD("\tStreaming type: %s ", GET_STREAMING_TYPE_STR(pStreamInfo->streamCaps.streamingType));
+    DLOGD("\tContent type: %s ", pStreamInfo->streamCaps.contentType);
+    DLOGD("\tMax latency (100ns): %" PRIu64, pStreamInfo->streamCaps.maxLatency);
+    DLOGD("\tFragment duration (100ns): %" PRIu64, pStreamInfo->streamCaps.fragmentDuration);
+    DLOGD("\tKey frame fragmentation: %s", pStreamInfo->streamCaps.keyFrameFragmentation ? "Yes" : "No");
+    DLOGD("\tUse frame timecode: %s", pStreamInfo->streamCaps.frameTimecodes ? "Yes" : "No");
+    DLOGD("\tAbsolute frame timecode: %s", pStreamInfo->streamCaps.absoluteFragmentTimes ? "Yes" : "No");
+    DLOGD("\tNal adaptation flags: %u", pStreamInfo->streamCaps.nalAdaptationFlags);
+    DLOGD("\tAverage bandwith (bps): %u", pStreamInfo->streamCaps.avgBandwidthBps);
+    DLOGD("\tFramerate: %u", pStreamInfo->streamCaps.frameRate);
+    DLOGD("\tBuffer duration (100ns): %" PRIu64, pStreamInfo->streamCaps.bufferDuration);
+    DLOGD("\tReplay duration (100ns): %" PRIu64, pStreamInfo->streamCaps.replayDuration);
+    DLOGD("\tConnection Staleness duration (100ns): %" PRIu64, pStreamInfo->streamCaps.connectionStalenessDuration);
+
+    if (pStreamInfo->streamCaps.segmentUuid != NULL) {
+        hasSegmentUUID = TRUE;
+        CHK_STATUS(hexEncode(pStreamInfo->streamCaps.segmentUuid, MKV_SEGMENT_UUID_LEN, UUID, &UUIDSize));
+    }
+    DLOGD("\tSegment UUID: %s", hasSegmentUUID ? UUID :  "NULL");
+
+    if (pStreamInfo->version == 0) {
+        return;
+    }
+
+    // ------------------------------- V0 compat ----------------------
+
+    DLOGD("\tFrame ordering mode: %u", pStreamInfo->streamCaps.frameOrderingMode);
+    DLOGD("Track list");
+    pTrackInfoList = pStreamInfo->streamCaps.trackInfoList;
+    for (i = 0; i < pStreamInfo->streamCaps.trackInfoCount; ++i) {
+        DLOGD("\tTrack id: %" PRIu64, pTrackInfoList[i].trackId);
+        DLOGD("\tTrack name: %s", pTrackInfoList[i].trackName);
+        DLOGD("\tCodec id: %s", pTrackInfoList[i].codecId);
+        DLOGD("\tTrack type: %s", GET_TRACK_TYPE_STR(pTrackInfoList[i].trackType));
+        if (pTrackInfoList[i].codecPrivateData != NULL) {
+            CHK_STATUS(hexEncode(pTrackInfoList[i].codecPrivateData, pTrackInfoList[i].codecPrivateDataSize, NULL, &hexEncodedCpdLen));
+            CHK((hexEncodedCpd = (PCHAR) MEMALLOC(hexEncodedCpdLen)) != NULL, STATUS_NOT_ENOUGH_MEMORY);
+            CHK_STATUS(hexEncode(pTrackInfoList[i].codecPrivateData, pTrackInfoList[i].codecPrivateDataSize, hexEncodedCpd, &hexEncodedCpdLen));
+            DLOGD("\tTrack cpd: %s", hexEncodedCpd);
+            MEMFREE(hexEncodedCpd);
+            hexEncodedCpd = NULL;
+        } else {
+            DLOGD("\tTrack cpd: NULL");
+        }
+
+    }
+
+CleanUp:
+
+    CHK_LOG_ERR(retStatus);
+    SAFE_MEMFREE(hexEncodedCpd);
+}

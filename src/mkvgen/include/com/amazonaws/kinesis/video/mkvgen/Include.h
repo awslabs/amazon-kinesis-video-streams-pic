@@ -215,6 +215,9 @@ typedef enum {
     MKV_TRACK_INFO_TYPE_UNKOWN = (BYTE) 0x03,
 } MKV_TRACK_INFO_TYPE, *PMKV_TRACK_INFO_TYPE;
 
+#define GET_TRACK_TYPE_STR(st)  ((st) == MKV_TRACK_INFO_TYPE_VIDEO ? (PCHAR) "TRACK_INFO_TYPE_VIDEO" : \
+    (st) == MKV_TRACK_INFO_TYPE_AUDIO ? (PCHAR) "TRACK_INFO_TYPE_AUDIO" : "TRACK_INFO_TYPE_UNKNOWN")
+
 /**
  * Macros checking for the frame flags
  */

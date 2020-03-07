@@ -685,6 +685,15 @@ STATUS notifyStreamClosed(PKinesisVideoStream, UPLOAD_HANDLE);
  */
 STATUS logStreamMetric(PKinesisVideoStream);
 
+/**
+ * log the StreamInfo struct
+ *
+ * @param 1 - IN - PStreamInfo
+ *
+ * @return VOID
+ */
+VOID logStreamInfo(PStreamInfo);
+
 ///////////////////////////////////////////////////////////////////////////
 // Service call event functions
 ///////////////////////////////////////////////////////////////////////////
