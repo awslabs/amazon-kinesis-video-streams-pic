@@ -98,11 +98,10 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     // Set logger log level
     SET_LOGGER_LOG_LEVEL(pKinesisVideoClient->deviceInfo.clientInfo.loggerLogLevel);
 
-    // TODO pthread_cond_wait fail with "The futex facility returned an unexpected error code" on UBUNTU
-    // when DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC is used. Ignore the setting for now.
-    if (pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC) {
-        pKinesisVideoClient->deviceInfo.storageInfo.storageType = DEVICE_STORAGE_TYPE_IN_MEM;
-    }
+#ifndef ALIGNED_MEMORY_MODEL
+    // In case of in-content-store memory allocation, we need to ensure the heap is aligned
+    CHK(pKinesisVideoClient->deviceInfo.storageInfo.storageType != DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC, STATUS_NON_ALIGNED_HEAP_WITH_IN_CONTENT_STORE_ALLOCATORS);
+#endif
 
     // Create the storage
     heapFlags = pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_IN_MEM ||
@@ -1296,6 +1295,10 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
                                                          pKinesisVideoClient->base.lock);
     }
 
+    if (IS_VALID_SEMAPHORE_HANDLE(pKinesisVideoClient->base.shutdownSemaphore)) {
+        semaphoreFree(&pKinesisVideoClient->base.shutdownSemaphore);
+    }
+
     // Reset the stored allocators if replaced
     if (STATUS_SUCCEEDED(failStatus) &&
         pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC) {
@@ -1312,10 +1315,6 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
     if (pKinesisVideoClient->pHeap) {
         heapDebugCheckAllocator(pKinesisVideoClient->pHeap, TRUE);
         freeHeapStatus = heapRelease(pKinesisVideoClient->pHeap);
-    }
-
-    if (IS_VALID_SEMAPHORE_HANDLE(pKinesisVideoClient->base.shutdownSemaphore)) {
-        semaphoreFree(&pKinesisVideoClient->base.shutdownSemaphore);
     }
 
     DLOGD("Total allocated memory %" PRIu64, pKinesisVideoClient->totalAllocationSize);

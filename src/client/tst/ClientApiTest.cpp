@@ -287,8 +287,7 @@ TEST_F(ClientApiTest, kinesisVideoClientCreateSync_Valid_Timeout)
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&clientHandle));
 }
 
-// disable this test until DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC mode is fixed
-TEST_F(ClientApiTest, DISABLED_kinesisVideoClientCreateSync_Store_Alloc)
+TEST_F(ClientApiTest, kinesisVideoClientCreateSync_Store_Alloc)
 {
     CLIENT_HANDLE clientHandle, failedClientHandle;
 
