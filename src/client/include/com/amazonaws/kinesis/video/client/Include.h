@@ -23,9 +23,6 @@ extern "C" {
 #include <com/amazonaws/kinesis/video/heap/Include.h>
 #include <com/amazonaws/kinesis/video/state/Include.h>
 
-// For tight packing
-#pragma pack(push, include, 1) // for byte alignment
-
 /**
  * Device/Client state transitions
  *
@@ -185,7 +182,8 @@ extern "C" {
 #define STATUS_MAX_FRAME_TIMESTAMP_DELTA_BETWEEN_TRACKS_EXCEEDED                    STATUS_CLIENT_BASE + 0x00000085
 #define STATUS_STREAM_SHUTTING_DOWN                                                 STATUS_CLIENT_BASE + 0x00000086
 #define STATUS_CLIENT_SHUTTING_DOWN                                                 STATUS_CLIENT_BASE + 0x00000087
-#define STATUS_PUTMEDIA_LAST_PERSIST_ACK_NOT_RECEIVED								STATUS_CLIENT_BASE + 0x00000088
+#define STATUS_PUTMEDIA_LAST_PERSIST_ACK_NOT_RECEIVED                               STATUS_CLIENT_BASE + 0x00000088
+#define STATUS_NON_ALIGNED_HEAP_WITH_IN_CONTENT_STORE_ALLOCATORS                    STATUS_CLIENT_BASE + 0x00000089
 
 #define IS_RECOVERABLE_ERROR(error)     ((error) == STATUS_ACK_ERR_INVALID_MKV_DATA ||          	\
                                         (error) == STATUS_ACK_ERR_FRAGMENT_ARCHIVAL_ERROR ||    	\
@@ -2216,8 +2214,6 @@ PUBLIC_API STATUS kinesisVideoStreamDefaultStreamShutdown(UINT64 customData, STR
  * @return - STATUS Mapped status
  */
 PUBLIC_API STATUS serviceCallResultCheck(SERVICE_CALL_RESULT);
-
-#pragma pack(pop, include)
 
 #ifdef  __cplusplus
 }

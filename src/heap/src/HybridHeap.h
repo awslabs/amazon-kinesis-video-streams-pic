@@ -9,9 +9,6 @@
 extern "C" {
 #endif
 
-#pragma once
-#pragma pack(push, include, 1) // for byte alignment
-
 /**
  * VRAM function definitions with their symbol names
  */
@@ -145,10 +142,9 @@ DEFINE_HEAP_CHK(hybridHeapDebugCheckAllocator);
  */
 DEFINE_HEADER_SIZE(hybridGetAllocationHeaderSize);
 DEFINE_FOOTER_SIZE(hybridGetAllocationFooterSize);
+DEFINE_ALIGNED_SIZE(hybridGetAllocationAlignedSize);
 DEFINE_ALLOC_SIZE(hybridGetAllocationSize);
 DEFINE_HEAP_LIMITS(hybridGetHeapLimits);
-
-#pragma pack(pop, include) // pop the existing settings
 
 #ifdef __cplusplus
 }

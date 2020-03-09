@@ -364,8 +364,10 @@ TEST_P(StateTransitionFunctionalityTest, FaultInjectUploadHandleAfterStopBeforeT
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
 
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
-            EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR, &submittedErrorAck));
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
+            if (mockConsumer != NULL) {
+                EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR, &submittedErrorAck));
+            }
         }
     } while (currentTime < stopTime && !submittedErrorAck);
 
@@ -412,8 +414,8 @@ TEST_P(StateTransitionFunctionalityTest, FaultInjectUploadHandleAfterStopDuringT
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
 
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
-            if (uploadHandle == 0 && !submittedErrorAck){
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
+            if (mockConsumer != NULL && uploadHandle == 0 && !submittedErrorAck){
                 EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR, &submittedErrorAck));
             }
         }
@@ -451,8 +453,10 @@ TEST_P(StateTransitionFunctionalityTest, basicResetConnectionTest) {
             UPLOAD_HANDLE uploadHandle = currentUploadHandles[i];
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
-            mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck);
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
+            if (mockConsumer != NULL) {
+                mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck);
+            }
         }
 
         if (IS_VALID_TIMESTAMP(resetConnectionTime) && currentTime > resetConnectionTime) {

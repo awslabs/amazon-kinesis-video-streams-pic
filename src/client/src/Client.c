@@ -48,9 +48,6 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     // Report the creation after the validation as we might have the overwritten logger.
     DLOGI("Creating Kinesis Video Client");
 
-    // Set logger log level
-    SET_LOGGER_LOG_LEVEL(pDeviceInfo->clientInfo.loggerLogLevel);
-
     // Get the max tags structure size
     CHK_STATUS(packageTags(pDeviceInfo->tagCount, pDeviceInfo->tags, 0, NULL, &tagsSize));
 
@@ -83,7 +80,12 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
 
     // Copy the structures in their entirety
     MEMCPY(&pKinesisVideoClient->clientCallbacks, pClientCallbacks, SIZEOF(ClientCallbacks));
-    MEMCPY(&pKinesisVideoClient->deviceInfo, pDeviceInfo, sizeOfDeviceInfo(pDeviceInfo));
+
+    // Fix-up the defaults if needed
+    // IMPORTANT!!! The calloc allocator will zero the memory which will also act as a
+    // sentinel value in case of an earlier version of the structure
+    // is used and the remaining fields are not copied
+    fixupDeviceInfo(&pKinesisVideoClient->deviceInfo, pDeviceInfo);
 
     // Fix-up the name of the device if not specified
     if (pKinesisVideoClient->deviceInfo.name[0] == '\0') {
@@ -93,17 +95,13 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
                          pKinesisVideoClient->clientCallbacks.customData);
     }
 
-    // Fix-up the defaults if needed
-    // IMPORTANT!!! The calloc allocator will zero the memory which will also act as a
-    // sentinel value in case of an earlier version of the structure
-    // is used and the remaining fields are not copied
-    fixupClientInfo(&pKinesisVideoClient->deviceInfo.clientInfo);
+    // Set logger log level
+    SET_LOGGER_LOG_LEVEL(pKinesisVideoClient->deviceInfo.clientInfo.loggerLogLevel);
 
-    // TODO pthread_cond_wait fail with "The futex facility returned an unexpected error code" on UBUNTU
-    // when DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC is used. Ignore the setting for now.
-    if (pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC) {
-        pKinesisVideoClient->deviceInfo.storageInfo.storageType = DEVICE_STORAGE_TYPE_IN_MEM;
-    }
+#ifndef ALIGNED_MEMORY_MODEL
+    // In case of in-content-store memory allocation, we need to ensure the heap is aligned
+    CHK(pKinesisVideoClient->deviceInfo.storageInfo.storageType != DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC, STATUS_NON_ALIGNED_HEAP_WITH_IN_CONTENT_STORE_ALLOCATORS);
+#endif
 
     // Create the storage
     heapFlags = pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_IN_MEM ||
@@ -1297,6 +1295,10 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
                                                          pKinesisVideoClient->base.lock);
     }
 
+    if (IS_VALID_SEMAPHORE_HANDLE(pKinesisVideoClient->base.shutdownSemaphore)) {
+        semaphoreFree(&pKinesisVideoClient->base.shutdownSemaphore);
+    }
+
     // Reset the stored allocators if replaced
     if (STATUS_SUCCEEDED(failStatus) &&
         pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC) {
@@ -1313,10 +1315,6 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
     if (pKinesisVideoClient->pHeap) {
         heapDebugCheckAllocator(pKinesisVideoClient->pHeap, TRUE);
         freeHeapStatus = heapRelease(pKinesisVideoClient->pHeap);
-    }
-
-    if (IS_VALID_SEMAPHORE_HANDLE(pKinesisVideoClient->base.shutdownSemaphore)) {
-        semaphoreFree(&pKinesisVideoClient->base.shutdownSemaphore);
     }
 
     DLOGD("Total allocated memory %" PRIu64, pKinesisVideoClient->totalAllocationSize);

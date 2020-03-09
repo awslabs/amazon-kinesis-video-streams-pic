@@ -34,7 +34,7 @@ STATUS getVideoWidthAndHeightFromH264Sps(PBYTE codecPrivateData, UINT32 codecPri
                && codecPrivateData[4] == AVCC_NALU_LEN_MINUS_ONE
                && codecPrivateData[5] == AVCC_NUMBER_OF_SPS_ONE) {
         // Avcc encoded sps
-        size = (UINT32) getInt16(*(PINT16) &codecPrivateData[6]);
+        size = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PINT16) &codecPrivateData[6]);
         pSps = codecPrivateData + AVCC_SPS_OFFSET;
     } else {
         // Must be raw SPS
@@ -95,13 +95,13 @@ STATUS getVideoWidthAndHeightFromH265Sps(PBYTE codecPrivateData, UINT32 codecPri
 
         // Pass the VPS
         CHK(SIZEOF(UINT32) <= adaptedSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
-        naluSize = (UINT32) getInt32(*(PUINT32) pRun);
+        naluSize = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pRun);
         pRun += SIZEOF(UINT32) + naluSize;
         CHK((UINT32)(pRun - pAdaptedBits) <= adaptedSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
 
         // Get the SPS
         CHK(pRun - pAdaptedBits + SIZEOF(UINT32) <= adaptedSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
-        naluSize = (UINT32) getInt32(*(PUINT32) pRun);
+        naluSize = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pRun);
         pSps = pRun + SIZEOF(UINT32);
         size = naluSize;
         CHK(pSps - pAdaptedBits + naluSize <= adaptedSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
@@ -118,7 +118,7 @@ STATUS getVideoWidthAndHeightFromH265Sps(PBYTE codecPrivateData, UINT32 codecPri
         // Iterate over the raw array and extract the SPS
         while (size > HEVC_NALU_ARRAY_ENTRY_SIZE) {
             naluType = (BYTE) (pSps[0] & 0x3f);
-            numNalus = (UINT16) getInt16(*(PINT16) &pSps[1]);
+            numNalus = (UINT16) GET_UNALIGNED_BIG_ENDIAN((PINT16) &pSps[1]);
             pSps += HEVC_NALU_ARRAY_ENTRY_SIZE;
             size -= HEVC_NALU_ARRAY_ENTRY_SIZE;
 
@@ -130,7 +130,7 @@ STATUS getVideoWidthAndHeightFromH265Sps(PBYTE codecPrivateData, UINT32 codecPri
 
             for (naluIterator = 0; naluIterator < numNalus; naluIterator++) {
                 CHK(size > SIZEOF(UINT16), STATUS_MKV_INVALID_HEVC_FORMAT);
-                naluLen = (UINT16) getInt16(*(PINT16) pSps);
+                naluLen = (UINT16) GET_UNALIGNED_BIG_ENDIAN((PINT16) pSps);
                 size -= SIZEOF(UINT16);
                 pSps += SIZEOF(UINT16);
 
@@ -144,7 +144,7 @@ STATUS getVideoWidthAndHeightFromH265Sps(PBYTE codecPrivateData, UINT32 codecPri
         CHK(spsNaluFound, STATUS_MKV_HEVC_SPS_NALU_MISSING);
 
         CHK(size > SIZEOF(UINT16), STATUS_MKV_INVALID_HEVC_FORMAT);
-        naluLen = (UINT16) getInt16(*(PINT16) pSps);
+        naluLen = (UINT16) GET_UNALIGNED_BIG_ENDIAN((PINT16) pSps);
         size -= SIZEOF(UINT16);
         pSps += SIZEOF(UINT16);
 

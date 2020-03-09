@@ -10,9 +10,6 @@ extern "C" {
 
 #pragma once
 
-// For tight packing
-#pragma pack(push, include_i, 1) // for byte alignment
-
 ////////////////////////////////////////////////////
 // Internal functionality
 ////////////////////////////////////////////////////
@@ -73,6 +70,14 @@ STATUS validateClientTags(UINT32, PTag);
 VOID fixupClientInfo(PClientInfo);
 
 /**
+ * Fixup/copy the DeviceInfo object returned from the client
+ *
+ * @param 1 - PDeviceInfo - Device info part of the client object which is on the latest version and zeroed out
+ * @param 2 - PDeviceInfo - Device info which is given by the client - might be on older version
+ */
+VOID fixupDeviceInfo(PDeviceInfo, PDeviceInfo);
+
+/**
  * Returns the size of the device info structure in bytes
  *
  * @param 1 PDeviceInfo - Device info object
@@ -121,8 +126,6 @@ VOID fixupFrame(PFrame pFrame);
  * @return The size of the object
  */
 SIZE_T sizeOfStreamDescription(PStreamDescription);
-
-#pragma pack(pop, include_i)
 
 #ifdef __cplusplus
 }

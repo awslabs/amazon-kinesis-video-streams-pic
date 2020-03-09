@@ -481,12 +481,7 @@ typedef CID*                PCID;
 
 #if !(defined _WIN32 || defined _WIN64)
 #include <unistd.h>
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpragma-pack"
-#pragma pack(push, current_common_packing)
 #include <dirent.h>
-#pragma pack(pop, current_common_packing)
-#pragma GCC diagnostic pop
 #include <sys/time.h>
 #include <sys/utsname.h>
 #endif

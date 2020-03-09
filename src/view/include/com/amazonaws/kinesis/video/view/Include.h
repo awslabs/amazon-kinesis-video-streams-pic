@@ -20,9 +20,6 @@ extern "C" {
 #include <com/amazonaws/kinesis/video/utils/Include.h>
 #include <com/amazonaws/kinesis/video/heap/Include.h>
 
-// For tight packing
-#pragma pack(push, include, 1) // for byte alignment
-
 /**
  * Minimum number of items in the window
  */
@@ -113,6 +110,8 @@ extern "C" {
 
 /**
  * The representation of the item in the cache.
+ *
+ * IMPORTANT!!! This structure should be tightly packed without explicit compiler directives
  */
 typedef struct {
     // Id of the item
@@ -376,8 +375,6 @@ PUBLIC_API STATUS contentViewRemoveAll(PContentView);
  * PBOOL - OUT OPT - Whether there is available space to put an item without tail eviction.
  */
 PUBLIC_API STATUS contentViewCheckAvailability(PContentView, PBOOL, PBOOL);
-
-#pragma pack(pop, include)
 
 #ifdef  __cplusplus
 }

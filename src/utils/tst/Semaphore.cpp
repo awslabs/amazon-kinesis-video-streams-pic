@@ -234,7 +234,7 @@ TEST_F(SemaphoreFunctionalityTest, drainTimeoutTest)
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&handle));
 }
 
-TEST_F(SemaphoreFunctionalityTest, DISABLED_freeWithoutReleaseAllTest)
+TEST_F(SemaphoreFunctionalityTest, freeWithoutReleaseAllTest)
 {
     const UINT32 SEMAPHORE_TEST_COUNT = 500;
     UINT32 i;
@@ -248,7 +248,7 @@ TEST_F(SemaphoreFunctionalityTest, DISABLED_freeWithoutReleaseAllTest)
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&handle));
 }
 
-TEST_F(SemaphoreFunctionalityTest, DISABLED_freeWithoutReleaseAllThreadsTest)
+TEST_F(SemaphoreFunctionalityTest, freeWithoutReleaseAllThreadsTest)
 {
     const UINT32 SEMAPHORE_TEST_THREAD_COUNT = 500;
     UINT32 i;

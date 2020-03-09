@@ -207,8 +207,10 @@ TEST_P(StreamFunctionalityTest, CreateSyncPutFrameEoFR)
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
 
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
-            EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
+            VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
+            if (mockConsumer != NULL) {
+                EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
+            }
         }
     } while((currentTime < stopTime) && !submittedAck);
 

@@ -596,7 +596,7 @@ protected:
 
                 STATUS retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
                 EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &didSubmitAck));
-                VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime);
+                VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             }
         } while (currentTime < stopStreamTime && !currentUploadHandles.empty());
     }
@@ -621,7 +621,8 @@ protected:
 
         EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
     }
-    void VerifyGetStreamDataResult(STATUS getStreamDataStatus, BOOL gotStreamData, UPLOAD_HANDLE uploadHandle, PUINT64 pCurrentTime)
+    void VerifyGetStreamDataResult(STATUS getStreamDataStatus, BOOL gotStreamData, UPLOAD_HANDLE uploadHandle,
+                                   PUINT64 pCurrentTime, MockConsumer **ppMockConsumer)
     {
         EXPECT_TRUE(getStreamDataStatus == STATUS_SUCCESS || getStreamDataStatus == STATUS_END_OF_STREAM ||
                 getStreamDataStatus == STATUS_AWAITING_PERSISTED_ACK || getStreamDataStatus == STATUS_NO_MORE_DATA_AVAILABLE ||
@@ -630,6 +631,7 @@ protected:
         if (getStreamDataStatus == STATUS_END_OF_STREAM || getStreamDataStatus == STATUS_UPLOAD_HANDLE_ABORTED) {
             DLOGD("got end-of-stream for upload handle %llu", uploadHandle);
             mStreamingSession.removeConsumerSession(uploadHandle);
+            *ppMockConsumer = NULL;
         }
         // Need to advance time such that each getStreamData happen at different times so that we can
         // check getStreamData time is monotonically increasing

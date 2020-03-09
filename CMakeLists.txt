@@ -12,6 +12,8 @@ option(ADDRESS_SANITIZER "Build with AddressSanitizer." OFF)
 option(MEMORY_SANITIZER "Build with MemorySanitizer." OFF)
 option(THREAD_SANITIZER "Build with ThreadSanitizer." OFF)
 option(UNDEFINED_BEHAVIOR_SANITIZER "Build with UndefinedBehaviorSanitizer." OFF)
+option(BUILD_DEBUG_HEAP "Build debug heap with guard bands and validation." OFF)
+option(ALIGNED_MEMORY_MODEL "Aligned memory model ONLY." OFF)
 
 if(CODE_COVERAGE)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g -fprofile-arcs -ftest-coverage")
@@ -23,6 +25,7 @@ function(enableSanitizer SANITIZER)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g -fsanitize=${SANITIZER} -fno-omit-frame-pointer -fno-optimize-sibling-calls" PARENT_SCOPE)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${SANITIZER}" PARENT_SCOPE)
 endfunction()
+
 if(ADDRESS_SANITIZER)
   enableSanitizer("address")
 endif()
@@ -34,6 +37,12 @@ if(THREAD_SANITIZER)
 endif()
 if(UNDEFINED_BEHAVIOR_SANITIZER)
   enableSanitizer("undefined")
+endif()
+if(BUILD_DEBUG_HEAP)
+  add_definitions(-DHEAP_DEBUG)
+endif()
+if(ALIGNED_MEMORY_MODEL)
+  add_definitions(-DALIGNED_MEMORY_MODEL)
 endif()
 
 if(NOT KINESIS_VIDEO_OPEN_SOURCE_SRC)
@@ -143,6 +152,19 @@ if(BUILD_TEST)
   set(GTEST_ROOT ${KINESIS_VIDEO_OPEN_SOURCE_SRC})
   find_package(GTest REQUIRED)
 
-  add_executable(kvspic_test ${PIC_TEST_SOURCE_FILES})
-  target_link_libraries(kvspic_test kvspic GTest::GTest GTest::Main)
+  add_executable(kvspic_test ${PIC_TEST_SOURCE_FILES}
+          ${PIC_CLIENT_SOURCE_FILES}
+          ${PIC_DURATION_SOURCE_FILES}
+          ${PIC_HEAP_SOURCE_FILES}
+          ${PIC_MKVGEN_SOURCE_FILES}
+          ${PIC_STATE_SOURCE_FILES}
+          ${PIC_TRACE_SOURCE_FILES}
+          ${PIC_UTILS_SOURCE_FILES}
+          ${PIC_VIEW_SOURCE_FILES})
+  target_compile_definitions(kvspic_test PRIVATE ALIGNED_MEMORY_MODEL=TRUE)
+  target_link_libraries(kvspic_test GTest::GTest GTest::Main ${CMAKE_DL_LIBS} Threads::Threads)
+  if(UNIX AND NOT APPLE)
+    # rt needed for clock_gettime
+    target_link_libraries(kvspic_test rt)
+  endif()
 endif()
