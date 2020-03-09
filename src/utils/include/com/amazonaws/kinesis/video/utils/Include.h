@@ -877,6 +877,14 @@ extern putUnalignedInt16Func putUnalignedInt16BigEndian;
 extern putUnalignedInt32Func putUnalignedInt32BigEndian;
 extern putUnalignedInt64Func putUnalignedInt64BigEndian;
 
+extern getUnalignedInt16Func getUnalignedInt16LittleEndian;
+extern getUnalignedInt32Func getUnalignedInt32LittleEndian;
+extern getUnalignedInt64Func getUnalignedInt64LittleEndian;
+
+extern putUnalignedInt16Func putUnalignedInt16LittleEndian;
+extern putUnalignedInt32Func putUnalignedInt32LittleEndian;
+extern putUnalignedInt64Func putUnalignedInt64LittleEndian;
+
 // Helper macro for unaligned
 #define GET_UNALIGNED(ptr)                                      \
     SIZEOF(*(ptr)) == 1 ? *(ptr) :                              \
