@@ -420,6 +420,28 @@ typedef enum {
 // 5 bits (Audio Object Type) | 4 bits (frequency index) | 4 bits (channel configuration) | 3 bits (not used)
 #define KVS_AAC_CPD_SIZE_BYTE                2
 
+/*
+ * http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html
+ * cpd structure (little endian):
+ * - 2 bytes format code (0x06 0x00 for pcm alaw)
+ * - 2 bytes number of channels
+ * - 4 bytes sampling rate
+ * - 4 bytes average bytes per second
+ * - 2 bytes block align
+ * - 2 bytes bit depth
+ * - 2 bytes extra data (usually 0)
+ */
+#define KVS_PCM_CPD_SIZE_BYTE            18
+
+typedef enum {
+    KVS_PCM_FORMAT_CODE_ALAW       = (UINT16) 0x0006,
+    KVS_PCM_FORMAT_CODE_MULAW      = (UINT16) 0x0007,
+} KVS_PCM_FORMAT_CODE;
+
+// Min/Max sampling rate for PCM alaw and mulaw. Referred pad template of gstreamer alawenc plugin
+#define MIN_PCM_SAMPLING_RATE 8000
+#define MAX_PCM_SAMPLING_RATE 192000
+
 ////////////////////////////////////////////////////
 // Callbacks definitions
 ////////////////////////////////////////////////////
@@ -585,6 +607,19 @@ PUBLIC_API STATUS mkvgenGetTrackInfo(PTrackInfo, UINT32, UINT64, PTrackInfo*, PU
  * @return Status of the operation
  */
 PUBLIC_API STATUS mkvgenGenerateAacCpd(KVS_MPEG4_AUDIO_OBJECT_TYPES, UINT32, UINT16, PBYTE, UINT32);
+
+/**
+ * Generate PCM audio cpd
+ *
+ * @KVS_PCM_FORMAT_CODE - IN - pcm format code. Either KVS_PCM_FORMAT_CODE_ALAW or KVS_PCM_FORMAT_CODE_MUALAW
+ * @UINT32 - IN - Sampling Frequency
+ * @UINT16 - IN - Channel Count
+ * @PBYTE - OUT - Buffer for cpd, should have at least KVS_PCM_CPD_SIZE_BYTE (18 bytes)
+ * @UINT32 - IN - size of buffer
+ *
+ * @return Status of the operation
+ */
+PUBLIC_API STATUS mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE, UINT32, UINT16, PBYTE, UINT32);
 
 #ifdef  __cplusplus
 }

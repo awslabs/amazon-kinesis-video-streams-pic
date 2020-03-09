@@ -1699,6 +1699,48 @@ CleanUp:
     return retStatus;
 }
 
+STATUS mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE format, UINT32 samplingRate, UINT16 channels, PBYTE buffer, UINT32 bufferLen)
+{
+    STATUS retStatus = STATUS_SUCCESS;
+    UINT16 blockAlign = 0;
+    UINT32 bitrate = 0;
+    PBYTE pCurPtr = NULL;
+
+    CHK(buffer != NULL, STATUS_NULL_ARG);
+    CHK_ERR(bufferLen >= KVS_PCM_CPD_SIZE_BYTE, STATUS_INVALID_ARG, "Buffer is too small");
+    CHK_ERR(format == KVS_PCM_FORMAT_CODE_ALAW || format == KVS_PCM_FORMAT_CODE_MULAW, STATUS_INVALID_ARG,
+            "Invalid pcm format, should be alaw (0x%04x) or mulaw (0x%04x)", KVS_PCM_FORMAT_CODE_ALAW, KVS_PCM_FORMAT_CODE_MULAW);
+    CHK_ERR(samplingRate <= MAX_PCM_SAMPLING_RATE && samplingRate >= MIN_PCM_SAMPLING_RATE, STATUS_INVALID_ARG,
+            "Invalid sampling rate %u", samplingRate);
+    CHK_ERR(channels == 2 || channels == 1, STATUS_INVALID_ARG,
+            "Invalid channels count %u", channels);
+
+    blockAlign = channels;
+    bitrate = blockAlign * samplingRate / 8;
+
+    // just in case
+    initializeEndianness();
+
+    MEMSET(buffer, 0x00, KVS_PCM_CPD_SIZE_BYTE);
+
+    pCurPtr = buffer;
+    putUnalignedInt16LittleEndian((PINT16) pCurPtr, (UINT16) format);
+    pCurPtr += SIZEOF(UINT16);
+    putUnalignedInt16LittleEndian((PINT16) pCurPtr, channels);
+    pCurPtr += SIZEOF(UINT16);
+    putUnalignedInt32LittleEndian((PINT32) pCurPtr, samplingRate);
+    pCurPtr += SIZEOF(UINT32);
+    putUnalignedInt32LittleEndian((PINT32) pCurPtr, bitrate);
+    pCurPtr += SIZEOF(UINT32);
+    putUnalignedInt16LittleEndian((PINT16) pCurPtr, blockAlign);
+    // leave remaining bits as 0
+
+CleanUp:
+
+    CHK_LOG_ERR(retStatus);
+    return retStatus;
+}
+
 /**
  * Adapts the CPD.
  *
