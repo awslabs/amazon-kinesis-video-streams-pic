@@ -644,7 +644,7 @@ STATUS mkvgenGenerateTag(PMkvGenerator pMkvGenerator, PBYTE pBuffer, PCHAR tagNa
     // Fix-up the tag name element size
     encodedElementLength = 0x100000000000000ULL | (UINT64) (tagNameLen);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + MKV_TAGS_BITS_SIZE + MKV_TAG_NAME_ELEMENT_SIZE_OFFSET), encodedElementLength);
-    
+
     // Fix-up the tag string element size
     encodedElementLength = 0x100000000000000ULL | (UINT64) (tagValueLen);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt +
@@ -1585,7 +1585,7 @@ STATUS getSamplingFreqAndChannelFromAacCpd(PBYTE pCpd,
     UINT16 samplingRateIdx, channelConfig;
 
     CHK(pSamplingFrequency != NULL && pChannelConfig != NULL, STATUS_NULL_ARG);
-    CHK(cpdSize >= MIN_AAC_CPD_SIZE && pCpd != NULL, STATUS_MKV_INVALID_AAC_CPD);
+    CHK(cpdSize >= KVS_AAC_CPD_SIZE_BYTE && pCpd != NULL, STATUS_MKV_INVALID_AAC_CPD);
 
     // AAC cpd are encoded in the first 2 bytes of the cpd
     cpdContainer = GET_UNALIGNED_BIG_ENDIAN((PINT16) pCpd);
@@ -1603,6 +1603,45 @@ STATUS getSamplingFreqAndChannelFromAacCpd(PBYTE pCpd,
     *pSamplingFrequency = gMkvAACSamplingFrequencies[samplingRateIdx];
 
 CleanUp:
+    return retStatus;
+}
+
+STATUS mkvgenGenerateAacCpd(KVS_MPEG4_AUDIO_OBJECT_TYPES objectType, UINT32 samplingFrequency, UINT16 channelConfig, PBYTE pBuffer, UINT32 bufferLen)
+{
+    STATUS retStatus = STATUS_SUCCESS;
+    BOOL samplingFreqFound = FALSE;
+    UINT16 samplingFreqIndex = 0, i, objectTypeInt16 = 0, cpdInt16 = 0;
+
+    CHK(pBuffer != NULL, STATUS_NULL_ARG);
+    CHK(channelConfig > 0 && channelConfig < MKV_AAC_CHANNEL_CONFIG_MAX && bufferLen >= KVS_AAC_CPD_SIZE_BYTE, STATUS_INVALID_ARG);
+
+    for (i = 0; i < MKV_AAC_SAMPLING_FREQUNECY_IDX_MAX && !samplingFreqFound; ++i) {
+        if (gMkvAACSamplingFrequencies[i] == samplingFrequency) {
+            samplingFreqIndex = i;
+            samplingFreqFound = TRUE;
+        }
+    }
+    CHK_ERR(samplingFreqFound, STATUS_INVALID_ARG, "Invalid sampling frequency %u", samplingFrequency);
+
+    MEMSET(pBuffer, 0x00, KVS_AAC_CPD_SIZE_BYTE);
+
+    // just in case
+    initializeEndianness();
+
+    /*
+     * aac cpd structure
+     * 5 bits (Audio Object Type) | 4 bits (frequency index) | 4 bits (channel configuration) | 3 bits (not used)
+     */
+    objectTypeInt16 = (UINT16) objectType;
+    cpdInt16 |= objectTypeInt16 << 11;
+    cpdInt16 |= samplingFreqIndex << 7;
+    cpdInt16 |= channelConfig << 3;
+
+    PUT_UNALIGNED_BIG_ENDIAN((PINT16) pBuffer, cpdInt16);
+
+CleanUp:
+
+    CHK_LOG_ERR(retStatus);
     return retStatus;
 }
 

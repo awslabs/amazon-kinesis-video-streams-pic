@@ -406,6 +406,20 @@ struct __MkvGenerator {
 
 typedef struct __MkvGenerator* PMkvGenerator;
 
+// https://wiki.multimedia.cx/index.php/MPEG-4_Audio
+// should cover most of aac object types. we can always expand this list if needed.
+typedef enum {
+    AAC_MAIN        = 1,
+    AAC_LC          = 2,
+    AAC_SSR         = 3,
+    AAC_LTP         = 4,
+    SBR             = 5,
+    AAC_SCALABLE    = 6,
+} KVS_MPEG4_AUDIO_OBJECT_TYPES;
+
+// 5 bits (Audio Object Type) | 4 bits (frequency index) | 4 bits (channel configuration) | 3 bits (not used)
+#define KVS_AAC_CPD_SIZE_BYTE                2
+
 ////////////////////////////////////////////////////
 // Callbacks definitions
 ////////////////////////////////////////////////////
@@ -558,6 +572,19 @@ PUBLIC_API STATUS mkvgenSetCodecPrivateData(PMkvGenerator, UINT64, UINT32, PBYTE
  * @return Status of the operation
  */
 PUBLIC_API STATUS mkvgenGetTrackInfo(PTrackInfo, UINT32, UINT64, PTrackInfo*, PUINT32);
+
+/**
+ * Generate AAC audio cpd
+ *
+ * @KVS_MPEG4_AUDIO_OBJECT_TYPES - IN - MPEG4 object type
+ * @UINT32 - IN - Sampling Frequency
+ * @UINT16 - IN - Channel Count
+ * @PBYTE - OUT - Buffer for cpd, should have at least KVS_AAC_CPD_SIZE_BYTE (2 bytes)
+ * @UINT32 - IN - size of buffer
+ *
+ * @return Status of the operation
+ */
+PUBLIC_API STATUS mkvgenGenerateAacCpd(KVS_MPEG4_AUDIO_OBJECT_TYPES, UINT32, UINT16, PBYTE, UINT32);
 
 #ifdef  __cplusplus
 }
