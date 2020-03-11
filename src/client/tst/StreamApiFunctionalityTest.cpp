@@ -335,7 +335,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetNextKeyFrame)
     pData = getDataBuffer;
 
     // This should point to 10th frame, offset with cluster info and simple block info
-    EXPECT_EQ(10, *(PUINT32) (pData + MKV_CLUSTER_INFO_BITS_SIZE + MKV_SIMPLE_BLOCK_BITS_SIZE));
+    EXPECT_EQ((UINT32) 10, GET_UNALIGNED((PUINT32) (pData + MKV_CLUSTER_INFO_BITS_SIZE + MKV_SIMPLE_BLOCK_BITS_SIZE)));
 
     // Set a new value to ensure it doesn't change as there is no dropped frames when we put again
     mFrameTime = 1000000;

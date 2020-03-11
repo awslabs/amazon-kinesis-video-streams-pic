@@ -212,6 +212,9 @@ typedef enum {
     MKV_TRACK_INFO_TYPE_UNKOWN = (BYTE) 0x03,
 } MKV_TRACK_INFO_TYPE, *PMKV_TRACK_INFO_TYPE;
 
+#define GET_TRACK_TYPE_STR(st)  ((st) == MKV_TRACK_INFO_TYPE_VIDEO ? (PCHAR) "TRACK_INFO_TYPE_VIDEO" : \
+    (st) == MKV_TRACK_INFO_TYPE_AUDIO ? (PCHAR) "TRACK_INFO_TYPE_AUDIO" : "TRACK_INFO_TYPE_UNKNOWN")
+
 /**
  * Macros checking for the frame flags
  */
@@ -403,6 +406,42 @@ struct __MkvGenerator {
 
 typedef struct __MkvGenerator* PMkvGenerator;
 
+// https://wiki.multimedia.cx/index.php/MPEG-4_Audio
+// should cover most of aac object types. we can always expand this list if needed.
+typedef enum {
+    AAC_MAIN        = 1,
+    AAC_LC          = 2,
+    AAC_SSR         = 3,
+    AAC_LTP         = 4,
+    SBR             = 5,
+    AAC_SCALABLE    = 6,
+} KVS_MPEG4_AUDIO_OBJECT_TYPES;
+
+// 5 bits (Audio Object Type) | 4 bits (frequency index) | 4 bits (channel configuration) | 3 bits (not used)
+#define KVS_AAC_CPD_SIZE_BYTE                2
+
+/*
+ * http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html
+ * cpd structure (little endian):
+ * - 2 bytes format code (0x06 0x00 for pcm alaw)
+ * - 2 bytes number of channels
+ * - 4 bytes sampling rate
+ * - 4 bytes average bytes per second
+ * - 2 bytes block align
+ * - 2 bytes bit depth
+ * - 2 bytes extra data (usually 0)
+ */
+#define KVS_PCM_CPD_SIZE_BYTE            18
+
+typedef enum {
+    KVS_PCM_FORMAT_CODE_ALAW       = (UINT16) 0x0006,
+    KVS_PCM_FORMAT_CODE_MULAW      = (UINT16) 0x0007,
+} KVS_PCM_FORMAT_CODE;
+
+// Min/Max sampling rate for PCM alaw and mulaw. Referred pad template of gstreamer alawenc plugin
+#define MIN_PCM_SAMPLING_RATE 8000
+#define MAX_PCM_SAMPLING_RATE 192000
+
 ////////////////////////////////////////////////////
 // Callbacks definitions
 ////////////////////////////////////////////////////
@@ -555,6 +594,32 @@ PUBLIC_API STATUS mkvgenSetCodecPrivateData(PMkvGenerator, UINT64, UINT32, PBYTE
  * @return Status of the operation
  */
 PUBLIC_API STATUS mkvgenGetTrackInfo(PTrackInfo, UINT32, UINT64, PTrackInfo*, PUINT32);
+
+/**
+ * Generate AAC audio cpd
+ *
+ * @KVS_MPEG4_AUDIO_OBJECT_TYPES - IN - MPEG4 object type
+ * @UINT32 - IN - Sampling Frequency
+ * @UINT16 - IN - Channel Count
+ * @PBYTE - OUT - Buffer for cpd, should have at least KVS_AAC_CPD_SIZE_BYTE (2 bytes)
+ * @UINT32 - IN - size of buffer
+ *
+ * @return Status of the operation
+ */
+PUBLIC_API STATUS mkvgenGenerateAacCpd(KVS_MPEG4_AUDIO_OBJECT_TYPES, UINT32, UINT16, PBYTE, UINT32);
+
+/**
+ * Generate PCM audio cpd
+ *
+ * @KVS_PCM_FORMAT_CODE - IN - pcm format code. Either KVS_PCM_FORMAT_CODE_ALAW or KVS_PCM_FORMAT_CODE_MUALAW
+ * @UINT32 - IN - Sampling Frequency
+ * @UINT16 - IN - Channel Count
+ * @PBYTE - OUT - Buffer for cpd, should have at least KVS_PCM_CPD_SIZE_BYTE (18 bytes)
+ * @UINT32 - IN - size of buffer
+ *
+ * @return Status of the operation
+ */
+PUBLIC_API STATUS mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE, UINT32, UINT16, PBYTE, UINT32);
 
 #ifdef  __cplusplus
 }

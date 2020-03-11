@@ -110,6 +110,8 @@ extern "C" {
 
 /**
  * The representation of the item in the cache.
+ *
+ * IMPORTANT!!! This structure should be tightly packed without explicit compiler directives
  */
 typedef struct {
     // Id of the item

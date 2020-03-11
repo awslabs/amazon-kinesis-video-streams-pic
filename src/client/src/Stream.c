@@ -38,6 +38,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
 
     // Validate the input structs
     CHK_STATUS(validateStreamInfo(pStreamInfo, &pKinesisVideoClient->clientCallbacks));
+    logStreamInfo(pStreamInfo);
 
     // Lock the client
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
@@ -1497,14 +1498,16 @@ CleanUp:
     // Remove the upload handle if it is in UPLOAD_HANDLE_STATE_TERMINATED state
     if (NULL != pUploadHandleInfo && pUploadHandleInfo->state == UPLOAD_HANDLE_STATE_TERMINATED) {
         deleteStreamUploadInfo(pKinesisVideoStream, pUploadHandleInfo);
-        pUploadHandleInfo = NULL;
+
+        // if there is no more active upload handle and we still have bytes to transfer,
+        // call kinesisVideoStreamResetConnection to create new upload session.
         pUploadHandleInfo = getStreamUploadInfoWithState(pKinesisVideoStream, UPLOAD_HANDLE_STATE_ACTIVE);
 
         if (pUploadHandleInfo == NULL) {
             // Get the duration and the size
             getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize);
             if (viewByteSize != 0) {
-                streamTerminatedEvent(pKinesisVideoStream, INVALID_UPLOAD_HANDLE_VALUE, SERVICE_CALL_RESULT_OK, FALSE);
+                kinesisVideoStreamResetConnection(TO_STREAM_HANDLE(pKinesisVideoStream));
             }
         }
     }
@@ -1661,7 +1664,7 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
     // Check if we have enough space available. Adding maxFrameSizeSeen to handle fragmentation as well as when curl thread needs to alloc space for
     // sending data.
     availableHeapSize = pKinesisVideoClient->deviceInfo.storageInfo.storageSize - heapSize -
-                        MAX_ALLOCATION_OVERHEAD_SIZE - 
+                        MAX_ALLOCATION_OVERHEAD_SIZE -
 						(UINT64) (pKinesisVideoStream->maxFrameSizeSeen * FRAME_ALLOC_FRAGMENTATION_FACTOR);
 
     // Early return if storage space is unavailable.
@@ -2216,7 +2219,7 @@ PUploadHandleInfo getStreamUploadInfoWithState(PKinesisVideoStream pKinesisVideo
 
         pCurHandleInfo = (PUploadHandleInfo) data;
         CHK(pCurHandleInfo != NULL, STATUS_INTERNAL_ERROR);
-        if ((handleState & pCurHandleInfo->state) != UPLOAD_HANDLE_STATE_NONE) {
+        if (IS_UPLOAD_HANDLE_IN_STATE(pCurHandleInfo, handleState)) {
             pUploadHandleInfo = pCurHandleInfo;
 
             // Found the item - early exit
@@ -3243,3 +3246,70 @@ CleanUp:
     return retStatus;
 }
 
+VOID logStreamInfo(PStreamInfo pStreamInfo)
+{
+    CHAR UUID[MKV_SEGMENT_UUID_LEN*2+1];
+    BOOL hasSegmentUUID = FALSE;
+    STATUS retStatus = STATUS_SUCCESS;
+    PCHAR hexEncodedCpd = NULL;
+    UINT32 hexEncodedCpdLen, i, UUIDSize = ARRAY_SIZE(UUID);
+    PTrackInfo pTrackInfoList = NULL;
+
+    if (pStreamInfo == NULL) {
+        return;
+    }
+
+    DLOGD("Kinesis Video Stream Info");
+    DLOGD("\tStream name: %s ", pStreamInfo->name);
+    DLOGD("\tStreaming type: %s ", GET_STREAMING_TYPE_STR(pStreamInfo->streamCaps.streamingType));
+    DLOGD("\tContent type: %s ", pStreamInfo->streamCaps.contentType);
+    DLOGD("\tMax latency (100ns): %" PRIu64, pStreamInfo->streamCaps.maxLatency);
+    DLOGD("\tFragment duration (100ns): %" PRIu64, pStreamInfo->streamCaps.fragmentDuration);
+    DLOGD("\tKey frame fragmentation: %s", pStreamInfo->streamCaps.keyFrameFragmentation ? "Yes" : "No");
+    DLOGD("\tUse frame timecode: %s", pStreamInfo->streamCaps.frameTimecodes ? "Yes" : "No");
+    DLOGD("\tAbsolute frame timecode: %s", pStreamInfo->streamCaps.absoluteFragmentTimes ? "Yes" : "No");
+    DLOGD("\tNal adaptation flags: %u", pStreamInfo->streamCaps.nalAdaptationFlags);
+    DLOGD("\tAverage bandwith (bps): %u", pStreamInfo->streamCaps.avgBandwidthBps);
+    DLOGD("\tFramerate: %u", pStreamInfo->streamCaps.frameRate);
+    DLOGD("\tBuffer duration (100ns): %" PRIu64, pStreamInfo->streamCaps.bufferDuration);
+    DLOGD("\tReplay duration (100ns): %" PRIu64, pStreamInfo->streamCaps.replayDuration);
+    DLOGD("\tConnection Staleness duration (100ns): %" PRIu64, pStreamInfo->streamCaps.connectionStalenessDuration);
+
+    if (pStreamInfo->streamCaps.segmentUuid != NULL) {
+        hasSegmentUUID = TRUE;
+        CHK_STATUS(hexEncode(pStreamInfo->streamCaps.segmentUuid, MKV_SEGMENT_UUID_LEN, UUID, &UUIDSize));
+    }
+    DLOGD("\tSegment UUID: %s", hasSegmentUUID ? UUID :  "NULL");
+
+    if (pStreamInfo->version == 0) {
+        return;
+    }
+
+    // ------------------------------- V0 compat ----------------------
+
+    DLOGD("\tFrame ordering mode: %u", pStreamInfo->streamCaps.frameOrderingMode);
+    DLOGD("Track list");
+    pTrackInfoList = pStreamInfo->streamCaps.trackInfoList;
+    for (i = 0; i < pStreamInfo->streamCaps.trackInfoCount; ++i) {
+        DLOGD("\tTrack id: %" PRIu64, pTrackInfoList[i].trackId);
+        DLOGD("\tTrack name: %s", pTrackInfoList[i].trackName);
+        DLOGD("\tCodec id: %s", pTrackInfoList[i].codecId);
+        DLOGD("\tTrack type: %s", GET_TRACK_TYPE_STR(pTrackInfoList[i].trackType));
+        if (pTrackInfoList[i].codecPrivateData != NULL) {
+            CHK_STATUS(hexEncode(pTrackInfoList[i].codecPrivateData, pTrackInfoList[i].codecPrivateDataSize, NULL, &hexEncodedCpdLen));
+            CHK((hexEncodedCpd = (PCHAR) MEMALLOC(hexEncodedCpdLen)) != NULL, STATUS_NOT_ENOUGH_MEMORY);
+            CHK_STATUS(hexEncode(pTrackInfoList[i].codecPrivateData, pTrackInfoList[i].codecPrivateDataSize, hexEncodedCpd, &hexEncodedCpdLen));
+            DLOGD("\tTrack cpd: %s", hexEncodedCpd);
+            MEMFREE(hexEncodedCpd);
+            hexEncodedCpd = NULL;
+        } else {
+            DLOGD("\tTrack cpd: NULL");
+        }
+
+    }
+
+CleanUp:
+
+    CHK_LOG_ERR(retStatus);
+    SAFE_MEMFREE(hexEncodedCpd);
+}

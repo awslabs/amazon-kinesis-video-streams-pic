@@ -97,6 +97,23 @@ INLINE VOID putInt32NoSwap(PINT32, INT32);
 INLINE VOID putInt64Swap(PINT64, INT64);
 INLINE VOID putInt64NoSwap(PINT64, INT64);
 
+/**
+ * Unaligned access functionality
+ */
+INLINE INT16 getUnalignedInt16Be(PVOID);
+INLINE INT16 getUnalignedInt16Le(PVOID);
+INLINE INT32 getUnalignedInt32Be(PVOID);
+INLINE INT32 getUnalignedInt32Le(PVOID);
+INLINE INT64 getUnalignedInt64Be(PVOID);
+INLINE INT64 getUnalignedInt64Le(PVOID);
+
+INLINE VOID putUnalignedInt16Be(PVOID, INT16);
+INLINE VOID putUnalignedInt16Le(PVOID, INT16);
+INLINE VOID putUnalignedInt32Be(PVOID, INT32);
+INLINE VOID putUnalignedInt32Le(PVOID, INT32);
+INLINE VOID putUnalignedInt64Be(PVOID, INT64);
+INLINE VOID putUnalignedInt64Le(PVOID, INT64);
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 // TimerQueue functionality
 //////////////////////////////////////////////////////////////////////////////////////////////

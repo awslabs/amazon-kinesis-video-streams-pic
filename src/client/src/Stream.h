@@ -225,14 +225,19 @@ typedef enum {
 } UPLOAD_CONNECTION_STATE;
 
 /**
+ * Whether the upload handle is in state s
+ */
+#define IS_UPLOAD_HANDLE_IN_STATE(u, s)            ((((PUploadHandleInfo)(u))->state & (s)) != UPLOAD_HANDLE_STATE_NONE)
+
+/**
  * Whether the upload handle is in sending EoS state
  */
-#define IS_UPLOAD_HANDLE_IN_SENDING_EOS_STATE(p)    ((((PUploadHandleInfo)(p))->state & UPLOAD_HANDLE_STATE_SEND_EOS) != UPLOAD_HANDLE_STATE_NONE)
+#define IS_UPLOAD_HANDLE_IN_SENDING_EOS_STATE(p)    (IS_UPLOAD_HANDLE_IN_STATE(p, UPLOAD_HANDLE_STATE_SEND_EOS))
 
 /**
  * Whether the upload handle has sent all its items, including eos.
  */
-#define IS_UPLOAD_HANDLE_READY_TO_TRIM(p)    ((((PUploadHandleInfo)(p))->state & UPLOAD_HANDLE_STATE_READY_TO_TRIM) != UPLOAD_HANDLE_STATE_NONE)
+#define IS_UPLOAD_HANDLE_READY_TO_TRIM(p)    (IS_UPLOAD_HANDLE_IN_STATE(p, UPLOAD_HANDLE_STATE_READY_TO_TRIM))
 
 /**
  * Upload handle information struct
@@ -676,6 +681,15 @@ STATUS notifyStreamClosed(PKinesisVideoStream, UPLOAD_HANDLE);
  * @return Status code of the operation
  */
 STATUS logStreamMetric(PKinesisVideoStream);
+
+/**
+ * log the StreamInfo struct
+ *
+ * @param 1 - IN - PStreamInfo
+ *
+ * @return VOID
+ */
+VOID logStreamInfo(PStreamInfo);
 
 ///////////////////////////////////////////////////////////////////////////
 // Service call event functions

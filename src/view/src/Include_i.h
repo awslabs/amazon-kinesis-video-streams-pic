@@ -26,9 +26,13 @@ extern "C" {
 
 /**
  * ContentView internal structure
+ *
+ * IMPORTANT! This structure is tightly packed without the compiler directives.
  */
 typedef struct {
     // The original public structure
+    // IMPORTANT! The contentView is 32 bit and together with the allocationSize field following
+    // it will be 64 bit packed together with the rest of the structure
     ContentView contentView;
 
     // Overall allocation size

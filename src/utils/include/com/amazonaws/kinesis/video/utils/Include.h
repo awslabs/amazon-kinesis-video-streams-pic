@@ -620,7 +620,7 @@ typedef struct {
     UINT32 itemCount;
     UINT32 bucketCount;
     UINT32 bucketLength;
-    UINT32 reservedFlags;
+    UINT32 flags;
     /*-- HashBucket[bucketCount] buckets; --*/
 } HashTable, *PHashTable;
 
@@ -832,12 +832,12 @@ PUBLIC_API STATUS bitReaderReadExpGolombSe(PBitReader, PINT32);
 ////////////////////////////////////////////////////
 // Endianness functionality
 ////////////////////////////////////////////////////
-typedef INT16(*getInt16Func) (INT16);
-typedef INT32(*getInt32Func) (INT32);
-typedef INT64(*getInt64Func) (INT64);
-typedef VOID(*putInt16Func) (PINT16, INT16);
-typedef VOID(*putInt32Func) (PINT32, INT32);
-typedef VOID(*putInt64Func) (PINT64, INT64);
+typedef INT16 (*getInt16Func) (INT16);
+typedef INT32 (*getInt32Func) (INT32);
+typedef INT64 (*getInt64Func) (INT64);
+typedef VOID (*putInt16Func) (PINT16, INT16);
+typedef VOID (*putInt32Func) (PINT32, INT32);
+typedef VOID (*putInt64Func) (PINT64, INT64);
 
 extern getInt16Func getInt16;
 extern getInt32Func getInt32;
@@ -848,6 +848,99 @@ extern putInt64Func putInt64;
 
 PUBLIC_API BOOL isBigEndian();
 PUBLIC_API VOID initializeEndianness();
+
+////////////////////////////////////////////////////
+// Unaligned access functionality
+////////////////////////////////////////////////////
+typedef INT16 (*getUnalignedInt16Func) (PVOID);
+typedef INT32 (*getUnalignedInt32Func) (PVOID);
+typedef INT64 (*getUnalignedInt64Func) (PVOID);
+
+typedef VOID (*putUnalignedInt16Func) (PVOID, INT16);
+typedef VOID (*putUnalignedInt32Func) (PVOID, INT32);
+typedef VOID (*putUnalignedInt64Func) (PVOID, INT64);
+
+extern getUnalignedInt16Func getUnalignedInt16;
+extern getUnalignedInt32Func getUnalignedInt32;
+extern getUnalignedInt64Func getUnalignedInt64;
+
+extern putUnalignedInt16Func putUnalignedInt16;
+extern putUnalignedInt32Func putUnalignedInt32;
+extern putUnalignedInt64Func putUnalignedInt64;
+
+// These are the specific Big-endian variants needed for most of the formats
+extern getUnalignedInt16Func getUnalignedInt16BigEndian;
+extern getUnalignedInt32Func getUnalignedInt32BigEndian;
+extern getUnalignedInt64Func getUnalignedInt64BigEndian;
+
+extern putUnalignedInt16Func putUnalignedInt16BigEndian;
+extern putUnalignedInt32Func putUnalignedInt32BigEndian;
+extern putUnalignedInt64Func putUnalignedInt64BigEndian;
+
+extern getUnalignedInt16Func getUnalignedInt16LittleEndian;
+extern getUnalignedInt32Func getUnalignedInt32LittleEndian;
+extern getUnalignedInt64Func getUnalignedInt64LittleEndian;
+
+extern putUnalignedInt16Func putUnalignedInt16LittleEndian;
+extern putUnalignedInt32Func putUnalignedInt32LittleEndian;
+extern putUnalignedInt64Func putUnalignedInt64LittleEndian;
+
+// Helper macro for unaligned
+#define GET_UNALIGNED(ptr)                                      \
+    SIZEOF(*(ptr)) == 1 ? *(ptr) :                              \
+    SIZEOF(*(ptr)) == 2 ? getUnalignedInt16(ptr) :              \
+    SIZEOF(*(ptr)) == 4 ? getUnalignedInt32(ptr) :              \
+    SIZEOF(*(ptr)) == 8 ? getUnalignedInt64(ptr) :              \
+    0                                                           \
+
+#define GET_UNALIGNED_BIG_ENDIAN(ptr)                           \
+    SIZEOF(*(ptr)) == 1 ? *(ptr) :                              \
+    SIZEOF(*(ptr)) == 2 ? getUnalignedInt16BigEndian(ptr) :     \
+    SIZEOF(*(ptr)) == 4 ? getUnalignedInt32BigEndian(ptr) :     \
+    SIZEOF(*(ptr)) == 8 ? getUnalignedInt64BigEndian(ptr) :     \
+    0                                                           \
+
+#define PUT_UNALIGNED(ptr, val) ({                              \
+    PVOID __pVoid = (ptr);                                      \
+    switch (SIZEOF(*(ptr))) {                                   \
+        case 1:                                                 \
+            *(PINT8)__pVoid = (INT8)(val);                      \
+            break;                                              \
+        case 2:                                                 \
+            putUnalignedInt16(__pVoid, (INT16) (val));          \
+            break;                                              \
+        case 4:                                                 \
+            putUnalignedInt32(__pVoid, (INT32) (val));          \
+            break;                                              \
+        case 8:                                                 \
+            putUnalignedInt64(__pVoid, (INT64) (val));          \
+            break;                                              \
+        default:                                                \
+            CHECK_EXT(FALSE, "Bad alignment size.");            \
+            break;                                              \
+        }                                                       \
+        (VOID) 0; })                                            \
+
+#define PUT_UNALIGNED_BIG_ENDIAN(ptr, val) ({                   \
+    PVOID __pVoid = (ptr);                                      \
+    switch (SIZEOF(*(ptr))) {                                   \
+        case 1:                                                 \
+            *(PINT8)__pVoid = (INT8)(val);                      \
+            break;                                              \
+        case 2:                                                 \
+            putUnalignedInt16BigEndian(__pVoid, (INT16) (val)); \
+            break;                                              \
+        case 4:                                                 \
+            putUnalignedInt32BigEndian(__pVoid, (INT32) (val)); \
+            break;                                              \
+        case 8:                                                 \
+            putUnalignedInt64BigEndian(__pVoid, (INT64) (val)); \
+            break;                                              \
+        default:                                                \
+            CHECK_EXT(FALSE, "Bad alignment size.");            \
+            break;                                              \
+        }                                                       \
+        (VOID) 0; })                                            \
 
 ////////////////////////////////////////////////////
 // Dumping memory functionality
@@ -1297,7 +1390,6 @@ PUBLIC_API STATUS serialDispatchQueueShutdown(SERIAL_DISPATCH_QUEUE_HANDLE);
  */
 PUBLIC_API STATUS serialDispatchQueueDispatchTask(SERIAL_DISPATCH_QUEUE_HANDLE, DISPATCH_QUEUE_TASK_PRIORITY,
                                                   DispatchQueueTaskFunc, UINT64);
-
 
 #ifdef __cplusplus
 }

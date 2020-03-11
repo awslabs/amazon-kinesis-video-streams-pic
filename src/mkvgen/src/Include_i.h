@@ -86,6 +86,7 @@ extern UINT32 gMkvWritingAppBitsSize;
 extern DOUBLE gMkvAACSamplingFrequencies[];
 extern UINT32 gMkvAACSamplingFrequenciesCount;
 #define MKV_AAC_SAMPLING_FREQUNECY_IDX_MAX gMkvAACSamplingFrequenciesCount
+// documented here: https://wiki.multimedia.cx/index.php/MPEG-4_Audio
 #define MKV_AAC_CHANNEL_CONFIG_MAX 8
 
 extern BYTE gMkvTrackInfoBits[];
@@ -159,9 +160,6 @@ extern UINT32 gMkvTrackNameBitsSize;
 
 // Mkv TrackEntry element plus its data size
 #define MKV_TRACK_ENTRY_HEADER_BITS_SIZE 5
-
-// Minimum AAC codec private size
-#define MIN_AAC_CPD_SIZE 2
 
 // Minimum A_MS/ACM codec private size
 #define MIN_AMS_ACM_CPD_SIZE 16

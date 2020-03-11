@@ -12,7 +12,6 @@ extern "C" {
 #include <com/amazonaws/kinesis/video/common/CommonDefs.h>
 #include <com/amazonaws/kinesis/video/common/PlatformUtils.h>
 
-
 /**
  * Definition of the handles
  */
@@ -193,8 +192,6 @@ PUBLIC_API DEFINE_TRACE_STOP(traceStop);
  * Including the headers
  */
 #include <com/amazonaws/kinesis/video/utils/Include.h>
-
-
 
 #ifdef __cplusplus
 }

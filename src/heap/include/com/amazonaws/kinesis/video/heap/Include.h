@@ -197,8 +197,6 @@ PUBLIC_API STATUS heapUnmap(PHeap, PVOID);
  */
 PUBLIC_API STATUS heapDebugCheckAllocator(PHeap, BOOL);
 
-
-
 #ifdef __cplusplus
 }
 #endif

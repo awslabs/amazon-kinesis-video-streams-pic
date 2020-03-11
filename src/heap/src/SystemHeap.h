@@ -9,9 +9,6 @@
 extern "C" {
 #endif
 
-#pragma once
-
-
 #define SYS_ALLOCATION_TYPE 1
 
 /**
@@ -69,10 +66,9 @@ DEFINE_HEAP_CHK(sysHeapDebugCheckAllocator);
  */
 DEFINE_HEADER_SIZE(sysGetAllocationHeaderSize);
 DEFINE_FOOTER_SIZE(sysGetAllocationFooterSize);
+DEFINE_ALIGNED_SIZE(sysGetAllocationAlignedSize);
 DEFINE_ALLOC_SIZE(sysGetAllocationSize);
 DEFINE_HEAP_LIMITS(sysGetHeapLimits);
-
-
 
 #ifdef __cplusplus
 }
