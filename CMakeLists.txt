@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake;${CMAKE_MODULE_PATH}")
+include(Utilities)
 project(pic_project)
 
 # User Flags
@@ -46,44 +48,23 @@ if(ALIGNED_MEMORY_MODEL)
 endif()
 
 if(NOT KINESIS_VIDEO_OPEN_SOURCE_SRC)
-  if(DEFINED ENV{KINESIS_VIDEO_OPEN_SOURCE_SRC})
-    set(KINESIS_VIDEO_OPEN_SOURCE_SRC $ENV{KINESIS_VIDEO_OPEN_SOURCE_SRC})
-  elseif(BUILD_DEPENDENCIES)
-    set(KINESIS_VIDEO_OPEN_SOURCE_SRC ${CMAKE_SOURCE_DIR}/open-source/local)
-  else()
-    set(KINESIS_VIDEO_OPEN_SOURCE_SRC
-        "${CMAKE_CURRENT_SOURCE_DIR}/open-source/downloads/local"
-    )
-  endif()
+  set(KINESIS_VIDEO_OPEN_SOURCE_SRC ${CMAKE_SOURCE_DIR}/open-source)
 endif()
 
 if(BUILD_DEPENDENCIES)
-  set(OPEN_SOURCE_DIR ${CMAKE_SOURCE_DIR}/open-source)
-
-  if(NOT EXISTS ${OPEN_SOURCE_DIR})
-    file(MAKE_DIRECTORY ${OPEN_SOURCE_DIR}/local)
+  if(NOT EXISTS ${KINESIS_VIDEO_OPEN_SOURCE_SRC})
+    file(MAKE_DIRECTORY ${KINESIS_VIDEO_OPEN_SOURCE_SRC}/local)
   endif()
 
-  set(OPEN_SRC_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/open-source/local)
+  if (NOT OPEN_SRC_INSTALL_PREFIX)
+    set(OPEN_SRC_INSTALL_PREFIX ${KINESIS_VIDEO_OPEN_SOURCE_SRC}/local)
+    set(ENV{PKG_CONFIG_PATH}
+          "$ENV{PKG_CONFIG_PATH}:${OPEN_SRC_INSTALL_PREFIX}/lib/pkgconfig")
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${OPEN_SRC_INSTALL_PREFIX})
+  endif()
 
-  if(NOT EXISTS ${OPEN_SOURCE_DIR}/libgtest)
-    # build gtest
-    configure_file(${CMAKE_SOURCE_DIR}/cmake-scripts/libgtest-CMakeLists.txt
-                   ${OPEN_SOURCE_DIR}/libgtest/CMakeLists.txt COPYONLY)
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -G ${CMAKE_GENERATOR} .
-      RESULT_VARIABLE result
-      WORKING_DIRECTORY ${OPEN_SOURCE_DIR}/libgtest)
-    if(result)
-      message(FATAL_ERROR "CMake step for libgtest failed: ${result}")
-    endif()
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} --build .
-      RESULT_VARIABLE result
-      WORKING_DIRECTORY ${OPEN_SOURCE_DIR}/libgtest)
-    if(result)
-      message(FATAL_ERROR "CMake step for libgtest failed: ${result}")
-    endif()
+  if(BUILD_TEST)
+    build_dependency(gtest)
   endif()
 endif()
 
@@ -149,7 +130,7 @@ endif()
 if(BUILD_TEST)
   set(CMAKE_CXX_STANDARD 11)
 
-  set(GTEST_ROOT ${KINESIS_VIDEO_OPEN_SOURCE_SRC})
+  set(GTEST_ROOT ${OPEN_SRC_INSTALL_PREFIX})
   find_package(GTest REQUIRED)
 
   add_executable(kvspic_test ${PIC_TEST_SOURCE_FILES}
