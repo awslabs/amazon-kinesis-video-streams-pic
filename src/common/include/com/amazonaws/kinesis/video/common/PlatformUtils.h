@@ -23,6 +23,8 @@ typedef VOID(*logPrintFunc) (UINT32, PCHAR, PCHAR, ...);
 //
 PUBLIC_API INLINE VOID defaultLogPrint(UINT32 level, PCHAR tag, PCHAR fmt, ...);
 
+PUBLIC_API VOID defaultThreadSleep(UINT64 time);
+
 extern logPrintFunc globalCustomLogPrintFn;
 
 #ifdef ANDROID_BUILD
