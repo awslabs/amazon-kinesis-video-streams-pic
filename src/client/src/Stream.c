@@ -229,6 +229,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
                                  pKinesisVideoStream->streamInfo.streamCaps.bufferDuration,
                                  viewItemRemoved,
                                  TO_CUSTOM_DATA(pKinesisVideoStream),
+                                 DROP_UNTIL_FRAGMENT_START,
                                  &pView));
     pKinesisVideoStream->pView = pView;
 

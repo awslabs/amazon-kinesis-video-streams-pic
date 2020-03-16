@@ -31,7 +31,9 @@ public:
 protected:
     PContentView mContentView;
 
-    STATUS CreateContentView()
+    STATUS CreateContentView(CONTENT_VIEW_OVERFLOW_STRATEGY contentViewOverflowStrategy = DROP_SINGLE_VIEW_ITEM,
+                             UINT32 maxViewItemCount = MAX_VIEW_ITEM_COUNT,
+                             UINT64 maxViewBufferDuration = MAX_VIEW_BUFFER_DURATION)
     {
         // Reset the globals
         gContentView = NULL;
@@ -39,9 +41,10 @@ protected:
         MEMSET(&gViewItem, 0x00, SIZEOF(ViewItem));
         gCurrent = FALSE;
         gCallCount = 0;
-
         // Create the content view
-        EXPECT_TRUE(STATUS_SUCCEEDED(createContentView(MAX_VIEW_ITEM_COUNT, MAX_VIEW_BUFFER_DURATION, removeNotificationCallback, VIEW_NOTIFICATION_CALLBACK_CUSTOM_DATA, &mContentView)));
+        EXPECT_TRUE(STATUS_SUCCEEDED(createContentView(maxViewItemCount, maxViewBufferDuration, removeNotificationCallback, 
+                                                       VIEW_NOTIFICATION_CALLBACK_CUSTOM_DATA, contentViewOverflowStrategy, 
+                                                       &mContentView)));
 
         return STATUS_SUCCESS;
     };
