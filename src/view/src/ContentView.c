@@ -11,7 +11,8 @@
 /**
  * Creates a content view
  */
-STATUS createContentView(UINT32 maxItemCount, UINT64 bufferDuration, ContentViewItemRemoveNotificationCallbackFunc removeCallbackFunc, UINT64 customData, PContentView* ppContentView)
+STATUS createContentView(UINT32 maxItemCount, UINT64 bufferDuration, ContentViewItemRemoveNotificationCallbackFunc removeCallbackFunc,
+                         UINT64 customData, CONTENT_VIEW_OVERFLOW_STRATEGY overflowStrategy, PContentView* ppContentView)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -40,6 +41,7 @@ STATUS createContentView(UINT32 maxItemCount, UINT64 bufferDuration, ContentView
     pContentView->removeCallbackFunc = removeCallbackFunc;
     pContentView->itemBufferCount = maxItemCount;
     pContentView->bufferDuration = bufferDuration;
+    pContentView->bufferOverflowStrategy = overflowStrategy;
 
     // Assign the created object
     *ppContentView = (PContentView) pContentView;
@@ -462,18 +464,41 @@ STATUS contentViewAddItem(PContentView pContentView, UINT64 timestamp, UINT64 ac
         // Check if we need to evict based on the max buffer depth or temporal window
         CHK_STATUS(contentViewCheckAvailability(pContentView, &currentAvailability, &windowAvailability));
         if (!windowAvailability) {
-            // Move the tail first
-            pRollingView->tail++;
+            switch (pRollingView->bufferOverflowStrategy) {
+                case DROP_SINGLE_VIEW_ITEM:
+                    // Move the tail first
+                    pRollingView->tail++;
 
-            // Move the current if needed
-            if (!currentAvailability) {
-                pRollingView->current = pRollingView->tail;
+                    // Callback if it's specified
+                    if (pRollingView->removeCallbackFunc != NULL) {
+                        // NOTE: The call is prompt - shouldn't block
+                        pRollingView->removeCallbackFunc(pContentView, pRollingView->customData, pTail, !currentAvailability);
+                    }
+                    break;
+
+                case DROP_UNTIL_FRAGMENT_START:
+                    do {
+                        // Move the tail first
+                        pRollingView->tail++;
+
+                        // Callback if it's specified
+                        if (pRollingView->removeCallbackFunc != NULL) {
+                            // NOTE: The call is prompt - shouldn't block
+                            pRollingView->removeCallbackFunc(pContentView, pRollingView->customData, pTail,
+                                                             !currentAvailability);
+                        }
+                        pTail = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail);
+                    } while (!CHECK_ITEM_FRAGMENT_START(pTail->flags) && pRollingView->tail != pRollingView->head);
+
+                    if (pTail == pHead) {
+                        DLOGW("ContentView is not big enough to contain a single fragment.");
+                    }
+                    break;
             }
 
-            // Callback if it's specified
-            if (pRollingView->removeCallbackFunc != NULL) {
-                // NOTE: The call is prompt - shouldn't block
-                pRollingView->removeCallbackFunc(pContentView, pRollingView->customData, pTail, !currentAvailability);
+            // Move the current if needed
+            if (pRollingView->current <= pRollingView->tail) {
+                pRollingView->current = pRollingView->tail;
             }
         }
     }

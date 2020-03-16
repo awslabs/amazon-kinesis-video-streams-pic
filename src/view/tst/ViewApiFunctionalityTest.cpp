@@ -295,6 +295,222 @@ TEST_F(ViewApiFunctionalityTest, AddGetSetCurrentRemoveAll)
     EXPECT_EQ(MAX_VIEW_ITERATION_COUNT, gCallCount);
 }
 
+TEST_F(ViewApiFunctionalityTest, overflowBufferDurationWithDropUntilFragmentStart)
+{
+    const UINT64 KEY_FRAME_INTERVAL = 25;
+    const UINT64 FPS = 25;
+    const UINT64 TEST_VIEW_ITEM_DURATION = HUNDREDS_OF_NANOS_IN_A_SECOND / FPS;
+    const UINT64 TEST_MAX_BUFFER_DURATION = 2 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    UINT64 timestamp = 0;
+    UINT32 i;
+
+    // buffer duration will run out first
+    CreateContentView(DROP_UNTIL_FRAGMENT_START, 10000, TEST_MAX_BUFFER_DURATION);
+
+    for(i = 0; i < 2 * FPS; ++i) {
+        EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
+                                                     timestamp,
+                                                     timestamp,
+                                                     TEST_VIEW_ITEM_DURATION,
+                                                     INVALID_ALLOCATION_HANDLE_VALUE,
+                                                     0,
+                                                     VIEW_ITEM_ALLOCAITON_SIZE,
+                                                     i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
+
+        timestamp += TEST_VIEW_ITEM_DURATION;
+    }
+
+    // content view should be full now, can no frame should be dropped yet.
+    EXPECT_EQ(0, gCallCount);
+
+    // should trigger a fragment getting dropped
+    EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
+                                                 timestamp,
+                                                 timestamp,
+                                                 TEST_VIEW_ITEM_DURATION,
+                                                 INVALID_ALLOCATION_HANDLE_VALUE,
+                                                 0,
+                                                 VIEW_ITEM_ALLOCAITON_SIZE,
+                                                 i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
+    // entire fragment should get dropped
+    EXPECT_EQ(gCallCount, KEY_FRAME_INTERVAL);
+}
+
+TEST_F(ViewApiFunctionalityTest, overflowItemCountWithDropUntilFragmentStart)
+{
+    const UINT64 KEY_FRAME_INTERVAL = 25;
+    const UINT64 FPS = 25;
+    const UINT64 TEST_VIEW_ITEM_DURATION = HUNDREDS_OF_NANOS_IN_A_SECOND / FPS;
+    const UINT64 TEST_MAX_BUFFER_DURATION = 2 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    UINT64 timestamp = 0;
+    UINT32 i;
+
+    // max view item count will run out first
+    CreateContentView(DROP_UNTIL_FRAGMENT_START, 2 * FPS, 100 * HUNDREDS_OF_NANOS_IN_A_SECOND);
+
+    for(i = 0; i < 2 * FPS; ++i) {
+        EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
+                                                     timestamp,
+                                                     timestamp,
+                                                     TEST_VIEW_ITEM_DURATION,
+                                                     INVALID_ALLOCATION_HANDLE_VALUE,
+                                                     0,
+                                                     VIEW_ITEM_ALLOCAITON_SIZE,
+                                                     i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
+
+        timestamp += TEST_VIEW_ITEM_DURATION;
+    }
+
+    // content view should be full now, can no frame should be dropped yet.
+    EXPECT_EQ(0, gCallCount);
+
+    // should trigger a fragment getting dropped
+    EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
+                                                 timestamp,
+                                                 timestamp,
+                                                 TEST_VIEW_ITEM_DURATION,
+                                                 INVALID_ALLOCATION_HANDLE_VALUE,
+                                                 0,
+                                                 VIEW_ITEM_ALLOCAITON_SIZE,
+                                                 i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
+    // entire fragment should get dropped
+    EXPECT_EQ(gCallCount, KEY_FRAME_INTERVAL);
+}
+
+TEST_F(ViewApiFunctionalityTest, dropUntilFragmentStartDropsEntireContentView)
+{
+    const UINT64 KEY_FRAME_INTERVAL = 25;
+    const UINT64 FPS = 25;
+    const UINT64 TEST_VIEW_ITEM_DURATION = HUNDREDS_OF_NANOS_IN_A_SECOND / FPS;
+    const UINT64 TEST_MAX_BUFFER_DURATION = 2 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    UINT64 timestamp = 0;
+    UINT32 i;
+
+    // In DropUntilFragmentStart mode, entire content view would get dropped if content view can only fit one fragment
+    // Only fit one fragment as limited by FPS
+    CreateContentView(DROP_UNTIL_FRAGMENT_START, FPS, 100 * HUNDREDS_OF_NANOS_IN_A_SECOND);
+
+    for(i = 0; i < FPS; ++i) {
+        EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
+                                                     timestamp,
+                                                     timestamp,
+                                                     TEST_VIEW_ITEM_DURATION,
+                                                     INVALID_ALLOCATION_HANDLE_VALUE,
+                                                     0,
+                                                     VIEW_ITEM_ALLOCAITON_SIZE,
+                                                     i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
+
+        timestamp += TEST_VIEW_ITEM_DURATION;
+    }
+
+    // content view should be full now, can no frame should be dropped yet.
+    EXPECT_EQ(0, gCallCount);
+
+    // should trigger a fragment getting dropped
+    EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
+                                                 timestamp,
+                                                 timestamp,
+                                                 TEST_VIEW_ITEM_DURATION,
+                                                 INVALID_ALLOCATION_HANDLE_VALUE,
+                                                 0,
+                                                 VIEW_ITEM_ALLOCAITON_SIZE,
+                                                 i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
+    // entire view get dropped
+    EXPECT_EQ(gCallCount, KEY_FRAME_INTERVAL);
+}
+
+TEST_F(ViewApiFunctionalityTest, dropUntilFragmentStartDropsUntilStreamStart)
+{
+    const UINT64 KEY_FRAME_INTERVAL = 25;
+    const UINT64 FPS = 25;
+    const UINT64 TEST_VIEW_ITEM_DURATION = HUNDREDS_OF_NANOS_IN_A_SECOND / FPS;
+    const UINT64 TEST_MAX_BUFFER_DURATION = 2 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    UINT64 timestamp = 0;
+    UINT32 i;
+
+    // limited by buffer duration
+    CreateContentView(DROP_UNTIL_FRAGMENT_START, INT16_MAX, TEST_MAX_BUFFER_DURATION);
+
+    for(i = 0; i < 2 * FPS; ++i) {
+        EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
+                                                     timestamp,
+                                                     timestamp,
+                                                     TEST_VIEW_ITEM_DURATION,
+                                                     INVALID_ALLOCATION_HANDLE_VALUE,
+                                                     0,
+                                                     VIEW_ITEM_ALLOCAITON_SIZE,
+                                                     i % KEY_FRAME_INTERVAL == 0 ?
+                                                     ITEM_FLAG_FRAGMENT_START | ITEM_FLAG_STREAM_START : // stream starts are also fragment start
+                                                     ITEM_FLAG_NONE));
+
+        timestamp += TEST_VIEW_ITEM_DURATION;
+    }
+
+    // content view should be full now, can no frame should be dropped yet.
+    EXPECT_EQ(0, gCallCount);
+
+    // should trigger a fragment getting dropped
+    EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
+                                                 timestamp,
+                                                 timestamp,
+                                                 TEST_VIEW_ITEM_DURATION,
+                                                 INVALID_ALLOCATION_HANDLE_VALUE,
+                                                 0,
+                                                 VIEW_ITEM_ALLOCAITON_SIZE,
+                                                 ITEM_FLAG_FRAGMENT_START | ITEM_FLAG_STREAM_START));
+    // only one fragment get dropped
+    EXPECT_EQ(gCallCount, FPS);
+}
+
+TEST_F(ViewApiFunctionalityTest, dropUntilFragmentStartDropsItemWithEndOfFragmentFlag)
+{
+    const UINT64 KEY_FRAME_INTERVAL = 25;
+    const UINT64 FPS = 25;
+    const UINT64 TEST_VIEW_ITEM_DURATION = HUNDREDS_OF_NANOS_IN_A_SECOND / FPS;
+    const UINT64 TEST_MAX_BUFFER_DURATION = 2 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    UINT64 timestamp = 0;
+    UINT32 i, viewItemFlag;
+
+    // limited by buffer duration
+    CreateContentView(DROP_UNTIL_FRAGMENT_START, INT16_MAX, TEST_MAX_BUFFER_DURATION);
+
+    for(i = 0; i < 2 * FPS; ++i) {
+        if (i % KEY_FRAME_INTERVAL == 0) {
+            viewItemFlag = ITEM_FLAG_FRAGMENT_START;
+        } else if ((i + 1) % KEY_FRAME_INTERVAL == 0) {
+            // add ITEM_FLAG_FRAGMENT_END flag to last frame of each fragment
+            viewItemFlag = ITEM_FLAG_FRAGMENT_END;
+        } else {
+            viewItemFlag = ITEM_FLAG_NONE;
+        }
+        EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
+                                                     timestamp,
+                                                     timestamp,
+                                                     TEST_VIEW_ITEM_DURATION,
+                                                     INVALID_ALLOCATION_HANDLE_VALUE,
+                                                     0,
+                                                     VIEW_ITEM_ALLOCAITON_SIZE,
+                                                     viewItemFlag));
+
+        timestamp += TEST_VIEW_ITEM_DURATION;
+    }
+
+    // content view should be full now, can no frame should be dropped yet.
+    EXPECT_EQ(0, gCallCount);
+
+    // should trigger a fragment getting dropped
+    EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
+                                                 timestamp,
+                                                 timestamp,
+                                                 TEST_VIEW_ITEM_DURATION,
+                                                 INVALID_ALLOCATION_HANDLE_VALUE,
+                                                 0,
+                                                 VIEW_ITEM_ALLOCAITON_SIZE,
+                                                 ITEM_FLAG_FRAGMENT_START));
+    // only one fragment get dropped, including the view item with ITEM_FLAG_FRAGMENT_END flag
+    EXPECT_EQ(gCallCount, FPS);
+}
+
 TEST_F(ViewApiFunctionalityTest, OverflowCheck)
 {
     UINT64 index, curIndex;

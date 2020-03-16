@@ -54,12 +54,17 @@ typedef struct {
     // Buffer duration to keep
     UINT64 bufferDuration;
 
+    // Controls how content view drop frames when it's overflown
+    CONTENT_VIEW_OVERFLOW_STRATEGY bufferOverflowStrategy;
+
+    // Ensure the struct is 64 bit packed. If a UINT32 field need to be added in the future this variable can be used.
+    UINT32 reserved;
+
     // The size of the buffer
     UINT64 itemBufferCount;
 
     // The actual buffer which follows immediately after the structure
     PViewItem itemBuffer;
-
 } RollingContentView, *PRollingContentView;
 
 ////////////////////////////////////////////////////

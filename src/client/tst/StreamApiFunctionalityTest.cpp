@@ -135,6 +135,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_BasicPutTestItemLimit)
     UINT64 timestamp;
     Frame frame;
 
+    mStreamInfo.streamCaps.keyFrameFragmentation = TRUE;
     // Create and ready a stream
     ReadyStream();
 
@@ -163,8 +164,9 @@ TEST_F(StreamApiFunctionalityTest, putFrame_BasicPutTestItemLimit)
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
 
         if (i == maxIteration) {
-            // Should have dropped but the first frame with ts = 0
-            EXPECT_EQ(0, mFrameTime);
+            // Should have dropped entire first fragment whose last frame's timestamp is 9 * TEST_FRAME_DURATION
+            // Since each fragment consists of 10 frames.
+            EXPECT_EQ(9 * TEST_FRAME_DURATION, mFrameTime);
         } else if (i == maxIteration + 1) {
             EXPECT_NE(0, mFrameTime);
         } else {
@@ -186,6 +188,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_BasicPutTestDurationLimit)
     UINT64 timestamp;
     Frame frame;
 
+    mStreamInfo.streamCaps.keyFrameFragmentation = TRUE;
     // Create and ready a stream
     ReadyStream();
 
@@ -211,8 +214,9 @@ TEST_F(StreamApiFunctionalityTest, putFrame_BasicPutTestDurationLimit)
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
 
         if (timestamp == TEST_BUFFER_DURATION) {
-            // Should have dropped but the first frame with ts = 0
-            EXPECT_EQ(0, mFrameTime);
+            // Should have dropped entire first fragment whose last frame's timestamp is 9 * TEST_FRAME_DURATION
+            // Since each fragment consists of 10 frames.
+            EXPECT_EQ(9 * TEST_LONG_FRAME_DURATION, mFrameTime);
         } else if (timestamp == TEST_BUFFER_DURATION + TEST_LONG_FRAME_DURATION) {
             EXPECT_NE(0, mFrameTime);
         } else {
@@ -296,7 +300,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetNextKeyFrame)
     // Create and ready a stream
     ReadyStream();
 
-    // Make sure we drop the first frame which should be the key frame
+    // Make sure we drop the first fragment
     for (i = 0, timestamp = 0; timestamp < TEST_BUFFER_DURATION + TEST_LONG_FRAME_DURATION; timestamp += TEST_LONG_FRAME_DURATION, i++) {
         frame.index = i;
         frame.decodingTs = timestamp;
@@ -319,13 +323,14 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetNextKeyFrame)
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
 
-        EXPECT_EQ(0, mFrameTime);
-
         // Return a put stream result on 50th
         if (i == 50) {
             EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
         }
     }
+
+    // mFrameTime should be the timestamp of the last frame in first fragment
+    EXPECT_EQ(9 * TEST_LONG_FRAME_DURATION, mFrameTime);
 
     // Now, the first frame should be the 10th
     EXPECT_EQ(STATUS_SUCCESS,
@@ -337,8 +342,8 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetNextKeyFrame)
     // This should point to 10th frame, offset with cluster info and simple block info
     EXPECT_EQ((UINT32) 10, GET_UNALIGNED((PUINT32) (pData + MKV_CLUSTER_INFO_BITS_SIZE + MKV_SIMPLE_BLOCK_BITS_SIZE)));
 
-    // Set a new value to ensure it doesn't change as there is no dropped frames when we put again
-    mFrameTime = 1000000;
+    // reset to 0 to ensure it doesn't change as there is no dropped frames when we put again
+    mFrameTime = 0;
 
     timestamp += TEST_LONG_FRAME_DURATION;
     frame.index = i + 1;
@@ -352,7 +357,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetNextKeyFrame)
     frame.frameData = tempBuffer;
 
     EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
-    EXPECT_EQ(1000000, mFrameTime);
+    EXPECT_EQ(0, mFrameTime);
 }
 
 TEST_F(StreamApiFunctionalityTest, putFrame_StorageOverflow)
@@ -504,7 +509,6 @@ TEST_F(StreamApiFunctionalityTest, putFrame_StreamLatencyNotification)
             EXPECT_EQ(latency + TEST_LONG_FRAME_DURATION, mDuration);
         } else if (timestamp == TEST_BUFFER_DURATION) {
             EXPECT_EQ(i - latency / TEST_LONG_FRAME_DURATION + 1, mStreamLatencyPressureFuncCount);
-            EXPECT_EQ(TEST_BUFFER_DURATION, mDuration);
         } else if (timestamp < latency) {
             // Shouldn't have been called yet
             EXPECT_EQ(0, mStreamLatencyPressureFuncCount);
