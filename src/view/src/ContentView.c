@@ -457,7 +457,7 @@ STATUS contentViewAddItem(PContentView pContentView, UINT64 timestamp, UINT64 ac
         pTail = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail);
 
         // Check the continuity with the existing head item (if any exist)
-        CHK(pHead->timestamp + pHead->duration <= timestamp, STATUS_CONTENT_VIEW_INVALID_TIMESTAMP);
+        CHK(pHead->timestamp <= timestamp, STATUS_CONTENT_VIEW_INVALID_TIMESTAMP);
 
         // Check if we need to evict based on the max buffer depth or temporal window
         CHK_STATUS(contentViewCheckAvailability(pContentView, &currentAvailability, &windowAvailability));

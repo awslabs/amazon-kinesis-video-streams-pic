@@ -240,7 +240,10 @@ TEST_F(ViewApiTest, contentViewAddItem_InvalidTime)
     EXPECT_TRUE(STATUS_SUCCEEDED(contentViewAddItem(mContentView, 40, 40, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_NONE)));
 
     // Add with older timestamp
-    EXPECT_EQ(STATUS_CONTENT_VIEW_INVALID_TIMESTAMP, contentViewAddItem(mContentView, 49, 49, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_NONE));
+    EXPECT_EQ(STATUS_CONTENT_VIEW_INVALID_TIMESTAMP, contentViewAddItem(mContentView, 39, 39, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_NONE));
+
+    // contentViewAddItem should succeed as long as timestamp dont overlap.
+    EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView, 49, 49, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_NONE));
 
     // Add a 0-length item
     EXPECT_EQ(STATUS_INVALID_CONTENT_VIEW_LENGTH, contentViewAddItem(mContentView, 60, 60, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 0, ITEM_FLAG_NONE));
