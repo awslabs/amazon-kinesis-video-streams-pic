@@ -602,7 +602,7 @@ STATUS getAvailableViewSize(PKinesisVideoStream, PUINT64, PUINT64);
  * @param 3 - OUT - Allocation handle if successfully allocated
  * @return Status code of the operation
  */
-STATUS waitForAvailability(PKinesisVideoStream, UINT32, PALLOCATION_HANDLE);
+STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allocationSize, PALLOCATION_HANDLE pAllocationHandle);
 
 /**
  * Checks whether space is available in the content store and

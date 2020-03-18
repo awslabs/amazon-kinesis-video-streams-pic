@@ -305,7 +305,7 @@ TEST_F(ViewApiFunctionalityTest, overflowBufferDurationWithDropUntilFragmentStar
     UINT32 i;
 
     // buffer duration will run out first
-    CreateContentView(DROP_UNTIL_FRAGMENT_START, 10000, TEST_MAX_BUFFER_DURATION);
+    CreateContentView(CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START, 10000, TEST_MAX_BUFFER_DURATION);
 
     for(i = 0; i < 2 * FPS; ++i) {
         EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
@@ -346,7 +346,7 @@ TEST_F(ViewApiFunctionalityTest, overflowItemCountWithDropUntilFragmentStart)
     UINT32 i;
 
     // max view item count will run out first
-    CreateContentView(DROP_UNTIL_FRAGMENT_START, 2 * FPS, 100 * HUNDREDS_OF_NANOS_IN_A_SECOND);
+    CreateContentView(CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START, 2 * FPS, 100 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 
     for(i = 0; i < 2 * FPS; ++i) {
         EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
@@ -388,7 +388,7 @@ TEST_F(ViewApiFunctionalityTest, dropUntilFragmentStartDropsEntireContentView)
 
     // In DropUntilFragmentStart mode, entire content view would get dropped if content view can only fit one fragment
     // Only fit one fragment as limited by FPS
-    CreateContentView(DROP_UNTIL_FRAGMENT_START, FPS, 100 * HUNDREDS_OF_NANOS_IN_A_SECOND);
+    CreateContentView(CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START, FPS, 100 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 
     for(i = 0; i < FPS; ++i) {
         EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
@@ -429,7 +429,7 @@ TEST_F(ViewApiFunctionalityTest, dropUntilFragmentStartDropsUntilStreamStart)
     UINT32 i;
 
     // limited by buffer duration
-    CreateContentView(DROP_UNTIL_FRAGMENT_START, INT16_MAX, TEST_MAX_BUFFER_DURATION);
+    CreateContentView(CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START, INT16_MAX, TEST_MAX_BUFFER_DURATION);
 
     for(i = 0; i < 2 * FPS; ++i) {
         EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
@@ -472,7 +472,7 @@ TEST_F(ViewApiFunctionalityTest, dropUntilFragmentStartDropsItemWithEndOfFragmen
     UINT32 i, viewItemFlag;
 
     // limited by buffer duration
-    CreateContentView(DROP_UNTIL_FRAGMENT_START, INT16_MAX, TEST_MAX_BUFFER_DURATION);
+    CreateContentView(CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START, INT16_MAX, TEST_MAX_BUFFER_DURATION);
 
     for(i = 0; i < 2 * FPS; ++i) {
         if (i % KEY_FRAME_INTERVAL == 0) {

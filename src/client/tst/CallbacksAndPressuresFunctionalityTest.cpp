@@ -96,8 +96,6 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, CreateStreamDelayACKsStaleCallbac
     }
 }
 
-
-
 TEST_P(CallbacksAndPressuresFunctionalityTest, BiggerBufferDurationThanStorageCheckStoragePressureCallbackAndOOMError)
 {
     mDeviceInfo.storageInfo.storageSize = 5 * 1024 * 1024;
@@ -120,6 +118,38 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, BiggerBufferDurationThanStorageCh
 
     EXPECT_TRUE(mStorageOverflowPressureFuncCount > 0);
     EXPECT_EQ(STATUS_STORE_OUT_OF_MEMORY, retStatus);
+}
+
+// Similar to the previous test but sets the eviction policy instead of failing with OOM
+TEST_P(CallbacksAndPressuresFunctionalityTest, BiggerBufferDurationThanStorageCheckStoragePressureCallbackAndNoOOMError)
+{
+    UINT64 timestamp = 0;
+    mDeviceInfo.storageInfo.storageSize = 5 * 1024 * 1024;
+    CreateScenarioTestClient();
+
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+    // in offline mode, putFrame never fails with OOM but blocks instead. Therefore pass test for offline mode.
+    PASS_TEST_FOR_OFFLINE();
+
+    mStreamInfo.streamCaps.bufferDuration = 120 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    mStreamInfo.streamCaps.storePressurePolicy = CONTENT_STORE_PRESSURE_POLICY_DROP_TAIL_ITEM;
+    CreateStreamSync();
+
+    STATUS retStatus = STATUS_SUCCESS;
+    MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
+
+    // keep putting frame until we get a few dropped frames.
+    do {
+        EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame());
+        if (mDroppedFrameReportFuncCount != 0) {
+            // Check the time stamps of the dropped frames
+            EXPECT_EQ(timestamp, mFrameTime);
+            timestamp += mockProducer.getCurrentFrame()->duration;
+        }
+    } while (mDroppedFrameReportFuncCount < 100);
+
+    EXPECT_TRUE(mStorageOverflowPressureFuncCount > 0);
+    EXPECT_EQ(STATUS_SUCCESS, retStatus);
 }
 
 // Create Offline stream. Put frame until blocked on availability. StopSync. Send ACK to enable availability. Ensure unblocked put Frame call returns an error.

@@ -229,7 +229,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
                                  pKinesisVideoStream->streamInfo.streamCaps.bufferDuration,
                                  viewItemRemoved,
                                  TO_CUSTOM_DATA(pKinesisVideoStream),
-                                 DROP_UNTIL_FRAGMENT_START,
+                                 pStreamInfo->streamCaps.viewOverflowPolicy,
                                  &pView));
     pKinesisVideoStream->pView = pView;
 
@@ -835,7 +835,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     pKinesisVideoStream->maxFrameSizeSeen = MAX(pKinesisVideoStream->maxFrameSizeSeen, overallSize);
 
     // Might need to block on the availability in the OFFLINE mode
-    CHK_STATUS(waitForAvailability(pKinesisVideoStream, overallSize, &allocHandle));
+    CHK_STATUS(handleAvailability(pKinesisVideoStream, overallSize, &allocHandle));
 
     // Lock the client
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
@@ -1570,8 +1570,9 @@ CleanUp:
 }
 
 /**
- * Check if there is enough content store for the frame. If not, block waiting if in OFFLINE mode, otherwise return with
- * INVALID_ALLOCATION_HANDLE.
+ * Check if there is enough content store for the frame. If not, block waiting if in OFFLINE mode,
+ * otherwise if the content store pressure is set to evict the tail frames then kick them out, otherwise
+ * return with INVALID_ALLOCATION_HANDLE.
  *
  * IMPORTANT: The assumption is that both the stream IS locked but
  * the client is NOT locked.
@@ -1581,14 +1582,15 @@ CleanUp:
  * available space in the content store and available spot
  * in the content view in order to proceed.
  *
- * The caller thread will be blocked.
+ * The caller thread will be blocked in the OFFLINE mode.
  * The operation will return interrupted error in case the stream is terminated.
  */
-STATUS waitForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allocationSize, PALLOCATION_HANDLE pAllocationHandle)
+STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allocationSize, PALLOCATION_HANDLE pAllocationHandle)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+    PViewItem pViewItem;
     BOOL streamLocked = TRUE;
 
     while (TRUE) {
@@ -1598,14 +1600,22 @@ STATUS waitForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloc
         // Early return if available
         CHK(!IS_VALID_ALLOCATION_HANDLE(*pAllocationHandle), STATUS_SUCCESS);
 
-        // if no space available, wait only if in OFFLINE mode
-        CHK(IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType), STATUS_SUCCESS);
+        // if no space available, wait only if in OFFLINE mode or if we are going to evict the tail frames
+        CHK(pKinesisVideoStream->streamInfo.streamCaps.storePressurePolicy == CONTENT_STORE_PRESSURE_POLICY_DROP_TAIL_ITEM ||
+            IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType), STATUS_SUCCESS);
 
-        // Long path which will await for the availability notification or cancellation
-        CHK_STATUS(pKinesisVideoClient->clientCallbacks.waitConditionVariableFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                                                pKinesisVideoStream->bufferAvailabilityCondition,
-                                                                                pKinesisVideoStream->base.lock,
-                                                                                pKinesisVideoClient->deviceInfo.clientInfo.offlineBufferAvailabilityTimeout));
+        if (IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
+            // Long path which will await for the availability notification or cancellation
+            CHK_STATUS(pKinesisVideoClient->clientCallbacks.waitConditionVariableFn(
+                    pKinesisVideoClient->clientCallbacks.customData,
+                    pKinesisVideoStream->bufferAvailabilityCondition,
+                    pKinesisVideoStream->base.lock,
+                    pKinesisVideoClient->deviceInfo.clientInfo.offlineBufferAvailabilityTimeout));
+        } else {
+            // Need to evict the tail frames by trimming the tail
+            CHK_STATUS(contentViewGetTail(pKinesisVideoStream->pView, &pViewItem));
+            CHK_STATUS(contentViewTrimTail(pKinesisVideoStream->pView, pViewItem->index + 1));
+        }
 
         // Check for the stream termination
         CHK(!pKinesisVideoStream->streamStopped && !pKinesisVideoStream->base.shutdown, STATUS_BLOCKING_PUT_INTERRUPTED_STREAM_TERMINATED);
@@ -1658,7 +1668,7 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
     // Get the heap size
     CHK_STATUS(heapGetSize(pKinesisVideoClient->pHeap, &heapSize));
 
-    // Check for undeflow
+    // Check for underflow
     CHK(pKinesisVideoClient->deviceInfo.storageInfo.storageSize > heapSize + MAX_ALLOCATION_OVERHEAD_SIZE +
                                                                   pKinesisVideoStream->maxFrameSizeSeen * FRAME_ALLOC_FRAGMENTATION_FACTOR, STATUS_SUCCESS);
 
