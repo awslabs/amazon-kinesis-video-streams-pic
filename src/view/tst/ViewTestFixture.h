@@ -31,7 +31,7 @@ public:
 protected:
     PContentView mContentView;
 
-    STATUS CreateContentView(CONTENT_VIEW_OVERFLOW_STRATEGY contentViewOverflowStrategy = DROP_SINGLE_VIEW_ITEM,
+    STATUS CreateContentView(CONTENT_VIEW_OVERFLOW_POLICY contentViewOverflowStrategy = CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM,
                              UINT32 maxViewItemCount = MAX_VIEW_ITEM_COUNT,
                              UINT64 maxViewBufferDuration = MAX_VIEW_BUFFER_DURATION)
     {

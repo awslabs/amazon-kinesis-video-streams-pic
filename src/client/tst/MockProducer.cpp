@@ -61,3 +61,7 @@ STATUS MockProducer::timedPutFrame(UINT64 currentTime, PBOOL pDidPutFrame) {
 
     return retStatus;
 }
+
+PFrame MockProducer::getCurrentFrame() {
+    return &mFrame;
+}

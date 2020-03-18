@@ -429,7 +429,7 @@ extern "C" {
  */
 #define DEVICE_INFO_CURRENT_VERSION                         1
 #define CALLBACKS_CURRENT_VERSION                           0
-#define STREAM_INFO_CURRENT_VERSION                         1
+#define STREAM_INFO_CURRENT_VERSION                         2
 #define SEGMENT_INFO_CURRENT_VERSION                        0
 #define STORAGE_INFO_CURRENT_VERSION                        0
 #define AUTH_INFO_CURRENT_VERSION                           0
@@ -830,13 +830,14 @@ typedef enum {
     /**
      * When in FRAME_ORDER_MODE_PASS_THROUGH, when putKinesisVideoFrame is called, the frame is submitted immediately
      */
-    FRAME_ORDER_MODE_PASS_THROUGH                           = 0,
+    FRAME_ORDER_MODE_PASS_THROUGH                                       = 0,
+
     /**
      * When in FRAME_ORDERING_MODE_MULTI_TRACK_AV, frames are submitted in the order of their dts. In case of two frames
      * having the same mkv timestamp, and one of them being key frame, the key frame flag is moved to the earliest frame
      * to make sure we dont have cluster end timestamp being equal to the next cluster beginning timestamp.
      */
-    FRAME_ORDERING_MODE_MULTI_TRACK_AV                      = 1,
+    FRAME_ORDERING_MODE_MULTI_TRACK_AV                                  = 1,
 
     /**
      * If frames from different tracks have dts difference less than mkv timecode scale, then add 1 unit of mkv timecode
@@ -850,6 +851,18 @@ typedef enum {
      */
     FRAME_ORDERING_MODE_MULTI_TRACK_AV_COMPARE_PTS_ONE_MS_COMPENSATE    = 3,
 } FRAME_ORDER_MODE;
+
+typedef enum {
+    /**
+     * Return an error STATUS_STORE_OUT_OF_MEMORY when we have no available storage when putting frame. The value of 0 is the default.
+     */
+    CONTENT_STORE_PRESSURE_POLICY_OOM                                   = 0,
+
+    /**
+     * Evict the earliest frames to make space for the new frame being put. Might result in dropped frame callbacks fired.
+     */
+    CONTENT_STORE_PRESSURE_POLICY_DROP_TAIL_ITEM                        = 1,
+} CONTENT_STORE_PRESSURE_POLICY;
 
 /**
  * Stream capabilities declaration
@@ -936,6 +949,14 @@ struct __StreamCaps {
 
     // How incoming frames are reordered
     FRAME_ORDER_MODE frameOrderingMode;
+
+    // ------------------------------- V1 compat ----------------------
+
+    // Content store pressure handling policy
+    CONTENT_STORE_PRESSURE_POLICY storePressurePolicy;
+
+    // Content view overflow handling policy
+    CONTENT_VIEW_OVERFLOW_POLICY viewOverflowPolicy;
 };
 
 typedef struct __StreamCaps* PStreamCaps;

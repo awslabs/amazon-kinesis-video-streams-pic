@@ -48,6 +48,13 @@ public:
      * @return STATUS code of putKinesisVideoFrame if it happened, otherwise STATUS_SUCCESS
      */
     STATUS timedPutFrame(UINT64 currentTime, PBOOL pDidPutFrame);
+
+    /**
+     * Returns the current frame which can be used in the tests
+     *
+     * @return Current frame pointer
+     */
+    PFrame getCurrentFrame();
 };
 
 

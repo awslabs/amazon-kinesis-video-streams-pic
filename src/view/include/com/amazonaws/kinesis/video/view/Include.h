@@ -140,9 +140,12 @@ typedef struct {
  * Determine how content view drop frames when overflow is detected
  */
 typedef enum {
-    DROP_SINGLE_VIEW_ITEM,          // drop single view item from the buffer
-    DROP_UNTIL_FRAGMENT_START,      // drop entire fragment
-} CONTENT_VIEW_OVERFLOW_STRATEGY;
+    // drop single view item from the buffer
+    CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM,
+
+    // drop entire fragment
+    CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START,
+} CONTENT_VIEW_OVERFLOW_POLICY;
 
 /**
  * ContentView structure
@@ -188,7 +191,7 @@ typedef VOID (*ContentViewItemRemoveNotificationCallbackFunc)(PContentView, UINT
  * @return - STATUS code of the execution
  **/
 PUBLIC_API STATUS createContentView(UINT32, UINT64, ContentViewItemRemoveNotificationCallbackFunc, UINT64,
-                                    CONTENT_VIEW_OVERFLOW_STRATEGY, PContentView*);
+                                    CONTENT_VIEW_OVERFLOW_POLICY, PContentView*);
 
 /**
  * Frees and de-allocates the memory of the ContentView and it's sub-objects

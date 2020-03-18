@@ -385,9 +385,13 @@ VOID fixupStreamInfo(PStreamInfo pStreamInfo)
                 pStreamInfo->streamCaps.frameOrderingMode = FRAME_ORDERING_MODE_MULTI_TRACK_AV_COMPARE_PTS_ONE_MS_COMPENSATE;
             }
 
+            // Explicit fall-through
+        case 1:
+            pStreamInfo->streamCaps.storePressurePolicy = CONTENT_STORE_PRESSURE_POLICY_OOM;
+            pStreamInfo->streamCaps.viewOverflowPolicy = CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM;
             break;
 
-        case 1:
+        case 2:
             // No-op - the latest version
             break;
     }

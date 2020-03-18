@@ -12,7 +12,7 @@
  * Creates a content view
  */
 STATUS createContentView(UINT32 maxItemCount, UINT64 bufferDuration, ContentViewItemRemoveNotificationCallbackFunc removeCallbackFunc,
-                         UINT64 customData, CONTENT_VIEW_OVERFLOW_STRATEGY overflowStrategy, PContentView* ppContentView)
+                         UINT64 customData, CONTENT_VIEW_OVERFLOW_POLICY overflowStrategy, PContentView* ppContentView)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -465,7 +465,7 @@ STATUS contentViewAddItem(PContentView pContentView, UINT64 timestamp, UINT64 ac
         CHK_STATUS(contentViewCheckAvailability(pContentView, &currentAvailability, &windowAvailability));
         if (!windowAvailability) {
             switch (pRollingView->bufferOverflowStrategy) {
-                case DROP_SINGLE_VIEW_ITEM:
+                case CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM:
                     // Move the tail first
                     pRollingView->tail++;
 
@@ -476,7 +476,7 @@ STATUS contentViewAddItem(PContentView pContentView, UINT64 timestamp, UINT64 ac
                     }
                     break;
 
-                case DROP_UNTIL_FRAGMENT_START:
+                case CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START:
                     do {
                         // Move the tail first
                         pRollingView->tail++;
@@ -576,7 +576,7 @@ STATUS contentViewRemoveAll(PContentView pContentView)
     // Quick check if anything is needed to be done
     CHK(pRollingView->tail != pRollingView->head, retStatus);
 
-    while(pRollingView->tail != pRollingView->head) {
+    while (pRollingView->tail != pRollingView->head) {
         pTail = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail);
 
         // Move the tail first
@@ -615,7 +615,7 @@ STATUS contentViewTrimTail(PContentView pContentView, UINT64 itemIndex)
     CHK(pContentView != NULL, STATUS_NULL_ARG);
     CHK(itemIndex >= pRollingView->tail && itemIndex <= pRollingView->head, STATUS_CONTENT_VIEW_INVALID_INDEX);
 
-    while(pRollingView->tail != itemIndex) {
+    while (pRollingView->tail != itemIndex) {
         pTail = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail);
 
         // Move the tail first
