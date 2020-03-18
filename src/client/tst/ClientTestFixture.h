@@ -416,6 +416,7 @@ protected:
         mStreamInfo.streamCaps.segmentUuid = TEST_SEGMENT_UUID;
         mStreamInfo.streamCaps.frameOrderingMode = FRAME_ORDER_MODE_PASS_THROUGH;
         mStreamInfo.streamCaps.storePressurePolicy = CONTENT_STORE_PRESSURE_POLICY_OOM;
+        mStreamInfo.streamCaps.viewOverflowPolicy = CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM;
         mTrackInfo.trackId = TEST_TRACKID;
         mTrackInfo.codecPrivateDataSize = 0;
         mTrackInfo.codecPrivateData = NULL;
