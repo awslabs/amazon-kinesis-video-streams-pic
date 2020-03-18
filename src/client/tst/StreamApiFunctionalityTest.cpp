@@ -580,7 +580,6 @@ TEST_F(StreamApiFunctionalityTest, putFrame_StorageOverflow)
     }
 
     // Now, we should overflow
-    mFrameTime = 1000000;
 
     timestamp += TEST_LONG_FRAME_DURATION;
     frame.index = i + 1;
@@ -594,7 +593,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_StorageOverflow)
     frame.frameData = pData;
 
     EXPECT_EQ(STATUS_STORE_OUT_OF_MEMORY, putKinesisVideoFrame(mStreamHandle, &frame));
-    EXPECT_EQ(1000000, mFrameTime);
+    EXPECT_EQ(0, mFrameTime);
 
     MEMFREE(pData);
 }
@@ -645,7 +644,6 @@ TEST_F(StreamApiFunctionalityTest, putFrame_StorageOverflowDropTailFrame)
     }
 
     // Now, we should overflow
-    mFrameTime = 1000000;
 
     timestamp += TEST_LONG_FRAME_DURATION;
     frame.index = i + 1;
@@ -663,6 +661,80 @@ TEST_F(StreamApiFunctionalityTest, putFrame_StorageOverflowDropTailFrame)
     // The earliest frame should be dropped
     EXPECT_EQ(1, mDroppedFrameReportFuncCount);
     EXPECT_EQ(0, mFrameTime);
+
+    MEMFREE(pData);
+}
+
+TEST_F(StreamApiFunctionalityTest, putFrame_StorageOverflowDropTailFragment)
+{
+    UINT32 i;
+    UINT32 frameSize = 1000000;
+    PBYTE pData = (PBYTE) MEMALLOC(frameSize);
+    UINT64 timestamp;
+    Frame frame;
+    UINT32 frameCount = (TEST_DEVICE_STORAGE_SIZE / frameSize) - 2; // minus two frameSize for watermark.
+
+    mStreamInfo.streamCaps.storePressurePolicy = CONTENT_STORE_PRESSURE_POLICY_DROP_TAIL_ITEM;
+    mStreamInfo.streamCaps.viewOverflowPolicy = CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START;
+
+    // Create and ready a stream
+    ReadyStream();
+
+    // Make sure we drop the first frame which should be the key frame
+    for (i = 0, timestamp = 0; i < frameCount; timestamp += TEST_LONG_FRAME_DURATION, i++) {
+        frame.index = i;
+        frame.decodingTs = timestamp;
+        frame.presentationTs = timestamp;
+        frame.duration = TEST_LONG_FRAME_DURATION;
+        frame.size = frameSize;
+        frame.trackId = TEST_TRACKID;
+        // Change the content of the buffer
+        *(PUINT32) pData = i;
+        frame.frameData = pData;
+
+        // Key frame every 3rd
+        frame.flags = i % 3 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
+        EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
+
+        // Ensure put stream is called
+        EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
+        EXPECT_EQ(TRUE, mAckRequired);
+        // Need to ensure we have a streaming token in the auth
+        EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
+        EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
+
+        EXPECT_EQ(0, mFrameTime);
+
+        // Return a put stream result on 5th
+        if (i == 5) {
+            EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
+        }
+    }
+
+    // Now, we should overflow
+
+    timestamp += TEST_LONG_FRAME_DURATION;
+    frame.index = i + 1;
+    frame.decodingTs = timestamp;
+    frame.presentationTs = timestamp;
+    frame.duration = TEST_LONG_FRAME_DURATION;
+    frame.size = frameSize;
+    frame.trackId = TEST_TRACKID;
+    // Change the content of the buffer
+    *(PUINT32) pData = i;
+    frame.frameData = pData;
+
+    // No dropped frames yet
+    EXPECT_EQ(0, mDroppedFrameReportFuncCount);
+
+    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
+
+    // The earliest frame should be dropped
+    // NOTE: The test fixture sets up non key-frame-fragmentation so the next
+    // fragment will not be until 2 seconds in and every frame is 40ms with 3 frames per
+    // fragment resulting in the next frame being 2.4 seconds in
+    EXPECT_EQ(6, mDroppedFrameReportFuncCount);
+    EXPECT_EQ(5 * TEST_LONG_FRAME_DURATION, mFrameTime);
 
     MEMFREE(pData);
 }
