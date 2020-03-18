@@ -272,5 +272,8 @@ TEST_F(SemaphoreFunctionalityTest, freeWithoutReleaseAllThreadsTest)
 
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&handle));
 
+    // Await for all of the threads to finish
+    THREAD_SLEEP(300 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+
     EXPECT_EQ(0, (UINT32) ATOMIC_LOAD(&threadCount));
 }
