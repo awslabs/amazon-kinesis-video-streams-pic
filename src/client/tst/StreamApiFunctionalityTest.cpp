@@ -164,6 +164,59 @@ TEST_F(StreamApiFunctionalityTest, putFrame_BasicPutTestItemLimit)
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
 
         if (i == maxIteration) {
+            // Should have dropped but the first frame with ts = 0
+            EXPECT_EQ(0, mFrameTime);
+        } else if (i == maxIteration + 1) {
+            EXPECT_NE(0, mFrameTime);
+        } else {
+            // Drop frame hasn't been called
+            EXPECT_EQ(0, mFrameTime);
+        }
+
+        // Return a put stream result on 50th
+        if (i == 50) {
+            EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
+        }
+    }
+}
+
+TEST_F(StreamApiFunctionalityTest, putFrame_BasicPutTestItemLimitDropFragment)
+{
+    UINT32 i, maxIteration;
+    BYTE tempBuffer[10000];
+    UINT64 timestamp;
+    Frame frame;
+
+    mStreamInfo.streamCaps.keyFrameFragmentation = TRUE;
+    mStreamInfo.streamCaps.viewOverflowPolicy = CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START;
+    // Create and ready a stream
+    ReadyStream();
+
+    // We should have space for 40 seconds
+    maxIteration = 24 * ((UINT32)(TEST_BUFFER_DURATION / HUNDREDS_OF_NANOS_IN_A_SECOND));
+
+    // Iterate 2 items over the buffer limit
+    for (i = 0, timestamp = 0; i < maxIteration + 2; timestamp += TEST_FRAME_DURATION, i++) {
+        frame.index = i;
+        frame.decodingTs = timestamp;
+        frame.presentationTs = timestamp;
+        frame.duration = TEST_FRAME_DURATION;
+        frame.size = SIZEOF(tempBuffer);
+        frame.frameData = tempBuffer;
+        frame.trackId = TEST_TRACKID;
+
+        // Key frame every 10th
+        frame.flags = i % 10 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
+        EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
+
+        // Ensure put stream is called
+        EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
+        EXPECT_EQ(TRUE, mAckRequired);
+        // Need to ensure we have a streaming token in the auth
+        EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
+        EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
+
+        if (i == maxIteration) {
             // Should have dropped entire first fragment whose last frame's timestamp is 9 * TEST_FRAME_DURATION
             // Since each fragment consists of 10 frames.
             EXPECT_EQ(9 * TEST_FRAME_DURATION, mFrameTime);
@@ -189,6 +242,55 @@ TEST_F(StreamApiFunctionalityTest, putFrame_BasicPutTestDurationLimit)
     Frame frame;
 
     mStreamInfo.streamCaps.keyFrameFragmentation = TRUE;
+    // Create and ready a stream
+    ReadyStream();
+
+    // Iterate 2 items over the buffer limit
+    for (i = 0, timestamp = 0; timestamp < TEST_BUFFER_DURATION + 2 * TEST_LONG_FRAME_DURATION; timestamp += TEST_LONG_FRAME_DURATION, i++) {
+        frame.index = i;
+        frame.decodingTs = timestamp;
+        frame.presentationTs = timestamp;
+        frame.duration = TEST_LONG_FRAME_DURATION;
+        frame.size = SIZEOF(tempBuffer);
+        frame.frameData = tempBuffer;
+        frame.trackId = TEST_TRACKID;
+
+        // Key frame every 10th
+        frame.flags = i % 10 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
+        EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
+
+        // Ensure put stream is called
+        EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
+        EXPECT_EQ(TRUE, mAckRequired);
+        // Need to ensure we have a streaming token in the auth
+        EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
+        EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
+
+        if (timestamp == TEST_BUFFER_DURATION) {
+            EXPECT_EQ(0, mFrameTime);
+        } else if (timestamp == TEST_BUFFER_DURATION + TEST_LONG_FRAME_DURATION) {
+            EXPECT_NE(0, mFrameTime);
+        } else {
+            // Drop frame hasn't been called
+            EXPECT_EQ(0, mFrameTime);
+        }
+
+        // Return a put stream result on 50th
+        if (i == 50) {
+            EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
+        }
+    }
+}
+
+TEST_F(StreamApiFunctionalityTest, putFrame_BasicPutTestDurationLimitDropFragment)
+{
+    UINT32 i;
+    BYTE tempBuffer[10000];
+    UINT64 timestamp;
+    Frame frame;
+
+    mStreamInfo.streamCaps.keyFrameFragmentation = TRUE;
+    mStreamInfo.streamCaps.viewOverflowPolicy = CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START;
     // Create and ready a stream
     ReadyStream();
 
@@ -329,6 +431,80 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetNextKeyFrame)
         }
     }
 
+    // mFrameTime should be the timestamp of the first frame in first fragment
+    EXPECT_EQ(0, mFrameTime);
+
+    // Now, the first frame should be the 10th
+    EXPECT_EQ(STATUS_SUCCESS,
+              getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
+                                        &filledSize));
+    EXPECT_EQ(SIZEOF(getDataBuffer), filledSize);
+    pData = getDataBuffer;
+
+    // This should point to 10th frame, offset with cluster info and simple block info
+    EXPECT_EQ((UINT32) 10, GET_UNALIGNED((PUINT32) (pData + MKV_CLUSTER_INFO_BITS_SIZE + MKV_SIMPLE_BLOCK_BITS_SIZE)));
+
+    // reset to 0 to ensure it doesn't change as there is no dropped frames when we put again
+    mFrameTime = 0;
+
+    timestamp += TEST_LONG_FRAME_DURATION;
+    frame.index = i + 1;
+    frame.decodingTs = timestamp;
+    frame.presentationTs = timestamp;
+    frame.duration = TEST_LONG_FRAME_DURATION;
+    frame.size = SIZEOF(tempBuffer);
+    frame.trackId = TEST_TRACKID;
+    // Change the content of the buffer
+    *(PUINT32) &tempBuffer = i;
+    frame.frameData = tempBuffer;
+
+    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
+    EXPECT_EQ(0, mFrameTime);
+}
+
+TEST_F(StreamApiFunctionalityTest, putFrame_PutGetNextKeyFrameDropFragment)
+{
+    UINT32 i, filledSize;
+    BYTE tempBuffer[10000];
+    PBYTE pData;
+    BYTE getDataBuffer[20000];
+    UINT64 timestamp;
+    Frame frame;
+
+    mStreamInfo.streamCaps.viewOverflowPolicy = CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START;
+
+    // Create and ready a stream
+    ReadyStream();
+
+    // Make sure we drop the first fragment
+    for (i = 0, timestamp = 0; timestamp < TEST_BUFFER_DURATION + TEST_LONG_FRAME_DURATION; timestamp += TEST_LONG_FRAME_DURATION, i++) {
+        frame.index = i;
+        frame.decodingTs = timestamp;
+        frame.presentationTs = timestamp;
+        frame.duration = TEST_LONG_FRAME_DURATION;
+        frame.size = SIZEOF(tempBuffer);
+        frame.trackId = TEST_TRACKID;
+        // Change the content of the buffer
+        *(PUINT32) &tempBuffer = i;
+        frame.frameData = tempBuffer;
+
+        // Key frame every 10th
+        frame.flags = i % 10 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
+        EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
+
+        // Ensure put stream is called
+        EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
+        EXPECT_EQ(TRUE, mAckRequired);
+        // Need to ensure we have a streaming token in the auth
+        EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
+        EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
+
+        // Return a put stream result on 50th
+        if (i == 50) {
+            EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
+        }
+    }
+
     // mFrameTime should be the timestamp of the last frame in first fragment
     EXPECT_EQ(9 * TEST_LONG_FRAME_DURATION, mFrameTime);
 
@@ -419,6 +595,74 @@ TEST_F(StreamApiFunctionalityTest, putFrame_StorageOverflow)
 
     EXPECT_EQ(STATUS_STORE_OUT_OF_MEMORY, putKinesisVideoFrame(mStreamHandle, &frame));
     EXPECT_EQ(1000000, mFrameTime);
+
+    MEMFREE(pData);
+}
+
+TEST_F(StreamApiFunctionalityTest, putFrame_StorageOverflowDropTailFrame)
+{
+    UINT32 i;
+    UINT32 frameSize = 1000000;
+    PBYTE pData = (PBYTE) MEMALLOC(frameSize);
+    UINT64 timestamp;
+    Frame frame;
+    UINT32 frameCount = (TEST_DEVICE_STORAGE_SIZE / frameSize) - 2; // minus two frameSize for watermark.
+
+    mStreamInfo.streamCaps.storePressurePolicy = CONTENT_STORE_PRESSURE_POLICY_DROP_TAIL_ITEM;
+
+    // Create and ready a stream
+    ReadyStream();
+
+    // Make sure we drop the first frame which should be the key frame
+    for (i = 0, timestamp = 0; i < frameCount; timestamp += TEST_LONG_FRAME_DURATION, i++) {
+        frame.index = i;
+        frame.decodingTs = timestamp;
+        frame.presentationTs = timestamp;
+        frame.duration = TEST_LONG_FRAME_DURATION;
+        frame.size = frameSize;
+        frame.trackId = TEST_TRACKID;
+        // Change the content of the buffer
+        *(PUINT32) pData = i;
+        frame.frameData = pData;
+
+        // Key frame every 3rd
+        frame.flags = i % 3 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
+        EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
+
+        // Ensure put stream is called
+        EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
+        EXPECT_EQ(TRUE, mAckRequired);
+        // Need to ensure we have a streaming token in the auth
+        EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
+        EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
+
+        EXPECT_EQ(0, mFrameTime);
+
+        // Return a put stream result on 5th
+        if (i == 5) {
+            EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
+        }
+    }
+
+    // Now, we should overflow
+    mFrameTime = 1000000;
+
+    timestamp += TEST_LONG_FRAME_DURATION;
+    frame.index = i + 1;
+    frame.decodingTs = timestamp;
+    frame.presentationTs = timestamp;
+    frame.duration = TEST_LONG_FRAME_DURATION;
+    frame.size = frameSize;
+    frame.trackId = TEST_TRACKID;
+    // Change the content of the buffer
+    *(PUINT32) pData = i;
+    frame.frameData = pData;
+
+    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
+
+    // The earliest frame should be dropped
+    EXPECT_EQ(1, mDroppedFrameReportFuncCount);
+    EXPECT_EQ(0, mFrameTime);
 
     MEMFREE(pData);
 }
