@@ -1591,7 +1591,8 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
     PViewItem pViewItem;
-    BOOL streamLocked = TRUE;
+    BOOL streamLocked = TRUE, iterate = TRUE;
+    UINT64 itemIndex;
 
     while (TRUE) {
         // Check if we have enough space to proceed - the stream should be locked
@@ -1613,8 +1614,33 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
                     pKinesisVideoClient->deviceInfo.clientInfo.offlineBufferAvailabilityTimeout));
         } else {
             // Need to evict the tail frames by trimming the tail
-            CHK_STATUS(contentViewGetTail(pKinesisVideoStream->pView, &pViewItem));
-            CHK_STATUS(contentViewTrimTail(pKinesisVideoStream->pView, pViewItem->index + 1));
+            switch (pKinesisVideoStream->streamInfo.streamCaps.viewOverflowPolicy) {
+                case CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM:
+                    // Drop the single tail item
+                    CHK_STATUS(contentViewGetTail(pKinesisVideoStream->pView, &pViewItem));
+                    itemIndex = pViewItem->index + 1;
+                    break;
+
+                case CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START:
+                    // Drop the entire tail fragment
+                    CHK_STATUS(contentViewGetTail(pKinesisVideoStream->pView, &pViewItem));
+
+                    // Increment the index to jump to the next one before iterating
+                    itemIndex = pViewItem->index + 1;
+                    while (iterate) {
+                        CHK_STATUS(contentViewGetItemAt(pKinesisVideoStream->pView, itemIndex, &pViewItem));
+                        if (!CHECK_ITEM_SKIP_ITEM(pViewItem->flags) &&
+                            (CHECK_ITEM_FRAGMENT_START(pViewItem->flags) ||
+                            CHECK_ITEM_FRAGMENT_END(pViewItem->flags))) {
+                            iterate = FALSE;
+                        } else {
+                            itemIndex = pViewItem->index + 1;
+                        }
+                    }
+                    break;
+            }
+
+            CHK_STATUS(contentViewTrimTail(pKinesisVideoStream->pView, itemIndex));
         }
 
         // Check for the stream termination
