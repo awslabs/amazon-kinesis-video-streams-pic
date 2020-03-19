@@ -69,6 +69,8 @@ TEST_F(StreamTokenRotationTest, basicTokenRotationNonPersistAwait)
     mClientCallbacks.getCurrentTimeFn = getCurrentTimePreset;
     mClientCallbacks.putStreamFn = testPutStream;
 
+    mStreamInfo.streamCaps.recoverOnError = TRUE;
+
     // Set the frame buffer to a pattern
     MEMSET(tempBuffer, 0x55, SIZEOF(tempBuffer));
 
@@ -201,6 +203,8 @@ TEST_F(StreamTokenRotationTest, rotationWithAwaitingCheck)
     // Reset the values for repeated playback of the tests
     gPresetTimeValue = 0;
     gPutStreamFuncCount = 0;
+
+    mStreamInfo.streamCaps.recoverOnError = TRUE;
 
     // Set the ACK values
     fragmentAck.version = FRAGMENT_ACK_CURRENT_VERSION;
