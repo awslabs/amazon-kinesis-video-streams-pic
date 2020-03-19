@@ -213,6 +213,8 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToGetEndpointState
                                                                 SERVICE_CALL_DEVICE_LIMIT,
                                                                 SERVICE_CALL_STREAM_LIMIT};
 
+    mStreamInfo.streamCaps.recoverOnError = TRUE;
+
     for (int i = 0; i < getEndpointStateResults.size(); i++) {
         SERVICE_CALL_RESULT service_call_result = getEndpointStateResults[i];
         CreateStreamSync();
@@ -245,6 +247,8 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToDescribeState)
                                                                    SERVICE_CALL_RESOURCE_NOT_FOUND,
                                                                    SERVICE_CALL_RESOURCE_DELETED};
 
+    mStreamInfo.streamCaps.recoverOnError = TRUE;
+
     for (int i = 0; i < describeStreamStateResults.size(); i++) {
             SERVICE_CALL_RESULT service_call_result = describeStreamStateResults[i];
         CreateStreamSync();
@@ -273,6 +277,8 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToGetTokenState)
     initDefaultProducer();
     std::vector<SERVICE_CALL_RESULT> getStreamingTokenStateResults = {SERVICE_CALL_NOT_AUTHORIZED,
                                                                       SERVICE_CALL_FORBIDDEN};
+
+    mStreamInfo.streamCaps.recoverOnError = TRUE;
 
     for (int i = 0; i < getStreamingTokenStateResults.size(); i++) {
         SERVICE_CALL_RESULT service_call_result = getStreamingTokenStateResults[i];

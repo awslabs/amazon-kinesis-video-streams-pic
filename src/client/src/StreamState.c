@@ -354,6 +354,9 @@ STATUS fromStoppedStreamState(UINT64 customData, PUINT64 pState)
 
     retStatus = serviceCallResultCheck(pKinesisVideoStream->base.result);
 
+    // Terminate in case of no-recovery
+    CHK (pKinesisVideoStream->streamInfo.streamCaps.recoverOnError, retStatus);
+
     // Check the result
     switch (retStatus) {
         case STATUS_SUCCESS:
@@ -396,9 +399,7 @@ STATUS fromStoppedStreamState(UINT64 customData, PUINT64 pState)
 
         default:
             // Default state in any other case
-            if (pKinesisVideoStream->streamInfo.streamCaps.recoverOnError) {
-                retStatus = STATUS_SUCCESS;
-            }
+            retStatus = STATUS_SUCCESS;
 
             break;
     }

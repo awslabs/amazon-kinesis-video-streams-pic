@@ -752,7 +752,6 @@ TEST_F(StreamApiFunctionalityTest, putFrame_StoragePressureNotification)
 
     // Reset the indicator of the callback called
     mRemainingSize = 0;
-    STORAGE_PRESSURE_NOTIFICATION_THRESHOLD;
 
     // Make sure we drop the first frame which should be the key frame
     for (i = 0, timestamp = 0; i < TEST_DEVICE_STORAGE_SIZE / frameSize; timestamp += TEST_LONG_FRAME_DURATION, i++) {
@@ -841,6 +840,8 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetRestartOkResult)
     UINT64 timestamp;
     Frame frame;
 
+    mStreamInfo.streamCaps.recoverOnError = TRUE;
+
     // Create and ready a stream
     ReadyStream();
 
@@ -919,6 +920,8 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetRestartStreamLimitResult)
     BYTE getDataBuffer[20000];
     UINT64 timestamp;
     Frame frame;
+
+    mStreamInfo.streamCaps.recoverOnError = TRUE;
 
     // Create and ready a stream
     ReadyStream();
@@ -999,6 +1002,8 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetRestartUnauthorizedResult)
     UINT64 timestamp;
     Frame frame;
 
+    mStreamInfo.streamCaps.recoverOnError = TRUE;
+
     // Create and ready a stream
     ReadyStream();
 
@@ -1077,6 +1082,8 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetRestartOtherResult)
     BYTE getDataBuffer[20000];
     UINT64 timestamp;
     Frame frame;
+
+    mStreamInfo.streamCaps.recoverOnError = TRUE;
 
     // Create and ready a stream
     ReadyStream();
@@ -1158,6 +1165,8 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetRestartNotFoundResult)
     BYTE getDataBuffer[20000];
     UINT64 timestamp;
     Frame frame;
+
+    mStreamInfo.streamCaps.recoverOnError = TRUE;
 
     // Create and ready a stream
     ReadyStream();
