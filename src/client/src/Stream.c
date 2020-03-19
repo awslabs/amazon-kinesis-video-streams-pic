@@ -1592,7 +1592,7 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
     PKinesisVideoClient pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
     PViewItem pViewItem;
     BOOL streamLocked = TRUE, iterate = TRUE;
-    UINT64 itemIndex;
+    UINT64 itemIndex = 0;
 
     while (TRUE) {
         // Check if we have enough space to proceed - the stream should be locked
@@ -1630,8 +1630,7 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
                     while (iterate) {
                         CHK_STATUS(contentViewGetItemAt(pKinesisVideoStream->pView, itemIndex, &pViewItem));
                         if (!CHECK_ITEM_SKIP_ITEM(pViewItem->flags) &&
-                            (CHECK_ITEM_FRAGMENT_START(pViewItem->flags) ||
-                            CHECK_ITEM_FRAGMENT_END(pViewItem->flags))) {
+                            CHECK_ITEM_FRAGMENT_START(pViewItem->flags)) {
                             iterate = FALSE;
                         } else {
                             itemIndex = pViewItem->index + 1;
