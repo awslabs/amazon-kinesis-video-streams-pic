@@ -715,15 +715,6 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     CHK(pKinesisVideoStream != NULL && pFrame != NULL, STATUS_NULL_ARG);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
-    DLOGV("debug frame info pts: %" PRIu64 ", dts: %" PRIu64 ", duration: %" PRIu64 ", size: %u, trackId: %" PRIu64 ", isKey %d",
-          pFrame->presentationTs,
-          pFrame->decodingTs,
-          pFrame->duration,
-          pFrame->size,
-          pFrame->trackId,
-          CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)
-    );
-
     if (!CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
         // Lookup the track that pFrame belong to
         CHK_STATUS(mkvgenGetTrackInfo(pKinesisVideoStream->streamInfo.streamCaps.trackInfoList,

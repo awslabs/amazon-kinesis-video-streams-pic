@@ -637,7 +637,7 @@ STATUS putKinesisVideoFrame(STREAM_HANDLE streamHandle, PFrame pFrame)
 
     DLOGS("Putting frame into an Kinesis Video stream.");
 
-    CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+    CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL && pFrame != NULL, STATUS_NULL_ARG);
 
     // Shutdown sequencer
     CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore, INFINITE_TIME_VALUE));
@@ -645,6 +645,15 @@ STATUS putKinesisVideoFrame(STREAM_HANDLE streamHandle, PFrame pFrame)
 
     CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->base.shutdownSemaphore, INFINITE_TIME_VALUE));
     releaseStreamSemaphore = TRUE;
+
+    DLOGV("debug frame info pts: %" PRIu64 ", dts: %" PRIu64 ", duration: %" PRIu64 ", size: %u, trackId: %" PRIu64 ", isKey %d",
+          pFrame->presentationTs,
+          pFrame->decodingTs,
+          pFrame->duration,
+          pFrame->size,
+          pFrame->trackId,
+          CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)
+    );
 
     // Process and store the result
     CHK_STATUS(frameOrderCoordinatorPutFrame(pKinesisVideoStream, pFrame));
