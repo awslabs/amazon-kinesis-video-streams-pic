@@ -402,7 +402,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetNextKeyFrame)
     // Create and ready a stream
     ReadyStream();
 
-    // Make sure we drop the first fragment
+    // Make sure we drop the first frame
     for (i = 0, timestamp = 0; timestamp < TEST_BUFFER_DURATION + TEST_LONG_FRAME_DURATION; timestamp += TEST_LONG_FRAME_DURATION, i++) {
         frame.index = i;
         frame.decodingTs = timestamp;
@@ -431,7 +431,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetNextKeyFrame)
         }
     }
 
-    // mFrameTime should be the timestamp of the first frame in first fragment
+    // mFrameTime should be the timestamp of the first frame
     EXPECT_EQ(0, mFrameTime);
 
     // Now, the first frame should be the 10th
@@ -444,7 +444,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetNextKeyFrame)
     // This should point to 10th frame, offset with cluster info and simple block info
     EXPECT_EQ((UINT32) 10, GET_UNALIGNED((PUINT32) (pData + MKV_CLUSTER_INFO_BITS_SIZE + MKV_SIMPLE_BLOCK_BITS_SIZE)));
 
-    // reset to 0 to ensure it doesn't change as there is no dropped frames when we put again
+    // reset to 0 to ensure it changes as it should dropped another frame when we put again
     mFrameTime = 0;
 
     timestamp += TEST_LONG_FRAME_DURATION;
@@ -459,7 +459,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetNextKeyFrame)
     frame.frameData = tempBuffer;
 
     EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
-    EXPECT_EQ(0, mFrameTime);
+    EXPECT_EQ(TEST_LONG_FRAME_DURATION, mFrameTime);
 }
 
 TEST_F(StreamApiFunctionalityTest, putFrame_PutGetNextKeyFrameDropFragment)

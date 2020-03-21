@@ -1581,9 +1581,7 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
-    PViewItem pViewItem;
-    BOOL streamLocked = TRUE, iterate = TRUE;
-    UINT64 itemIndex = 0;
+    BOOL streamLocked = TRUE;
 
     while (TRUE) {
         // Check if we have enough space to proceed - the stream should be locked
@@ -1605,32 +1603,7 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
                     pKinesisVideoClient->deviceInfo.clientInfo.offlineBufferAvailabilityTimeout));
         } else {
             // Need to evict the tail frames by trimming the tail
-            switch (pKinesisVideoStream->streamInfo.streamCaps.viewOverflowPolicy) {
-                case CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM:
-                    // Drop the single tail item
-                    CHK_STATUS(contentViewGetTail(pKinesisVideoStream->pView, &pViewItem));
-                    itemIndex = pViewItem->index + 1;
-                    break;
-
-                case CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START:
-                    // Drop the entire tail fragment
-                    CHK_STATUS(contentViewGetTail(pKinesisVideoStream->pView, &pViewItem));
-
-                    // Increment the index to jump to the next one before iterating
-                    itemIndex = pViewItem->index + 1;
-                    while (iterate) {
-                        CHK_STATUS(contentViewGetItemAt(pKinesisVideoStream->pView, itemIndex, &pViewItem));
-                        if (!CHECK_ITEM_SKIP_ITEM(pViewItem->flags) &&
-                            CHECK_ITEM_FRAGMENT_START(pViewItem->flags)) {
-                            iterate = FALSE;
-                        } else {
-                            itemIndex = pViewItem->index + 1;
-                        }
-                    }
-                    break;
-            }
-
-            CHK_STATUS(contentViewTrimTail(pKinesisVideoStream->pView, itemIndex));
+            CHK_STATUS(contentViewTrimTailItems(pKinesisVideoStream->pView));
         }
 
         // Check for the stream termination
@@ -1671,7 +1644,7 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
     // check view availability only if in offline mode
     if (IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
         // Check to see if we have availability in the content view. This will set the availability
-        CHK_STATUS(contentViewCheckAvailability(pKinesisVideoStream->pView, NULL, &availability));
+        CHK_STATUS(contentViewCheckAvailability(pKinesisVideoStream->pView, &availability));
 
         // Early return if no view availability
         CHK(availability, STATUS_SUCCESS);
@@ -3301,6 +3274,8 @@ VOID logStreamInfo(PStreamInfo pStreamInfo)
     DLOGD("\tBuffer duration (100ns): %" PRIu64, pStreamInfo->streamCaps.bufferDuration);
     DLOGD("\tReplay duration (100ns): %" PRIu64, pStreamInfo->streamCaps.replayDuration);
     DLOGD("\tConnection Staleness duration (100ns): %" PRIu64, pStreamInfo->streamCaps.connectionStalenessDuration);
+    DLOGD("\tStore Pressure Policy: %u", pStreamInfo->streamCaps.storePressurePolicy);
+    DLOGD("\tView Overflow Policy: %u", pStreamInfo->streamCaps.viewOverflowPolicy);
 
     if (pStreamInfo->streamCaps.segmentUuid != NULL) {
         hasSegmentUUID = TRUE;

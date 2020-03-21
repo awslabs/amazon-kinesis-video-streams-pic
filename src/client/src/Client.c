@@ -1355,17 +1355,9 @@ VOID viewItemRemoved(PContentView pContentView, UINT64 customData, PViewItem pVi
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     streamLocked = TRUE;
 
-    // Notify the client about the dropped frame - only if we are removing the current view item
-    // or the item that's been partially sent is being removed which was the one before the current.
-    if (currentRemoved ||
-            (pViewItem->handle == pKinesisVideoStream->curViewItem.viewItem.handle &&
-                    pKinesisVideoStream->curViewItem.offset != pKinesisVideoStream->curViewItem.viewItem.length)) {
+    // Notify the client about the dropped frame - only if we are removing the an item that has not been sent
+    if (currentRemoved) {
         DLOGW("Reporting a dropped frame/fragment.");
-
-        // Invalidate the streams current view item
-        MEMSET(&pKinesisVideoStream->curViewItem, 0x00, SIZEOF(CurrentViewItem));
-        pKinesisVideoStream->curViewItem.viewItem.handle = INVALID_ALLOCATION_HANDLE_VALUE;
-
         switch (pKinesisVideoStream->streamInfo.streamCaps.streamingType) {
             case STREAMING_TYPE_REALTIME:
             case STREAMING_TYPE_OFFLINE:
@@ -1402,7 +1394,6 @@ CleanUp:
     {
         // Lock the client
         pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
-
         // Remove the item from the storage
         heapFree(pKinesisVideoClient->pHeap, pViewItem->handle);
         pViewItem->handle = INVALID_ALLOCATION_HANDLE_VALUE;

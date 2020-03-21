@@ -180,7 +180,6 @@ STATUS contentViewGetItemAt(PContentView pContentView, UINT64 itemIndex, PViewIt
 
     // Check the input params
     CHK(pContentView != NULL && ppItem != NULL, STATUS_NULL_ARG);
-
     CHK_STATUS(contentViewItemExists(pContentView, itemIndex, &exists));
     CHK(exists, STATUS_CONTENT_VIEW_INVALID_INDEX);
 
@@ -445,9 +444,8 @@ STATUS contentViewAddItem(PContentView pContentView, UINT64 timestamp, UINT64 ac
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PRollingContentView pRollingView = (PRollingContentView) pContentView;
-    PViewItem pTail = NULL;
     PViewItem pHead = NULL;
-    BOOL currentAvailability = FALSE, windowAvailability = FALSE;
+    BOOL windowAvailability = FALSE;
 
     // Check the input params
     CHK(pContentView != NULL, STATUS_NULL_ARG);
@@ -456,50 +454,14 @@ STATUS contentViewAddItem(PContentView pContentView, UINT64 timestamp, UINT64 ac
     // If we have any items in the buffer
     if (pRollingView->head != pRollingView->tail) {
         pHead = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->head - 1);
-        pTail = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail);
 
         // Check the continuity with the existing head item (if any exist)
         CHK(pHead->timestamp <= timestamp, STATUS_CONTENT_VIEW_INVALID_TIMESTAMP);
 
         // Check if we need to evict based on the max buffer depth or temporal window
-        CHK_STATUS(contentViewCheckAvailability(pContentView, &currentAvailability, &windowAvailability));
+        CHK_STATUS(contentViewCheckAvailability(pContentView, &windowAvailability));
         if (!windowAvailability) {
-            switch (pRollingView->bufferOverflowStrategy) {
-                case CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM:
-                    // Move the tail first
-                    pRollingView->tail++;
-
-                    // Callback if it's specified
-                    if (pRollingView->removeCallbackFunc != NULL) {
-                        // NOTE: The call is prompt - shouldn't block
-                        pRollingView->removeCallbackFunc(pContentView, pRollingView->customData, pTail, !currentAvailability);
-                    }
-                    break;
-
-                case CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START:
-                    do {
-                        // Move the tail first
-                        pRollingView->tail++;
-
-                        // Callback if it's specified
-                        if (pRollingView->removeCallbackFunc != NULL) {
-                            // NOTE: The call is prompt - shouldn't block
-                            pRollingView->removeCallbackFunc(pContentView, pRollingView->customData, pTail,
-                                                             !currentAvailability);
-                        }
-                        pTail = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail);
-                    } while (!CHECK_ITEM_FRAGMENT_START(pTail->flags) && pRollingView->tail != pRollingView->head);
-
-                    if (pTail == pHead) {
-                        DLOGW("ContentView is not big enough to contain a single fragment.");
-                    }
-                    break;
-            }
-
-            // Move the current if needed
-            if (pRollingView->current <= pRollingView->tail) {
-                pRollingView->current = pRollingView->tail;
-            }
+            CHK_STATUS(contentViewTrimTailItems(pContentView));
         }
     }
 
@@ -522,16 +484,16 @@ CleanUp:
     return retStatus;
 }
 
-STATUS contentViewCheckAvailability(PContentView pContentView, PBOOL pCurrentAvailability, PBOOL pWindowAvailability)
+STATUS contentViewCheckAvailability(PContentView pContentView, PBOOL pWindowAvailability)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PRollingContentView pRollingView = (PRollingContentView) pContentView;
-    BOOL windowAvailability = TRUE, currentAvailability = TRUE;
+    BOOL windowAvailability = TRUE;
     PViewItem pTail = NULL;
     PViewItem pHead = NULL;
 
-    CHK(pContentView != NULL && (pCurrentAvailability != NULL || pWindowAvailability != NULL), STATUS_NULL_ARG);
+    CHK(pContentView != NULL && pWindowAvailability != NULL, STATUS_NULL_ARG);
 
     // If the tail and head are the same then there must be availability
     if (pRollingView->head != pRollingView->tail) {
@@ -542,16 +504,9 @@ STATUS contentViewCheckAvailability(PContentView pContentView, PBOOL pCurrentAva
         if (pRollingView->head - pRollingView->tail >= pRollingView->itemBufferCount ||
             pHead->ackTimestamp + pHead->duration - pTail->ackTimestamp >= pRollingView->bufferDuration) {
             windowAvailability = FALSE;
-            // Check the current
-            if (pRollingView->current <= pRollingView->tail) {
-                currentAvailability = FALSE;
-            }
         }
     }
 
-    if (pCurrentAvailability != NULL) {
-        *pCurrentAvailability = currentAvailability;
-    }
     if (pWindowAvailability != NULL) {
         *pWindowAvailability = windowAvailability;
     }
@@ -633,6 +588,102 @@ STATUS contentViewTrimTail(PContentView pContentView, UINT64 itemIndex)
         if (pRollingView->removeCallbackFunc != NULL) {
             // NOTE: The call is prompt - shouldn't block
             pRollingView->removeCallbackFunc(pContentView, pRollingView->customData, pTail, currentRemoved);
+        }
+    }
+
+CleanUp:
+
+    LEAVES();
+    return retStatus;
+}
+
+STATUS contentViewTrimTailItems(PContentView pContentView)
+{
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    PRollingContentView pRollingView = (PRollingContentView) pContentView;
+    PViewItem pTail = NULL, pCurrentViewItem = NULL;
+    BOOL viewItemDropped = FALSE;
+    UINT64 currentStreamingItem = UINT64_MAX;
+    UINT32 dropFrameCount = 0;
+
+    // Check the input params
+    CHK(pContentView != NULL, STATUS_NULL_ARG);
+
+    pTail = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail);
+    // if current is greater than tail, it means the application has consumed a view item by calling contentViewGetNext
+    if (pRollingView->current > pRollingView->tail) {
+        currentStreamingItem = pRollingView->current - 1;
+    } else {
+        // otherwise no view item has ever been consumed, thus any view item dropped were never sent. currentStreamingItem
+        // remains UINT64_MAX which wont trigger any view item retaining logic.
+        viewItemDropped = TRUE;
+    }
+    switch (pRollingView->bufferOverflowStrategy) {
+        case CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM:
+
+            // if tail is the currentStreamingItem, dont drop tail, drop the view item after tail.
+            if (pRollingView->tail == currentStreamingItem) {
+                pRollingView->tail++;
+                pTail = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail);
+            }
+
+            // Callback if it's specified, also dont drop currently streaming item to avoid corrupting data.
+            if (pRollingView->removeCallbackFunc != NULL) {
+                // NOTE: The call is prompt - shouldn't block
+                pRollingView->removeCallbackFunc(pContentView, pRollingView->customData, pTail, TRUE);
+            }
+
+            pRollingView->tail++;
+            break;
+
+        case CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START:
+
+            do {
+                // Callback if it's specified
+                if (pRollingView->removeCallbackFunc != NULL) {
+                    // also dont drop currently streaming item to avoid corrupting data.
+                    if (pRollingView->tail != currentStreamingItem) {
+                        // NOTE: The call is prompt - shouldn't block
+                        pRollingView->removeCallbackFunc(pContentView, pRollingView->customData, pTail, viewItemDropped);
+                        dropFrameCount++;
+                    } else {
+                        // we have passed the current streaming item. View items dropped beyond this point
+                        // were never sent.
+                        viewItemDropped = TRUE;
+                    }
+                }
+                pRollingView->tail++;
+                pTail = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail);
+
+                // Stop looping when
+                // - pRollingView->tail == pRollingView->head which means there is no more view item
+                // - when a new fragment start is reached AND some frames have been dropped.
+            } while (pRollingView->tail != pRollingView->head && (dropFrameCount == 0 || !CHECK_ITEM_FRAGMENT_START(pTail->flags)));
+            if (pRollingView->tail == pRollingView->head) {
+                DLOGW("ContentView is not big enough to contain a single fragment.");
+            }
+            break;
+    }
+
+    // If tail rolled pass current, then reset current to tail.
+    if (pRollingView->current <= pRollingView->tail) {
+        pRollingView->current = pRollingView->tail;
+
+        // If currentStreamingItem isn't sentinel and tail has rolled pass the currentStreamingItem, prepend
+        // currentStreamingItem to tail and make it the new tail. This item will be freed automatically when it either
+        // fall out of window or in later trim tail event (persisted ack received)
+        if (currentStreamingItem != UINT64_MAX && currentStreamingItem < pRollingView->tail) {
+            pRollingView->tail--;
+            pRollingView->current = pRollingView->tail + 1;
+            pCurrentViewItem = GET_VIEW_ITEM_FROM_INDEX(pRollingView, currentStreamingItem);
+            pTail = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail);
+            // Do not set pTail's timestamp and duration to pCurrentViewItem's because otherwise it would create temporal
+            // gap in content view and drop frame would not cause window duration to drop.
+            pTail->flags = pCurrentViewItem->flags;
+            pTail->handle = pCurrentViewItem->handle;
+            pTail->length = pCurrentViewItem->length;
+            pTail->index = pRollingView->tail;
         }
     }
 
