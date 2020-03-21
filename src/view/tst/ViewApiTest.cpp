@@ -48,18 +48,13 @@ TEST_F(ViewApiTest, contentViewRemoveAll_NullPointer)
 
 TEST_F(ViewApiTest, contentViewCheckAvailability_NullPointer)
 {
-    BOOL currentAvailability, windowAvailability;
-    EXPECT_NE(STATUS_SUCCESS, contentViewCheckAvailability(NULL, &currentAvailability, NULL));
-    EXPECT_NE(STATUS_SUCCESS, contentViewCheckAvailability(NULL, &currentAvailability, &windowAvailability));
-    EXPECT_NE(STATUS_SUCCESS, contentViewCheckAvailability(mContentView, NULL, NULL));
-    EXPECT_NE(STATUS_SUCCESS, contentViewCheckAvailability(mContentView, NULL, &windowAvailability));
-    EXPECT_NE(STATUS_SUCCESS, contentViewCheckAvailability(mContentView, &currentAvailability, NULL));
-    EXPECT_NE(STATUS_SUCCESS, contentViewCheckAvailability(mContentView, &currentAvailability, &windowAvailability));
+    BOOL windowAvailability;
+    EXPECT_NE(STATUS_SUCCESS, contentViewCheckAvailability(NULL, NULL));
+    EXPECT_NE(STATUS_SUCCESS, contentViewCheckAvailability(NULL, &windowAvailability));
+    EXPECT_NE(STATUS_SUCCESS, contentViewCheckAvailability(mContentView, NULL));
+    EXPECT_NE(STATUS_SUCCESS, contentViewCheckAvailability(mContentView, &windowAvailability));
     CreateContentView();
-    EXPECT_EQ(STATUS_SUCCESS, contentViewCheckAvailability(mContentView, &currentAvailability, NULL));
-    EXPECT_EQ(TRUE, currentAvailability);
-    EXPECT_EQ(STATUS_SUCCESS, contentViewCheckAvailability(mContentView, &currentAvailability, &windowAvailability));
-    EXPECT_EQ(TRUE, currentAvailability);
+    EXPECT_EQ(STATUS_SUCCESS, contentViewCheckAvailability(mContentView, &windowAvailability));
     EXPECT_EQ(TRUE, windowAvailability);
 }
 

@@ -13,16 +13,11 @@
 #define VIEW_NOTIFICATION_CALLBACK_CUSTOM_DATA      1122
 #define CHECK_AGAINST_ACKTIMESTAMP                   TRUE
 
-extern PContentView gContentView;
-extern UINT64 gCustomData;
-extern ViewItem gViewItem;
-extern BOOL gCurrent;
-extern UINT32 gCallCount;
+#define MAX_VIEW_ITERATION_COUNT 50
+#define VIEW_ITEM_DURATION 10
+#define VIEW_ITEM_DURATION_LARGE 20
 
-/**
- * Callback function
- */
-VOID removeNotificationCallback(PContentView pContentView, UINT64 customData, PViewItem pViewItem, BOOL consumed);
+#define VIEW_ITEM_ALLOCAITON_SIZE 100
 
 class ViewTestBase : public ::testing::Test {
 public:
@@ -31,26 +26,37 @@ public:
 protected:
     PContentView mContentView;
 
+    PContentView gContentView;
+    UINT64 gCustomData;
+    ViewItem gViewItem;
+    BOOL gFrameDropped;
+    UINT32 gCallCount;
+
+    /*
+     * Callback function
+     */
+    static VOID removeNotificationCallback(PContentView pContentView, UINT64 customData, PViewItem pViewItem, BOOL consumed);
+
     STATUS CreateContentView(CONTENT_VIEW_OVERFLOW_POLICY contentViewOverflowStrategy = CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM,
                              UINT32 maxViewItemCount = MAX_VIEW_ITEM_COUNT,
                              UINT64 maxViewBufferDuration = MAX_VIEW_BUFFER_DURATION)
     {
-        // Reset the globals
-        gContentView = NULL;
-        gCustomData = 0;
-        MEMSET(&gViewItem, 0x00, SIZEOF(ViewItem));
-        gCurrent = FALSE;
-        gCallCount = 0;
         // Create the content view
-        EXPECT_TRUE(STATUS_SUCCEEDED(createContentView(maxViewItemCount, maxViewBufferDuration, removeNotificationCallback, 
-                                                       VIEW_NOTIFICATION_CALLBACK_CUSTOM_DATA, contentViewOverflowStrategy, 
+        EXPECT_TRUE(STATUS_SUCCEEDED(createContentView(maxViewItemCount, maxViewBufferDuration, removeNotificationCallback,
+                                                       (UINT64) this, contentViewOverflowStrategy,
                                                        &mContentView)));
-
         return STATUS_SUCCESS;
     };
 
     virtual void SetUp()
     {
+        // Reset the values
+        gContentView = NULL;
+        gCustomData = 0;
+        MEMSET(&gViewItem, 0x00, SIZEOF(ViewItem));
+        gFrameDropped = FALSE;
+        gCallCount = 0;
+
         UINT32 logLevel = 0;
         auto logLevelStr = GETENV("AWS_KVS_LOG_LEVEL");
         if (logLevelStr != NULL) {

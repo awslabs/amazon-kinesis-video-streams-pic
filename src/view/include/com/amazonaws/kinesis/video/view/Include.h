@@ -373,6 +373,14 @@ PUBLIC_API STATUS contentViewGetWindowAllocationSize(PContentView, PUINT64, PUIN
 PUBLIC_API STATUS contentViewTrimTail(PContentView, UINT64);
 
 /**
+ * Trims the tail based on CONTENT_VIEW_OVERFLOW_POLICY
+ *
+ * PContentView - Content view
+ *
+ */
+PUBLIC_API STATUS contentViewTrimTailItems(PContentView);
+
+/**
  * Removes all items in the content view. Calls the remove callback if specified.
  *
  * PContentView - Content view
@@ -384,10 +392,9 @@ PUBLIC_API STATUS contentViewRemoveAll(PContentView);
  * in the content view without evicting a tail item.
  *
  * PContentView - Content view
- * PBOOL - OUT - Whether there is available space to put an item without current being evicted.
  * PBOOL - OUT OPT - Whether there is available space to put an item without tail eviction.
  */
-PUBLIC_API STATUS contentViewCheckAvailability(PContentView, PBOOL, PBOOL);
+PUBLIC_API STATUS contentViewCheckAvailability(PContentView, PBOOL);
 
 #ifdef  __cplusplus
 }
