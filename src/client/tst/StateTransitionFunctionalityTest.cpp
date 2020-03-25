@@ -111,6 +111,52 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallReturnNonRetriab
                                                            TEST_AUTH_EXPIRATION));
 }
 
+TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallReturnNotAuthorizedError)
+{
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+    Tag tags[1];
+    PCHAR tagName = (PCHAR) "foo";
+    PCHAR tagValue = (PCHAR) "vfoo";
+    tags[0].version = TAG_CURRENT_VERSION;
+    tags[0].name = tagName;
+    tags[0].value = tagValue;
+    mStreamInfo.tagCount = 1;
+    mStreamInfo.tags = tags;
+
+    CreateStream();
+
+    setupStreamDescription();
+    // submit auth error which should be retriable
+    EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_NOT_AUTHORIZED, &mStreamDescription));
+    EXPECT_EQ(2, mDescribeStreamFuncCount); // check retry happened
+    // submit not found result to move to create state
+    EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESOURCE_NOT_FOUND, &mStreamDescription));
+
+    EXPECT_EQ(STATUS_SUCCESS, createStreamResultEvent(mCallContext.customData, SERVICE_CALL_NOT_AUTHORIZED, TEST_STREAM_ARN));
+    EXPECT_EQ(2, mCreateStreamFuncCount);
+    EXPECT_EQ(STATUS_SUCCESS, createStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAM_ARN));
+
+    EXPECT_EQ(STATUS_SUCCESS, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_NOT_AUTHORIZED));
+    EXPECT_EQ(2, mTagResourceFuncCount);
+    EXPECT_EQ(STATUS_SUCCESS, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK));
+
+    EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_NOT_AUTHORIZED, TEST_STREAMING_ENDPOINT));
+    EXPECT_EQ(2, mGetStreamingEndpointFuncCount);
+    EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
+
+    EXPECT_EQ(STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, getStreamingTokenResultEvent(mCallContext.customData,
+                                                           SERVICE_CALL_NOT_AUTHORIZED,
+                                                           (PBYTE) TEST_STREAMING_TOKEN,
+                                                           SIZEOF(TEST_STREAMING_TOKEN),
+                                                           TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(1, mGetStreamingTokenFuncCount);
+    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
+                                                           SERVICE_CALL_RESULT_OK,
+                                                           (PBYTE) TEST_STREAMING_TOKEN,
+                                                           SIZEOF(TEST_STREAMING_TOKEN),
+                                                           TEST_AUTH_EXPIRATION));
+}
+
 // Create stream, fault inject all calls for Describe, Create, Tag, Get Endpoint, Get Token, ensure fails at the end
 TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallExhaustRetry)
 {
