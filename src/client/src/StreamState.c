@@ -397,6 +397,11 @@ STATUS fromStoppedStreamState(UINT64 customData, PUINT64 pState)
             retStatus = STATUS_SUCCESS;
             break;
 
+        case STATUS_SERVICE_CALL_TIMEOUT_ERROR:
+            state = STREAM_STATE_GET_ENDPOINT;
+            retStatus = STATUS_SUCCESS;
+            break;
+
         default:
             // Default state in any other case
             retStatus = STATUS_SUCCESS;

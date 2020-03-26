@@ -209,7 +209,8 @@ STATUS describeStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CAL
     CHK(retStatus == STATUS_SUCCESS ||
                 retStatus == STATUS_SERVICE_CALL_RESOURCE_NOT_FOUND_ERROR ||
                 retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR,
+                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
+                retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR,
         retStatus);
 
     // Reset the status
@@ -307,7 +308,8 @@ STATUS createStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_
     retStatus = serviceCallResultCheck(callResult);
     CHK(retStatus == STATUS_SUCCESS ||
                 retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR, retStatus);
+                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
+                retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, retStatus);
 
     // Reset the status
     retStatus = STATUS_SUCCESS;
@@ -449,7 +451,8 @@ STATUS getStreamingEndpointResult(PKinesisVideoStream pKinesisVideoStream, SERVI
     retStatus = serviceCallResultCheck(callResult);
     CHK(retStatus == STATUS_SUCCESS ||
                 retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR, retStatus);
+                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
+                retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, retStatus);
 
     // Reset the status
     retStatus = STATUS_SUCCESS;
@@ -508,7 +511,8 @@ STATUS putStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
     retStatus = serviceCallResultCheck(callResult);
     CHK(retStatus == STATUS_SUCCESS ||
                 retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR, retStatus);
+                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
+                retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, retStatus);
 
     // Reset the status
     retStatus = STATUS_SUCCESS;
@@ -573,7 +577,8 @@ STATUS tagStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
     retStatus = serviceCallResultCheck(callResult);
     CHK(retStatus == STATUS_SUCCESS ||
                 retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR, retStatus);
+                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
+                retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, retStatus);
 
     // Reset the status
     retStatus = STATUS_SUCCESS;
