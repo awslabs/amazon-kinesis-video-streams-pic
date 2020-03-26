@@ -257,7 +257,11 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToGetEndpointState
     initDefaultProducer();
     std::vector<SERVICE_CALL_RESULT> getEndpointStateResults = {SERVICE_CALL_RESULT_OK,
                                                                 SERVICE_CALL_DEVICE_LIMIT,
-                                                                SERVICE_CALL_STREAM_LIMIT};
+                                                                SERVICE_CALL_STREAM_LIMIT,
+                                                                SERVICE_CALL_REQUEST_TIMEOUT,
+                                                                SERVICE_CALL_GATEWAY_TIMEOUT,
+                                                                SERVICE_CALL_NETWORK_READ_TIMEOUT,
+                                                                SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT};
 
     mStreamInfo.streamCaps.recoverOnError = TRUE;
 
@@ -353,10 +357,10 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToNewState)
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
     UINT32 oldDescribeStreamFuncCount;
     initDefaultProducer();
-    std::vector<SERVICE_CALL_RESULT> newStateResults = {SERVICE_CALL_REQUEST_TIMEOUT,
-                                                        SERVICE_CALL_GATEWAY_TIMEOUT,
-                                                        SERVICE_CALL_NETWORK_READ_TIMEOUT,
-                                                        SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT};
+    std::vector<SERVICE_CALL_RESULT> newStateResults = {SERVICE_CALL_UNKNOWN,
+                                                        SERVICE_CALL_INVALID_ARG,
+                                                        SERVICE_CALL_DEVICE_NOT_FOUND,
+                                                        SERVICE_CALL_INTERNAL_ERROR};
 
     for (int i = 0; i < newStateResults.size(); i++) {
         SERVICE_CALL_RESULT service_call_result = newStateResults[i];
