@@ -78,7 +78,23 @@ CleanUp:
 
 PUBLIC_API VOID defaultThreadSleep(UINT64 time)
 {
-    Sleep((UINT32) (time / HUNDREDS_OF_NANOS_IN_A_MILLISECOND));
+    // Time in milliseconds
+    UINT64 remaining_time = time / HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    // The loop will be run till the complete Sleep() time is reached
+    while(remaining_time != 0) {
+        // Covers the last case when there is residual time left and
+        // when the value provided is less than or equal to MAX_UINT32
+        if(remaining_time <= MAX_UINT32) {
+            Sleep((UINT32) remaining_time);
+            remaining_time = 0;
+        }
+        // Sleep maximum time supported by Sleep() repeatedly to cover large
+        // sleep time cases
+        else {
+            Sleep(MAX_UINT32);
+            remaining_time = remaining_time - (UINT64) MAX_UINT32;
+        }
+    }
 }
 
 PUBLIC_API STATUS defaultCancelThread(TID threadId)
@@ -208,7 +224,25 @@ CleanUp:
 
 PUBLIC_API VOID defaultThreadSleep(UINT64 time)
 {
-    usleep(time / HUNDREDS_OF_NANOS_IN_A_MICROSECOND);
+    // Time in microseconds
+    UINT64 remaining_time = time / HUNDREDS_OF_NANOS_IN_A_MICROSECOND;
+
+    // The loop will be run till the complete usleep time is reached
+    while(remaining_time != 0) {
+        // Covers the last case when there is residual time left and
+        // when the value provided is less than or equal to MAX_UINT32
+        if(remaining_time <= MAX_UINT32) {
+            usleep(remaining_time);
+            remaining_time = 0;
+        }
+
+        // Sleep maximum time supported by usleep repeatedly to cover large
+        // sleep time cases
+        else {
+            usleep(MAX_UINT32);
+            remaining_time = remaining_time - (UINT64) MAX_UINT32;
+        }
+    }
 }
 
 /**
@@ -301,3 +335,4 @@ threadSleepUntil globalThreadSleepUntil = defaultThreadSleepUntil;
 joinThread globalJoinThread = defaultJoinThread;
 cancelThread globalCancelThread = defaultCancelThread;
 detachThread globalDetachThread = defaultDetachThread;
+
