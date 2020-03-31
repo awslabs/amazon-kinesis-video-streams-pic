@@ -339,17 +339,18 @@ STATUS hashTableRemove(PHashTable pHashTable, UINT64 key)
 
     // Check if we already have the value
     pHashEntry = pHashBucket->entries;
-    for (i = 0; i < pHashBucket->count; i++, pHashEntry++) {
+    for (i = 0; !found && i < pHashBucket->count; i++) {
         if (pHashEntry->key == key) {
             found = TRUE;
-            break;
+        } else {
+            pHashEntry++;
         }
     }
 
     CHK(found, STATUS_HASH_KEY_NOT_PRESENT);
 
     // Move the rest of the items
-    MEMMOVE(pHashEntry, pHashEntry + 1, (pHashBucket->count - 1) * SIZEOF(HashEntry));
+    MEMMOVE(pHashEntry, pHashEntry + 1, (pHashBucket->count - i) * SIZEOF(HashEntry));
 
     // Decrement the count as we have removed and item
     pHashBucket->count--;
