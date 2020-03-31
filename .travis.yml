@@ -24,7 +24,7 @@ after_failure:
   - for i in $(find ./ -maxdepth 1 -name 'core*' -print); do gdb $(pwd)/kvspic_test core* -ex "thread apply all bt" -ex "set pagination 0" -batch; done;
 
 matrix:
-  # MemorySanitizer and UndefinedBehaviorSanitizer are still WIP
+  # MemorySanitizer and Thread sanitizer are still WIP
   allow_failures:
     - env: allowTestFail=true
 
@@ -43,7 +43,6 @@ matrix:
     - name: "OSX Clang"
       os: osx
       compiler: clang
-      env: allowTestFail=true
       before_script:
         - mkdir build && cd build && cmake .. -DBUILD_TEST=TRUE -DCOMPILER_WARNINGS=TRUE
       script:
@@ -66,7 +65,6 @@ matrix:
       os: linux
       compiler: clang
       # env: ASAN_OPTIONS=detect_odr_violation=0:detect_leaks=1
-      env: allowTestFail=true
       before_script: mkdir build && cd build && cmake .. -DBUILD_TEST=TRUE -DADDRESS_SANITIZER=TRUE
 
     # UndefinedBehaviorSanitizer
