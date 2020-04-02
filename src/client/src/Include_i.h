@@ -169,6 +169,14 @@ typedef struct __EndpointInfo* PEndpointInfo;
                                                 (r) == SERVICE_CALL_NOT_AUTHORIZED)
 
 /**
+ * Returns whether the service call result is a timeout
+ */
+#define SERVICE_CALL_RESULT_IS_A_TIMEOUT(r)     ((r) == SERVICE_CALL_REQUEST_TIMEOUT || \
+                                                (r) == SERVICE_CALL_GATEWAY_TIMEOUT || \
+                                                (r) == SERVICE_CALL_NETWORK_READ_TIMEOUT || \
+                                                (r) == SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT)
+
+/**
  * The Realtime put media API name for GetDataEndpoint API call
  */
 #define GET_DATA_ENDPOINT_REAL_TIME_PUT_API_NAME            "PUT_MEDIA"

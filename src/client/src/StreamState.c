@@ -705,6 +705,7 @@ STATUS executeStoppedStreamState(UINT64 customData, UINT64 time)
     ENTERS();
     UNUSED_PARAM(time);
     STATUS retStatus = STATUS_SUCCESS;
+    UINT64 duration, viewByteSize;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
 
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
@@ -712,7 +713,26 @@ STATUS executeStoppedStreamState(UINT64 customData, UINT64 time)
     // Also store the connection stopping result
     pKinesisVideoStream->connectionDroppedResult = pKinesisVideoStream->base.result;
 
-    // Step the client state machine first
+    // Check if we want to prime the state machine based on whether we have any more content to send
+    // currently and if the error is a timeout.
+    if (SERVICE_CALL_RESULT_IS_A_TIMEOUT(pKinesisVideoStream->connectionDroppedResult)) {
+        CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+        if (viewByteSize == 0) {
+            // Next time putFrame is called we will self-prime.
+            // The idea is to drop frames till new key frame which will
+            // become a stream start.
+            pKinesisVideoStream->resetGeneratorOnKeyFrame = TRUE;
+            pKinesisVideoStream->skipNonKeyFrames = TRUE;
+
+            // Set an indicator to step the state machine on new frame
+            pKinesisVideoStream->streamState = STREAM_STATE_NEW;
+
+            // Early exit
+            CHK(FALSE, retStatus);
+        }
+    }
+
+    // Auto-prime the state machine
     CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
 
 CleanUp:

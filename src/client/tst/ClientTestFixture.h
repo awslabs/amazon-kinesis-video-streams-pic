@@ -92,6 +92,13 @@
         return;\
     }
 
+#define PASS_TEST_FOR_OFFLINE_OR_ZERO_RETENTION() \
+    if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE || \
+        mStreamInfo.retention == 0 || \
+        !mStreamInfo.streamCaps.fragmentAcks) { \
+        return;\
+    }
+
 #define PASS_TEST_FOR_OFFLINE() \
     if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE) { \
         return;\

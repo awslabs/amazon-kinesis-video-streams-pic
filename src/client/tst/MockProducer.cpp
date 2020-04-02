@@ -18,10 +18,10 @@ MockProducer::MockProducer(MockProducerConfig config,
     mFrame.duration = (UINT64) 1000 / mFps * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
 }
 
-STATUS MockProducer::putFrame(BOOL eofr) {
+STATUS MockProducer::putFrame(BOOL isEofr) {
     STATUS retStatus = STATUS_SUCCESS;
 
-    if (eofr) {
+    if (isEofr) {
         Frame eofr = EOFR_FRAME_INITIALIZER;
         mIndex += (mKeyFrameInterval - (mIndex % mKeyFrameInterval)); // next frame must have key frame flag after eofr.
         retStatus = putKinesisVideoFrame(mStreamHandle, &eofr);
