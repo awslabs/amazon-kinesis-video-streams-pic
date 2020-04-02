@@ -638,8 +638,11 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithoutBuff
     UINT64 currentTime, stopTime;
     TID thread;
     STATUS retStatus = STATUS_SUCCESS;
-    UINT32 i, totalFragmentPut = 10, ackReceived = 0;
+    BYTE dataBuf[TEST_DEFAULT_PRODUCER_CONFIG_FRAME_SIZE + 1000]; // Should be over the default frame size
+    UINT32 i, ackReceived = 0, dataBufSize = SIZEOF(dataBuf), retrievedSize, overhead, numFragments = 5;
     UPLOAD_HANDLE errorHandle;
+    PKinesisVideoStream pKinesisVideoStream;
+    PStreamMkvGenerator pStreamMkvGenerator;
 
     PASS_TEST_FOR_OFFLINE();
 
@@ -653,7 +656,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithoutBuff
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
     // put all frames for the first few fragments
-    for (i = 0; i < 5 * mMockProducerConfig.mKeyFrameInterval; i++) {
+    for (i = 0; i < numFragments * mMockProducerConfig.mKeyFrameInterval; i++) {
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame());
     }
 
@@ -708,8 +711,6 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithoutBuff
         EXPECT_EQ(0, mTagResourceFuncCount);
         EXPECT_EQ(2, mGetStreamingEndpointFuncCount);
         EXPECT_EQ(2, mStreamReadyFuncCount);
-
-        // TODO: Validate that the new upload handle has a rolled back proper start stream
     }
 
     // Next one should be a key frame.
@@ -728,6 +729,32 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithoutBuff
     mStreamingSession.getActiveUploadHandles(currentUploadHandles);
     EXPECT_EQ(1, currentUploadHandles.size());
     EXPECT_TRUE(currentUploadHandles[0] != errorHandle);
+
+    // Validate that the new upload handle has a rolled back proper start stream
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle,
+            currentUploadHandles[0], dataBuf,
+            dataBufSize, &retrievedSize));
+    EXPECT_EQ(dataBufSize, retrievedSize);
+
+    pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+    pStreamMkvGenerator = (PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator;
+    // Get the overhead size
+    overhead = mkvgenGetFrameOverhead(pStreamMkvGenerator, MKV_STATE_START_STREAM);
+
+    // Check the content of the buffer
+    // NOTE: We had submitted ACKs for all of the fragments before the termination
+    // so the entire buffer is trimmed. We will be skipping over the frames
+    // until the next key frame which will become the stream start
+    for (i = 0; i < TEST_DEFAULT_PRODUCER_CONFIG_FRAME_SIZE; i++) {
+        if (mStreamInfo.streamCaps.replayDuration == 0) {
+            EXPECT_EQ((numFragments + 1) * mMockProducerConfig.mKeyFrameInterval, dataBuf[i + overhead])
+                                << "Failed on " << i;
+        } else {
+            EXPECT_EQ(0, dataBuf[i + overhead])
+                                << "Failed on " << i;
+        }
+    }
+
     EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&thread, stopStreamSyncRoutine, (PVOID) this));
     THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 

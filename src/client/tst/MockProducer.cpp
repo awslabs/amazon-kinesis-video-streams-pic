@@ -31,6 +31,9 @@ STATUS MockProducer::putFrame(BOOL isEofr) {
         mFrame.presentationTs = mTimestamp;
         mFrame.index = mIndex;
 
+        // Set the body of the frame so it's easier to track
+        MEMSET(mFrame.frameData, mFrame.index, mFrame.size);
+
         retStatus = putKinesisVideoFrame(mStreamHandle, &mFrame);
 
         mIndex++;
