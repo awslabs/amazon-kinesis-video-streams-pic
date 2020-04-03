@@ -265,48 +265,69 @@ STATUS fromPutStreamState(UINT64 customData, PUINT64 pState) {
     // Transition to states if not stopped
     if (pKinesisVideoStream->streamState == STREAM_STATE_STOPPED) {
         state = STREAM_STATE_STOPPED;
-    } else if (pKinesisVideoStream->base.result == SERVICE_CALL_RESULT_OK) {
-        // find the handle in the new state and set it to ready
-        pUploadHandleInfo = getStreamUploadInfoWithState(pKinesisVideoStream, UPLOAD_HANDLE_STATE_NEW);
+    } else {
+        switch (pKinesisVideoStream->base.result) {
+            case SERVICE_CALL_RESULT_OK:
+                // find the handle in the new state and set it to ready
+                pUploadHandleInfo = getStreamUploadInfoWithState(pKinesisVideoStream, UPLOAD_HANDLE_STATE_NEW);
 
-        if (NULL != pUploadHandleInfo) {
-            pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_READY;
+                if (NULL != pUploadHandleInfo) {
+                    pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_READY;
 
-            // NOTE: On successful streaming state transition we need to notify the data notification callback
-            // to handle the case with the intermittent producer that's already finished putting frames and
-            // is awaiting for the existing buffer to be streamed out.
+                    // NOTE: On successful streaming state transition we need to notify the data notification callback
+                    // to handle the case with the intermittent producer that's already finished putting frames and
+                    // is awaiting for the existing buffer to be streamed out.
 
-            // When a new handle is created, there is a potential that there is no more putFrame to
-            // to drive the first data available call to the new handle. Therefore, do a data available call here.
+                    // When a new handle is created, there is a potential that there is no more putFrame to
+                    // to drive the first data available call to the new handle. Therefore, do a data available call here.
 
-            // If there is still any active upload handles, then when they reach end-of-stream they will probe the
-            // next ready handle, so there is no need to do data available call in this case.
-            pOngoingUploadHandle = getStreamUploadInfoWithState(pKinesisVideoStream,
-                                                                UPLOAD_HANDLE_STATE_STREAMING |
-                                                                UPLOAD_HANDLE_STATE_AWAITING_ACK |
-                                                                UPLOAD_HANDLE_STATE_TERMINATING |
-                                                                UPLOAD_HANDLE_STATE_ACK_RECEIVED);
+                    // If there is still any active upload handles, then when they reach end-of-stream they will probe the
+                    // next ready handle, so there is no need to do data available call in this case.
+                    pOngoingUploadHandle = getStreamUploadInfoWithState(pKinesisVideoStream,
+                                                                        UPLOAD_HANDLE_STATE_STREAMING |
+                                                                        UPLOAD_HANDLE_STATE_AWAITING_ACK |
+                                                                        UPLOAD_HANDLE_STATE_TERMINATING |
+                                                                        UPLOAD_HANDLE_STATE_ACK_RECEIVED);
 
-            if (pOngoingUploadHandle == NULL){
-                // ping the first ready upload handle. (There can be more than one ready upload handle due to
-                // token rotation)
-                pUploadHandleInfo = getStreamUploadInfoWithState(pKinesisVideoStream, UPLOAD_HANDLE_STATE_READY);
+                    if (pOngoingUploadHandle == NULL){
+                        // ping the first ready upload handle. (There can be more than one ready upload handle due to
+                        // token rotation)
+                        pUploadHandleInfo = getStreamUploadInfoWithState(pKinesisVideoStream, UPLOAD_HANDLE_STATE_READY);
 
-                // Get the duration and the size
-                CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+                        // Get the duration and the size
+                        CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
 
-                // Call the notification callback
-                CHK_STATUS(pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.streamDataAvailableFn(
-                        pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.customData,
-                        TO_STREAM_HANDLE(pKinesisVideoStream),
-                        pKinesisVideoStream->streamInfo.name,
-                        pUploadHandleInfo->handle,
-                        duration,
-                        viewByteSize));
-            }
+                        // Call the notification callback
+                        CHK_STATUS(pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.streamDataAvailableFn(
+                                pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.customData,
+                                TO_STREAM_HANDLE(pKinesisVideoStream),
+                                pKinesisVideoStream->streamInfo.name,
+                                pUploadHandleInfo->handle,
+                                duration,
+                                viewByteSize));
+                    }
+                }
+
+                state = STREAM_STATE_STREAMING;
+                break;
+
+            case SERVICE_CALL_REQUEST_TIMEOUT:
+            case SERVICE_CALL_GATEWAY_TIMEOUT:
+            case SERVICE_CALL_NETWORK_READ_TIMEOUT:
+            case SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT:
+
+                state = STREAM_STATE_GET_ENDPOINT;
+                break;
+
+            case SERVICE_CALL_NOT_AUTHORIZED:
+            case SERVICE_CALL_FORBIDDEN:
+
+                state = STREAM_STATE_GET_TOKEN;
+                break;
+
+            default:
+                state = STREAM_STATE_DESCRIBE;
         }
-
-        state = STREAM_STATE_STREAMING;
     }
 
     *pState = state;
@@ -398,7 +419,7 @@ STATUS fromStoppedStreamState(UINT64 customData, PUINT64 pState)
             break;
 
         case STATUS_SERVICE_CALL_TIMEOUT_ERROR:
-            state = STREAM_STATE_GET_ENDPOINT;
+            state = STREAM_STATE_READY;
             retStatus = STATUS_SUCCESS;
             break;
 

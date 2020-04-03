@@ -253,15 +253,18 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToGetEndpointState
 {
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    UINT32 oldGetStreamingEndpointFuncCount;
+    UINT32 oldGetStreamingEndpointFuncCount, oldDescribeFuncCount, oldGetTokenFuncCount;
     initDefaultProducer();
     std::vector<SERVICE_CALL_RESULT> getEndpointStateResults = {SERVICE_CALL_RESULT_OK,
                                                                 SERVICE_CALL_DEVICE_LIMIT,
                                                                 SERVICE_CALL_STREAM_LIMIT,
+                                                                SERVICE_CALL_BAD_REQUEST,
                                                                 SERVICE_CALL_REQUEST_TIMEOUT,
                                                                 SERVICE_CALL_GATEWAY_TIMEOUT,
                                                                 SERVICE_CALL_NETWORK_READ_TIMEOUT,
-                                                                SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT};
+                                                                SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT,
+                                                                SERVICE_CALL_NOT_AUTHORIZED,
+                                                                SERVICE_CALL_FORBIDDEN};
 
     mStreamInfo.streamCaps.recoverOnError = TRUE;
 
@@ -276,9 +279,55 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToGetEndpointState
         mStreamingSession.getActiveUploadHandles(currentUploadHandles);
         EXPECT_EQ(1, currentUploadHandles.size());
         oldGetStreamingEndpointFuncCount = mGetStreamingEndpointFuncCount;
+        oldGetTokenFuncCount = mGetStreamingTokenFuncCount;
+        oldDescribeFuncCount = mDescribeStreamFuncCount;
+
+        // Submit a terminate event
         EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mStreamHandle, currentUploadHandles[0], service_call_result));
-        // get Streaming endpoint has been called once, that means stream state moved to GetEndpoint
-        EXPECT_EQ(mGetStreamingEndpointFuncCount, oldGetStreamingEndpointFuncCount + 1);
+
+        STATUS retStatus = serviceCallResultCheck(service_call_result);
+
+        switch (retStatus) {
+            case STATUS_SUCCESS:
+                // Should start from get endpoint
+                EXPECT_EQ(oldGetStreamingEndpointFuncCount + 1, mGetStreamingEndpointFuncCount);
+                EXPECT_EQ(oldGetTokenFuncCount + 1, mGetStreamingTokenFuncCount);
+                EXPECT_EQ(oldDescribeFuncCount, mDescribeStreamFuncCount);
+
+                break;
+
+            case STATUS_SERVICE_CALL_TIMEOUT_ERROR:
+                // Should start from ready
+                EXPECT_EQ(oldGetStreamingEndpointFuncCount, mGetStreamingEndpointFuncCount);
+                EXPECT_EQ(oldGetTokenFuncCount, mGetStreamingTokenFuncCount);
+                EXPECT_EQ(oldDescribeFuncCount, mDescribeStreamFuncCount);
+
+                break;
+
+            case STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR:
+                // Should start from token
+                EXPECT_EQ(oldGetStreamingEndpointFuncCount, mGetStreamingEndpointFuncCount);
+                EXPECT_EQ(oldGetTokenFuncCount + 1, mGetStreamingTokenFuncCount);
+                EXPECT_EQ(oldDescribeFuncCount, mDescribeStreamFuncCount);
+
+                break;
+
+            case STATUS_SERVICE_CALL_DEVICE_LIMIT_ERROR:
+            case STATUS_SERVICE_CALL_STREAM_LIMIT_ERROR:
+                // Should start from get endpoint
+                EXPECT_EQ(oldGetStreamingEndpointFuncCount + 1, mGetStreamingEndpointFuncCount);
+                EXPECT_EQ(oldGetTokenFuncCount + 1, mGetStreamingTokenFuncCount);
+                EXPECT_EQ(oldDescribeFuncCount, mDescribeStreamFuncCount);
+
+                break;
+
+            default:
+                // Should start from describe
+                EXPECT_EQ(oldGetStreamingEndpointFuncCount + 1, mGetStreamingEndpointFuncCount);
+                EXPECT_EQ(oldGetTokenFuncCount + 1, mGetStreamingTokenFuncCount);
+                EXPECT_EQ(oldDescribeFuncCount + 1, mDescribeStreamFuncCount);
+        }
+
         mStreamingSession.clearSessions(); // remove current session for next iteration.
         EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
     }

@@ -706,10 +706,10 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithoutBuff
         mockProducer.putFrame();
         // Recovery till ready state
         EXPECT_EQ(2, mPutStreamFuncCount);
-        EXPECT_EQ(3, mDescribeStreamFuncCount);
+        EXPECT_EQ(3, mDescribeStreamFuncCount); // remains the same
         EXPECT_EQ(0, mCreateStreamFuncCount);
         EXPECT_EQ(0, mTagResourceFuncCount);
-        EXPECT_EQ(2, mGetStreamingEndpointFuncCount);
+        EXPECT_EQ(1, mGetStreamingEndpointFuncCount); // remains the same
         EXPECT_EQ(2, mStreamReadyFuncCount);
     }
 
