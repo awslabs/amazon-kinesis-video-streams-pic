@@ -85,10 +85,20 @@
 // Offset of the MKV Segment Info UUID from the beginning of the header
 #define MKV_SEGMENT_UUID_OFFSET         54
 
+// Default producer configuration frame size
+#define TEST_DEFAULT_PRODUCER_CONFIG_FRAME_SIZE             50000
+
 #define PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE() \
     if ((mStreamInfo.retention == 0 || !mStreamInfo.streamCaps.fragmentAcks) && \
         mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE) { \
         EXPECT_EQ(STATUS_OFFLINE_MODE_WITH_ZERO_RETENTION, createKinesisVideoStreamSync(mClientHandle, &mStreamInfo, &mStreamHandle)); \
+        return;\
+    }
+
+#define PASS_TEST_FOR_OFFLINE_OR_ZERO_RETENTION() \
+    if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE || \
+        mStreamInfo.retention == 0 || \
+        !mStreamInfo.streamCaps.fragmentAcks) { \
         return;\
     }
 
@@ -525,7 +535,7 @@ protected:
     void initDefaultProducer() {
         mMockProducerConfig.mFps = 20;
         mMockProducerConfig.mKeyFrameInterval = 20;
-        mMockProducerConfig.mFrameSizeByte = 50000;
+        mMockProducerConfig.mFrameSizeByte = TEST_DEFAULT_PRODUCER_CONFIG_FRAME_SIZE;
         mMockProducerConfig.mIsLive = TRUE;
         mMockProducerConfig.mSetEOFR = FALSE;
         mMockProducerConfig.mFrameTrackId = TEST_TRACKID;

@@ -485,7 +485,7 @@ CleanUp:
 /**
  * PutStream result event func
  */
-STATUS putStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RESULT callResult, UPLOAD_HANDLE streamHandle)
+STATUS putStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RESULT callResult, UPLOAD_HANDLE uploadHandle)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -514,19 +514,24 @@ STATUS putStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
                 retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
                 retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, retStatus);
 
-    // Reset the status
-    retStatus = STATUS_SUCCESS;
-
     // store the result
     pKinesisVideoStream->base.result = callResult;
 
-    // Store the client stream handle to call back with.
-    CHK(NULL != (pUploadHandleInfo = (PUploadHandleInfo) MEMALLOC(SIZEOF(UploadHandleInfo))), STATUS_NOT_ENOUGH_MEMORY);
-    pUploadHandleInfo->handle = streamHandle;
-    pUploadHandleInfo->lastFragmentTs = INVALID_TIMESTAMP_VALUE;
-    pUploadHandleInfo->timestamp = INVALID_TIMESTAMP_VALUE;
-    pUploadHandleInfo->lastPersistedAckTs = INVALID_TIMESTAMP_VALUE;
-    pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_NEW;
+    if (STATUS_SUCCEEDED(retStatus)) {
+        // On a success we should have a proper upload handle
+        CHK(IS_VALID_UPLOAD_HANDLE(uploadHandle), STATUS_INVALID_ARG);
+
+        // Store the client stream upload handle to call back with.
+        CHK(NULL != (pUploadHandleInfo = (PUploadHandleInfo) MEMALLOC(SIZEOF(UploadHandleInfo))), STATUS_NOT_ENOUGH_MEMORY);
+        pUploadHandleInfo->handle = uploadHandle;
+        pUploadHandleInfo->lastFragmentTs = INVALID_TIMESTAMP_VALUE;
+        pUploadHandleInfo->timestamp = INVALID_TIMESTAMP_VALUE;
+        pUploadHandleInfo->lastPersistedAckTs = INVALID_TIMESTAMP_VALUE;
+        pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_NEW;
+    } else {
+        // Reset the status
+        retStatus = STATUS_SUCCESS;
+    }
 
     // Enqueue the stream upload info object
     CHK_STATUS(stackQueueEnqueue(pKinesisVideoStream->pUploadInfoQueue, (UINT64) pUploadHandleInfo));

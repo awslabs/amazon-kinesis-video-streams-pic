@@ -148,14 +148,15 @@ void MockConsumer::purgeAckItemWithTimestamp(UINT64 ackTimestamp)
     }
 }
 
-STATUS MockConsumer::timedGetStreamData(UINT64 currentTime, PBOOL pDidGetStreamData, PUINT32 pRetrievedSize){
+STATUS MockConsumer::timedGetStreamData(UINT64 currentTime, PBOOL pDidGetStreamData, PUINT32 pRetrievedSize) {
     STATUS retStatus = STATUS_SUCCESS;
     UINT32 actualDataSize;
     *pDidGetStreamData = FALSE;
 
     if (mDataAvailable && (currentTime >= mNextGetStreamDataTime)) {
         *pDidGetStreamData = TRUE;
-        retStatus = getKinesisVideoStreamData(mStreamHandle, mUploadHandle, mDataBuffer, mDataBufferSize, &actualDataSize);
+        retStatus = getKinesisVideoStreamData(mStreamHandle, mUploadHandle, mDataBuffer, mDataBufferSize,
+                                              &actualDataSize);
 
         // stop calling getKinesisVideoStreamData if there is no more data.
         if (retStatus == STATUS_NO_MORE_DATA_AVAILABLE || retStatus == STATUS_AWAITING_PERSISTED_ACK) {
