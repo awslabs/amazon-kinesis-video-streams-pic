@@ -67,23 +67,28 @@ extern memFree globalMemFree;
 
 class UtilTestBase : public ::testing::Test {
 public:
-    UtilTestBase()
+    UtilTestBase(BOOL setAllocators = TRUE)
     {
         // Store the function pointers
         gTotalUtilsMemoryUsage = 0;
-        storedMemAlloc = globalMemAlloc;
-        storedMemAlignAlloc = globalMemAlignAlloc;
-        storedMemCalloc = globalMemCalloc;
-        storedMemFree = globalMemFree;
 
-        // Create the mutex for the synchronization for the instrumentation
-        gUtilityMemMutex = MUTEX_CREATE(FALSE);
+        allocatorsSet = setAllocators;
 
-        // Save the instrumented ones
-        globalMemAlloc = instrumentedUtilMemAlloc;
-        globalMemAlignAlloc = instrumentedUtilMemAlignAlloc;
-        globalMemCalloc = instrumentedUtilMemCalloc;
-        globalMemFree = instrumentedUtilMemFree;
+        if (allocatorsSet) {
+            storedMemAlloc = globalMemAlloc;
+            storedMemAlignAlloc = globalMemAlignAlloc;
+            storedMemCalloc = globalMemCalloc;
+            storedMemFree = globalMemFree;
+
+            // Create the mutex for the synchronization for the instrumentation
+            gUtilityMemMutex = MUTEX_CREATE(FALSE);
+
+            // Save the instrumented ones
+            globalMemAlloc = instrumentedUtilMemAlloc;
+            globalMemAlignAlloc = instrumentedUtilMemAlignAlloc;
+            globalMemCalloc = instrumentedUtilMemCalloc;
+            globalMemFree = instrumentedUtilMemFree;
+        }
     };
 
     virtual void SetUp()
@@ -106,11 +111,14 @@ public:
         DLOGI("Final remaining allocation size is %llu\n", gTotalUtilsMemoryUsage);
 
         EXPECT_EQ((UINT64) 0, gTotalUtilsMemoryUsage);
-        globalMemAlloc = storedMemAlloc;
-        globalMemAlignAlloc = storedMemAlignAlloc;
-        globalMemCalloc = storedMemCalloc;
-        globalMemFree = storedMemFree;
-        MUTEX_FREE(gUtilityMemMutex);
+
+        if (allocatorsSet) {
+            globalMemAlloc = storedMemAlloc;
+            globalMemAlignAlloc = storedMemAlignAlloc;
+            globalMemCalloc = storedMemCalloc;
+            globalMemFree = storedMemFree;
+            MUTEX_FREE(gUtilityMemMutex);
+        }
     };
 
     PCHAR GetTestName()
@@ -125,4 +133,6 @@ protected:
     memAlignAlloc storedMemAlignAlloc;
     memCalloc storedMemCalloc;
     memFree storedMemFree;
+
+    BOOL allocatorsSet;
 };

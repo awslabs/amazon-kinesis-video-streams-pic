@@ -469,6 +469,7 @@ typedef CID*                PCID;
 #define STATUS_DETACH_THREAD_FAILED                 STATUS_BASE + 0x0000001b
 #define STATUS_THREAD_ATTR_INIT_FAILED              STATUS_BASE + 0x0000001c
 #define STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED    STATUS_BASE + 0x0000001d
+#define STATUS_MEMORY_NOT_FREED                     STATUS_BASE + 0x0000001e
 
 #include <stdlib.h>
 #include <string.h>
@@ -1158,6 +1159,18 @@ typedef UINT64 HANDLE;
             DLOGE("operation returned status code: 0x%08x", __status); \
         } \
     } while (FALSE)
+
+/**
+* Macro that logs one of the status codes if the operation does not return STATUS_SUCCESS
+*/
+#define CHK_LOG_ERR_NV(condition) \
+    do { \
+        STATUS __status = condition; \
+        if (STATUS_FAILED(__status)) { \
+            DLOGE("operation returned status code: 0x%08x", __status); \
+        } \
+    } while (FALSE)
+
 
 #ifdef  __cplusplus
 }

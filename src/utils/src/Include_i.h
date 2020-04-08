@@ -213,6 +213,15 @@ STATUS semaphoreReleaseInternal(PSemaphore);
 STATUS semaphoreSetLockInternal(PSemaphore, BOOL);
 STATUS semaphoreWaitUntilClearInternal(PSemaphore, UINT64);
 
+//////////////////////////////////////////////////////////////////////////////////////////////
+// Instrumented allocators functionality
+//////////////////////////////////////////////////////////////////////////////////////////////
+PVOID instrumentedAllocatorsMemAlloc(SIZE_T);
+PVOID instrumentedAllocatorsMemAlignAlloc(SIZE_T, SIZE_T);
+PVOID instrumentedAllocatorsMemCalloc(SIZE_T, SIZE_T);
+PVOID instrumentedAllocatorsMemRealloc(PVOID, SIZE_T);
+VOID instrumentedAllocatorsMemFree(PVOID);
+
 #ifdef __cplusplus
 }
 #endif
