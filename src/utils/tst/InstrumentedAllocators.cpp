@@ -2,8 +2,12 @@
 
 class InstrumentedAllocatorsTest : public UtilTestBase {
 protected:
-    InstrumentedAllocatorsTest() : UtilTestBase(FALSE) {}
-    const int TestAllocSize = 1000;
+    InstrumentedAllocatorsTest() : UtilTestBase(FALSE) {
+        SRAND(12345);
+    }
+
+    const SIZE_T TestAllocSize = 1000;
+    const UINT32 TestIterationCount = 10000;
 };
 
 TEST_F(InstrumentedAllocatorsTest, set_reset_basic_test)
@@ -86,6 +90,9 @@ TEST_F(InstrumentedAllocatorsTest, memory_leak_check_malloc)
     MEMCHK(pAlloc, 0xff, TestAllocSize);
     EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
     EXPECT_EQ(totalAllocSize + TestAllocSize, getInstrumentedTotalAllocationSize());
+
+    // Free the allocation as we are tripping ASAN
+    MEMFREE((PSIZE_T) pAlloc - 1);
 }
 
 TEST_F(InstrumentedAllocatorsTest, memory_leak_check_alignalloc)
@@ -97,6 +104,8 @@ TEST_F(InstrumentedAllocatorsTest, memory_leak_check_alignalloc)
     MEMCHK(pAlloc, 0xff, TestAllocSize);
     EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
     EXPECT_EQ(totalAllocSize + TestAllocSize, getInstrumentedTotalAllocationSize());
+
+    MEMFREE((PSIZE_T) pAlloc - 1);
 }
 
 TEST_F(InstrumentedAllocatorsTest, memory_leak_check_calloc)
@@ -109,6 +118,8 @@ TEST_F(InstrumentedAllocatorsTest, memory_leak_check_calloc)
     MEMCHK(pAlloc, 0xff, 10 * TestAllocSize);
     EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
     EXPECT_EQ(totalAllocSize + 10 * TestAllocSize, getInstrumentedTotalAllocationSize());
+
+    MEMFREE((PSIZE_T) pAlloc - 1);
 }
 
 TEST_F(InstrumentedAllocatorsTest, memory_leak_check_realloc_larger_small_diff)
@@ -124,6 +135,8 @@ TEST_F(InstrumentedAllocatorsTest, memory_leak_check_realloc_larger_small_diff)
 
     EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
     EXPECT_EQ(totalAllocSize + TestAllocSize + 1, getInstrumentedTotalAllocationSize());
+
+    MEMFREE((PSIZE_T) pRealloc - 1);
 }
 
 TEST_F(InstrumentedAllocatorsTest, memory_leak_check_realloc_larger_large_diff)
@@ -139,6 +152,8 @@ TEST_F(InstrumentedAllocatorsTest, memory_leak_check_realloc_larger_large_diff)
 
     EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
     EXPECT_EQ(totalAllocSize + 10 * TestAllocSize, getInstrumentedTotalAllocationSize());
+
+    MEMFREE((PSIZE_T) pRealloc - 1);
 }
 
 TEST_F(InstrumentedAllocatorsTest, memory_leak_check_realloc_smaller_small_diff)
@@ -154,6 +169,8 @@ TEST_F(InstrumentedAllocatorsTest, memory_leak_check_realloc_smaller_small_diff)
 
     EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
     EXPECT_EQ(totalAllocSize + TestAllocSize - 1, getInstrumentedTotalAllocationSize());
+
+    MEMFREE((PSIZE_T) pRealloc - 1);
 }
 
 TEST_F(InstrumentedAllocatorsTest, memory_leak_check_realloc_smaller_large_diff)
@@ -169,4 +186,88 @@ TEST_F(InstrumentedAllocatorsTest, memory_leak_check_realloc_smaller_large_diff)
 
     EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
     EXPECT_EQ(totalAllocSize + TestAllocSize / 10, getInstrumentedTotalAllocationSize());
+
+    MEMFREE((PSIZE_T) pRealloc - 1);
+}
+
+TEST_F(InstrumentedAllocatorsTest, random_alloc_free)
+{
+    EXPECT_EQ(STATUS_SUCCESS, setInstrumentedAllocators());
+    SIZE_T totalAllocSize = getInstrumentedTotalAllocationSize();
+
+    for (UINT32 i = 0; i < TestIterationCount; i++) {
+        SIZE_T size = RAND() % TestAllocSize + 100;
+        PVOID pAlloc = MEMALLOC(size);
+        // Touch beginning, mid and end for no no-op
+        *(PBYTE) pAlloc = (BYTE) RAND();
+        *((PBYTE) pAlloc + size / 2) = (BYTE) RAND();
+        *((PBYTE) pAlloc + size - 1) = (BYTE) RAND();
+
+        MEMFREE(pAlloc);
+    }
+
+    EXPECT_EQ(totalAllocSize, getInstrumentedTotalAllocationSize());
+    resetInstrumentedAllocators();
+}
+
+TEST_F(InstrumentedAllocatorsTest, random_alignalloc_free)
+{
+    EXPECT_EQ(STATUS_SUCCESS, setInstrumentedAllocators());
+    SIZE_T totalAllocSize = getInstrumentedTotalAllocationSize();
+
+    for (UINT32 i = 0; i < TestIterationCount; i++) {
+        SIZE_T size = RAND() % TestAllocSize + 100;
+        PVOID pAlloc = MEMALIGNALLOC(size, 16);
+        *(PBYTE) pAlloc = (BYTE) RAND();
+        *((PBYTE) pAlloc + size / 2) = (BYTE) RAND();
+        *((PBYTE) pAlloc + size - 1) = (BYTE) RAND();
+
+        MEMFREE(pAlloc);
+    }
+
+    EXPECT_EQ(totalAllocSize, getInstrumentedTotalAllocationSize());
+    resetInstrumentedAllocators();
+}
+
+TEST_F(InstrumentedAllocatorsTest, random_calloc_free)
+{
+    EXPECT_EQ(STATUS_SUCCESS, setInstrumentedAllocators());
+    SIZE_T totalAllocSize = getInstrumentedTotalAllocationSize();
+
+    for (UINT32 i = 0; i < TestIterationCount; i++) {
+        SIZE_T size = RAND() % TestAllocSize + 100;
+        PVOID pAlloc = MEMCALLOC(3, size);
+        *(PBYTE) pAlloc = (BYTE) RAND();
+        *((PBYTE) pAlloc + size / 2) = (BYTE) RAND();
+        *((PBYTE) pAlloc + size - 1) = (BYTE) RAND();
+
+        MEMFREE(pAlloc);
+    }
+
+    EXPECT_EQ(totalAllocSize, getInstrumentedTotalAllocationSize());
+    resetInstrumentedAllocators();
+}
+
+TEST_F(InstrumentedAllocatorsTest, random_alloc_later_free)
+{
+    PBYTE allocations[TestIterationCount];
+    EXPECT_EQ(STATUS_SUCCESS, setInstrumentedAllocators());
+    SIZE_T totalAllocSize = getInstrumentedTotalAllocationSize();
+
+    for (UINT32 i = 0; i < TestIterationCount; i++) {
+        SIZE_T size = RAND() % TestAllocSize + 100;
+        allocations[i] = (PBYTE) MEMALLOC(size);
+        // Touch beginning, mid and end for no no-op
+        allocations[i][0] = (BYTE) RAND();
+        allocations[i][size / 2] = (BYTE) RAND();
+        allocations[i][size - 1] = (BYTE) RAND();
+    }
+
+    // Free all allocations
+    for (UINT32 i = 0; i < TestIterationCount; i++) {
+        MEMFREE(allocations[i]);
+    }
+
+    EXPECT_EQ(totalAllocSize, getInstrumentedTotalAllocationSize());
+    resetInstrumentedAllocators();
 }
