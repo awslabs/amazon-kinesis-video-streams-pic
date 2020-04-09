@@ -167,6 +167,8 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
 
 CleanUp:
 
+    CHK_LOG_ERR(retStatus);
+
     if (STATUS_FAILED(retStatus) && tearDownOnError) {
         freeKinesisVideoClientInternal(pKinesisVideoClient, retStatus);
     }
@@ -224,6 +226,8 @@ CleanUp:
         DLOGE("Failed to create Kinesis Video Client - timed out.");
     }
 
+    CHK_LOG_ERR(retStatus);
+
     // Unlock the client
     if (clientLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
@@ -268,6 +272,7 @@ STATUS freeKinesisVideoClient(PCLIENT_HANDLE pClientHandle)
 
 CleanUp:
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -318,6 +323,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -357,6 +363,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -394,6 +401,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -431,6 +439,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -468,6 +477,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -506,6 +516,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -587,6 +598,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -622,6 +634,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -664,6 +677,9 @@ CleanUp:
         DLOGW("Failed to submit frame to Kinesis Video client. "
                       "status: 0x%08x decoding timestamp: %" PRIu64 " presentation timestamp: %" PRIu64,
               retStatus, pFrame->decodingTs, pFrame->presentationTs);
+    } else {
+        /* In case pFrame is NULL and something failed */
+        CHK_LOG_ERR(retStatus);
     }
 
     if (releaseStreamSemaphore) {
@@ -710,6 +726,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -750,6 +767,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 
@@ -789,6 +807,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -824,6 +843,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -856,6 +876,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -886,6 +907,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -922,6 +944,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -958,6 +981,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -994,6 +1018,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -1031,6 +1056,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -1067,6 +1093,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -1127,6 +1154,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -1164,6 +1192,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -1200,6 +1229,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -1236,6 +1266,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
