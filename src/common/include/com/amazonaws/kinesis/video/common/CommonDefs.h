@@ -1152,25 +1152,13 @@ typedef UINT64 HANDLE;
         } \
     } while (FALSE)
 
-#define CHK_LOG_ERR(condition, ...) \
+#define CHK_LOG_ERR(condition) \
     do { \
         STATUS __status = condition; \
         if (STATUS_FAILED(__status)) { \
             DLOGE("operation returned status code: 0x%08x", __status); \
         } \
     } while (FALSE)
-
-/**
-* Macro that logs one of the status codes if the operation does not return STATUS_SUCCESS
-*/
-#define CHK_LOG_ERR_NV(condition) \
-    do { \
-        STATUS __status = condition; \
-        if (STATUS_FAILED(__status)) { \
-            DLOGE("operation returned status code: 0x%08x", __status); \
-        } \
-    } while (FALSE)
-
 
 #ifdef  __cplusplus
 }
