@@ -65,6 +65,9 @@ VOID dumpMemoryHex(PVOID pMem, UINT32 size)
     DLOGS("++++++++++++++++++++++++++++++++++++++++++++");
     DLOGS("Dumping memory done!");
     DLOGS("============================================");
+#else
+    UNUSED_PARAM(pMem);
+    UNUSED_PARAM(size);
 #endif
 }
 

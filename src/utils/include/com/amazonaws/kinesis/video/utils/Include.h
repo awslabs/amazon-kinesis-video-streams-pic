@@ -1309,6 +1309,42 @@ PUBLIC_API STATUS semaphoreUnlock(SEMAPHORE_HANDLE);
  */
 PUBLIC_API STATUS semaphoreWaitUntilClear(SEMAPHORE_HANDLE, UINT64);
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// Instrumented memory allocators functionality
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Sets the global allocators to the instrumented ones.
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS setInstrumentedAllocators();
+
+/**
+ * Resets the global allocators to the original ones.
+ *
+ * NOTE: Any attempt to free allocations which were allocated after set call
+ * past this API call will result in memory corruption.
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS resetInstrumentedAllocators();
+
+/**
+ * Returns the current total allocation size.
+ *
+ * @return - Total allocation size
+ */
+PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
+
+#ifdef INSTRUMENTED_ALLOCATORS
+#define SET_INSTRUMENTED_ALLOCATORS()               setInstrumentedAllocators()
+#define RESET_INSTRUMENTED_ALLOCATORS()             resetInstrumentedAllocators()
+#else
+#define SET_INSTRUMENTED_ALLOCATORS()               do { if (0) setInstrumentedAllocators(); } while (0)
+#define RESET_INSTRUMENTED_ALLOCATORS()             do { if (0) resetInstrumentedAllocators(); } while (0)
+#endif
+
 #ifdef __cplusplus
 }
 #endif
