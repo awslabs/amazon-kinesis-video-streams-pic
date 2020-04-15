@@ -181,6 +181,9 @@ STATUS contentViewGetItemAt(PContentView pContentView, UINT64 itemIndex, PViewIt
     // Check the input params
     CHK(pContentView != NULL && ppItem != NULL, STATUS_NULL_ARG);
     CHK_STATUS(contentViewItemExists(pContentView, itemIndex, &exists));
+    if (!exists) {
+        DLOGD("head %" PRIu64 " tail %" PRIu64 " itemIndex %" PRIu64, pRollingView->head, pRollingView->tail, itemIndex);
+    }
     CHK(exists, STATUS_CONTENT_VIEW_INVALID_INDEX);
 
     // Get the current item
@@ -254,6 +257,10 @@ STATUS contentViewSetCurrentIndex(PContentView pContentView, UINT64 index)
     pRollingView->current = index;
 
 CleanUp:
+
+    if (retStatus == STATUS_CONTENT_VIEW_INVALID_INDEX) {
+        DLOGD("head %" PRIu64 " tail %" PRIu64 " itemIndex %" PRIu64, pRollingView->head, pRollingView->tail, index);
+    }
 
     LEAVES();
     return retStatus;
@@ -592,6 +599,10 @@ STATUS contentViewTrimTail(PContentView pContentView, UINT64 itemIndex)
     }
 
 CleanUp:
+
+    if (retStatus == STATUS_CONTENT_VIEW_INVALID_INDEX) {
+        DLOGD("head %" PRIu64 " tail %" PRIu64 " itemIndex %" PRIu64, pRollingView->head, pRollingView->tail, index);
+    }
 
     LEAVES();
     return retStatus;
