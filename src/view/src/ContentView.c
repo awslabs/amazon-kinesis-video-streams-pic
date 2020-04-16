@@ -157,6 +157,8 @@ STATUS contentViewGetNext(PContentView pContentView, PViewItem* ppItem)
     // Get the current item
     pCurrent = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->current);
 
+    DLOGD("head %" PRIu64 " tail %" PRIu64 " current %" PRIu64, pRollingView->head, pRollingView->tail, pRollingView->current);
+
     // Increment the current
     pRollingView->current++;
 
@@ -344,6 +346,7 @@ STATUS contentViewRollbackCurrent(PContentView pContentView, UINT64 duration, BO
             break;
         }
     }
+    DLOGD("head %" PRIu64 " tail %" PRIu64 " current %" PRIu64, pRollingView->head, pRollingView->tail, pRollingView->current);
 
 CleanUp:
 
@@ -365,6 +368,8 @@ STATUS contentViewResetCurrent(PContentView pContentView)
 
     // Start from the current and iterate
     pRollingView->current = pRollingView->tail;
+
+    DLOGD("head %" PRIu64 " tail %" PRIu64 " current %" PRIu64, pRollingView->head, pRollingView->tail, pRollingView->current);
 
 CleanUp:
 
@@ -598,12 +603,11 @@ STATUS contentViewTrimTail(PContentView pContentView, UINT64 itemIndex)
         }
     }
 
+    DLOGD("head %" PRIu64 " tail %" PRIu64 " current %" PRIu64, pRollingView->head, pRollingView->tail, pRollingView->current);
+
 CleanUp:
 
-    if (retStatus == STATUS_CONTENT_VIEW_INVALID_INDEX) {
-        DLOGD("head %" PRIu64 " tail %" PRIu64 " itemIndex %" PRIu64, pRollingView->head, pRollingView->tail, index);
-    }
-
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
 }
@@ -697,6 +701,8 @@ STATUS contentViewTrimTailItems(PContentView pContentView)
             pTail->index = pRollingView->tail;
         }
     }
+
+    DLOGD("head %" PRIu64 " tail %" PRIu64 " current %" PRIu64, pRollingView->head, pRollingView->tail, pRollingView->current);
 
 CleanUp:
 
