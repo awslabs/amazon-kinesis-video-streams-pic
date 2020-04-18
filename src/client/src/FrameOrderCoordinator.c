@@ -308,6 +308,10 @@ STATUS frameOrderCoordinatorPutFrame(PKinesisVideoStream pKinesisVideoStream, PF
 
 CleanUp:
 
+    if (STATUS_FAILED(retStatus) && pKinesisVideoStream != NULL) {
+        pKinesisVideoStream->diagnostics.putFrameErrors++;
+    }
+
     if (locked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
                                                            pFrameOrderCoordinator->lock);

@@ -284,6 +284,9 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     // Set the initial state to new
     pKinesisVideoStream->streamState = STREAM_STATE_NEW;
 
+    // Store the stream uptime start
+    pKinesisVideoStream->diagnostics.createTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
+
     // Call to transition the state machine
     CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
 
@@ -659,31 +662,38 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     CHK_STATUS(getKinesisVideoMetrics(TO_CLIENT_HANDLE(pKinesisVideoClient), &clientMetrics));
     CHK_STATUS(getKinesisVideoStreamMetrics(TO_STREAM_HANDLE(pKinesisVideoStream), &streamMetrics));
 
-    DLOGD("Kinesis Video client and stream metrics: \n\t"
-                  "Overall storage byte size: %" PRIu64 "\n\t"
-                  "Available storage byte size: %" PRIu64 "\n\t"
-                  "Allocated storage byte size: %" PRIu64 "\n\t"
-                  "Total view allocation byte size: %" PRIu64 "\n\t"
-                  "Total streams frame rate (fps): %" PRIu64 "\n\t"
-                  "Total streams transfer rate (bps): %" PRIu64 " (%" PRIu64 " Kbps)\n\t"
-                  "Current view duration (ms): %" PRIu64 "\n\t"
-                  "Overall view duration (ms): %" PRIu64 "\n\t"
-                  "Current view byte size: %" PRIu64 "\n\t"
-                  "Overall view byte size: %" PRIu64 "\n\t"
-                  "Current frame rate (fps): %f\n\t"
-                  "Current transfer rate (bps): %" PRIu64 " (%" PRIu64 " Kbps)",
-          clientMetrics.contentStoreSize,
-          clientMetrics.contentStoreAvailableSize,
-          clientMetrics.contentStoreAllocatedSize,
-          clientMetrics.totalContentViewsSize,
-          clientMetrics.totalFrameRate,
-          clientMetrics.totalTransferRate * 8, clientMetrics.totalTransferRate * 8 / 1024,
-          streamMetrics.currentViewDuration / HUNDREDS_OF_NANOS_IN_A_MILLISECOND,
-          streamMetrics.overallViewDuration / HUNDREDS_OF_NANOS_IN_A_MILLISECOND,
-          streamMetrics.currentViewSize,
-          streamMetrics.overallViewSize,
-          streamMetrics.currentFrameRate,
-          streamMetrics.currentTransferRate * 8, streamMetrics.currentTransferRate * 8 / 1024);
+    DLOGD("Kinesis Video client and stream metrics:");
+    DLOGD("\tOverall storage byte size: %" PRIu64 " ", clientMetrics.contentStoreSize);
+    DLOGD("\tAvailable storage byte size: %" PRIu64 " ", clientMetrics.contentStoreAvailableSize);
+    DLOGD("\tAllocated storage byte size: %" PRIu64 " ", clientMetrics.contentStoreAllocatedSize);
+    DLOGD("\tTotal view allocation byte size: %" PRIu64 " ", clientMetrics.totalContentViewsSize);
+    DLOGD("\tTotal streams frame rate (fps): %" PRIu64 " ", clientMetrics.totalFrameRate);
+    DLOGD("\tTotal streams transfer rate (bps): %" PRIu64 " (%" PRIu64 " Kbps)", clientMetrics.totalTransferRate * 8, clientMetrics.totalTransferRate * 8 / 1024);
+    DLOGD("\tCurrent view duration (ms): %" PRIu64 " ", streamMetrics.currentViewDuration / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    DLOGD("\tOverall view duration (ms): %" PRIu64 " ", streamMetrics.overallViewDuration / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    DLOGD("\tCurrent view byte size: %" PRIu64 " ", streamMetrics.currentViewSize);
+    DLOGD("\tOverall view byte size: %" PRIu64 " ", streamMetrics.overallViewSize);
+    DLOGD("\tCurrent frame rate (fps): %f ", streamMetrics.currentFrameRate);
+    DLOGD("\tCurrent transfer rate (bps): %" PRIu64 " (%" PRIu64 " Kbps)", streamMetrics.currentTransferRate * 8, streamMetrics.currentTransferRate * 8 / 1024);
+
+    // V1 information
+    DLOGD("\tStream uptime in (ms): %" PRIu64 " ", streamMetrics.uptime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    DLOGD("\tTotal transferred bytes: %" PRIu64 " ", streamMetrics.transferredBytes);
+    DLOGD("\tTotal number of streaming sessions: %" PRIu64 " ", streamMetrics.totalSessions);
+    DLOGD("\tTotal number of active streaming sessions: %" PRIu64 " ", streamMetrics.totalActiveSessions);
+    DLOGD("\tNumber of Buffered ACKs: %" PRIu64 " ", streamMetrics.bufferedAcks);
+    DLOGD("\tNumber of Received ACKs: %" PRIu64 " ", streamMetrics.receivedAcks);
+    DLOGD("\tNumber of Persisted ACKs: %" PRIu64 " ", streamMetrics.persistedAcks);
+    DLOGD("\tNumber of Error ACKs: %" PRIu64 " ", streamMetrics.errorAcks);
+    DLOGD("\tNumber of dropped frames: %" PRIu64 " ", streamMetrics.droppedFrames);
+    DLOGD("\tNumber of skipped frames: %" PRIu64 " ", streamMetrics.skippedFrames);
+    DLOGD("\tNumber of latency pressure events: %" PRIu64 " ", streamMetrics.latencyPressures);
+    DLOGD("\tNumber of buffer pressure events: %" PRIu64 " ", streamMetrics.bufferPressures);
+    DLOGD("\tNumber of stream staleness events: %" PRIu64 " ", streamMetrics.staleEvents);
+    DLOGD("\tNumber of latency pressure events: %" PRIu64 " ", streamMetrics.latencyPressures);
+    DLOGD("\tNumber of Put Frame errors: %" PRIu64 " ", streamMetrics.putFrameErrors);
+    DLOGD("\tAverage Control Plane API latency (ms): %" PRIu64 " ", streamMetrics.cplApiCallLatency / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    DLOGD("\tAverage Data Plane API latency (ms): %" PRIu64 " ", streamMetrics.dataApiCallLatency / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
 CleanUp:
 
@@ -771,6 +781,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         if (CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)) {
             pKinesisVideoStream->skipNonKeyFrames = FALSE;
         } else {
+            pKinesisVideoStream->diagnostics.skippedFrames++;
             CHK(FALSE, retStatus); // skip processing the frame
         }
     }
@@ -915,6 +926,8 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             remainingDuration = pKinesisVideoStream->streamInfo.streamCaps.bufferDuration - windowDuration;
             thresholdPercent = (UINT32) (((DOUBLE) remainingDuration / pKinesisVideoStream->streamInfo.streamCaps.bufferDuration) * 100);
             if (thresholdPercent <= BUFFER_DURATION_PRESSURE_NOTIFICATION_THRESHOLD) {
+                pKinesisVideoStream->diagnostics.bufferPressures++;
+
                 // Notify the client app about buffer pressure
                 CHK_STATUS(pKinesisVideoClient->clientCallbacks.bufferDurationOverflowPressureFn(
                         pKinesisVideoClient->clientCallbacks.customData,
@@ -986,6 +999,8 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 
         // Check for the breach and invoke the user provided callback
         if (duration > pKinesisVideoStream->streamInfo.streamCaps.maxLatency) {
+            pKinesisVideoStream->diagnostics.latencyPressures++;
+
             CHK_STATUS(pKinesisVideoClient->clientCallbacks.streamLatencyPressureFn(
                 pKinesisVideoClient->clientCallbacks.customData,
                 TO_STREAM_HANDLE(pKinesisVideoStream),
@@ -1169,6 +1184,9 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             }
 
             pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_STREAMING;
+
+            // Update the active session count in metrics
+            pKinesisVideoStream->diagnostics.totalActiveSessions++;
 
             break;
         case UPLOAD_HANDLE_STATE_AWAITING_ACK:
@@ -1400,6 +1418,10 @@ CleanUp:
         // Calculate the current transfer rate only after the first iteration
         currentTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
         pKinesisVideoStream->diagnostics.accumulatedByteCount += *pFillSize;
+
+        // Store the overall transferred byte count
+        pKinesisVideoStream->diagnostics.transferredBytes += *pFillSize;
+
         if (!restarted) {
             // Calculate the delta time in seconds
             deltaInSeconds = (DOUBLE) (currentTime - pKinesisVideoStream->diagnostics.lastTransferRateTimestamp) / HUNDREDS_OF_NANOS_IN_A_SECOND;
@@ -1530,6 +1552,7 @@ STATUS getStreamMetrics(PKinesisVideoStream pKinesisVideoStream, PStreamMetrics 
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = NULL;
     BOOL streamLocked = FALSE;
+    UINT64 currentTime;
 
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL && pStreamMetrics != NULL, STATUS_NULL_ARG);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
@@ -1549,6 +1572,30 @@ STATUS getStreamMetrics(PKinesisVideoStream pKinesisVideoStream, PStreamMetrics 
     // Store the frame rate and the transfer rate
     pStreamMetrics->currentFrameRate = pKinesisVideoStream->diagnostics.currentFrameRate;
     pStreamMetrics->currentTransferRate = pKinesisVideoStream->diagnostics.currentTransferRate;
+
+    // Bail out for V0
+    CHK(pStreamMetrics->version != 0, retStatus);
+
+    // Fill in data for V1 metrics
+    currentTime = pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(
+            pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.customData);
+    pStreamMetrics->uptime = currentTime - pKinesisVideoStream->diagnostics.createTime;
+    pStreamMetrics->transferredBytes = pKinesisVideoStream->diagnostics.transferredBytes;
+    pStreamMetrics->totalSessions = pKinesisVideoStream->diagnostics.totalSessions;
+    pStreamMetrics->totalActiveSessions = pKinesisVideoStream->diagnostics.totalActiveSessions;
+    pStreamMetrics->bufferedAcks = pKinesisVideoStream->diagnostics.bufferedAcks;
+    pStreamMetrics->receivedAcks = pKinesisVideoStream->diagnostics.receivedAcks;
+    pStreamMetrics->persistedAcks = pKinesisVideoStream->diagnostics.persistedAcks;
+    pStreamMetrics->errorAcks = pKinesisVideoStream->diagnostics.errorAcks;
+    pStreamMetrics->droppedFrames = pKinesisVideoStream->diagnostics.droppedFrames;
+    pStreamMetrics->droppedFragments = pKinesisVideoStream->diagnostics.droppedFragments;
+    pStreamMetrics->skippedFrames = pKinesisVideoStream->diagnostics.skippedFrames;
+    pStreamMetrics->latencyPressures = pKinesisVideoStream->diagnostics.latencyPressures;
+    pStreamMetrics->bufferPressures = pKinesisVideoStream->diagnostics.bufferPressures;
+    pStreamMetrics->staleEvents = pKinesisVideoStream->diagnostics.staleEvents;
+    pStreamMetrics->putFrameErrors = pKinesisVideoStream->diagnostics.putFrameErrors;
+    pStreamMetrics->cplApiCallLatency = pKinesisVideoStream->diagnostics.cplApiCallLatency;
+    pStreamMetrics->dataApiCallLatency = pKinesisVideoStream->diagnostics.dataApiCallLatency;
 
 CleanUp:
 
@@ -2352,6 +2399,9 @@ STATUS streamFragmentBufferingAck(PKinesisVideoStream pKinesisVideoStream, UINT6
     // Set the buffering ACK
     SET_ITEM_BUFFERING_ACK(pCurItem->flags);
 
+    // Store for metrics purposes
+    pKinesisVideoStream->diagnostics.bufferedAcks++;
+
 CleanUp:
 
     LEAVES();
@@ -2373,6 +2423,9 @@ STATUS streamFragmentReceivedAck(PKinesisVideoStream pKinesisVideoStream, UINT64
 
     // Set the received ACK
     SET_ITEM_RECEIVED_ACK(pCurItem->flags);
+
+    // Store for metrics purposes
+    pKinesisVideoStream->diagnostics.receivedAcks++;
 
 CleanUp:
 
@@ -2398,6 +2451,9 @@ STATUS streamFragmentPersistedAck(PKinesisVideoStream pKinesisVideoStream, UINT6
 
     // Update last persistedAck timestamp
     pUploadHandleInfo->lastPersistedAckTs = timestamp;
+
+    // Store for metrics purposes
+    pKinesisVideoStream->diagnostics.persistedAcks++;
 
     // Get the fragment start frame.
     CHK_STATUS(contentViewGetItemWithTimestamp(pKinesisVideoStream->pView, timestamp, TRUE, &pCurItem));
@@ -2513,6 +2569,9 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 ti
     UPLOAD_HANDLE uploadHandle = INVALID_UPLOAD_HANDLE_VALUE;
     BOOL iterate = TRUE;
 
+    // Store for metrics purposes
+    pKinesisVideoStream->diagnostics.errorAcks++;
+
     // The state and the params are validated. Get the item with the timestamp of the failed fragment
     CHK_STATUS(contentViewGetItemWithTimestamp(pKinesisVideoStream->pView, timestamp, TRUE, &pCurItem));
     // Set the latest to the timestamp of the failed fragment for re-transmission
@@ -2538,6 +2597,7 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 ti
         while (iterate) {
             // Indicate an errored item and advance the current
             SET_ITEM_SKIP_ITEM(pCurItem->flags);
+            pKinesisVideoStream->diagnostics.skippedFrames++;
             retStatus = contentViewGetNext(pKinesisVideoStream->pView, &pCurItem);
             CHK(retStatus == STATUS_CONTENT_VIEW_NO_MORE_ITEMS || retStatus == STATUS_SUCCESS, retStatus);
 
@@ -2623,6 +2683,8 @@ STATUS checkForConnectionStaleness(PKinesisVideoStream pKinesisVideoStream, PVie
         // See if we are over the threshold
         lastAckDuration = pCurView->timestamp - pViewItem->timestamp;
         if (lastAckDuration > pKinesisVideoStream->streamInfo.streamCaps.connectionStalenessDuration) {
+            pKinesisVideoStream->diagnostics.staleEvents++;
+
             // Ok, we are above the threshold - call the callback
             CHK_STATUS(pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.streamConnectionStaleFn(
                     pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.customData,

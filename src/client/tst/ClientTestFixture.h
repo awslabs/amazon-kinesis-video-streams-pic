@@ -557,6 +557,12 @@ protected:
 
     STATUS CreateClient()
     {
+        mGetDeviceFingerprintFuncCount = 0;
+        mGetDeviceCertificateFuncCount = 0;
+        mDeviceCertToTokenFuncCount = 0;
+        mGetSecurityTokenFuncCount = 0;
+        mCreateDeviceFuncCount = 0;
+
         // Set the random number generator seed for reproducibility
         SRAND(12345);
 
@@ -575,8 +581,11 @@ protected:
         EXPECT_EQ(1, mCreateDeviceFuncCount);
         EXPECT_EQ(0, STRNCMP(TEST_DEVICE_NAME, mDeviceName, SIZEOF(mDeviceName)));
 
-        // Satisfy the create device callback
-        EXPECT_EQ(STATUS_SUCCESS, createDeviceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_DEVICE_ARN));
+        // Satisfy the create device callback in assync mode
+        if (!mClientSyncMode) {
+            EXPECT_EQ(STATUS_SUCCESS,
+                      createDeviceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_DEVICE_ARN));
+        }
 
         // Ensure the OK is called
         EXPECT_TRUE(mClientReady);

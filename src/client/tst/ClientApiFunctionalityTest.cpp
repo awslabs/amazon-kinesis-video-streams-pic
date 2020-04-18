@@ -176,3 +176,58 @@ TEST_F(ClientApiFunctionalityTest, createKinesisVideoClientSync_AuthIntegration)
     mClientSyncMode = TRUE;
     authIntegrationTest(TRUE);
 }
+
+TEST_F(ClientApiFunctionalityTest, createClientCreateStream_Iterate)
+{
+    mClientSyncMode = TRUE;
+    mSubmitServiceCallResultMode = STOP_AT_PUT_STREAM;
+    STREAM_HANDLE streams[10];
+
+    // Free the initial client that was created by the setup of the test
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&mClientHandle));
+
+    for (UINT32 iterate = 0; iterate < 100; iterate++) {
+        CreateClient();
+        // Create a few streams, delete stream
+        for (UINT32 i = 0; i < ARRAY_SIZE(streams); i++) {
+            EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoStreamSync(mClientHandle, &mStreamInfo, &mStreamHandle));
+            EXPECT_TRUE(IS_VALID_STREAM_HANDLE(mStreamHandle));
+
+            // delete the stream
+            EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
+        }
+
+        // Create a few streams and don't delete immediately
+        for (UINT32 i = 0; i < ARRAY_SIZE(streams); i++) {
+            SPRINTF(mStreamInfo.name, "TestStream_%d", i);
+            EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoStreamSync(mClientHandle, &mStreamInfo, &mStreamHandle));
+            EXPECT_TRUE(IS_VALID_STREAM_HANDLE(mStreamHandle));
+        }
+
+        EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&mClientHandle));
+
+        // Set the stream as invalid
+        mStreamHandle = INVALID_STREAM_HANDLE_VALUE;
+    }
+
+    // Same with free streams
+    for (UINT32 iterate = 0; iterate < 100; iterate++) {
+        CreateClient();
+
+        // Create a few streams and don't delete immediately
+        for (UINT32 i = 0; i < ARRAY_SIZE(streams); i++) {
+            SPRINTF(mStreamInfo.name, "TestStream_%d", i);
+            EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoStreamSync(mClientHandle, &mStreamInfo, &streams[i]));
+            EXPECT_TRUE(IS_VALID_STREAM_HANDLE(streams[i]));
+        }
+
+        for (UINT32 i = 0; i < ARRAY_SIZE(streams); i++) {
+            EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&streams[ARRAY_SIZE(streams) - i - 1]));
+        }
+
+        EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&mClientHandle));
+
+        // Set the stream as invalid
+        mStreamHandle = INVALID_STREAM_HANDLE_VALUE;
+    }
+}

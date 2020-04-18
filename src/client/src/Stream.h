@@ -102,11 +102,63 @@ struct __KinesisVideoStreamDiagnostics {
     // Current transfer bytes-per-second
     UINT64 currentTransferRate;
 
-    // Accumuted byte count for the transfer rate calculation
+    // Accumulated byte count for the transfer rate calculation
     UINT64 accumulatedByteCount;
 
     // Last time we took a measurement for the transfer rate
     UINT64 lastTransferRateTimestamp;
+
+    // Stream create time
+    UINT64 createTime;
+
+    // Total transferred bytes
+    UINT64 transferredBytes;
+
+    // Total number of streaming sessions including new/errored/active
+    UINT64 totalSessions;
+
+    // Total number of active streaming sessions - only the ones that actually have streamed some data
+    UINT64 totalActiveSessions;
+
+    // Total number of buffered ACKs
+    UINT64 bufferedAcks;
+
+    // Total number of received ACKs
+    UINT64 receivedAcks;
+
+    // Total number of persisted ACKs
+    UINT64 persistedAcks;
+
+    // Total number of error ACKs
+    UINT64 errorAcks;
+
+    // Total number of dropped frames
+    UINT64 droppedFrames;
+
+    // Total number of dropped fragments
+    // TODO: Near-realtime streaming mode is not used currently supported and this value will be 0
+    UINT64 droppedFragments;
+
+    // Total number of skipped frames
+    UINT64 skippedFrames;
+
+    // Total number of latency pressure events
+    UINT64 latencyPressures;
+
+    // Total number of Buffer pressure events
+    UINT64 bufferPressures;
+
+    // Total number of stream stale events
+    UINT64 staleEvents;
+
+    // Total number of put frame call errors
+    UINT64 putFrameErrors;
+
+    // Backend Control Plane API call latency which includes success and failure
+    UINT64 cplApiCallLatency;
+
+    // Backend Data Plane API call latency which includes success and failure
+    UINT64 dataApiCallLatency;
 };
 typedef struct __KinesisVideoStreamDiagnostics* PKinesisVideoStreamDiagnostics;
 
@@ -690,6 +742,16 @@ STATUS logStreamMetric(PKinesisVideoStream);
  * @return VOID
  */
 VOID logStreamInfo(PStreamInfo);
+
+/**
+ * Calculates the backend API call latency for diagnostics/metrics purposes
+ *
+ * @param 1 - IN - PKinesisVideoStream object
+ * @param 2 - IN - BOOL - Whether it's control plane API call or data plane API call
+ *
+ * @return Status code of the operation
+ */
+STATUS calculateCallLatency(PKinesisVideoStream, BOOL);
 
 ///////////////////////////////////////////////////////////////////////////
 // Service call event functions
