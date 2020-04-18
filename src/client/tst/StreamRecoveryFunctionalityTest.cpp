@@ -732,8 +732,8 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithoutBuff
 
     // Validate that the new upload handle has a rolled back proper start stream
     EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle,
-            currentUploadHandles[0], dataBuf,
-            dataBufSize, &retrievedSize));
+                                                        currentUploadHandles[0], dataBuf,
+                                                        dataBufSize, &retrievedSize));
     EXPECT_EQ(dataBufSize, retrievedSize);
 
     pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
@@ -785,6 +785,71 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithoutBuff
     EXPECT_EQ(TRUE, mStreamClosed);
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
+}
+
+TEST_P(StreamRecoveryFunctionalityTest, streamStartViewDroppedBeforeFullyConsumedRecoverable)
+{
+    UINT64 currentTime, testTerminationTime;
+    CreateScenarioTestClient();
+    BOOL didPutFrame, gotStreamData = FALSE, submittedAck;
+    UINT32 tokenRotateCount = 0, i;
+    std::vector<UPLOAD_HANDLE> currentUploadHandles;
+    MockConsumer *mockConsumer;
+    STATUS status = STATUS_SUCCESS;
+
+    CreateScenarioTestClient();
+    /* data buffer need to be less than frame size so a single frame needs two getStreamData calls to be consumed */
+    mMockProducerConfig.mFrameSizeByte = 50000;
+    mMockConsumerConfig.mDataBufferSizeByte = 30000;
+
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+    PASS_TEST_FOR_OFFLINE()
+
+    /* content view can contain only 40 frames */
+    mStreamInfo.streamCaps.frameRate = 20;
+    mStreamInfo.streamCaps.bufferDuration = 2 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    mStreamInfo.streamCaps.viewOverflowPolicy = CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM;
+
+    CreateStreamSync();
+    /* default fps is 20 */
+    MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
+
+    /* fill the content view */
+    for(i = 0; i < 40; ++i) {
+        EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
+    }
+
+    mStreamingSession.getActiveUploadHandles(currentUploadHandles);
+    /* should only be 1 because we didnt hit token rotation */
+    EXPECT_EQ(1, currentUploadHandles.size());
+
+    UPLOAD_HANDLE uploadHandle = currentUploadHandles[0];
+    mockConsumer = mStreamingSession.getConsumer(uploadHandle);
+
+    /* do ONE successful getStreamData */
+    while(!gotStreamData) {
+        currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
+        status = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
+        VerifyGetStreamDataResult(status, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
+    }
+
+    /* put 40 frames again. The first 40 frames are now all dropped */
+    for(i = 0; i < 40; ++i) {
+        EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
+    }
+
+    status = STATUS_SUCCESS;
+    gotStreamData = FALSE;
+
+    /* do another getStreamData */
+    while(!gotStreamData) {
+        currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
+        status = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
+    }
+
+    EXPECT_EQ(STATUS_SUCCESS, status);
+
+    VerifyStopStreamSyncAndFree();
 }
 
 INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, StreamRecoveryFunctionalityTest,

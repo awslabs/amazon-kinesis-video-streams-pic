@@ -88,17 +88,18 @@ void MockConsumer::createAckEvent(BOOL isEosSent, UINT64 sendAckTime) {
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
-    PViewItem pViewItem;
+    PViewItem pViewItem = NULL;
     UINT64 endIndex = pKinesisVideoStream->curViewItem.viewItem.index;
-
-
+    STATUS status = STATUS_SUCCESS;
     if (pKinesisVideoStream->curViewItem.offset == pKinesisVideoStream->curViewItem.viewItem.length) {
         endIndex++;
     }
 
     for(UINT64 i = mOldCurrent; i < endIndex; i++) {
-        EXPECT_EQ(STATUS_SUCCESS, contentViewGetItemAt(pKinesisVideoStream->pView, i, &pViewItem));
-        if (!CHECK_ITEM_SKIP_ITEM(pViewItem->flags)) {
+        /* not expecting contentViewGetItemAt to always succeed because it may fail in the negative scenario tests.
+         * For example view items were deliberately dropped. */
+        status = contentViewGetItemAt(pKinesisVideoStream->pView, i, &pViewItem);
+        if (STATUS_SUCCEEDED(status) && pViewItem != NULL && !CHECK_ITEM_SKIP_ITEM(pViewItem->flags)) {
             if (CHECK_ITEM_FRAGMENT_START(pViewItem->flags)) {
                 if (IS_VALID_TIMESTAMP(mFragmentTimestamp)) {
                     enqueueAckItem(mFragmentTimestamp, &sendAckTime);

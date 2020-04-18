@@ -2074,6 +2074,11 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
 
 CleanUp:
 
+    /* fix up retStatus if contentViewGetItemAt could not find curViewItem */
+    if (retStatus == STATUS_CONTENT_VIEW_INVALID_INDEX) {
+        retStatus = STATUS_SUCCESS;
+    }
+
     // Unmap the old mapping
     if (pFrame != NULL) {
         heapUnmap(pKinesisVideoClient->pHeap, (PVOID) pFrame);
