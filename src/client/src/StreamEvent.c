@@ -532,6 +532,8 @@ STATUS putStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
         pUploadHandleInfo->lastPersistedAckTs = INVALID_TIMESTAMP_VALUE;
         pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_NEW;
 
+        pUploadHandleInfo->createTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
+
         // Increment the total session count in diagnostics
         pKinesisVideoStream->diagnostics.totalSessions++;
     } else {
@@ -695,7 +697,6 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                 if (uploadHandleNotUsed) {
                     // Need to indicate to the getStreamData to not rollback.
                     pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_NOT_IN_USE;
-
                 } else {
                     pActiveUploadHandleInfo = getStreamUploadInfo(pKinesisVideoStream, UPLOAD_HANDLE_STATE_ACTIVE);
 

@@ -1157,6 +1157,9 @@ struct __StreamMetrics {
     // Total number of active streaming sessions - only the ones that actually have streamed some data
     UINT64 totalActiveSessions;
 
+    // Average session duration
+    UINT64 avgSessionDuration;
+
     // Total number of buffered ACKs
     UINT64 bufferedAcks;
 

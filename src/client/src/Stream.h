@@ -120,6 +120,9 @@ struct __KinesisVideoStreamDiagnostics {
     // Total number of active streaming sessions - only the ones that actually have streamed some data
     UINT64 totalActiveSessions;
 
+    // Average session duration
+    UINT64 avgSessionDuration;
+
     // Total number of buffered ACKs
     UINT64 bufferedAcks;
 
@@ -307,6 +310,9 @@ struct __UploadHandleInfo {
 
     // Last received persisted ack timestamp
     UINT64 lastPersistedAckTs;
+
+    // The creation time of the upload handle for diagnostics calculations
+    UINT64 createTime;
 
     // Handle state
     UPLOAD_HANDLE_STATE state;

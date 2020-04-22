@@ -681,6 +681,7 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     DLOGD("\tTotal transferred bytes: %" PRIu64 " ", streamMetrics.transferredBytes);
     DLOGD("\tTotal number of streaming sessions: %" PRIu64 " ", streamMetrics.totalSessions);
     DLOGD("\tTotal number of active streaming sessions: %" PRIu64 " ", streamMetrics.totalActiveSessions);
+    DLOGD("\tAverage streaming sessions duration: %" PRIu64 " ", streamMetrics.avgSessionDuration);
     DLOGD("\tNumber of Buffered ACKs: %" PRIu64 " ", streamMetrics.bufferedAcks);
     DLOGD("\tNumber of Received ACKs: %" PRIu64 " ", streamMetrics.receivedAcks);
     DLOGD("\tNumber of Persisted ACKs: %" PRIu64 " ", streamMetrics.persistedAcks);
@@ -1583,6 +1584,7 @@ STATUS getStreamMetrics(PKinesisVideoStream pKinesisVideoStream, PStreamMetrics 
     pStreamMetrics->transferredBytes = pKinesisVideoStream->diagnostics.transferredBytes;
     pStreamMetrics->totalSessions = pKinesisVideoStream->diagnostics.totalSessions;
     pStreamMetrics->totalActiveSessions = pKinesisVideoStream->diagnostics.totalActiveSessions;
+    pStreamMetrics->avgSessionDuration = pKinesisVideoStream->diagnostics.avgSessionDuration;
     pStreamMetrics->bufferedAcks = pKinesisVideoStream->diagnostics.bufferedAcks;
     pStreamMetrics->receivedAcks = pKinesisVideoStream->diagnostics.receivedAcks;
     pStreamMetrics->persistedAcks = pKinesisVideoStream->diagnostics.persistedAcks;
@@ -2305,6 +2307,16 @@ PUploadHandleInfo getAckReceivedStreamUploadInfo(PKinesisVideoStream pKinesisVid
 VOID deleteStreamUploadInfo(PKinesisVideoStream pKinesisVideoStream, PUploadHandleInfo pUploadHandleInfo) {
     if (NULL != pUploadHandleInfo) {
         stackQueueRemoveItem(pKinesisVideoStream->pUploadInfoQueue, (UINT64) pUploadHandleInfo);
+
+        // Update the diagnostics info with session times
+        UINT64 currentTime = pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(
+                pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.customData);
+
+        if (currentTime >= pUploadHandleInfo->createTime) {
+            UINT64 uptime = currentTime - pUploadHandleInfo->createTime;
+            pKinesisVideoStream->diagnostics.avgSessionDuration = EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.avgSessionDuration, uptime);
+        }
+
         MEMFREE(pUploadHandleInfo);
     }
 }
