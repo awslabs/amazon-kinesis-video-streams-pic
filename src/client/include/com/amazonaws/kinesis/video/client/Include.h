@@ -1182,6 +1182,9 @@ struct __StreamMetrics {
     // Total number of skipped frames
     UINT64 skippedFrames;
 
+    // Total number of storage pressure events
+    UINT64 storagePressures;
+
     // Total number of latency pressure events
     UINT64 latencyPressures;
 

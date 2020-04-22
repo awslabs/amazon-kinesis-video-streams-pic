@@ -142,6 +142,9 @@ struct __KinesisVideoStreamDiagnostics {
     // TODO: Near-realtime streaming mode is not used currently supported and this value will be 0
     UINT64 droppedFragments;
 
+    // Total number of storage pressure events
+    UINT64 storagePressures;
+
     // Total number of skipped frames
     UINT64 skippedFrames;
 

@@ -688,6 +688,7 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     DLOGD("\tNumber of Error ACKs: %" PRIu64 " ", streamMetrics.errorAcks);
     DLOGD("\tNumber of dropped frames: %" PRIu64 " ", streamMetrics.droppedFrames);
     DLOGD("\tNumber of skipped frames: %" PRIu64 " ", streamMetrics.skippedFrames);
+    DLOGD("\tNumber of storage pressure events: %" PRIu64 " ", streamMetrics.storagePressures);
     DLOGD("\tNumber of latency pressure events: %" PRIu64 " ", streamMetrics.latencyPressures);
     DLOGD("\tNumber of buffer pressure events: %" PRIu64 " ", streamMetrics.bufferPressures);
     DLOGD("\tNumber of stream staleness events: %" PRIu64 " ", streamMetrics.staleEvents);
@@ -904,11 +905,14 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // Check for storage pressures. No need for offline mode as the media pipeline will be blocked when there
     // is not enough storage
     if (!IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
-        if (pKinesisVideoClient->clientCallbacks.storageOverflowPressureFn != NULL) {
             remainingSize = pKinesisVideoClient->pHeap->heapLimit - pKinesisVideoClient->pHeap->heapSize;
             thresholdPercent = (UINT32) (((DOUBLE) remainingSize / pKinesisVideoClient->pHeap->heapLimit) * 100);
 
             if (thresholdPercent <= STORAGE_PRESSURE_NOTIFICATION_THRESHOLD) {
+
+                pKinesisVideoStream->diagnostics.storagePressures++;
+
+                if (pKinesisVideoClient->clientCallbacks.storageOverflowPressureFn != NULL) {
                 // Notify the client app about buffer pressure
                 CHK_STATUS(pKinesisVideoClient->clientCallbacks.storageOverflowPressureFn(
                         pKinesisVideoClient->clientCallbacks.customData,
@@ -1592,6 +1596,7 @@ STATUS getStreamMetrics(PKinesisVideoStream pKinesisVideoStream, PStreamMetrics 
     pStreamMetrics->droppedFrames = pKinesisVideoStream->diagnostics.droppedFrames;
     pStreamMetrics->droppedFragments = pKinesisVideoStream->diagnostics.droppedFragments;
     pStreamMetrics->skippedFrames = pKinesisVideoStream->diagnostics.skippedFrames;
+    pStreamMetrics->storagePressures = pKinesisVideoStream->diagnostics.storagePressures;
     pStreamMetrics->latencyPressures = pKinesisVideoStream->diagnostics.latencyPressures;
     pStreamMetrics->bufferPressures = pKinesisVideoStream->diagnostics.bufferPressures;
     pStreamMetrics->staleEvents = pKinesisVideoStream->diagnostics.staleEvents;
