@@ -450,7 +450,7 @@ extern "C" {
 #define FRAGMENT_ACK_CURRENT_VERSION                        0
 #define STREAM_METRICS_CURRENT_VERSION                      1
 #define CLIENT_METRICS_CURRENT_VERSION                      0
-#define CLIENT_INFO_CURRENT_VERSION                         0
+#define CLIENT_INFO_CURRENT_VERSION                         1
 
 /**
  * Definition of the client handle
@@ -1052,6 +1052,11 @@ typedef struct __ClientInfo {
 
     // whether to log metric or not
     BOOL logMetric;
+
+    // ------------------------------- V0 compat ----------------------
+
+    // Time that allowed to be elapsed between the metric loggings if enabled
+    UINT64 metricLoggingPeriod;
 } ClientInfo, *PClientInfo;
 
 /**

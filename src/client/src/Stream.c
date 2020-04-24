@@ -287,6 +287,10 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     // Store the stream uptime start
     pKinesisVideoStream->diagnostics.createTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
 
+    // Set up the next logging time if enabled
+    pKinesisVideoStream->diagnostics.nextLoggingTime = pKinesisVideoStream->diagnostics.createTime +
+            pKinesisVideoClient->deviceInfo.clientInfo.metricLoggingPeriod;
+
     // Call to transition the state machine
     CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
 
@@ -959,9 +963,17 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     }
 
     if (CHECK_ITEM_FRAGMENT_START(itemFlags) && pKinesisVideoClient->deviceInfo.clientInfo.logMetric) {
-        if (STATUS_FAILED(logStreamMetric(pKinesisVideoStream))) {
-            DLOGW("Failed to log stream metric with error 0x%08x", retStatus);
+        currentTime = IS_VALID_TIMESTAMP(currentTime) ? currentTime :
+                pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
+
+        if (currentTime >= pKinesisVideoStream->diagnostics.nextLoggingTime) {
+            if (STATUS_FAILED(logStreamMetric(pKinesisVideoStream))) {
+                DLOGW("Failed to log stream metric with error 0x%08x", retStatus);
+            }
         }
+
+        // Update the next log time
+        pKinesisVideoStream->diagnostics.nextLoggingTime = currentTime + pKinesisVideoClient->deviceInfo.clientInfo.metricLoggingPeriod;
     }
 
     // Put the frame into the view.

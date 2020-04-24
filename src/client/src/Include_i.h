@@ -311,6 +311,34 @@ struct __DeviceInfo_V0 {
 typedef struct __DeviceInfo_V0* PDeviceInfo_V0;
 
 /**
+ * Internal declarations of backwards compat client info
+ */
+typedef struct __ClientInfo_V0 ClientInfo_V0;
+struct __ClientInfo_V0 {
+    // Version of the struct
+    UINT32 version;
+
+    // Client sync creation timeout. 0 or INVALID_TIMESTAMP_VALUE = use default
+    UINT64 createClientTimeout;
+
+    // Stream sync creation timeout. 0 or INVALID_TIMESTAMP_VALUE= use default
+    UINT64 createStreamTimeout;
+
+    // Stream sync stopping timeout. 0 or INVALID_TIMESTAMP_VALUE= use default
+    UINT64 stopStreamTimeout;
+
+    // Offline mode wait for buffer availability timeout. 0 or INVALID_TIMESTAMP_VALUE= use default
+    UINT64 offlineBufferAvailabilityTimeout;
+
+    // Logger log level. 0 = use default
+    UINT32 loggerLogLevel;
+
+    // whether to log metric or not
+    BOOL logMetric;
+};
+typedef struct __ClientInfo_V0* PClientInfo_V0;
+
+/**
  * Internal declarations of backwards compat stream description
  */
 typedef struct __StreamDescription_V0 StreamDescription_V0;

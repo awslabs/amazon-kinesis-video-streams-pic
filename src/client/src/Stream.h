@@ -165,6 +165,9 @@ struct __KinesisVideoStreamDiagnostics {
 
     // Backend Data Plane API call latency which includes success and failure
     UINT64 dataApiCallLatency;
+
+    // Tracking when next time we should log the metrics
+    UINT64 nextLoggingTime;
 };
 typedef struct __KinesisVideoStreamDiagnostics* PKinesisVideoStreamDiagnostics;
 

@@ -65,9 +65,10 @@ STATUS validateClientTags(UINT32, PTag);
  * Sets the default values of the client info if needed
  *
  * @param 1 PClientInfo - Client info object to fixup
+ * @param 2 PClientInfo - Client info object passed in
  *
  */
-VOID fixupClientInfo(PClientInfo);
+VOID fixupClientInfo(PClientInfo, PClientInfo);
 
 /**
  * Fixup/copy the DeviceInfo object returned from the client

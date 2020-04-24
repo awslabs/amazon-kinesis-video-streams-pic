@@ -398,6 +398,7 @@ protected:
         mDeviceInfo.clientInfo.offlineBufferAvailabilityTimeout = TEST_DEFAULT_BUFFER_AVAILABILITY_TIMEOUT;
         mDeviceInfo.clientInfo.loggerLogLevel = logLevel;
         mDeviceInfo.clientInfo.logMetric = FALSE;
+        mDeviceInfo.clientInfo.metricLoggingPeriod = 1 * HUNDREDS_OF_NANOS_IN_A_MINUTE;
 
         // Initialize stream info
         mStreamInfo.version = STREAM_INFO_CURRENT_VERSION;
