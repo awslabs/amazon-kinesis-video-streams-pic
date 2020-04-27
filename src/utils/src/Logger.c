@@ -25,8 +25,8 @@ PCHAR getLogLevelStr(UINT32 loglevel)
 VOID addLogMetadata(PCHAR buffer, UINT32 bufferLen, PCHAR fmt, UINT32 logLevel)
 {
     UINT32 timeStrLen = 0;
-    /* space for "yyyy-mm-dd HH:MM:SS\0" + space + null */
-    CHAR timeString[MAX_TIMESTAMP_FORMAT_STR_LEN + 1 + 1];
+    /* space for "yyyy-mm-dd HH:MM:SS:000\0" + space + null */
+    CHAR timeString[MAX_TIMESTAMP_FORMAT_STR_LEN + 4 + 1 + 1];
     STATUS retStatus = STATUS_SUCCESS;
     UINT32 offset = 0;
 
@@ -38,7 +38,7 @@ VOID addLogMetadata(PCHAR buffer, UINT32 bufferLen, PCHAR fmt, UINT32 logLevel)
 #endif
 
     /* if something fails in getting time, still print the log, just without timestamp */
-    retStatus = generateTimestampStr(globalGetTime(), "%Y-%m-%d %H:%M:%S ", timeString, (UINT32) ARRAY_SIZE(timeString), &timeStrLen);
+    retStatus = generateTimestampStr(globalGetTime(), "%Y-%m-%d %H:%M:%S", timeString, (UINT32) ARRAY_SIZE(timeString), &timeStrLen);
     if (STATUS_FAILED(retStatus)) {
         PRINTF("Fail to get time with status code is %08x\n", retStatus);
         timeString[0] = '\0';

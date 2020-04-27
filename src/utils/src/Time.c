@@ -7,19 +7,22 @@ STATUS generateTimestampStr(UINT64 timestamp, PCHAR formatStr, PCHAR pDestBuffer
 {
     STATUS retStatus = STATUS_SUCCESS;
     time_t timestampSeconds;
-    UINT32 formattedStrLen;
+    UINT32 formattedStrLen, len2;
+    UINT32 milliseconds;
     CHK(pDestBuffer != NULL, STATUS_NULL_ARG);
     CHK(STRNLEN(formatStr, MAX_TIMESTAMP_FORMAT_STR_LEN + 1) <= MAX_TIMESTAMP_FORMAT_STR_LEN,
         STATUS_MAX_TIMESTAMP_FORMAT_STR_LEN_EXCEEDED);
 
     timestampSeconds = timestamp / HUNDREDS_OF_NANOS_IN_A_SECOND;
+    milliseconds = (UINT32) ((timestamp / HUNDREDS_OF_NANOS_IN_A_MILLISECOND) % 1000);
     formattedStrLen = 0;
     *pFormattedStrLen = 0;
 
     formattedStrLen = (UINT32) STRFTIME(pDestBuffer, destBufferLen, formatStr, GMTIME(&timestampSeconds));
     CHK(formattedStrLen != 0, STATUS_STRFTIME_FALIED);
 
-    pDestBuffer[formattedStrLen] = '\0';
+    len2 = SNPRINTF(pDestBuffer + formattedStrLen, destBufferLen - formattedStrLen, ":%03u ", milliseconds);
+    pDestBuffer[formattedStrLen + len2] = '\0';
     *pFormattedStrLen = formattedStrLen;
 
 CleanUp:
