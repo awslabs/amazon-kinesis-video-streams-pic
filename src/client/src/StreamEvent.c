@@ -204,9 +204,6 @@ STATUS describeStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CAL
     // Check if we are in describe state
     CHK_STATUS(acceptStateMachineState(pKinesisVideoStream->base.pStateMachine, pState->acceptStates));
 
-    // Calculate the latency of the API call
-    CHK_STATUS(calculateCallLatency(pKinesisVideoStream, TRUE));
-
     // Basic checks
     retStatus = serviceCallResultCheck(callResult);
     CHK(retStatus == STATUS_SUCCESS ||
@@ -218,6 +215,9 @@ STATUS describeStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CAL
 
     // Reset the status
     retStatus = STATUS_SUCCESS;
+
+    // Calculate the latency of the API call
+    CHK_STATUS(calculateCallLatency(pKinesisVideoStream, TRUE));
 
     // store the result
     pKinesisVideoStream->base.result = callResult;
@@ -317,6 +317,9 @@ STATUS createStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_
     // Reset the status
     retStatus = STATUS_SUCCESS;
 
+    // Calculate the latency of the API call
+    CHK_STATUS(calculateCallLatency(pKinesisVideoStream, TRUE));
+
     // store the result
     pKinesisVideoStream->base.result = callResult;
 
@@ -376,6 +379,10 @@ STATUS getStreamingTokenResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_
 
     // Reset the status
     retStatus = STATUS_SUCCESS;
+
+    // NOTE: We won't calculate the latency for this API as most implementations will integreate
+    // with the credential provider which might not evaluate into a service call and return
+    // a pre-cached result resulting in skewed numbers for the overall control plane API latency.
 
     // store the result
     pKinesisVideoStream->base.result = callResult;
@@ -460,6 +467,9 @@ STATUS getStreamingEndpointResult(PKinesisVideoStream pKinesisVideoStream, SERVI
     // Reset the status
     retStatus = STATUS_SUCCESS;
 
+    // Calculate the latency of the API call
+    CHK_STATUS(calculateCallLatency(pKinesisVideoStream, TRUE));
+
     // store the result
     pKinesisVideoStream->base.result = callResult;
 
@@ -516,6 +526,9 @@ STATUS putStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
                 retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR ||
                 retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
                 retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, retStatus);
+
+    // Calculate the latency of the API call
+    CHK_STATUS(calculateCallLatency(pKinesisVideoStream, FALSE));
 
     // store the result
     pKinesisVideoStream->base.result = callResult;
@@ -595,6 +608,9 @@ STATUS tagStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
 
     // Reset the status
     retStatus = STATUS_SUCCESS;
+
+    // Calculate the latency of the API call
+    CHK_STATUS(calculateCallLatency(pKinesisVideoStream, TRUE));
 
     // store the result
     pKinesisVideoStream->base.result = callResult;
