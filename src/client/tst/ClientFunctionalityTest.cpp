@@ -415,6 +415,138 @@ TEST_P(ClientFunctionalityTest, StreamFormatChangedPcmAudioDirectCpdPassingCorre
     EXPECT_TRUE(!IS_VALID_CLIENT_HANDLE(mClientHandle));
 }
 
+TEST_P(ClientFunctionalityTest, StreamFormatChangedGeneratedPcmAlawAudioDirectCpdPassingCorrectTrackAudioConfig)
+{
+    CreateScenarioTestClient();
+    BYTE cpd[KVS_PCM_CPD_SIZE_BYTE];
+    UINT32 cpdSize = SIZEOF(cpd);
+
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE_ALAW,
+            8000,
+            2,
+            cpd,
+            cpdSize));
+
+    TrackInfo trackInfo[1];
+    trackInfo[0].trackId = 1;
+    trackInfo[0].codecPrivateDataSize = 0;
+    trackInfo[0].codecPrivateData = NULL;
+    STRNCPY(trackInfo[0].codecId, TEST_AUDIO_CODEC_ID, MKV_MAX_CODEC_ID_LEN);
+    STRNCPY(trackInfo[0].trackName, TEST_AUDIO_TRACK_NAME, MKV_MAX_TRACK_NAME_LEN);
+    trackInfo[0].trackType = MKV_TRACK_INFO_TYPE_AUDIO;
+    trackInfo[0].codecPrivateData = cpd;
+    trackInfo[0].codecPrivateDataSize = cpdSize;
+
+    mStreamInfo.streamCaps.trackInfoList = trackInfo;
+    mStreamInfo.streamCaps.trackInfoCount = 1;
+
+    STRNCPY(mStreamInfo.streamCaps.contentType, "audio/alaw", MAX_CONTENT_TYPE_LEN);
+
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+
+    CreateStreamSync();
+
+    PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+    EXPECT_TRUE(pKinesisVideoStream != NULL);
+    PStreamMkvGenerator pStreamMkvGenerator = (PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator;
+    EXPECT_TRUE(pStreamMkvGenerator != NULL);
+
+    EXPECT_EQ(8000, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackAudioConfig.samplingFrequency);
+    EXPECT_EQ(2, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackAudioConfig.channelConfig);
+    EXPECT_EQ(0, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackAudioConfig.bitDepth);
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&mClientHandle));
+    EXPECT_TRUE(!IS_VALID_CLIENT_HANDLE(mClientHandle));
+}
+
+TEST_P(ClientFunctionalityTest, StreamFormatChangedGeneratedPcmMlawAudioDirectCpdPassingCorrectTrackAudioConfig)
+{
+    CreateScenarioTestClient();
+    BYTE cpd[KVS_PCM_CPD_SIZE_BYTE];
+    UINT32 cpdSize = SIZEOF(cpd);
+
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE_MULAW,
+                                                   8000,
+                                                   2,
+                                                   cpd,
+                                                   cpdSize));
+
+    TrackInfo trackInfo[1];
+    trackInfo[0].trackId = 1;
+    trackInfo[0].codecPrivateDataSize = 0;
+    trackInfo[0].codecPrivateData = NULL;
+    STRNCPY(trackInfo[0].codecId, TEST_AUDIO_CODEC_ID, MKV_MAX_CODEC_ID_LEN);
+    STRNCPY(trackInfo[0].trackName, TEST_AUDIO_TRACK_NAME, MKV_MAX_TRACK_NAME_LEN);
+    trackInfo[0].trackType = MKV_TRACK_INFO_TYPE_AUDIO;
+    trackInfo[0].codecPrivateData = cpd;
+    trackInfo[0].codecPrivateDataSize = cpdSize;
+
+    mStreamInfo.streamCaps.trackInfoList = trackInfo;
+    mStreamInfo.streamCaps.trackInfoCount = 1;
+
+    STRNCPY(mStreamInfo.streamCaps.contentType, "audio/mulaw", MAX_CONTENT_TYPE_LEN);
+
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+
+    CreateStreamSync();
+
+    PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+    EXPECT_TRUE(pKinesisVideoStream != NULL);
+    PStreamMkvGenerator pStreamMkvGenerator = (PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator;
+    EXPECT_TRUE(pStreamMkvGenerator != NULL);
+
+    EXPECT_EQ(8000, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackAudioConfig.samplingFrequency);
+    EXPECT_EQ(2, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackAudioConfig.channelConfig);
+    EXPECT_EQ(0, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackAudioConfig.bitDepth);
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&mClientHandle));
+    EXPECT_TRUE(!IS_VALID_CLIENT_HANDLE(mClientHandle));
+}
+
+TEST_P(ClientFunctionalityTest, StreamFormatChangedGeneratedAacAudioDirectCpdPassingCorrectTrackAudioConfig)
+{
+    CreateScenarioTestClient();
+    BYTE cpd[KVS_AAC_CPD_SIZE_BYTE];
+    UINT32 cpdSize = SIZEOF(cpd);
+
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateAacCpd(AAC_MAIN,
+                                                   16000,
+                                                   2,
+                                                   cpd,
+                                                   cpdSize));
+
+    TrackInfo trackInfo[1];
+    trackInfo[0].trackId = 1;
+    trackInfo[0].codecPrivateDataSize = 0;
+    trackInfo[0].codecPrivateData = NULL;
+    STRNCPY(trackInfo[0].codecId, TEST_AUDIO_CODEC_ID, MKV_MAX_CODEC_ID_LEN);
+    STRNCPY(trackInfo[0].trackName, TEST_AUDIO_TRACK_NAME, MKV_MAX_TRACK_NAME_LEN);
+    trackInfo[0].trackType = MKV_TRACK_INFO_TYPE_AUDIO;
+    trackInfo[0].codecPrivateData = cpd;
+    trackInfo[0].codecPrivateDataSize = cpdSize;
+
+    mStreamInfo.streamCaps.trackInfoList = trackInfo;
+    mStreamInfo.streamCaps.trackInfoCount = 1;
+
+    STRNCPY(mStreamInfo.streamCaps.contentType, "audio/aac", MAX_CONTENT_TYPE_LEN);
+
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+
+    CreateStreamSync();
+
+    PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+    EXPECT_TRUE(pKinesisVideoStream != NULL);
+    PStreamMkvGenerator pStreamMkvGenerator = (PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator;
+    EXPECT_TRUE(pStreamMkvGenerator != NULL);
+
+    EXPECT_EQ(16000, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackAudioConfig.samplingFrequency);
+    EXPECT_EQ(2, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackAudioConfig.channelConfig);
+    EXPECT_EQ(0, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackAudioConfig.bitDepth);
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&mClientHandle));
+    EXPECT_TRUE(!IS_VALID_CLIENT_HANDLE(mClientHandle));
+}
+
 INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, ClientFunctionalityTest,
                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE),
                                 Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR),

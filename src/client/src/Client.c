@@ -1392,6 +1392,8 @@ VOID viewItemRemoved(PContentView pContentView, UINT64 customData, PViewItem pVi
         switch (pKinesisVideoStream->streamInfo.streamCaps.streamingType) {
             case STREAMING_TYPE_REALTIME:
             case STREAMING_TYPE_OFFLINE:
+                pKinesisVideoStream->diagnostics.droppedFrames++;
+
                 // The callback is optional so check if specified first
                 if (pKinesisVideoClient->clientCallbacks.droppedFrameReportFn != NULL) {
                     CHK_STATUS(pKinesisVideoClient->clientCallbacks.droppedFrameReportFn(
@@ -1403,6 +1405,8 @@ VOID viewItemRemoved(PContentView pContentView, UINT64 customData, PViewItem pVi
                 break;
 
             case STREAMING_TYPE_NEAR_REALTIME:
+                pKinesisVideoStream->diagnostics.droppedFragments++;
+
                 // The callback is optional so check if specified first
                 if (pKinesisVideoClient->clientCallbacks.droppedFragmentReportFn != NULL) {
                     CHK_STATUS(pKinesisVideoClient->clientCallbacks.droppedFragmentReportFn(

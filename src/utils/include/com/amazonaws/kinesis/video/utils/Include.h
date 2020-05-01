@@ -1349,4 +1349,4 @@ PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
 }
 #endif
 
-#endif // __DASH_UTILS_H__
+#endif // __UTILS_H__

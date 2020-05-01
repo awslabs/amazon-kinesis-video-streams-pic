@@ -448,9 +448,9 @@ extern "C" {
 #define SERVICE_CALL_CONTEXT_CURRENT_VERSION                0
 #define STREAM_DESCRIPTION_CURRENT_VERSION                  1
 #define FRAGMENT_ACK_CURRENT_VERSION                        0
-#define STREAM_METRICS_CURRENT_VERSION                      0
+#define STREAM_METRICS_CURRENT_VERSION                      1
 #define CLIENT_METRICS_CURRENT_VERSION                      0
-#define CLIENT_INFO_CURRENT_VERSION                         0
+#define CLIENT_INFO_CURRENT_VERSION                         1
 
 /**
  * Definition of the client handle
@@ -1052,6 +1052,11 @@ typedef struct __ClientInfo {
 
     // whether to log metric or not
     BOOL logMetric;
+
+    // ------------------------------- V0 compat ----------------------
+
+    // Time that allowed to be elapsed between the metric loggings if enabled
+    UINT64 metricLoggingPeriod;
 } ClientInfo, *PClientInfo;
 
 /**
@@ -1123,6 +1128,8 @@ struct __StreamMetrics {
     // Version of the struct
     UINT32 version;
 
+    // V0 metrics following
+
     // Duration from the current to the head in 100ns
     UINT64 currentViewDuration;
 
@@ -1140,6 +1147,66 @@ struct __StreamMetrics {
 
     // Last measured transfer rate in bytes per second
     UINT64 currentTransferRate;
+
+    // V1 metrics following
+
+    // Total stream duration - stream uptime
+    UINT64 uptime;
+
+    // Total transferred bytes
+    UINT64 transferredBytes;
+
+    // Total number of streaming sessions including new/errored/active
+    UINT64 totalSessions;
+
+    // Total number of active streaming sessions - only the ones that actually have streamed some data
+    UINT64 totalActiveSessions;
+
+    // Average session duration
+    UINT64 avgSessionDuration;
+
+    // Total number of buffered ACKs
+    UINT64 bufferedAcks;
+
+    // Total number of received ACKs
+    UINT64 receivedAcks;
+
+    // Total number of persisted ACKs
+    UINT64 persistedAcks;
+
+    // Total number of error ACKs
+    UINT64 errorAcks;
+
+    // Total number of dropped frames
+    UINT64 droppedFrames;
+
+    // Total number of dropped fragments
+    // TODO: Near-realtime streaming mode is not used currently supported and this value will be 0
+    UINT64 droppedFragments;
+
+    // Total number of skipped frames
+    UINT64 skippedFrames;
+
+    // Total number of storage pressure events
+    UINT64 storagePressures;
+
+    // Total number of latency pressure events
+    UINT64 latencyPressures;
+
+    // Total number of Buffer pressure events
+    UINT64 bufferPressures;
+
+    // Total number of stream stale events
+    UINT64 staleEvents;
+
+    // Total number of put frame call errors
+    UINT64 putFrameErrors;
+
+    // Backend Control Plane API call latency which includes success and failure
+    UINT64 cplApiCallLatency;
+
+    // Backend Data Plane API call latency which includes success and failure
+    UINT64 dataApiCallLatency;
 };
 
 typedef struct __StreamMetrics* PStreamMetrics;

@@ -273,7 +273,14 @@ CleanUp:
 
 VOID fixupDeviceInfo(PDeviceInfo pClientDeviceInfo, PDeviceInfo pDeviceInfo)
 {
+    PClientInfo pOrigClientInfo = NULL;
     switch (pDeviceInfo->version) {
+        case 1:
+            // Copy the individual fields for V1
+            MEMCPY(pClientDeviceInfo->clientId, pDeviceInfo->clientId, MAX_CLIENT_ID_STRING_LENGTH + 1);
+            pOrigClientInfo = &pDeviceInfo->clientInfo;
+
+            // Explicit fall-through
         case 0:
             // Copy and fixup individual fields
             pClientDeviceInfo->version = DEVICE_INFO_CURRENT_VERSION;
@@ -285,20 +292,42 @@ VOID fixupDeviceInfo(PDeviceInfo pClientDeviceInfo, PDeviceInfo pDeviceInfo)
 
             break;
 
-        case 1:
-            *pClientDeviceInfo = *pDeviceInfo;
-
-            break;
+        default:
+            DLOGW("Invalid DeviceInfo version");
     }
 
-    fixupClientInfo(&pClientDeviceInfo->clientInfo);
+    fixupClientInfo(&pClientDeviceInfo->clientInfo, pOrigClientInfo);
 }
 
 /**
  * The structure has been sanitized prior this call. We are setting defaults if needed
  */
-VOID fixupClientInfo(PClientInfo pClientInfo)
+VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
 {
+    // Assuming pClientInfo had been zeroed already
+    if (pOrigClientInfo != NULL) {
+        switch (pOrigClientInfo->version) {
+            case 1:
+                // Copy individual fields and skip to V0
+                pClientInfo->metricLoggingPeriod = pOrigClientInfo->metricLoggingPeriod;
+
+                // Explicit fall-through
+            case 0:
+                pClientInfo->version = pOrigClientInfo->version;
+                pClientInfo->createClientTimeout = pOrigClientInfo->createClientTimeout;
+                pClientInfo->createStreamTimeout = pOrigClientInfo->createStreamTimeout;
+                pClientInfo->stopStreamTimeout = pOrigClientInfo->stopStreamTimeout;
+                pClientInfo->offlineBufferAvailabilityTimeout = pOrigClientInfo->offlineBufferAvailabilityTimeout;
+                pClientInfo->loggerLogLevel = pOrigClientInfo->loggerLogLevel;
+                pClientInfo->logMetric = pOrigClientInfo->logMetric;
+
+                break;
+
+            default:
+                DLOGW("Invalid ClientInfo version");
+        }
+    }
+    
     // Set the defaults if older version or if the sentinel values have been specified
     if (pClientInfo->createClientTimeout == 0 || !IS_VALID_TIMESTAMP(pClientInfo->createClientTimeout)) {
         pClientInfo->createClientTimeout = CLIENT_READY_TIMEOUT_DURATION_IN_SECONDS * HUNDREDS_OF_NANOS_IN_A_SECOND;
@@ -319,6 +348,8 @@ VOID fixupClientInfo(PClientInfo pClientInfo)
     if (pClientInfo->loggerLogLevel == 0 || pClientInfo->loggerLogLevel > LOG_LEVEL_SILENT) {
         pClientInfo->loggerLogLevel = LOG_LEVEL_WARN;
     }
+
+    // logMetric and metricLoggingPeriod do not need to be fixed
 }
 
 /**

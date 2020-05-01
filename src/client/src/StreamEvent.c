@@ -216,6 +216,9 @@ STATUS describeStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CAL
     // Reset the status
     retStatus = STATUS_SUCCESS;
 
+    // Calculate the latency of the API call
+    CHK_STATUS(calculateCallLatency(pKinesisVideoStream, TRUE));
+
     // store the result
     pKinesisVideoStream->base.result = callResult;
 
@@ -314,6 +317,9 @@ STATUS createStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_
     // Reset the status
     retStatus = STATUS_SUCCESS;
 
+    // Calculate the latency of the API call
+    CHK_STATUS(calculateCallLatency(pKinesisVideoStream, TRUE));
+
     // store the result
     pKinesisVideoStream->base.result = callResult;
 
@@ -373,6 +379,10 @@ STATUS getStreamingTokenResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_
 
     // Reset the status
     retStatus = STATUS_SUCCESS;
+
+    // NOTE: We won't calculate the latency for this API as most implementations will integreate
+    // with the credential provider which might not evaluate into a service call and return
+    // a pre-cached result resulting in skewed numbers for the overall control plane API latency.
 
     // store the result
     pKinesisVideoStream->base.result = callResult;
@@ -457,6 +467,9 @@ STATUS getStreamingEndpointResult(PKinesisVideoStream pKinesisVideoStream, SERVI
     // Reset the status
     retStatus = STATUS_SUCCESS;
 
+    // Calculate the latency of the API call
+    CHK_STATUS(calculateCallLatency(pKinesisVideoStream, TRUE));
+
     // store the result
     pKinesisVideoStream->base.result = callResult;
 
@@ -514,6 +527,9 @@ STATUS putStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
                 retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
                 retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, retStatus);
 
+    // Calculate the latency of the API call
+    CHK_STATUS(calculateCallLatency(pKinesisVideoStream, FALSE));
+
     // store the result
     pKinesisVideoStream->base.result = callResult;
 
@@ -528,6 +544,11 @@ STATUS putStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
         pUploadHandleInfo->timestamp = INVALID_TIMESTAMP_VALUE;
         pUploadHandleInfo->lastPersistedAckTs = INVALID_TIMESTAMP_VALUE;
         pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_NEW;
+
+        pUploadHandleInfo->createTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
+
+        // Increment the total session count in diagnostics
+        pKinesisVideoStream->diagnostics.totalSessions++;
     } else {
         // Reset the status
         retStatus = STATUS_SUCCESS;
@@ -587,6 +608,9 @@ STATUS tagStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
 
     // Reset the status
     retStatus = STATUS_SUCCESS;
+
+    // Calculate the latency of the API call
+    CHK_STATUS(calculateCallLatency(pKinesisVideoStream, TRUE));
 
     // store the result
     pKinesisVideoStream->base.result = callResult;
@@ -689,7 +713,6 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                 if (uploadHandleNotUsed) {
                     // Need to indicate to the getStreamData to not rollback.
                     pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_NOT_IN_USE;
-
                 } else {
                     pActiveUploadHandleInfo = getStreamUploadInfo(pKinesisVideoStream, UPLOAD_HANDLE_STATE_ACTIVE);
 
@@ -915,5 +938,33 @@ CleanUp:
     }
 
     LEAVES();
+    return retStatus;
+}
+
+STATUS calculateCallLatency(PKinesisVideoStream pKinesisVideoStream, BOOL cplApiCall)
+{
+    STATUS retStatus = STATUS_SUCCESS;
+    PKinesisVideoClient pKinesisVideoClient = NULL;
+    UINT64 currentTime, latency = 0;
+
+    CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+    pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+
+    currentTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
+
+    // It's possible that the networking client did not honor the wait time the state machine asks for
+    if (currentTime > pKinesisVideoStream->base.serviceCallContext.callAfter) {
+        latency = currentTime - pKinesisVideoStream->base.serviceCallContext.callAfter;
+    }
+
+    // Exponential mean averaging
+    if (cplApiCall) {
+        pKinesisVideoStream->diagnostics.cplApiCallLatency = EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.cplApiCallLatency, latency);
+    } else {
+        pKinesisVideoStream->diagnostics.dataApiCallLatency = EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.dataApiCallLatency, latency);
+    }
+
+CleanUp:
+
     return retStatus;
 }
