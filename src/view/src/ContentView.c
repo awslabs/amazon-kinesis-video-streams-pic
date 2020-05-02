@@ -604,7 +604,7 @@ STATUS contentViewTrimTailItems(PContentView pContentView)
     PRollingContentView pRollingView = (PRollingContentView) pContentView;
     PViewItem pTail = NULL, pCurrentViewItem = NULL;
     BOOL viewItemDropped = FALSE;
-    UINT64 currentStreamingItem = UINT64_MAX;
+    UINT64 currentStreamingItem = MAX_UINT64;
     UINT32 dropFrameCount = 0;
 
     // Check the input params
@@ -616,7 +616,7 @@ STATUS contentViewTrimTailItems(PContentView pContentView)
         currentStreamingItem = pRollingView->current - 1;
     } else {
         // otherwise no view item has ever been consumed, thus any view item dropped were never sent. currentStreamingItem
-        // remains UINT64_MAX which wont trigger any view item retaining logic.
+        // remains MAX_UINT64 which wont trigger any view item retaining logic.
         viewItemDropped = TRUE;
     }
     switch (pRollingView->bufferOverflowStrategy) {
@@ -673,7 +673,7 @@ STATUS contentViewTrimTailItems(PContentView pContentView)
         // If currentStreamingItem isn't sentinel and tail has rolled pass the currentStreamingItem, prepend
         // currentStreamingItem to tail and make it the new tail. This item will be freed automatically when it either
         // fall out of window or in later trim tail event (persisted ack received)
-        if (currentStreamingItem != UINT64_MAX && currentStreamingItem < pRollingView->tail) {
+        if (currentStreamingItem != MAX_UINT64 && currentStreamingItem < pRollingView->tail) {
             pRollingView->tail--;
             pRollingView->current = pRollingView->tail + 1;
             pCurrentViewItem = GET_VIEW_ITEM_FROM_INDEX(pRollingView, currentStreamingItem);
