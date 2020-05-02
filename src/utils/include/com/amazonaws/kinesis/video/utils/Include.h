@@ -900,7 +900,8 @@ extern putUnalignedInt64Func putUnalignedInt64LittleEndian;
     SIZEOF(*(ptr)) == 8 ? getUnalignedInt64BigEndian(ptr) :     \
     0                                                           \
 
-#define PUT_UNALIGNED(ptr, val) ({                              \
+#define PUT_UNALIGNED(ptr, val)                                 \
+    do {                                                        \
     PVOID __pVoid = (ptr);                                      \
     switch (SIZEOF(*(ptr))) {                                   \
         case 1:                                                 \
@@ -919,9 +920,10 @@ extern putUnalignedInt64Func putUnalignedInt64LittleEndian;
             CHECK_EXT(FALSE, "Bad alignment size.");            \
             break;                                              \
         }                                                       \
-        (VOID) 0; })                                            \
+    }  while (0);                                               \
 
-#define PUT_UNALIGNED_BIG_ENDIAN(ptr, val) ({                   \
+#define PUT_UNALIGNED_BIG_ENDIAN(ptr, val)                      \
+    do {                                                        \
     PVOID __pVoid = (ptr);                                      \
     switch (SIZEOF(*(ptr))) {                                   \
         case 1:                                                 \
@@ -940,7 +942,7 @@ extern putUnalignedInt64Func putUnalignedInt64LittleEndian;
             CHECK_EXT(FALSE, "Bad alignment size.");            \
             break;                                              \
         }                                                       \
-        (VOID) 0; })                                            \
+    } while(0);
 
 ////////////////////////////////////////////////////
 // Dumping memory functionality
