@@ -47,21 +47,15 @@ if(ALIGNED_MEMORY_MODEL)
   add_definitions(-DALIGNED_MEMORY_MODEL)
 endif()
 
-if(NOT KINESIS_VIDEO_OPEN_SOURCE_SRC)
-  set(KINESIS_VIDEO_OPEN_SOURCE_SRC ${CMAKE_SOURCE_DIR}/open-source/local)
-endif()
+set(KINESIS_VIDEO_OPEN_SOURCE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/open-source)
 
 if(BUILD_DEPENDENCIES)
   if(NOT EXISTS ${KINESIS_VIDEO_OPEN_SOURCE_SRC})
     file(MAKE_DIRECTORY ${KINESIS_VIDEO_OPEN_SOURCE_SRC}/local)
   endif()
 
-  if (NOT OPEN_SRC_INSTALL_PREFIX)
-    set(OPEN_SRC_INSTALL_PREFIX ${KINESIS_VIDEO_OPEN_SOURCE_SRC}/local)
-    set(ENV{PKG_CONFIG_PATH}
-          "$ENV{PKG_CONFIG_PATH}:${OPEN_SRC_INSTALL_PREFIX}/lib/pkgconfig")
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${OPEN_SRC_INSTALL_PREFIX})
-  endif()
+  set(OPEN_SRC_INSTALL_PREFIX ${KINESIS_VIDEO_OPEN_SOURCE_SRC}/local)
+  set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${OPEN_SRC_INSTALL_PREFIX}/lib/pkgconfig")
 
   if(BUILD_TEST)
     build_dependency(gtest)
@@ -134,8 +128,7 @@ endif()
 if(BUILD_TEST)
   set(CMAKE_CXX_STANDARD 11)
 
-  set(GTEST_ROOT ${OPEN_SRC_INSTALL_PREFIX})
-  find_package(GTest REQUIRED)
+  find_package(GTest REQUIRED PATHS ${OPEN_SRC_INSTALL_PREFIX})
 
   add_executable(kvspic_test ${PIC_TEST_SOURCE_FILES}
           ${PIC_CLIENT_SOURCE_FILES}
@@ -147,7 +140,7 @@ if(BUILD_TEST)
           ${PIC_UTILS_SOURCE_FILES}
           ${PIC_VIEW_SOURCE_FILES})
   target_compile_definitions(kvspic_test PRIVATE ALIGNED_MEMORY_MODEL=TRUE)
-  target_link_libraries(kvspic_test GTest::GTest GTest::Main ${CMAKE_DL_LIBS} Threads::Threads)
+  target_link_libraries(kvspic_test GTest::gtest ${CMAKE_DL_LIBS} Threads::Threads)
   if(UNIX AND NOT APPLE)
     # rt needed for clock_gettime
     target_link_libraries(kvspic_test rt)
