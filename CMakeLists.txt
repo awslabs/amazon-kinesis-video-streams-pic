@@ -75,6 +75,10 @@ find_package(Threads)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 
+if(MSVC)
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
+endif()
+
 file(GLOB PIC_CLIENT_SOURCE_FILES "src/client/src/*.c")
 
 file(GLOB PIC_DURATION_SOURCE_FILES "src/duration/src/*.c")
