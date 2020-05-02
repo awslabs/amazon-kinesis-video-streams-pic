@@ -6,8 +6,8 @@ protected:
         SRAND(12345);
     }
 
-    const SIZE_T TestAllocSize = 1000;
-    const UINT32 TestIterationCount = 10000;
+    static const SIZE_T TestAllocSize = 1000;
+    static const UINT32 TestIterationCount = 10000;
 };
 
 TEST_F(InstrumentedAllocatorsTest, set_reset_basic_test)
