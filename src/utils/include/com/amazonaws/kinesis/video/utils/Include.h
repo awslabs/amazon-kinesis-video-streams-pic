@@ -1343,8 +1343,8 @@ PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
 #define SET_INSTRUMENTED_ALLOCATORS()               setInstrumentedAllocators()
 #define RESET_INSTRUMENTED_ALLOCATORS()             resetInstrumentedAllocators()
 #else
-#define SET_INSTRUMENTED_ALLOCATORS()               do { if (0) setInstrumentedAllocators(); } while (0)
-#define RESET_INSTRUMENTED_ALLOCATORS()             do { if (0) resetInstrumentedAllocators(); } while (0)
+#define SET_INSTRUMENTED_ALLOCATORS()               ({STATUS __noopStatusSuccess = STATUS_SUCCESS; do { if (0) setInstrumentedAllocators(); } while (0); __noopStatusSuccess;})
+#define RESET_INSTRUMENTED_ALLOCATORS()             ({STATUS __noopStatusSuccess = STATUS_SUCCESS; do { if (0) resetInstrumentedAllocators(); } while (0); __noopStatusSuccess;})
 #endif
 
 #ifdef __cplusplus
