@@ -2,14 +2,22 @@
 
 volatile SIZE_T gInstrumentedAllocatorsTotalAllocationSize = 0;
 
-memAlloc gInstrumentedAllocatorsStoredMemAlloc;
-memAlignAlloc gInstrumentedAllocatorsStoredMemAlignAlloc;
-memCalloc gInstrumentedAllocatorsStoredMemCalloc;
-memFree gInstrumentedAllocatorsStoredMemFree;
-memRealloc gInstrumentedAllocatorsStoredMemRealloc;
+memAlloc gInstrumentedAllocatorsStoredMemAlloc = NULL;
+memAlignAlloc gInstrumentedAllocatorsStoredMemAlignAlloc = NULL;
+memCalloc gInstrumentedAllocatorsStoredMemCalloc = NULL;
+memFree gInstrumentedAllocatorsStoredMemFree = NULL;
+memRealloc gInstrumentedAllocatorsStoredMemRealloc = NULL;
 
 STATUS setInstrumentedAllocators()
 {
+    STATUS retStatus = STATUS_SUCCESS;
+    // Check if we are attempting to set the instrumented allocators again
+    CHK(gInstrumentedAllocatorsStoredMemAlloc == NULL &&
+        gInstrumentedAllocatorsStoredMemAlignAlloc == NULL &&
+        gInstrumentedAllocatorsStoredMemCalloc == NULL &&
+        gInstrumentedAllocatorsStoredMemFree == NULL &&
+        gInstrumentedAllocatorsStoredMemRealloc == NULL, STATUS_INVALID_OPERATION);
+
     // Store the existing function pointers
     gInstrumentedAllocatorsStoredMemAlloc = globalMemAlloc;
     gInstrumentedAllocatorsStoredMemAlignAlloc = globalMemAlignAlloc;
@@ -24,6 +32,15 @@ STATUS setInstrumentedAllocators()
     globalMemFree = instrumentedAllocatorsMemFree;
     globalMemRealloc = instrumentedAllocatorsMemRealloc;
 
+CleanUp:
+
+    CHK_LOG_ERR(retStatus);
+    return retStatus;
+}
+
+STATUS setInstrumentedAllocatorsNoop()
+{
+    // No-op function
     return STATUS_SUCCESS;
 }
 
@@ -32,6 +49,13 @@ STATUS resetInstrumentedAllocators()
     STATUS retStatus = STATUS_SUCCESS;
     SIZE_T totalRemainingSize = ATOMIC_LOAD(&gInstrumentedAllocatorsTotalAllocationSize);
 
+    // Check if we are attempting to reset without setting or attempting to reset again
+    CHK(globalMemAlloc == instrumentedAllocatorsMemAlloc &&
+        globalMemAlignAlloc == instrumentedAllocatorsMemAlignAlloc &&
+        globalMemCalloc == instrumentedAllocatorsMemCalloc &&
+        globalMemFree == instrumentedAllocatorsMemFree &&
+        globalMemRealloc == instrumentedAllocatorsMemRealloc, STATUS_INVALID_OPERATION);
+
     // Reset the global allocators with the stored ones
     globalMemAlloc = gInstrumentedAllocatorsStoredMemAlloc;
     globalMemAlignAlloc = gInstrumentedAllocatorsStoredMemAlignAlloc;
@@ -39,14 +63,27 @@ STATUS resetInstrumentedAllocators()
     globalMemFree = gInstrumentedAllocatorsStoredMemFree;
     globalMemRealloc = gInstrumentedAllocatorsStoredMemRealloc;
 
+    // Reset the stored allocator function pointers to ensure we are OK to set again
+    gInstrumentedAllocatorsStoredMemAlloc = NULL;
+    gInstrumentedAllocatorsStoredMemAlignAlloc = NULL;
+    gInstrumentedAllocatorsStoredMemCalloc = NULL;
+    gInstrumentedAllocatorsStoredMemFree = NULL;
+    gInstrumentedAllocatorsStoredMemRealloc = NULL;
+
     // Check the final total value
     CHK_WARN(totalRemainingSize == 0, STATUS_MEMORY_NOT_FREED,
-            "Possible memory leak of size %" PRIu64, totalRemainingSize);
+             "Possible memory leak of size %" PRIu64, totalRemainingSize);
 
 CleanUp:
 
     CHK_LOG_ERR(retStatus);
     return retStatus;
+}
+
+STATUS resetInstrumentedAllocatorsNoop()
+{
+    // No-op function
+    return STATUS_SUCCESS;
 }
 
 SIZE_T getInstrumentedTotalAllocationSize()

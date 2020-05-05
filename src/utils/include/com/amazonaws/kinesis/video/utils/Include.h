@@ -1323,6 +1323,20 @@ PUBLIC_API STATUS semaphoreWaitUntilClear(SEMAPHORE_HANDLE, UINT64);
 PUBLIC_API STATUS setInstrumentedAllocators();
 
 /**
+ * No-op equivalent of the setInstrumentedAllocators.
+ *
+ * NOTE: This is needed to allow the applications to use the macro which evaluates
+ * at compile time based on the INSTRUMENTED_ALLOCATORS compiler definition.
+ * The reason for the API is due to inability to get a no-op C macro compilable
+ * across different languages and compilers with l-values.
+ *
+ * ex: CHK_STATUS(SET_INSTRUMENTED_ALLOCATORS);
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS setInstrumentedAllocatorsNoop();
+
+/**
  * Resets the global allocators to the original ones.
  *
  * NOTE: Any attempt to free allocations which were allocated after set call
@@ -1331,6 +1345,20 @@ PUBLIC_API STATUS setInstrumentedAllocators();
  * @return - STATUS code of the execution
  */
 PUBLIC_API STATUS resetInstrumentedAllocators();
+
+/**
+ * No-op equivalent of the resetInstrumentedAllocators.
+ *
+ * NOTE: This is needed to allow the applications to use the macro which evaluates
+ * at compile time based on the INSTRUMENTED_ALLOCATORS compiler definition.
+ * The reason for the API is due to inability to get a no-op C macro compilable
+ * across different languages and compilers with l-values.
+ *
+ * ex: CHK_STATUS(RESET_INSTRUMENTED_ALLOCATORS);
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS resetInstrumentedAllocatorsNoop();
 
 /**
  * Returns the current total allocation size.
@@ -1343,8 +1371,8 @@ PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
 #define SET_INSTRUMENTED_ALLOCATORS()               setInstrumentedAllocators()
 #define RESET_INSTRUMENTED_ALLOCATORS()             resetInstrumentedAllocators()
 #else
-#define SET_INSTRUMENTED_ALLOCATORS()               do { if (0) setInstrumentedAllocators(); } while (0)
-#define RESET_INSTRUMENTED_ALLOCATORS()             do { if (0) resetInstrumentedAllocators(); } while (0)
+#define SET_INSTRUMENTED_ALLOCATORS()               setInstrumentedAllocatorsNoop()
+#define RESET_INSTRUMENTED_ALLOCATORS()             resetInstrumentedAllocatorsNoop()
 #endif
 
 #ifdef __cplusplus
