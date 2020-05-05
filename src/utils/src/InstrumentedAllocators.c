@@ -38,6 +38,12 @@ CleanUp:
     return retStatus;
 }
 
+STATUS setInstrumentedAllocatorsNoop()
+{
+    // No-op function
+    return STATUS_SUCCESS;
+}
+
 STATUS resetInstrumentedAllocators()
 {
     STATUS retStatus = STATUS_SUCCESS;
@@ -72,6 +78,12 @@ CleanUp:
 
     CHK_LOG_ERR(retStatus);
     return retStatus;
+}
+
+STATUS resetInstrumentedAllocatorsNoop()
+{
+    // No-op function
+    return STATUS_SUCCESS;
 }
 
 SIZE_T getInstrumentedTotalAllocationSize()

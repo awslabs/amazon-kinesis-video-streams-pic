@@ -95,6 +95,25 @@ TEST_F(InstrumentedAllocatorsTest, set_reset_negative_test)
     EXPECT_EQ(STATUS_INVALID_OPERATION, resetInstrumentedAllocators());
 }
 
+TEST_F(InstrumentedAllocatorsTest, noop_allocators_test)
+{
+    EXPECT_EQ(STATUS_SUCCESS, resetInstrumentedAllocatorsNoop());
+
+    EXPECT_EQ(STATUS_SUCCESS, setInstrumentedAllocatorsNoop());
+    EXPECT_EQ(STATUS_SUCCESS, setInstrumentedAllocatorsNoop());
+
+    EXPECT_EQ(STATUS_SUCCESS, resetInstrumentedAllocatorsNoop());
+    EXPECT_EQ(STATUS_SUCCESS, resetInstrumentedAllocatorsNoop());
+
+    // Attempt with the allocators
+    EXPECT_EQ(STATUS_SUCCESS, setInstrumentedAllocators());
+    EXPECT_EQ(STATUS_SUCCESS, setInstrumentedAllocatorsNoop());
+
+    EXPECT_EQ(STATUS_SUCCESS, resetInstrumentedAllocatorsNoop());
+    EXPECT_EQ(STATUS_SUCCESS, resetInstrumentedAllocators());
+    EXPECT_EQ(STATUS_SUCCESS, resetInstrumentedAllocatorsNoop());
+}
+
 TEST_F(InstrumentedAllocatorsTest, memory_leak_check_malloc)
 {
     EXPECT_EQ(STATUS_SUCCESS, setInstrumentedAllocators());
