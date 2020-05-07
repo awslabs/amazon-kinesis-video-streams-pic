@@ -128,7 +128,16 @@ endif()
 if(BUILD_TEST)
   set(CMAKE_CXX_STANDARD 11)
 
-  find_package(GTest REQUIRED PATHS ${OPEN_SRC_INSTALL_PREFIX})
+  if (OPEN_SRC_INSTALL_PREFIX)
+    find_package(GTest REQUIRED PATHS ${OPEN_SRC_INSTALL_PREFIX})
+  else()
+    find_package(GTest REQUIRED)
+  endif()
+
+  SET(GTEST_LIBNAME GTest::gtest)
+  if (TARGET GTest::GTest)
+    SET(GTEST_LIBNAME GTest::GTest)
+  endif()
 
   add_executable(kvspic_test ${PIC_TEST_SOURCE_FILES}
           ${PIC_CLIENT_SOURCE_FILES}
@@ -140,7 +149,7 @@ if(BUILD_TEST)
           ${PIC_UTILS_SOURCE_FILES}
           ${PIC_VIEW_SOURCE_FILES})
   target_compile_definitions(kvspic_test PRIVATE ALIGNED_MEMORY_MODEL=TRUE)
-  target_link_libraries(kvspic_test GTest::gtest ${CMAKE_DL_LIBS} Threads::Threads)
+  target_link_libraries(kvspic_test ${GTEST_LIBNAME} ${CMAKE_DL_LIBS} Threads::Threads)
   if(UNIX AND NOT APPLE)
     # rt needed for clock_gettime
     target_link_libraries(kvspic_test rt)
