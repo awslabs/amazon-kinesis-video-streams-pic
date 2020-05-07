@@ -305,7 +305,7 @@ PCHAR strnchr(PCHAR pStr, UINT32 strLen, CHAR ch)
     UINT32 i = 0;
 
     while (*pStr != ch) {
-        if (*pStr++ == '\0' || i++ == strLen) {
+        if (*pStr++ == '\0' || i++ == strLen - 1) {
             return NULL;
         }
     }
