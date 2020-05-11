@@ -47,14 +47,11 @@ if(ALIGNED_MEMORY_MODEL)
   add_definitions(-DALIGNED_MEMORY_MODEL)
 endif()
 
-set(KINESIS_VIDEO_OPEN_SOURCE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/open-source)
-
 if(BUILD_DEPENDENCIES)
-  if(NOT EXISTS ${KINESIS_VIDEO_OPEN_SOURCE_SRC})
-    file(MAKE_DIRECTORY ${KINESIS_VIDEO_OPEN_SOURCE_SRC}/local)
+  set(OPEN_SRC_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/open-source)
+  if(NOT EXISTS ${OPEN_SRC_INSTALL_PREFIX})
+    file(MAKE_DIRECTORY ${OPEN_SRC_INSTALL_PREFIX})
   endif()
-
-  set(OPEN_SRC_INSTALL_PREFIX ${KINESIS_VIDEO_OPEN_SOURCE_SRC}/local)
   set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${OPEN_SRC_INSTALL_PREFIX}/lib/pkgconfig")
 
   if(BUILD_TEST)
@@ -96,6 +93,10 @@ file(GLOB PIC_HEADERS "${KINESIS_VIDEO_PIC_SRC}/src/*/include")
 include_directories(${PIC_HEADERS})
 include_directories(${KINESIS_VIDEO_PIC_SRC})
 
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/libkvspic.pc.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/libkvspic.pc" @ONLY)
+
 add_library(
   kvspic STATIC
   ${PIC_CLIENT_SOURCE_FILES}
@@ -112,11 +113,23 @@ if(UNIX AND NOT APPLE)
   target_link_libraries(kvspic rt)
 endif()
 
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/libkvspicClient.pc.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/libkvspicClient.pc" @ONLY)
+
 add_library(kvspicClient STATIC ${PIC_CLIENT_SOURCE_FILES})
 target_link_libraries(kvspicClient)
 
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/libkvspicState.pc.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/libkvspicState.pc" @ONLY)
+
 add_library(kvspicState STATIC ${PIC_STATE_SOURCE_FILES})
 target_link_libraries(kvspicState)
+
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/libkvspicUtils.pc.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/libkvspicUtils.pc" @ONLY)
 
 add_library(kvspicUtils STATIC ${PIC_UTILS_SOURCE_FILES})
 target_link_libraries(kvspicUtils ${CMAKE_DL_LIBS} Threads::Threads)
@@ -124,6 +137,24 @@ if(UNIX AND NOT APPLE)
   # rt needed for clock_gettime
   target_link_libraries(kvspicUtils rt)
 endif()
+
+install(
+  TARGETS kvspic kvspicClient kvspicState kvspicUtils
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
+
+install(
+  DIRECTORY ${PIC_HEADERS}
+  DESTINATION .)
+
+install(
+  FILES 
+    ${CMAKE_CURRENT_BINARY_DIR}/libkvspic.pc
+    ${CMAKE_CURRENT_BINARY_DIR}/libkvspicClient.pc
+    ${CMAKE_CURRENT_BINARY_DIR}/libkvspicState.pc
+    ${CMAKE_CURRENT_BINARY_DIR}/libkvspicUtils.pc
+  DESTINATION lib/pkgconfig)
 
 if(BUILD_TEST)
   set(CMAKE_CXX_STANDARD 11)
