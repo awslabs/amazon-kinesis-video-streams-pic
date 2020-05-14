@@ -18,8 +18,7 @@ extern "C" {
 #define GENERATE_AUDIO_CONFIG(x)        (((PTrackInfo) (x))->trackType == MKV_TRACK_INFO_TYPE_AUDIO && ((PTrackInfo) (x))->trackCustomData.trackAudioConfig.samplingFrequency != 0)
 
 // SPS NALU values
-#define SPS_NALU_67     0x67
-#define SPS_NALU_27     0x27
+#define SPS_NALU_TYPE     0x07
 
 // AUD NALu value
 #define AUD_NALU_TYPE   0x09
