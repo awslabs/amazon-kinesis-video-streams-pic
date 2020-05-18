@@ -3197,7 +3197,7 @@ STATUS notifyStreamClosed(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE
     pKinesisVideoStream->streamClosed = TRUE;
 
     // Signal the stopped condition variable
-    CHK_STATUS(pKinesisVideoClient->clientCallbacks.signalConditionVariableFn(
+    CHK_STATUS(pKinesisVideoClient->clientCallbacks.broadcastConditionVariableFn(
             pKinesisVideoClient->clientCallbacks.customData,
             pKinesisVideoStream->streamClosedCondition));
 
