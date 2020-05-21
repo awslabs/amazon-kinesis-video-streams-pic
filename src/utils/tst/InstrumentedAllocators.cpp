@@ -121,8 +121,9 @@ TEST_F(InstrumentedAllocatorsTest, memory_leak_check_malloc)
     PVOID pAlloc = MEMALLOC(TestAllocSize);
     MEMSET(pAlloc, 0xFF, TestAllocSize);
     MEMCHK(pAlloc, 0xff, TestAllocSize);
-    EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
     EXPECT_EQ(totalAllocSize + TestAllocSize, getInstrumentedTotalAllocationSize());
+    EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
+    EXPECT_EQ(0, getInstrumentedTotalAllocationSize());
 
     // Free the allocation as we are tripping ASAN
     MEMFREE((PSIZE_T) pAlloc - 1);
@@ -135,8 +136,9 @@ TEST_F(InstrumentedAllocatorsTest, memory_leak_check_alignalloc)
     PVOID pAlloc = MEMALIGNALLOC(TestAllocSize, 16);
     MEMSET(pAlloc, 0xFF, TestAllocSize);
     MEMCHK(pAlloc, 0xff, TestAllocSize);
-    EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
     EXPECT_EQ(totalAllocSize + TestAllocSize, getInstrumentedTotalAllocationSize());
+    EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
+    EXPECT_EQ(0, getInstrumentedTotalAllocationSize());
 
     MEMFREE((PSIZE_T) pAlloc - 1);
 }
@@ -149,8 +151,9 @@ TEST_F(InstrumentedAllocatorsTest, memory_leak_check_calloc)
     MEMCHK(pAlloc, 0x00, 10 * TestAllocSize);
     MEMSET(pAlloc, 0xFF, 10 * TestAllocSize);
     MEMCHK(pAlloc, 0xff, 10 * TestAllocSize);
-    EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
     EXPECT_EQ(totalAllocSize + 10 * TestAllocSize, getInstrumentedTotalAllocationSize());
+    EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
+    EXPECT_EQ(0, getInstrumentedTotalAllocationSize());
 
     MEMFREE((PSIZE_T) pAlloc - 1);
 }
@@ -166,8 +169,9 @@ TEST_F(InstrumentedAllocatorsTest, memory_leak_check_realloc_larger_small_diff)
     MEMSET(pRealloc, 0xFF, TestAllocSize + 1);
     MEMCHK(pRealloc, 0xff, TestAllocSize + 1);
 
-    EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
     EXPECT_EQ(totalAllocSize + TestAllocSize + 1, getInstrumentedTotalAllocationSize());
+    EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
+    EXPECT_EQ(0, getInstrumentedTotalAllocationSize());
 
     MEMFREE((PSIZE_T) pRealloc - 1);
 }
@@ -183,8 +187,9 @@ TEST_F(InstrumentedAllocatorsTest, memory_leak_check_realloc_larger_large_diff)
     MEMSET(pRealloc, 0xFF, 10 * TestAllocSize);
     MEMCHK(pRealloc, 0xff, 10 * TestAllocSize);
 
-    EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
     EXPECT_EQ(totalAllocSize + 10 * TestAllocSize, getInstrumentedTotalAllocationSize());
+    EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
+    EXPECT_EQ(0, getInstrumentedTotalAllocationSize());
 
     MEMFREE((PSIZE_T) pRealloc - 1);
 }
@@ -200,8 +205,9 @@ TEST_F(InstrumentedAllocatorsTest, memory_leak_check_realloc_smaller_small_diff)
     MEMSET(pRealloc, 0xFF, TestAllocSize - 1);
     MEMCHK(pRealloc, 0xff, TestAllocSize - 1);
 
-    EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
     EXPECT_EQ(totalAllocSize + TestAllocSize - 1, getInstrumentedTotalAllocationSize());
+    EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
+    EXPECT_EQ(0, getInstrumentedTotalAllocationSize());
 
     MEMFREE((PSIZE_T) pRealloc - 1);
 }
@@ -217,8 +223,9 @@ TEST_F(InstrumentedAllocatorsTest, memory_leak_check_realloc_smaller_large_diff)
     MEMSET(pRealloc, 0xFF, TestAllocSize / 10);
     MEMCHK(pRealloc, 0xff, TestAllocSize / 10);
 
-    EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
     EXPECT_EQ(totalAllocSize + TestAllocSize / 10, getInstrumentedTotalAllocationSize());
+    EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
+    EXPECT_EQ(0, getInstrumentedTotalAllocationSize());
 
     MEMFREE((PSIZE_T) pRealloc - 1);
 }
@@ -303,4 +310,26 @@ TEST_F(InstrumentedAllocatorsTest, random_alloc_later_free)
 
     EXPECT_EQ(totalAllocSize, getInstrumentedTotalAllocationSize());
     resetInstrumentedAllocators();
+}
+
+TEST_F(InstrumentedAllocatorsTest, set_reset_multiple_leak)
+{
+    PVOID allocations[1000];
+    UINT32 i;
+
+    for (i = 0; i < ARRAY_SIZE(allocations); i++) {
+        EXPECT_EQ(STATUS_SUCCESS, setInstrumentedAllocators());
+        SIZE_T totalAllocSize = getInstrumentedTotalAllocationSize();
+        allocations[i] = MEMALLOC(TestAllocSize);
+        MEMSET(allocations[i], 0xFF, TestAllocSize);
+        MEMCHK(allocations[i], 0xff, TestAllocSize);
+        EXPECT_EQ(totalAllocSize + TestAllocSize, getInstrumentedTotalAllocationSize());
+        EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
+        EXPECT_EQ(0, getInstrumentedTotalAllocationSize());
+    }
+
+    // Free the allocation as we are tripping ASAN
+    for (i = 0; i < ARRAY_SIZE(allocations); i++) {
+        MEMFREE((PSIZE_T) allocations[i] - 1);
+    }
 }
