@@ -77,6 +77,10 @@ STATUS resetInstrumentedAllocators()
 CleanUp:
 
     CHK_LOG_ERR(retStatus);
+
+    // Reset the total size prior returning
+    ATOMIC_STORE(&gInstrumentedAllocatorsTotalAllocationSize, 0);
+
     return retStatus;
 }
 
