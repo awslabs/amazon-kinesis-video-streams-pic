@@ -807,7 +807,14 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
-    CHK_LOG_ERR(retStatus);
+    if (retStatus != STATUS_SUCCESS &&
+        retStatus != STATUS_AWAITING_PERSISTED_ACK &&
+        retStatus != STATUS_END_OF_STREAM &&
+        retStatus != STATUS_UPLOAD_HANDLE_ABORTED &&
+        retStatus != STATUS_NO_MORE_DATA_AVAILABLE) {
+        CHK_LOG_ERR(retStatus);
+    }
+
     LEAVES();
     return retStatus;
 }
