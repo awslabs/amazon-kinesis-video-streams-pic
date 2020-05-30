@@ -1375,6 +1375,65 @@ PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
 #define RESET_INSTRUMENTED_ALLOCATORS()             resetInstrumentedAllocatorsNoop()
 #endif
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// File logging functionality
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * File logger error values starting from 0x41300000
+ */
+#define STATUS_FILE_LOGGER_BASE                                             STATUS_UTILS_BASE + 0x01200000
+#define STATUS_FILE_LOGGER_INDEX_FILE_INVALID_SIZE                          STATUS_SEMAPHORE_BASE + 0x00000001
+
+/**
+ * File based logger limit constants
+ */
+#define MAX_FILE_LOGGER_STRING_BUFFER_SIZE          (100 * 1024 * 1024)
+#define MIN_FILE_LOGGER_STRING_BUFFER_SIZE          (10 * 1024)
+#define MAX_FILE_LOGGER_LOG_FILE_COUNT              (10 * 1024)
+
+/**
+ * Default values used in the file logger
+ */
+#define FILE_LOGGER_LOG_FILE_NAME                   "kvsFileLog"
+#define FILE_LOGGER_LAST_INDEX_FILE_NAME            "kvsFileLogIndex"
+#define FILE_LOGGER_STRING_BUFFER_SIZE              (100 * 1024)
+#define FILE_LOGGER_LOG_FILE_COUNT                  3
+#define FILE_LOGGER_LOG_FILE_DIRECTORY_PATH         "./"
+
+/**
+ * Creates a file based logger object and installs the global logger callback function
+ *
+ * @param - UINT64 - IN - Size of string buffer in file logger. When the string buffer is full the logger will flush everything into a new file
+ * @param - UINT64 - IN - Max number of log file. When exceeded, the oldest file will be deleted when new one is generated
+ * @param - PCHAR - IN - Directory in which the log file will be generated
+ * @param - BOOL - IN - Whether to print log to std out too
+ * @param - BOOL - IN - Whether to set global logger function pointer
+ * @param - logPrintFunc* - OUT/OPT - Optional function pointer to be returned to the caller that contains the main function for actual output
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS createFileLogger(UINT64, UINT64, PCHAR, BOOL, BOOL, logPrintFunc*);
+
+/**
+ * Frees the static file logger object and resets the global logging function if it was
+ * previously set by the create function.
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS freeFileLogger();
+
+/**
+ * Helper macros to be used in pairs at the application start and end
+ */
+#define CREATE_DEFAULT_FILE_LOGGER()                                \
+    createFileLogger(FILE_LOGGER_STRING_BUFFER_SIZE,                \
+                     FILE_LOGGER_LOG_FILE_COUNT,                    \
+                     (PCHAR) FILE_LOGGER_LOG_FILE_DIRECTORY_PATH,   \
+                     TRUE, TRUE, NULL);
+
+#define RELEASE_FILE_LOGGER()                                       freeFileLogger();
+
 #ifdef __cplusplus
 }
 #endif
