@@ -1,6 +1,7 @@
 #include "Include_i.h"
 
 getTime globalGetTime = defaultGetTime;
+getTime globalGetRealTime = defaultGetTime;
 
 STATUS generateTimestampStr(UINT64 timestamp, PCHAR formatStr, PCHAR pDestBuffer, UINT32 destBufferLen,
                             PUINT32 pFormattedStrLen)
