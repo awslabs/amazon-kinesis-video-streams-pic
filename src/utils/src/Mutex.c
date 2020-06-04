@@ -284,7 +284,7 @@ STATUS defaultConditionVariableWait(CVAR cvar, MUTEX mutex, UINT64 timeout)
     INT32 retVal = 0;
     struct timespec timeSpec;
     pthread_mutex_t* pMutex = (pthread_mutex_t*) mutex;
-    UINT64 curTime = GETTIME();
+    UINT64 curTime = GETREALTIME();
 
     // Timeout is a duration so we need to construct an absolute time
     UINT64 time = timeout + curTime;

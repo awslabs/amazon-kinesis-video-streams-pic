@@ -658,6 +658,7 @@ PUBLIC_API INLINE UINT64 defaultGetTime();
 // Thread related functionality
 //
 extern getTime globalGetTime;
+extern getTime globalGetRealTime;
 
 //
 // Thread library function definitions
@@ -939,6 +940,7 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 // Time functionality
 //
 #define GETTIME                     globalGetTime
+#define GETREALTIME                 globalGetRealTime
 #define STRFTIME                    strftime
 #define GMTIME                      gmtime
 
