@@ -72,7 +72,7 @@ STATUS resetInstrumentedAllocators()
 
     // Check the final total value
     CHK_WARN(totalRemainingSize == 0, STATUS_MEMORY_NOT_FREED,
-             "Possible memory leak of size %" PRIu64, totalRemainingSize);
+             "Possible memory leak of size %" PRIu64, (UINT64)totalRemainingSize);
 
 CleanUp:
 
