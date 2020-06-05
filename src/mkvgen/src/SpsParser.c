@@ -240,7 +240,7 @@ STATUS parseH264SpsGetResolution(PBYTE pSps, UINT32 spsSize, PUINT16 pWidth, PUI
 
     // Read the SPS Nalu
     CHK_STATUS(bitReaderReadBits(&bitReader, 8, &read));
-    CHK((((read & 0x60) >> 1) != 0) && ((read & 0x1f) == SPS_NALU_TYPE), STATUS_MKV_INVALID_H264_H265_SPS_NALU);
+    CHK(((read & 0x80) == 0) && ((read & 0x60) != 0) && ((read & 0x1f) == SPS_NALU_TYPE), STATUS_MKV_INVALID_H264_H265_SPS_NALU);
 
     // Get the profile
     CHK_STATUS(bitReaderReadBits(&bitReader, 8, &profileIdc));
