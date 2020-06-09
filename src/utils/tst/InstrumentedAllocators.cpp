@@ -251,12 +251,13 @@ TEST_F(InstrumentedAllocatorsTest, realloc_null_ptr_equivalent_malloc_zero_size)
     SIZE_T totalAllocSize = getInstrumentedTotalAllocationSize();
     PVOID pRealloc = MEMREALLOC(NULL, 0);
 
-    // NOTE: the pRealloc being NULL or not is implementation dependent
-    UNUSED_PARAM(pRealloc);
-
     EXPECT_EQ(totalAllocSize, getInstrumentedTotalAllocationSize());
     EXPECT_EQ(STATUS_SUCCESS, resetInstrumentedAllocators());
     EXPECT_EQ(0, getInstrumentedTotalAllocationSize());
+
+    if (pRealloc != NULL) {
+        MEMFREE((PSIZE_T) pRealloc - 1);
+    }
 }
 
 TEST_F(InstrumentedAllocatorsTest, random_alloc_free)
