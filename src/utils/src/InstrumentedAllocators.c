@@ -147,7 +147,8 @@ PVOID instrumentedAllocatorsMemCalloc(SIZE_T num, SIZE_T size)
 PVOID instrumentedAllocatorsMemRealloc(PVOID ptr, SIZE_T size)
 {
     if (ptr == NULL) {
-        return NULL;
+        // Realloc called with NULL ptr is equivalent to malloc
+        return instrumentedAllocatorsMemAlloc(size);
     }
 
     PSIZE_T pAlloc = (PSIZE_T) ptr - 1;
