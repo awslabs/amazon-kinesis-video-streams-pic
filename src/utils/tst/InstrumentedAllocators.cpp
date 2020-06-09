@@ -230,6 +230,35 @@ TEST_F(InstrumentedAllocatorsTest, memory_leak_check_realloc_smaller_large_diff)
     MEMFREE((PSIZE_T) pRealloc - 1);
 }
 
+TEST_F(InstrumentedAllocatorsTest, realloc_null_ptr_equivalent_malloc)
+{
+    EXPECT_EQ(STATUS_SUCCESS, setInstrumentedAllocators());
+    SIZE_T totalAllocSize = getInstrumentedTotalAllocationSize();
+    PVOID pRealloc = MEMREALLOC(NULL, TestAllocSize);
+    MEMSET(pRealloc, 0xFF, TestAllocSize);
+    MEMCHK(pRealloc, 0xFF, TestAllocSize);
+
+    EXPECT_EQ(totalAllocSize + TestAllocSize, getInstrumentedTotalAllocationSize());
+    EXPECT_EQ(STATUS_MEMORY_NOT_FREED, resetInstrumentedAllocators());
+    EXPECT_EQ(0, getInstrumentedTotalAllocationSize());
+
+    MEMFREE((PSIZE_T) pRealloc - 1);
+}
+
+TEST_F(InstrumentedAllocatorsTest, realloc_null_ptr_equivalent_malloc_zero_size)
+{
+    EXPECT_EQ(STATUS_SUCCESS, setInstrumentedAllocators());
+    SIZE_T totalAllocSize = getInstrumentedTotalAllocationSize();
+    PVOID pRealloc = MEMREALLOC(NULL, 0);
+
+    // NOTE: the pRealloc being NULL or not is implementation dependent
+    UNUSED_PARAM(pRealloc);
+
+    EXPECT_EQ(totalAllocSize, getInstrumentedTotalAllocationSize());
+    EXPECT_EQ(STATUS_SUCCESS, resetInstrumentedAllocators());
+    EXPECT_EQ(0, getInstrumentedTotalAllocationSize());
+}
+
 TEST_F(InstrumentedAllocatorsTest, random_alloc_free)
 {
     EXPECT_EQ(STATUS_SUCCESS, setInstrumentedAllocators());
