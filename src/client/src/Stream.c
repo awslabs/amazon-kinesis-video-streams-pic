@@ -100,10 +100,6 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     pKinesisVideoStream->base.identifier = KINESIS_VIDEO_OBJECT_IDENTIFIER_STREAM;
     pKinesisVideoStream->base.version = STREAM_CURRENT_VERSION;
 
-    // We can now unlock the client lock so we won't block it
-    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
-    locked = FALSE;
-
     // Set the initial state and the stream status
     pKinesisVideoStream->streamState = STREAM_STATE_NONE;
     pKinesisVideoStream->streamStatus = STREAM_STATUS_CREATING;
@@ -266,20 +262,24 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
 
     pKinesisVideoStream->base.shutdown = FALSE;
 
+    // Reset the ACK parser
+    CHK_STATUS(resetAckParserState(pKinesisVideoStream));
+
     // Set the new object in the parent object, set the ID and increment the current count
     // NOTE: Make sure we set the stream in the client object before setting the return value and
     // no tear-down flag is set.
     pKinesisVideoClient->streams[pKinesisVideoStream->streamId] = pKinesisVideoStream;
     pKinesisVideoClient->streamCount++;
 
-    // Reset the ACK parser
-    CHK_STATUS(resetAckParserState(pKinesisVideoStream));
-
     // Assign the created object
     *ppKinesisVideoStream = pKinesisVideoStream;
 
     // Setting this value will ensure we won't tear down the newly created object after this on failure
     tearDownOnError = FALSE;
+
+    // We can now unlock the client lock so we won't block it
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
+    locked = FALSE;
 
     // Set the initial state to new
     pKinesisVideoStream->streamState = STREAM_STATE_NEW;
