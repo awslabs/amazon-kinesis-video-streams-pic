@@ -57,7 +57,9 @@ if(BUILD_DEPENDENCIES)
   endif()
 
   if(BUILD_TEST)
+    message("build gtest pic ${OPEN_SRC_INSTALL_PREFIX}")
     build_dependency(gtest)
+    message("build gtest pic done ${OPEN_SRC_INSTALL_PREFIX}")
   endif()
 endif()
 
