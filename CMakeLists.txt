@@ -16,6 +16,7 @@ option(THREAD_SANITIZER "Build with ThreadSanitizer." OFF)
 option(UNDEFINED_BEHAVIOR_SANITIZER "Build with UndefinedBehaviorSanitizer." OFF)
 option(BUILD_DEBUG_HEAP "Build debug heap with guard bands and validation." OFF)
 option(ALIGNED_MEMORY_MODEL "Aligned memory model ONLY." OFF)
+option(FIXUP_ANNEX_B_TRAILING_NALU_ZERO "Fix-up some bad encoder behavior leaving a trailing zero at the end of NALu" OFF)
 
 if(CODE_COVERAGE)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g -fprofile-arcs -ftest-coverage")
@@ -45,6 +46,9 @@ if(BUILD_DEBUG_HEAP)
 endif()
 if(ALIGNED_MEMORY_MODEL)
   add_definitions(-DALIGNED_MEMORY_MODEL)
+endif()
+if(FIXUP_ANNEX_B_TRAILING_NALU_ZERO)
+  add_definitions(-DFIXUP_ANNEX_B_TRAILING_NALU_ZERO)
 endif()
 
 if(BUILD_DEPENDENCIES)
@@ -181,7 +185,7 @@ if(BUILD_TEST)
           ${PIC_TRACE_SOURCE_FILES}
           ${PIC_UTILS_SOURCE_FILES}
           ${PIC_VIEW_SOURCE_FILES})
-  target_compile_definitions(kvspic_test PRIVATE ALIGNED_MEMORY_MODEL=TRUE)
+  target_compile_definitions(kvspic_test PRIVATE ALIGNED_MEMORY_MODEL=TRUE FIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE)
   target_link_libraries(kvspic_test ${GTEST_LIBNAME} ${CMAKE_DL_LIBS} Threads::Threads)
   if(UNIX AND NOT APPLE)
     # rt needed for clock_gettime

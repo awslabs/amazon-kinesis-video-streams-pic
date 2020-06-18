@@ -13,23 +13,35 @@ STATUS getVideoWidthAndHeightFromH264Sps(PBYTE codecPrivateData, UINT32 codecPri
                                          PUINT16 pHeight)
 {
     STATUS retStatus = STATUS_SUCCESS;
-    PBYTE pSps;
-    UINT32 size;
+    PBYTE pSps, pPps;
+    UINT32 size, ppsSize, adaptedSize;
     BYTE start3ByteCode[] = {0x00, 0x00, 0x01};
     BYTE start4ByteCode[] = {0x00, 0x00, 0x00, 0x01};
+    BYTE start5ByteCode[] = {0x00, 0x00, 0x00, 0x00, 0x01};
+    PBYTE pAdaptedBits = NULL;
 
     CHK(codecPrivateData != NULL && pWidth != NULL && pHeight != NULL, STATUS_NULL_ARG);
     CHK(codecPrivateDataSize >= MIN_H264_H265_CPD_SIZE, STATUS_MKV_INVALID_H264_H265_CPD);
 
     // First of all, we need to determine what format the CPD is in - Annex-B, Avcc or raw
-    if (0 == MEMCMP(codecPrivateData, start4ByteCode, SIZEOF(start4ByteCode))) {
-        // 4-byte Annex-B start code
-        pSps = codecPrivateData + SIZEOF(start4ByteCode);
-        size = codecPrivateDataSize - SIZEOF(start4ByteCode);
-    } else if (0 == MEMCMP(codecPrivateData, start3ByteCode, SIZEOF(start3ByteCode))) {
-        // 3-byte Annex-B start code
-        pSps = codecPrivateData + SIZEOF(start3ByteCode);
-        size = codecPrivateDataSize - SIZEOF(start3ByteCode);
+    // NOTE: Some "bad" encoders encode an extra 0 at the end of the NALu resulting in
+    // an extra zero interfering with the Annex-B start code so we check for 4 zeroes and 1
+    if ((0 == MEMCMP(codecPrivateData, start5ByteCode, SIZEOF(start5ByteCode))) ||
+        (0 == MEMCMP(codecPrivateData, start4ByteCode, SIZEOF(start4ByteCode))) ||
+        (0 == MEMCMP(codecPrivateData, start3ByteCode, SIZEOF(start3ByteCode)))) {
+        // Convert to AvCC format to iterate over NALus easier
+        CHK_STATUS(adaptFrameNalsFromAnnexBToAvcc(codecPrivateData, codecPrivateDataSize, FALSE, NULL, &adaptedSize));
+
+        // Allocate enough storage to store the data temporarily
+        pAdaptedBits = (PBYTE) MEMALLOC(adaptedSize);
+        CHK(pAdaptedBits != NULL, STATUS_NOT_ENOUGH_MEMORY);
+
+        // Get the converted bits
+        CHK_STATUS(adaptFrameNalsFromAnnexBToAvcc(codecPrivateData, codecPrivateDataSize, FALSE, pAdaptedBits, &adaptedSize));
+
+        // Retrieve the SPS
+        CHK_STATUS(getH264SpsPpsNalusFromAvccNalus(pAdaptedBits, adaptedSize, &pSps, &size, &pPps, &ppsSize));
+        CHK(pSps != NULL, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
     } else if (codecPrivateData[0] == AVCC_VERSION_CODE
                && codecPrivateData[4] == AVCC_NALU_LEN_MINUS_ONE
                && codecPrivateData[5] == AVCC_NUMBER_OF_SPS_ONE) {
@@ -48,6 +60,8 @@ STATUS getVideoWidthAndHeightFromH264Sps(PBYTE codecPrivateData, UINT32 codecPri
 
 CleanUp:
 
+    SAFE_MEMFREE(pAdaptedBits);
+
     return retStatus;
 }
 
@@ -63,6 +77,7 @@ STATUS getVideoWidthAndHeightFromH265Sps(PBYTE codecPrivateData, UINT32 codecPri
     UINT32 size = codecPrivateDataSize;
     BYTE start3ByteCode[] = {0x00, 0x00, 0x01};
     BYTE start4ByteCode[] = {0x00, 0x00, 0x00, 0x01};
+    BYTE start5ByteCode[] = {0x00, 0x00, 0x00, 0x00, 0x01};
     BYTE naluType;
     UINT16 numNalus, naluIterator, naluLen;
     BOOL spsNaluFound = FALSE;
@@ -73,8 +88,11 @@ STATUS getVideoWidthAndHeightFromH265Sps(PBYTE codecPrivateData, UINT32 codecPri
     CHK(codecPrivateDataSize >= MIN_H264_H265_CPD_SIZE, STATUS_MKV_INVALID_H264_H265_CPD);
 
     // First of all, we need to determine what format the CPD is in - Annex-B, HEVC or raw
-    if ((0 == MEMCMP(codecPrivateData, start4ByteCode, SIZEOF(start4ByteCode))) ||
-            (0 == MEMCMP(codecPrivateData, start3ByteCode, SIZEOF(start3ByteCode)))) {
+    // NOTE: Some "bad" encoders encode an extra 0 at the end of the NALu resulting in
+    // an extra zero interfering with the Annex-B start code so we check for 4 zeroes and 1
+    if ((0 == MEMCMP(codecPrivateData, start5ByteCode, SIZEOF(start5ByteCode))) ||
+        (0 == MEMCMP(codecPrivateData, start4ByteCode, SIZEOF(start4ByteCode))) ||
+        (0 == MEMCMP(codecPrivateData, start3ByteCode, SIZEOF(start3ByteCode)))) {
         // 3 or 4-byte Annex-B start code.
         // Assume this is VPS/SPS/PPS format. Extract the second NALu
         // Convert the raw bits
@@ -87,24 +105,9 @@ STATUS getVideoWidthAndHeightFromH265Sps(PBYTE codecPrivateData, UINT32 codecPri
         // Get the converted bits
         CHK_STATUS(adaptFrameNalsFromAnnexBToAvcc(pSps, size, FALSE, pAdaptedBits, &adaptedSize));
 
-        // Set the source pointer to walk the adapted data
-        pRun = pAdaptedBits;
-
-        // Get size and the pointer to SPS
-        // It should be VPS/SPS/PPS
-
-        // Pass the VPS
-        CHK(SIZEOF(UINT32) <= adaptedSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
-        naluSize = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pRun);
-        pRun += SIZEOF(UINT32) + naluSize;
-        CHK((UINT32)(pRun - pAdaptedBits) <= adaptedSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
-
-        // Get the SPS
-        CHK(pRun - pAdaptedBits + SIZEOF(UINT32) <= adaptedSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
-        naluSize = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pRun);
-        pSps = pRun + SIZEOF(UINT32);
-        size = naluSize;
-        CHK(pSps - pAdaptedBits + naluSize <= adaptedSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
+        // Retrieve the SPS
+        CHK_STATUS(getH265SpsNalusFromAvccNalus(pAdaptedBits, adaptedSize, &pSps, &size));
+        CHK(pSps != NULL, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
     } else {
         // Check for the HEVC format
         if (checkHevcFormatHeader(codecPrivateData, codecPrivateDataSize)) {
@@ -158,9 +161,7 @@ STATUS getVideoWidthAndHeightFromH265Sps(PBYTE codecPrivateData, UINT32 codecPri
 
 CleanUp:
 
-    if (pAdaptedBits != NULL) {
-        MEMFREE(pAdaptedBits);
-    }
+    SAFE_MEMFREE(pAdaptedBits);
 
     return retStatus;
 }
@@ -384,7 +385,8 @@ CleanUp:
     return retStatus;
 }
 
-STATUS parseH265SpsGetResolution(PBYTE pSps, UINT32 spsSize, PUINT16 pWidth, PUINT16 pHeight) {
+STATUS parseH265SpsGetResolution(PBYTE pSps, UINT32 spsSize, PUINT16 pWidth, PUINT16 pHeight)
+{
     STATUS retStatus = STATUS_SUCCESS;
     H265SpsInfo spsInfo;
 
@@ -402,7 +404,8 @@ CleanUp:
     return retStatus;
 }
 
-STATUS parseH265Sps(PBYTE pSps, UINT32 spsSize, PH265SpsInfo pSpsInfo) {
+STATUS parseH265Sps(PBYTE pSps, UINT32 spsSize, PH265SpsInfo pSpsInfo)
+{
     STATUS retStatus = STATUS_SUCCESS;
     UINT32 i, read, sps_sub_layer_ordering_info_present_flag,
             scaling_list_enabled_flag, sps_scaling_list_data_present_flag,
@@ -751,7 +754,8 @@ CleanUp:
     return retStatus;
 }
 
-STATUS extractResolutionFromH265SpsInfo(PH265SpsInfo pSpsInfo, PUINT16 pWidth, PUINT16 pHeight) {
+STATUS extractResolutionFromH265SpsInfo(PH265SpsInfo pSpsInfo, PUINT16 pWidth, PUINT16 pHeight)
+{
     STATUS retStatus = STATUS_SUCCESS;
     INT32 crop_x = 0, crop_y = 0, sub_width_c = 0, sub_height_c = 0;
 
@@ -794,6 +798,84 @@ STATUS extractResolutionFromH265SpsInfo(PH265SpsInfo pSpsInfo, PUINT16 pWidth, P
 
     *pWidth = (UINT16) (pSpsInfo->pic_width_in_luma_samples - crop_x);
     *pHeight = (UINT16) (pSpsInfo->pic_height_in_luma_samples - crop_y);
+
+CleanUp:
+
+    return retStatus;
+}
+
+STATUS getH264SpsPpsNalusFromAvccNalus(PBYTE pAvccNalus, UINT32 nalusSize, PBYTE *ppSps, PUINT32 pSpsSize, PBYTE *ppPps, PUINT32 pPpsSize)
+{
+    STATUS retStatus = STATUS_SUCCESS;
+    PBYTE pSps = NULL, pPps = NULL;
+    UINT32 spsSize = 0, ppsSize = 0, runLen;
+    PUINT32 pCurPtr = (PUINT32) pAvccNalus;
+    BYTE naluHeader;
+    BOOL iterate = TRUE;
+
+    CHK(pAvccNalus != NULL && ppSps != NULL && pSpsSize != NULL && ppPps != NULL && pPpsSize != NULL, STATUS_NULL_ARG);
+
+    while (iterate && (PBYTE) (pCurPtr + 1) < pAvccNalus + nalusSize) {
+        runLen = GET_UNALIGNED_BIG_ENDIAN(pCurPtr);
+        naluHeader = *(PBYTE) (pCurPtr + 1);
+
+        // Check for the SPS header
+        if (pSps == NULL && (naluHeader & 0x80) == 0 && (naluHeader & 0x60) != 0 && (naluHeader & 0x1f) == SPS_NALU_TYPE) {
+            pSps = (PBYTE) (pCurPtr + 1);
+            spsSize = runLen;
+        }
+
+        // Check for the PPS header
+        if (pPps == NULL && (naluHeader & 0x80) == 0 && (naluHeader & 0x60) != 0 && (naluHeader & 0x1f) == PPS_NALU_TYPE) {
+            pPps = (PBYTE) (pCurPtr + 1);
+            ppsSize = runLen;
+        }
+
+        iterate = (pSps == NULL || pPps == NULL);
+
+        // Advance the current ptr taking into account the 4 byte length and the size of the run
+        pCurPtr = (PUINT32) ((PBYTE) (pCurPtr + 1) + runLen);
+    }
+
+    *ppSps = pSps;
+    *pSpsSize = spsSize;
+    *ppPps = pPps;
+    *pPpsSize = ppsSize;
+
+CleanUp:
+
+    return retStatus;
+}
+
+STATUS getH265SpsNalusFromAvccNalus(PBYTE pAvccNalus, UINT32 nalusSize, PBYTE *ppSps, PUINT32 pSpsSize)
+{
+    STATUS retStatus = STATUS_SUCCESS;
+    PBYTE pSps = NULL;
+    UINT32 spsSize = 0, runLen;
+    PUINT32 pCurPtr = (PUINT32) pAvccNalus;
+    BYTE naluHeader;
+    BOOL iterate = TRUE;
+
+    CHK(pAvccNalus != NULL && ppSps != NULL && pSpsSize != NULL, STATUS_NULL_ARG);
+
+    while (iterate && (PBYTE) (pCurPtr + 1) < pAvccNalus + nalusSize) {
+        runLen = GET_UNALIGNED_BIG_ENDIAN(pCurPtr);
+        naluHeader = *(PBYTE) (pCurPtr + 1);
+
+        // Check for the SPS header
+        if (pSps == NULL && (naluHeader >> 1) == HEVC_SPS_NALU_TYPE) {
+            pSps = (PBYTE) (pCurPtr + 1);
+            spsSize = runLen;
+        }
+
+        iterate = (pSps == NULL);
+
+        // Advance the current ptr taking into account the 4 byte length and the size of the run
+        pCurPtr = (PUINT32) ((PBYTE) (pCurPtr + 1) + runLen);
+    }
+
+    *ppSps = pSps;
+    *pSpsSize = spsSize;
 
 CleanUp:
 

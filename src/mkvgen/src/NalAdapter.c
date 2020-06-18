@@ -34,10 +34,11 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData,
 
             // Reset the last marker
             markerFound = FALSE;
-        } else if (zeroCount > 3) {
-            // Ensure we don't have over 3 zero's in a row
+        } else if (zeroCount > MAX_ANNEX_B_ZERO_COUNT) {
+            // Ensure we don't have over 3 zero's in a row. However, some broken encoders produce zero-es
+            // at the end of NALUs which ends up with 4 zeroes
             CHK(FALSE, STATUS_MKV_INVALID_ANNEXB_NALU_IN_FRAME_DATA);
-        } else if (*pCurPnt == 0x01 && (zeroCount == 2 || zeroCount == 3)) {
+        } else if (*pCurPnt == 0x01 && (zeroCount >= 2 && zeroCount <= MAX_ANNEX_B_ZERO_COUNT)) {
             // Found the Annex-B NAL
             // Check if we have previous run and fix it up
             if (pRunStart != NULL && pAdaptedFrameData != NULL) {
@@ -189,7 +190,7 @@ STATUS adaptH264CpdNalsFromAnnexBToAvcc(PBYTE pCpd,
 {
     STATUS retStatus = STATUS_SUCCESS;
     UINT32 spsSize, ppsSize, adaptedRawSize, adaptedCpdSize = 0;
-    PBYTE pAdaptedBits = NULL, pCurPnt = pAdaptedCpd, pSrcPnt;
+    PBYTE pAdaptedBits = NULL, pCurPnt = pAdaptedCpd, pSps, pPps;
 
     CHK(pCpd != NULL && pAdaptedCpdSize != NULL, STATUS_NULL_ARG);
 
@@ -216,21 +217,19 @@ STATUS adaptH264CpdNalsFromAnnexBToAvcc(PBYTE pCpd,
     // Get the converted bits
     CHK_STATUS(adaptFrameNalsFromAnnexBToAvcc(pCpd, cpdSize, FALSE, pAdaptedBits, &adaptedRawSize));
 
-    // Set the source pointer to walk the adapted data
-    pSrcPnt = pAdaptedBits;
-
-    // Get the size of the run
-    spsSize = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pSrcPnt);
-    pSrcPnt += SIZEOF(UINT32);
+    // Retrieve the SPS and PPS
+    CHK_STATUS(getH264SpsPpsNalusFromAvccNalus(pAdaptedBits, adaptedRawSize, &pSps, &spsSize, &pPps, &ppsSize));
+    CHK(pSps != NULL, STATUS_MKV_MISSING_SPS_FROM_H264_CPD);
+    CHK(pPps != NULL, STATUS_MKV_MISSING_PPS_FROM_H264_CPD);
 
     // See if we are still in the buffer
     CHK(spsSize + 8 <= *pAdaptedCpdSize && spsSize + 4 + 4 <= adaptedRawSize, STATUS_MKV_INVALID_ANNEXB_NALU_IN_CPD);
 
     // Start converting and copying it to the output
     *pCurPnt++ = AVCC_VERSION_CODE; // Version
-    *pCurPnt++ = *(pSrcPnt + 1); // Profile
-    *pCurPnt++ = *(pSrcPnt + 2); // Compat
-    *pCurPnt++ = *(pSrcPnt + 3); // Level
+    *pCurPnt++ = *(pSps + 1); // Profile
+    *pCurPnt++ = *(pSps + 2); // Compat
+    *pCurPnt++ = *(pSps + 3); // Level
 
     *pCurPnt++ = AVCC_NALU_LEN_MINUS_ONE;
     *pCurPnt++ = AVCC_NUMBER_OF_SPS_ONE;
@@ -240,15 +239,8 @@ STATUS adaptH264CpdNalsFromAnnexBToAvcc(PBYTE pCpd,
     pCurPnt += SIZEOF(UINT16);
 
     // Copy the actual bits
-    MEMCPY(pCurPnt, pSrcPnt, spsSize);
+    MEMCPY(pCurPnt, pSps, spsSize);
     pCurPnt += spsSize;
-
-    // Move the source pointer to the next nal
-    pSrcPnt += spsSize;
-
-    // Get the pps size
-    ppsSize = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pSrcPnt);
-    pSrcPnt += SIZEOF(UINT32);
 
     CHK(spsSize + 8 + 1 + ppsSize <= *pAdaptedCpdSize && spsSize + 4 + 4 + ppsSize <= adaptedRawSize, STATUS_MKV_INVALID_ANNEXB_NALU_IN_CPD);
 
@@ -260,7 +252,7 @@ STATUS adaptH264CpdNalsFromAnnexBToAvcc(PBYTE pCpd,
     pCurPnt += SIZEOF(UINT16);
 
     // Write the PPS data
-    MEMCPY(pCurPnt, pSrcPnt, ppsSize);
+    MEMCPY(pCurPnt, pPps, ppsSize);
     pCurPnt += ppsSize;
 
     // Precise adapted size
@@ -297,7 +289,7 @@ STATUS adaptH265CpdNalsFromAnnexBToHvcc(PBYTE pCpd,
     UINT32 naluSizes[3];
     PBYTE naluPtrs[3];
     // Nalu types in order - VPS, SPS, PPS
-    BYTE naluTypes[3] = {0x20, 0x21, 0x22};
+    BYTE naluTypes[3] = {HEVC_VPS_NALU_TYPE, HEVC_SPS_NALU_TYPE, HEVC_PPS_NALU_TYPE};
 
     CHK(pCpd != NULL && pAdaptedCpdSize != NULL, STATUS_NULL_ARG);
 
@@ -320,7 +312,7 @@ STATUS adaptH265CpdNalsFromAnnexBToHvcc(PBYTE pCpd,
     // Get the NALu count and store the pointer to SPS
     // It should be VPS/SPS/PPS
     // In some cases the PPS might be missing
-    while((UINT32)(pSrcPnt - pAdaptedBits) < adaptedRawSize) {
+    while (naluCount < ARRAY_SIZE(naluTypes) && (UINT32)(pSrcPnt - pAdaptedBits) < adaptedRawSize) {
         CHK(pSrcPnt - pAdaptedBits + SIZEOF(UINT32) <= adaptedRawSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
         naluSize = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pSrcPnt);
 

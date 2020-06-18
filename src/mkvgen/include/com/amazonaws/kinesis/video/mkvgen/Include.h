@@ -65,6 +65,8 @@ extern "C" {
 #define STATUS_MKV_INVALID_TRACK_UID                                                STATUS_MKVGEN_BASE + 0x00000028
 #define STATUS_MKV_INVALID_CLIENT_ID_LENGTH                                         STATUS_MKVGEN_BASE + 0x00000029
 #define STATUS_MKV_INVALID_AMS_ACM_CPD                                              STATUS_MKVGEN_BASE + 0x0000002a
+#define STATUS_MKV_MISSING_SPS_FROM_H264_CPD                                        STATUS_MKVGEN_BASE + 0x0000002b
+#define STATUS_MKV_MISSING_PPS_FROM_H264_CPD                                        STATUS_MKVGEN_BASE + 0x0000002c
 
 ////////////////////////////////////////////////////
 // Main structure declarations

@@ -244,7 +244,9 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
         pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO &&
         CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags) &&
         (pStreamMkvGenerator->contentType & MKV_CONTENT_TYPE_H264_H265) != MKV_CONTENT_TYPE_NONE) {
-        mkvgenExtractCpdFromAnnexBFrame(pStreamMkvGenerator, pFrame, pTrackInfo);
+        if (STATUS_FAILED(mkvgenExtractCpdFromAnnexBFrame(pStreamMkvGenerator, pFrame, pTrackInfo))) {
+            DLOGW("Warning: Failed auto-extracting the CPD from the key frame.");
+        }
     }
 
     // Calculate the necessary size
@@ -1744,7 +1746,7 @@ CleanUp:
 /**
  * Adapts the CPD.
  *
- * NOTE: The input has veen validated.
+ * NOTE: The input has been validated.
  */
 STATUS mkvgenAdaptCodecPrivateData(PStreamMkvGenerator pMkvGenerator,
                                    MKV_TRACK_INFO_TYPE trackType,
@@ -1754,7 +1756,7 @@ STATUS mkvgenAdaptCodecPrivateData(PStreamMkvGenerator pMkvGenerator,
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
-    UINT32 adaptedCodecPrivateDataSize = 0;
+    UINT32 adaptedCodecPrivateDataSize;
     PBYTE pCpd = NULL;
 
     // Initialize to existing size
@@ -1804,15 +1806,19 @@ STATUS mkvgenAdaptCodecPrivateData(PStreamMkvGenerator pMkvGenerator,
         case MKV_TRACK_INFO_TYPE_UNKOWN:
             break;
 
-        case MKV_TRACK_INFO_TYPE_VIDEO :
+        case MKV_TRACK_INFO_TYPE_VIDEO:
             // Check and process the H264 then H265 and later M-JPG content type
             if ((pMkvGenerator->contentType & MKV_CONTENT_TYPE_H264) != MKV_CONTENT_TYPE_NONE) {
+                // Important: The assumption here is that if this is not in AvCC format and it's in Annex-B or RAW then
+                // the first NALu is the SPS. We will not skip over possible SEI or AUD NALus
                 retStatus = getVideoWidthAndHeightFromH264Sps(pCpd,
                                                               adaptedCodecPrivateDataSize,
                                                               &pData->trackVideoConfig.videoWidth,
                                                               &pData->trackVideoConfig.videoHeight);
 
             } else if ((pMkvGenerator->contentType & MKV_CONTENT_TYPE_H265) != MKV_CONTENT_TYPE_NONE) {
+                // Important: The assumption here is that if this is not in HvCC format and it's in Annex-B or RAW then
+                // the first NALu is the SPS. We will not skip over possible SEI or AUD NALus
                 retStatus = getVideoWidthAndHeightFromH265Sps(pCpd,
                                                               adaptedCodecPrivateDataSize,
                                                               &pData->trackVideoConfig.videoWidth,
@@ -1837,7 +1843,7 @@ STATUS mkvgenAdaptCodecPrivateData(PStreamMkvGenerator pMkvGenerator,
 
             break;
 
-        case MKV_TRACK_INFO_TYPE_AUDIO :
+        case MKV_TRACK_INFO_TYPE_AUDIO:
             // zero out the fields
             MEMSET(&pData->trackAudioConfig, 0x00, SIZEOF(TrackCustomData));
 
@@ -1909,8 +1915,11 @@ STATUS mkvgenExtractCpdFromAnnexBFrame(PStreamMkvGenerator pStreamMkvGenerator, 
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
-    UINT32 cpdSize, runLen;
-    PBYTE pCpd = NULL, pCurPtr, pEndPtr, pCpdStart;
+    UINT32 cpdSize, runLen, parsedSize = 0;
+    PBYTE pCpd = NULL;
+    PUINT32 pCurPtr;
+    BOOL iterate = TRUE;
+    BYTE naluHeader;
 
     CHK(pFrame != NULL && pTrackInfo != NULL, STATUS_NULL_ARG);
 
@@ -1921,49 +1930,35 @@ STATUS mkvgenExtractCpdFromAnnexBFrame(PStreamMkvGenerator pStreamMkvGenerator, 
     CHK(pCpd != NULL, STATUS_NOT_ENOUGH_MEMORY);
     CHK_STATUS(adaptFrameNalsFromAnnexBToAvcc(pFrame->frameData, pFrame->size, FALSE, pCpd, &cpdSize));
 
-    // Assume the first 2 NALus are SPS and PPS for H264 and 3 NALus are VPS, SPS and PPS for H265
-    // NOTE: Some of the encoders might produce an Access Unit Delimiter NALu as the first NALu
-    // so we need to account for it
-    pCurPtr = pCpd;
-    pEndPtr = pCpd + cpdSize;
-    pCpdStart = pCpd;
+    // Here we will assume that all of the runs prior the I-frame are part of the CPD and will use in it's entirety
+    // The CPD adapter and/or height/width extracting will need to handle the rest
+    pCurPtr = (PUINT32) pCpd;
 
-    // Get the first byte of the NALu and check whether it's AUD.
-    if (*(pCurPtr + SIZEOF(UINT32)) == AUD_NALU_TYPE) {
-        // Skip over the AUD
-        runLen = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pCurPtr);
-        CHK(pCurPtr + SIZEOF(UINT32) + runLen < pEndPtr, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
-        pCurPtr += SIZEOF(UINT32) + runLen;
-        pCpdStart = pCurPtr;
+    while (iterate && (PBYTE) (pCurPtr + 1) < pCpd + cpdSize) {
+        runLen = GET_UNALIGNED_BIG_ENDIAN(pCurPtr);
+        naluHeader = *(PBYTE) (pCurPtr + 1);
+
+        // Check for the H264 format IDR slice NAL type if h264 or IDR_W_RADL_NALU_TYPE if h265
+        if (((pStreamMkvGenerator->contentType & MKV_CONTENT_TYPE_H264) != MKV_CONTENT_TYPE_NONE &&
+            (naluHeader & 0x80) == 0 && (naluHeader & 0x60) != 0 && (naluHeader & 0x1f) == IDR_NALU_TYPE) ||
+            ((pStreamMkvGenerator->contentType & MKV_CONTENT_TYPE_H265) != MKV_CONTENT_TYPE_NONE &&
+            (naluHeader >> 1) == IDR_W_RADL_NALU_TYPE)) {
+            parsedSize = (UINT32) ((PBYTE) pCurPtr - pCpd);
+            iterate = FALSE;
+        }
+
+        // Advance the current ptr taking into account the 4 byte length and the size of the run
+        pCurPtr = (PUINT32) ((PBYTE) (pCurPtr + 1) + runLen);
     }
 
-    // Check NALU is not over the limit
-    runLen = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pCurPtr);
-    CHK(pCurPtr + SIZEOF(UINT32) + runLen < pEndPtr, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
-    pCurPtr += SIZEOF(UINT32) + runLen;
-
-    // Check NALU is not over the limit
-    runLen = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pCurPtr);
-    CHK(pCurPtr + SIZEOF(UINT32) + runLen < pEndPtr, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
-    pCurPtr += SIZEOF(UINT32) + runLen;
-
-    if ((pStreamMkvGenerator->contentType & MKV_CONTENT_TYPE_H265) != MKV_CONTENT_TYPE_NONE) {
-        // Check NALU is not over the limit
-        runLen = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pCurPtr);
-        CHK(pCurPtr + SIZEOF(UINT32) + runLen < pEndPtr, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
-        pCurPtr += SIZEOF(UINT32) + runLen;
-    }
-
-    cpdSize = (UINT32) (pCurPtr - pCpdStart);
-
-    // Ensure there is still a run for an I-frame
-    CHK(pCurPtr != pEndPtr, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
+    // Ensure that we extracted CPD
+    CHK(parsedSize != 0, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
 
     // Assume it's all OK - convert back to AnnexB
-    CHK_STATUS(adaptFrameNalsFromAvccToAnnexB(pCpdStart, cpdSize));
+    CHK_STATUS(adaptFrameNalsFromAvccToAnnexB(pCpd, parsedSize));
 
     // Set the CPD for the track
-    CHK_STATUS(mkvgenSetCodecPrivateData((PMkvGenerator) pStreamMkvGenerator, pFrame->trackId, cpdSize, pCpdStart));
+    CHK_STATUS(mkvgenSetCodecPrivateData((PMkvGenerator) pStreamMkvGenerator, pFrame->trackId, parsedSize, pCpd));
 
 CleanUp:
 
