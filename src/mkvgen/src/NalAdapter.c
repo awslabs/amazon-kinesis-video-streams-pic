@@ -14,13 +14,23 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData,
                                       PBYTE pAdaptedFrameData,
                                       PUINT32 pAdaptedFrameDataSize)
 {
+    return adaptFrameNalsFromAnnexBToAvccSkipH264NonVcl(pFrameData, frameDataSize, removeEpb, FALSE, pAdaptedFrameData, pAdaptedFrameDataSize);
+}
+
+STATUS adaptFrameNalsFromAnnexBToAvccSkipH264NonVcl(PBYTE pFrameData,
+        UINT32 frameDataSize,
+        BOOL removeEpb,
+        BOOL skipNonVcl,
+        PBYTE pAdaptedFrameData,
+        PUINT32 pAdaptedFrameDataSize)
+{
     STATUS retStatus = STATUS_SUCCESS;
     UINT32 i = 0, zeroCount = 0, runSize = 0;
-    BOOL markerFound = FALSE;
+    BOOL markerFound = FALSE, skipNal = FALSE;
     PBYTE pCurPnt = pFrameData, pAdaptedCurPnt = pAdaptedFrameData, pRunStart = NULL;
 
     CHK(pFrameData != NULL && pAdaptedFrameDataSize != NULL, STATUS_NULL_ARG);
-    CHK(pAdaptedFrameData == NULL || *pAdaptedFrameDataSize >= frameDataSize, STATUS_INVALID_ARG_LEN);
+    CHK(skipNonVcl || pAdaptedFrameData == NULL || *pAdaptedFrameDataSize >= frameDataSize, STATUS_INVALID_ARG_LEN);
 
     // Quick check for small size
     CHK(frameDataSize != 0, retStatus);
@@ -49,15 +59,22 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData,
             // Store the beginning of the run
             pRunStart = pAdaptedCurPnt;
 
-            // Increment the adapted pointer to 4 bytes
-            pAdaptedCurPnt += 4;
-
             // Store an indicator that we have a marker
             markerFound = TRUE;
 
             // Start the new run
             zeroCount = 0;
             runSize = 0;
+
+            // Check if the NALu should be skipped
+            if (skipNonVcl && i < frameDataSize - 1 && IS_NON_VCL_H264_NAL(*(pCurPnt + 1))) {
+                skipNal = TRUE;
+            } else {
+                skipNal = FALSE;
+
+                // Increment the adapted pointer to 4 bytes
+                pAdaptedCurPnt += 4;
+            }
         } else if (removeEpb &&
                 *pCurPnt == 0x03 &&
                 zeroCount == 2 &&
@@ -68,10 +85,12 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData,
                         (*(pCurPnt + 1) == 0x03))) {
 
             // Removing the EPB
-            pAdaptedCurPnt += zeroCount;
+            if (!skipNal) {
+                pAdaptedCurPnt += zeroCount;
+            }
 
             // If the adapted frame is specified then copy the zeros and then the current byte
-            if (pAdaptedFrameData != NULL) {
+            if (!skipNal && pAdaptedFrameData != NULL) {
                 while (zeroCount != 0) {
                     *(pAdaptedCurPnt - zeroCount) = 0x00;
                     zeroCount--;
@@ -85,10 +104,13 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData,
             // Advance the current pointer and the run size to the number of zeros so far
             // as well as add the zeros to the adapted buffer if any
             runSize += zeroCount + 1; // for the current byte
-            pAdaptedCurPnt += zeroCount + 1;
+
+            if (!skipNal) {
+                pAdaptedCurPnt += zeroCount + 1;
+            }
 
             // If the adapted frame is specified then copy the zeros and then the current byte
-            if (pAdaptedFrameData != NULL) {
+            if (!skipNal && pAdaptedFrameData != NULL) {
                 *(pAdaptedCurPnt - 1) = *pCurPnt;
 
                 while (zeroCount != 0) {
@@ -133,7 +155,9 @@ CleanUp:
     if (STATUS_SUCCEEDED(retStatus) && pAdaptedFrameDataSize != NULL) {
         // NOTE: Due to EPB removal we could in fact make the adaptation buffer smaller than the original
         // We will require at least the original size buffer.
-        *pAdaptedFrameDataSize = MAX(frameDataSize, (UINT32)(pAdaptedCurPnt - pAdaptedFrameData));
+        // NOTE: in case of frame NAL adaptation with skipping non-VCL NALs the size WILL be smaller
+        *pAdaptedFrameDataSize = skipNonVcl ? (UINT32) (pAdaptedCurPnt - pAdaptedFrameData) :
+                MAX(frameDataSize, (UINT32) (pAdaptedCurPnt - pAdaptedFrameData));
     }
 
     return retStatus;
