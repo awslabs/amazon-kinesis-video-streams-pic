@@ -170,6 +170,7 @@ PVOID instrumentedAllocatorsMemRealloc(PVOID ptr, SIZE_T size)
     } else {
         ATOMIC_ADD(&gInstrumentedAllocatorsTotalAllocationSize, size - existingSize);
     }
+    *pNewAlloc = size;
 
     return pNewAlloc + 1;
 }
