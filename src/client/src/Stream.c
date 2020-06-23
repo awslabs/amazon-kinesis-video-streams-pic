@@ -90,6 +90,9 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
         }
     }
 
+    // Set the start streaming flag to false initially for event based streaming
+    pKinesisVideoStream->startStreaming = FALSE;
+
     // set the maximum frame size observed to 0
     pKinesisVideoStream->maxFrameSizeSeen = 0;
 
@@ -456,6 +459,8 @@ STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
 
     // Set the stream end flag
     pKinesisVideoStream->streamStopped = TRUE;
+
+    pKinesisVideoStream->startStreaming = FALSE;
 
     // Notify in case of an OFFLINE stream
     if (IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
@@ -3267,6 +3272,7 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
     // Stream is not stopped and not closed
     pKinesisVideoStream->streamStopped = FALSE;
     pKinesisVideoStream->streamClosed = FALSE;
+    pKinesisVideoStream->startStreaming = FALSE;
 
     // Set the stream start timestamps and index
     pKinesisVideoStream->newSessionTimestamp = INVALID_TIMESTAMP_VALUE;

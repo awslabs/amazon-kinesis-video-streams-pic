@@ -640,6 +640,36 @@ CleanUp:
 }
 
 /**
+ * Start Kinesis Video Streaming
+ * @param streamHandle
+ * @param currentTime
+ * @return
+ */
+STATUS startKinesisVideoStream(STREAM_HANDLE streamHandle, UINT64 currentTime) {
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
+    CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
+    pKinesisVideoStream->startStreaming = TRUE;
+
+    // Enable stream callbacks
+
+    // Check the content view.
+    /*
+     * If the tail item is not a key frame, drop the item and traverse tail
+     * If the tail item is not the start of the stream, call resetCurrentViewItemStreamStart()
+     * to generate MKV header
+     */
+
+    // APIs to use: contentViewTimestampInRange()
+    // CHECK_ITEM_STREAM_START(itemFlags)
+
+CleanUp:
+    CHK_LOG_ERR(retStatus);
+    LEAVES();
+    return retStatus;
+}
+/**
  * Puts a frame into the Kinesis Video stream.
  */
 STATUS putKinesisVideoFrame(STREAM_HANDLE streamHandle, PFrame pFrame)

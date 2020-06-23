@@ -449,10 +449,15 @@ STATUS fromReadyStreamState(UINT64 customData, PUINT64 pState)
 
     CHK(pKinesisVideoStream != NULL && pState != NULL, STATUS_NULL_ARG);
 
+    if(pKinesisVideoStream->streamInfo.streamCaps.streamingType == STREAMING_TYPE_REALTIME_CONTROLLED_START &&
+       pKinesisVideoStream->startStreaming == TRUE) {
+        state = STREAM_STATE_PUT_STREAM;
+    }
     // Transition to put stream state if not stopped
-    if (pKinesisVideoStream->streamState == STREAM_STATE_STOPPED) {
+    else if (pKinesisVideoStream->streamState == STREAM_STATE_STOPPED) {
         state = STREAM_STATE_STOPPED;
-    } else {
+    }
+    else {
         state = STREAM_STATE_PUT_STREAM;
     }
 
@@ -627,6 +632,11 @@ STATUS executeReadyStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     pKinesisVideoStream->streamReady = TRUE;
+
+    if(pKinesisVideoStream->streamInfo.streamCaps.streamingType == STREAMING_TYPE_REALTIME_CONTROLLED_START) {
+        DLOGI("Event based streaming type selected. Will not move to streaming till said to do so");
+        CHK(FALSE, retStatus);
+    }
 
     // Pulse the ready condition variable
     CHK_STATUS(pKinesisVideoClient->clientCallbacks.broadcastConditionVariableFn(

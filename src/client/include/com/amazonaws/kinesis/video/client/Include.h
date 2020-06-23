@@ -542,6 +542,9 @@ typedef enum {
 
     // Offline upload mode
     STREAMING_TYPE_OFFLINE,
+
+    // Intermittent event based streaming mode
+    STREAMING_TYPE_REALTIME_CONTROLLED_START
 } STREAMING_TYPE;
 
 #define GET_STREAMING_TYPE_STR(st)  ((st) == STREAMING_TYPE_REALTIME ? (PCHAR) "STREAMING_TYPE_REALTIME" : \
@@ -1978,6 +1981,14 @@ PUBLIC_API STATUS createKinesisVideoStream(CLIENT_HANDLE, PStreamInfo, PSTREAM_H
  */
 PUBLIC_API STATUS createKinesisVideoStreamSync(CLIENT_HANDLE, PStreamInfo, PSTREAM_HANDLE);
 
+/**
+ * Start streaming API called in by the application
+ * @param STREAM_HANDLE - Stream Handle object passed in by application
+ * @param UINT64 - startTimeStamp. This is set up to allow steaming the first key frame less than the
+ * timestamp. The timestamp is based off pts
+ * @return
+ */
+PUBLIC_API STATUS startKinesisVideoStream(STREAM_HANDLE, UINT64);
 /**
  * Stops and frees the stream
  *
