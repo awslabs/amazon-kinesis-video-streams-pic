@@ -223,7 +223,6 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
     UINT64 pts = 0, dts = 0, duration = 0;
     PBYTE pCurrentPnt = pBuffer;
     MKV_NALS_ADAPTATION nalsAdaptation;
-    BOOL skipNonVcl = FALSE;
 
     // Check the input params
     CHK(pSize != NULL && pMkvGenerator != NULL && pTrackInfo != NULL, STATUS_NULL_ARG);
@@ -258,19 +257,8 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
     // NAL adaptation should only be done for video frames
     nalsAdaptation = pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO ? pStreamMkvGenerator->nalsAdaptation : MKV_NALS_ADAPT_NONE;
 
-    // Some encoders produce frames with AUD/SEI NALus which breaks the Console playback
-    // We will be removing those NALus if
-    // * The Track is H264
-    // * The adaptation flags is set to MKV_NALS_ADAPT_ANNEXB
-    // * The compiler directive REMOVE_H264_NON_VCL_NALUS is specified
-    if (REMOVE_NON_VCL_NALUS_FROM_H264 &&
-        pStreamMkvGenerator->nalsAdaptation == MKV_NALS_ADAPT_ANNEXB &&
-        (pStreamMkvGenerator->contentType & MKV_CONTENT_TYPE_H264) != MKV_CONTENT_TYPE_NONE) {
-        skipNonVcl = TRUE;
-    }
-
     // Get the adapted size of the frame and add to the overall size
-    CHK_STATUS(getAdaptedFrameSize(pFrame, nalsAdaptation, skipNonVcl, &adaptedFrameSize));
+    CHK_STATUS(getAdaptedFrameSize(pFrame, nalsAdaptation, &adaptedFrameSize));
     packagedSize = overheadSize + adaptedFrameSize;
 
     // Check if we are asked for size only and early return if so
@@ -378,7 +366,6 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
                                                    (INT16) pts,
                                                    pFrame,
                                                    nalsAdaptation,
-                                                   skipNonVcl,
                                                    adaptedFrameSize,
                                                    pStreamMkvGenerator,
                                                    &encodedLen));
@@ -1378,7 +1365,7 @@ CleanUp:
 /**
  * EBML encodes a simple block
  */
-STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 timestamp, PFrame pFrame, MKV_NALS_ADAPTATION nalsAdaptation, BOOL skipNonVcl, UINT32 adaptedFrameSize, PStreamMkvGenerator pStreamMkvGenerator, PUINT32 pEncodedLen)
+STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 timestamp, PFrame pFrame, MKV_NALS_ADAPTATION nalsAdaptation, UINT32 adaptedFrameSize, PStreamMkvGenerator pStreamMkvGenerator, PUINT32 pEncodedLen)
 {
     STATUS retStatus = STATUS_SUCCESS;
     UINT64 encodedLength;
@@ -1416,10 +1403,9 @@ STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 times
 
         case MKV_NALS_ADAPT_ANNEXB:
             // Adapt from Annex-B to Avcc nals. NOTE: The conversion is not 'in-place'
-            CHK_STATUS(adaptFrameNalsFromAnnexBToAvccSkipH264NonVcl(pFrame->frameData,
+            CHK_STATUS(adaptFrameNalsFromAnnexBToAvcc(pFrame->frameData,
                                                       pFrame->size,
                                                       FALSE,
-                                                      skipNonVcl,
                                                       pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE,
                                                       &adaptedFrameSize));
     }
@@ -1459,7 +1445,7 @@ CleanUp:
     return retStatus;
 }
 
-STATUS getAdaptedFrameSize(PFrame pFrame, MKV_NALS_ADAPTATION nalsAdaptation, BOOL skipNonVcl, PUINT32 pAdaptedFrameSize)
+STATUS getAdaptedFrameSize(PFrame pFrame, MKV_NALS_ADAPTATION nalsAdaptation, PUINT32 pAdaptedFrameSize)
 {
     STATUS retStatus = STATUS_SUCCESS;
     UINT32 adaptedFrameSize = 0;
@@ -1476,12 +1462,11 @@ STATUS getAdaptedFrameSize(PFrame pFrame, MKV_NALS_ADAPTATION nalsAdaptation, BO
             break;
         case MKV_NALS_ADAPT_ANNEXB:
             // Get the size after conversion
-            CHK_STATUS(adaptFrameNalsFromAnnexBToAvccSkipH264NonVcl(pFrame->frameData,
-                    pFrame->size,
-                    FALSE,
-                    skipNonVcl,
-                    NULL,
-                    &adaptedFrameSize));
+            CHK_STATUS(adaptFrameNalsFromAnnexBToAvcc(pFrame->frameData,
+                                                      pFrame->size,
+                                                      FALSE,
+                                                      NULL,
+                                                      &adaptedFrameSize));
             break;
     }
 

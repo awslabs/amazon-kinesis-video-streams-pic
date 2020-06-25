@@ -135,15 +135,6 @@ extern "C" {
 #define MAX_ANNEX_B_ZERO_COUNT      3
 #endif
 
-#ifdef REMOVE_H264_NON_VCL_NALUS
-#define REMOVE_NON_VCL_NALUS_FROM_H264      TRUE
-#else
-#define REMOVE_NON_VCL_NALUS_FROM_H264      FALSE
-#endif
-
-// Check whether h264 NALu Header has nal_ref_idc which is zero
-#define IS_NON_VCL_H264_NAL(x)      (((x) & 0x60) == 0)
-
 /**
  * NALu adaptation
  */
@@ -168,20 +159,6 @@ typedef enum {
  * @return - STATUS code of the execution
  */
 STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE, UINT32, BOOL, PBYTE, PUINT32);
-
-/**
- * Adapts the frame data Annex-B NALUs to AVCC allowing for skipping Non-VCL H264 NALus
- *
- * @PBYTE - Frame data buffer
- * @UINT32 - Frame data buffer size
- * @BOOL - Remove EPB (Emulation Prevention Bytes)
- * @BOOL - Skip Non-VCL NALus
- * @PBYTE - OUT - OPTIONAL - Adapted frame data buffer
- * @PUINT32 - IN/OUT - Adapted frame data buffer size
- *
- * @return - STATUS code of the execution
- */
-STATUS adaptFrameNalsFromAnnexBToAvccSkipH264NonVcl(PBYTE, UINT32, BOOL, BOOL, PBYTE, PUINT32);
 
 /**
  * Adapts the CPD Annex-B NALUs to AVCC for H264
@@ -226,12 +203,11 @@ STATUS adaptFrameNalsFromAvccToAnnexB(PBYTE, UINT32);
  *
  * @PFrame - IN - Frame to get the packaged size for
  * @MKV_NALS_ADAPTATION - the nals adaptation mode
- * @BOOL - IN - Whether to skip the NON-VCL NALus
  * @PUINT32 - Packaged size of the frame
  *
  * @return - STATUS code of the execution
  */
-STATUS getAdaptedFrameSize(PFrame, MKV_NALS_ADAPTATION, BOOL, PUINT32);
+STATUS getAdaptedFrameSize(PFrame, MKV_NALS_ADAPTATION, PUINT32);
 
 /**
  * @PBYTE - CPD buffer

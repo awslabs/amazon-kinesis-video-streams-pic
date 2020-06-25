@@ -519,12 +519,11 @@ STATUS mkvgenEbmlEncodeClusterInfo(PBYTE, UINT32, UINT64, PUINT32);
  * @INT16 - frame timestamp
  * @PFrame - the frame to encode
  * @MKV_NALS_ADAPTATION - Type of NAL adaptation to perform
- * @BOOL - IN - WHether to skip non-VCL NALus
  * @UINT32 - the adapted frame size
  * @PStreamMkvGenerator - The MKV generator
  * @PUINT32 - the returned encoded length of the number in bytes
  */
-STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE, UINT32, INT16, PFrame, MKV_NALS_ADAPTATION, BOOL, UINT32, PStreamMkvGenerator, PUINT32);
+STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE, UINT32, INT16, PFrame, MKV_NALS_ADAPTATION, UINT32, PStreamMkvGenerator, PUINT32);
 
 /**
  * Gets the size of a single mkv TrackEntry

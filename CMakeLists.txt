@@ -17,7 +17,6 @@ option(UNDEFINED_BEHAVIOR_SANITIZER "Build with UndefinedBehaviorSanitizer." OFF
 option(BUILD_DEBUG_HEAP "Build debug heap with guard bands and validation." OFF)
 option(ALIGNED_MEMORY_MODEL "Aligned memory model ONLY." OFF)
 option(FIXUP_ANNEX_B_TRAILING_NALU_ZERO "Fix-up some bad encoder behavior leaving a trailing zero at the end of NALu" OFF)
-option(REMOVE_H264_NON_VCL_NALUS "Removes non-VCL NALs from the frame data as some encoders produce frames which are failing to play back in MSE" OFF)
 
 if(CODE_COVERAGE)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g -fprofile-arcs -ftest-coverage")
@@ -50,9 +49,6 @@ if(ALIGNED_MEMORY_MODEL)
 endif()
 if(FIXUP_ANNEX_B_TRAILING_NALU_ZERO)
   add_definitions(-DFIXUP_ANNEX_B_TRAILING_NALU_ZERO)
-endif()
-if (REMOVE_H264_NON_VCL_NALUS)
-  add_definitions(-DREMOVE_H264_NON_VCL_NALUS)
 endif()
 
 if(BUILD_DEPENDENCIES)
@@ -189,7 +185,7 @@ if(BUILD_TEST)
           ${PIC_TRACE_SOURCE_FILES}
           ${PIC_UTILS_SOURCE_FILES}
           ${PIC_VIEW_SOURCE_FILES})
-  target_compile_definitions(kvspic_test PRIVATE ALIGNED_MEMORY_MODEL=TRUE FIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE REMOVE_H264_NON_VCL_NALUS=TRUE)
+  target_compile_definitions(kvspic_test PRIVATE ALIGNED_MEMORY_MODEL=TRUE FIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE)
   target_link_libraries(kvspic_test ${GTEST_LIBNAME} ${CMAKE_DL_LIBS} Threads::Threads)
   if(UNIX AND NOT APPLE)
     # rt needed for clock_gettime
