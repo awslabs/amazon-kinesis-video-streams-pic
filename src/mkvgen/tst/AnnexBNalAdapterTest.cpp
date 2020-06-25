@@ -16,7 +16,6 @@ TEST_F(AnnexBNalAdapterTest, nalAdapter_InvalidInput)
     EXPECT_EQ(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(pFrameData, 0, TRUE, pAdaptedFrameData, &adaptedFrameDataSize));
     EXPECT_EQ(0, adaptedFrameDataSize);
     adaptedFrameDataSize = frameDataSize - 1;
-    EXPECT_NE(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(pFrameData, frameDataSize, FALSE, pAdaptedFrameData, &adaptedFrameDataSize));
     EXPECT_NE(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(pFrameData, frameDataSize, TRUE, pAdaptedFrameData, &adaptedFrameDataSize));
     EXPECT_NE(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(pFrameData, frameDataSize, FALSE, pAdaptedFrameData, NULL));
     EXPECT_NE(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(pFrameData, frameDataSize, TRUE, pAdaptedFrameData, NULL));
@@ -181,8 +180,11 @@ TEST_F(AnnexBNalAdapterTest, nalAdapter_ValidTrailingZeros)
     UINT32 frameData5Size = SIZEOF(frameData5);
     EXPECT_EQ(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(frameData5, frameData5Size, TRUE, NULL, &adaptedFrameDataSize));
     EXPECT_EQ(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(frameData5, frameData5Size, FALSE, NULL, &adaptedFrameDataSize));
-    EXPECT_EQ(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(frameData5, frameData5Size, TRUE, adaptedFrameData, &adaptedFrameDataSize));
     EXPECT_EQ(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(frameData5, frameData5Size, FALSE, adaptedFrameData, &adaptedFrameDataSize));
+    // Should set the size larger due to extra 0 removal and checking for at least the same size for EPB
+    adaptedFrameDataSize += 1;
+    EXPECT_EQ(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(frameData5, frameData5Size, TRUE, adaptedFrameData, &adaptedFrameDataSize));
+
 
     BYTE frameData6[] = {0, 0, 0, 1, 0};
     UINT32 frameData6Size = SIZEOF(frameData6);
@@ -359,7 +361,7 @@ TEST_F(AnnexBNalAdapterTest, nalAdapter_ValidEPB)
 
     UINT16 i;
 
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < ARRAY_SIZE(frameSizes); i++) {
         adaptedFrameDataSize = 0;
         EXPECT_EQ(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(frames[i], frameSizes[i], TRUE, NULL, &adaptedFrameDataSize)) << "Failed on iteration " << i;
         EXPECT_EQ(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(frames[i], frameSizes[i], TRUE, adaptedFrameData, &adaptedFrameDataSize)) << "Failed on iteration " << i;
@@ -386,18 +388,22 @@ TEST_F(AnnexBNalAdapterTest, nalAdapter_badRealLifeEncoderSampleWithFix)
     UINT32 adaptedFrameDataSize = SIZEOF(adaptedFrameData);
 
     EXPECT_EQ(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(frameData, SIZEOF(frameData), TRUE, NULL, &adaptedFrameDataSize));
-    EXPECT_EQ(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(frameData, SIZEOF(frameData), FALSE, NULL, &adaptedFrameDataSize));
+
+    // Need to account for the removal of zeroes and the fact that with EPB we are requiring at least the same size as frame data
+    adaptedFrameDataSize += 4;
     EXPECT_EQ(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(frameData, SIZEOF(frameData), TRUE, adaptedFrameData, &adaptedFrameDataSize));
+
+    EXPECT_EQ(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(frameData, SIZEOF(frameData), FALSE, NULL, &adaptedFrameDataSize));
     EXPECT_EQ(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(frameData, SIZEOF(frameData), FALSE, adaptedFrameData, &adaptedFrameDataSize));
 
-    // 3 larger than normal Annex-B start codes but we are always returning at least the original size
-    EXPECT_EQ(SIZEOF(frameData), adaptedFrameDataSize);
+    // 4 larger than normal Annex-B start codes as with no-EPB we are returning the actual size required
+    EXPECT_EQ(SIZEOF(frameData) - 4, adaptedFrameDataSize);
 
     // We have 5 NALUs here with run sizes of 2, 50, 4, 26, 22
     UINT32 expectedRunSizes[] = {2, 50, 4, 26, 22};
 
     PUINT32 pRunSize = (PUINT32) adaptedFrameData;
-    for (UINT32 i = 0; i < 5; i++) {
+    for (UINT32 i = 0; i < ARRAY_SIZE(expectedRunSizes); i++) {
         UINT32 runSize = GET_UNALIGNED_BIG_ENDIAN(pRunSize);
         EXPECT_EQ(expectedRunSizes[i], runSize);
 

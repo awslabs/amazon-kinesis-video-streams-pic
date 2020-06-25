@@ -1027,7 +1027,7 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
                          0x10, 0x17, 0x68, 0x50, 0x94, 0x00, 0x00, 0x00, 0x01, 0x44, 0x01, 0xc0, 0xf1, 0x80, 0x04, 0x20};
 
     // I-frame from a real-life encoder output which is actually invalid Annex-B format (shortened after a few bytes of the actual frame)
-    BYTE frameData[] = {0x00, 0x00, 0x00, 0x01, 0x09, 0x10, 0x00, 0x00, 0x00, 0x00, 0x01, 0x67, 0x64, 0x00, 0x1E, 0xAC,
+    BYTE cpdH264AudSeiExtra0[] = {0x00, 0x00, 0x00, 0x01, 0x09, 0x10, 0x00, 0x00, 0x00, 0x00, 0x01, 0x67, 0x64, 0x00, 0x1E, 0xAC,
                         0x1B, 0x1A, 0x80, 0xB0, 0x3D, 0xFF, 0xFF, 0x00, 0x28, 0x00, 0x21, 0x6E, 0x0C, 0x0C, 0x0C, 0x80,
                         0x00, 0x01, 0xF4, 0x00, 0x00, 0x75, 0x30, 0x74, 0x30, 0x07, 0xD0, 0x00, 0x01, 0x31, 0x2D, 0x5D,
                         0xE5, 0xC6, 0x86, 0x00, 0xFA, 0x00, 0x00, 0x26, 0x25, 0xAB, 0xBC, 0xB8, 0x50, 0x00, 0x00, 0x00,
@@ -1657,8 +1657,48 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     EXPECT_EQ(MKV_TEST_DEFAULT_TRACK_HEIGHT, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackVideoConfig.videoHeight);
 
     // Set the frame buffer
-    frame.size = SIZEOF(frameData);
-    MEMCPY(frame.frameData, frameData, frame.size);
+    frame.size = SIZEOF(cpdH264AudSeiExtra0);
+    MEMCPY(frame.frameData, cpdH264AudSeiExtra0, frame.size);
+
+    size = SIZEOF(frameBuf);
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenPackageFrame(pMkvGenerator, &frame, pTrackInfo, mBuffer, &size, &encodedFrameInfo));
+
+    // Ensure we have no width/height or CPD
+    EXPECT_NE(0, pStreamMkvGenerator->trackInfoList[0].codecPrivateDataSize);
+    EXPECT_NE((PBYTE) NULL, pStreamMkvGenerator->trackInfoList[0].codecPrivateData);
+    EXPECT_EQ(704, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackVideoConfig.videoWidth);
+    EXPECT_EQ(480, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackVideoConfig.videoHeight);
+
+    // Free the generator
+    EXPECT_EQ(STATUS_SUCCESS, freeMkvGenerator(pMkvGenerator));
+
+    //
+    // InValid H264 getting fixed up with content type of H264 with CPD adaptation
+    //
+    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_CONTENT_TYPE,
+                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS | MKV_GEN_ADAPT_ANNEXB_CPD_NALS,
+                                                 MKV_TEST_TIMECODE_SCALE,
+                                                 MKV_TEST_CLUSTER_DURATION,
+                                                 MKV_TEST_SEGMENT_UUID,
+                                                 &mTrackInfo,
+                                                 mTrackInfoCount,
+                                                 MKV_TEST_CLIENT_ID,
+                                                 NULL,
+                                                 0,
+                                                 &pMkvGenerator));
+
+    pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
+    pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
+
+    // Ensure we have no width/height or CPD
+    EXPECT_EQ(0, pStreamMkvGenerator->trackInfoList[0].codecPrivateDataSize);
+    EXPECT_EQ((PBYTE) NULL, pStreamMkvGenerator->trackInfoList[0].codecPrivateData);
+    EXPECT_EQ(MKV_TEST_DEFAULT_TRACK_WIDTH, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackVideoConfig.videoWidth);
+    EXPECT_EQ(MKV_TEST_DEFAULT_TRACK_HEIGHT, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackVideoConfig.videoHeight);
+
+    // Set the frame buffer
+    frame.size = SIZEOF(cpdH264AudSeiExtra0);
+    MEMCPY(frame.frameData, cpdH264AudSeiExtra0, frame.size);
 
     size = SIZEOF(frameBuf);
     EXPECT_EQ(STATUS_SUCCESS, mkvgenPackageFrame(pMkvGenerator, &frame, pTrackInfo, mBuffer, &size, &encodedFrameInfo));

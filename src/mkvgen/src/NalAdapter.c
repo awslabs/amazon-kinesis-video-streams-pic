@@ -20,7 +20,12 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData,
     PBYTE pCurPnt = pFrameData, pAdaptedCurPnt = pAdaptedFrameData, pRunStart = NULL;
 
     CHK(pFrameData != NULL && pAdaptedFrameDataSize != NULL, STATUS_NULL_ARG);
-    CHK(pAdaptedFrameData == NULL || *pAdaptedFrameDataSize >= frameDataSize, STATUS_INVALID_ARG_LEN);
+
+    // Validate only when removeEpb flag is set which is the case when we need to split the NALus for
+    // CPD processing. For frame adaptation we might have a certain bloat due to bad encoder adaptation flag
+    if (removeEpb && pAdaptedFrameData != NULL && HANDLING_TRAILING_NALU_ZERO) {
+        CHK(*pAdaptedFrameDataSize >= frameDataSize, STATUS_INVALID_ARG_LEN);
+    }
 
     // Quick check for small size
     CHK(frameDataSize != 0, retStatus);
@@ -133,7 +138,9 @@ CleanUp:
     if (STATUS_SUCCEEDED(retStatus) && pAdaptedFrameDataSize != NULL) {
         // NOTE: Due to EPB removal we could in fact make the adaptation buffer smaller than the original
         // We will require at least the original size buffer.
-        *pAdaptedFrameDataSize = MAX(frameDataSize, (UINT32)(pAdaptedCurPnt - pAdaptedFrameData));
+        *pAdaptedFrameDataSize = (removeEpb && HANDLING_TRAILING_NALU_ZERO) ?
+                MAX(frameDataSize, (UINT32) (pAdaptedCurPnt - pAdaptedFrameData)) :
+                (UINT32) (pAdaptedCurPnt - pAdaptedFrameData);
     }
 
     return retStatus;
