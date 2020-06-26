@@ -227,9 +227,12 @@ STATUS parseH264SpsGetResolution(PBYTE pSps, UINT32 spsSize, PUINT16 pWidth, PUI
             nextScale = 8,
             picOrderCntType = 0,
             numRefFramesInPicOrderCntCycle = 0,
-            deltaScale = 0;
+            deltaScale = 0,
+            chromaFormatIdc = 1,
+            separateColourPlaneFlag = 0;
     UINT32 i, j, read;
-    INT32 readInt, width, height;
+    INT32 readInt, width, height, pixelWidth, pixelHeight,
+        subWidthC, subHeightC, arrayWidth, cropUnitX, cropUnitY;
 
     BitReader bitReader;
 
@@ -259,11 +262,11 @@ STATUS parseH264SpsGetResolution(PBYTE pSps, UINT32 spsSize, PUINT16 pWidth, PUI
         || profileIdc == 86 || profileIdc == 118
         || profileIdc == 128 || profileIdc == 138) {
         // Read chroma_format_idc
-        CHK_STATUS(bitReaderReadExpGolomb(&bitReader, &read));
+        CHK_STATUS(bitReaderReadExpGolomb(&bitReader, &chromaFormatIdc));
 
-        if (read == 3) {
+        if (chromaFormatIdc == 3) {
             // Read residual_colour_transform_flag
-            CHK_STATUS(bitReaderReadBit(&bitReader, &read));
+            CHK_STATUS(bitReaderReadBit(&bitReader, &separateColourPlaneFlag));
         }
 
         // Read bit_depth_luma_minus8
@@ -297,7 +300,6 @@ STATUS parseH264SpsGetResolution(PBYTE pSps, UINT32 spsSize, PUINT16 pWidth, PUI
                 }
             }
         }
-
     }
 
     // Read log2_max_frame_num_minus4
@@ -371,8 +373,33 @@ STATUS parseH264SpsGetResolution(PBYTE pSps, UINT32 spsSize, PUINT16 pWidth, PUI
     // Read vui_parameters_present_flag
     CHK_STATUS(bitReaderReadBit(&bitReader, &read));
 
-    width = ((picWidthInMbsMinus1 + 1) * 16) - frameCropLeftOffset * 2 - frameCropRightOffset * 2;
-    height = ((2 - frameMbsOnlyFlag) * (picHeightInMapUnitsMinus1 + 1) * 16) - (frameCropTopOffset * 2) - (frameCropBottomOffset * 2);
+    // Proper width and height extraction is defined in part in
+    // 7.3.2.1.1 for SPS syntax: https://www.itu.int/rec/T-REC-H.264-201304-S/en
+    arrayWidth = frameMbsOnlyFlag != 0 ? 1 : 2;
+    pixelWidth = (picWidthInMbsMinus1 + 1) * 16;
+    pixelHeight = (picHeightInMapUnitsMinus1 + 1) * 16 * arrayWidth;
+
+    switch (chromaFormatIdc) {
+        case 1:
+            subWidthC = 2;
+            subHeightC = 2;
+            break;
+
+        case 2:
+            subWidthC = 2;
+            subHeightC = 1;
+            break;
+
+        default:
+            subWidthC = 1;
+            subHeightC = 1;
+    }
+
+    cropUnitX = subWidthC;
+    cropUnitY = subHeightC * arrayWidth;
+
+    width = pixelWidth - frameCropLeftOffset * cropUnitX - frameCropRightOffset * cropUnitX;
+    height = pixelHeight - frameCropTopOffset * cropUnitY - frameCropBottomOffset * cropUnitY;
 
     CHK(width >= 0 && width <= MAX_UINT16, STATUS_MKV_INVALID_H264_H265_SPS_WIDTH);
     CHK(height >= 0 && height <= MAX_UINT16, STATUS_MKV_INVALID_H264_H265_SPS_HEIGHT);
