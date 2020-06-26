@@ -37,16 +37,16 @@ TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_InvalidNoStartCode)
 TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_ValidZerosInStream)
 {
     BYTE cpds[][21] = {
-            {0, 0, 1, 1, 2, 3, 4, 10, 11, 12, 13, 14, 15, 0, 0, 1, 2, 3, 4, 5, 6}, // 0
-            {0, 0, 0, 1, 1, 2, 3, 4, 10, 11, 12, 13, 14, 15, 0, 0, 0, 1, 2, 3, 4}, // 1
+            {0, 0, 1, 0x67, 2, 3, 4, 10, 11, 12, 13, 14, 15, 0, 0, 1, 0x68, 3, 4, 5, 6}, // 0
+            {0, 0, 0, 1, 0x67, 2, 3, 4, 10, 11, 12, 13, 14, 15, 0, 0, 0, 1, 0x68, 3, 4}, // 1
     };
 
     UINT32 adaptedSizes[] = {26, 26};
     UINT32 actualAdaptedSizes[] = {26, 24};
 
     BYTE adaptedCpds[][26] = {
-            {1, 2, 3, 4, 0xff, 0xE1, 0, 10, 1, 2, 3, 4, 10, 11, 12, 13, 14, 15, 1, 0, 5, 2, 3, 4, 5, 6}, // 0
-            {1, 2, 3, 4, 0xff, 0xE1, 0, 10, 1, 2, 3, 4, 10, 11, 12, 13, 14, 15, 1, 0, 3, 2, 3, 4, 0, 0}, // 1
+            {1, 2, 3, 4, 0xff, 0xE1, 0, 10, 0x67, 2, 3, 4, 10, 11, 12, 13, 14, 15, 1, 0, 5, 0x68, 3, 4, 5, 6}, // 0
+            {1, 2, 3, 4, 0xff, 0xE1, 0, 10, 0x67, 2, 3, 4, 10, 11, 12, 13, 14, 15, 1, 0, 3, 0x68, 3, 4, 0, 0}, // 1
     };
 
     UINT32 cpdSize;
@@ -83,10 +83,29 @@ TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_ValidSpsPps)
                    0x47, 0xA5, 0x50, 0x00, 0x00, 0x00, 0x01, 0x68,
                    0xEE, 0x3C, 0xB0};
     cpdSize = SIZEOF(cpd2);
-    DLOGI("CPD size is %lu", cpdSize);
 
     EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd2, cpdSize, NULL, &adaptedCpdSize));
     EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd2, cpdSize, adaptedCpd, &adaptedCpdSize));
+}
+
+TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_FixedUpValidSpsPps)
+{
+    // This is taken from a real encoder that generates bad NALUs with zeroes at the end.
+    // It also has SEI and AUD NALus
+    BYTE cpd[] = {0x00, 0x00, 0x00, 0x01, 0x09, 0x10, 0x00, 0x00, 0x00, 0x00, 0x01, 0x67, 0x64, 0x00, 0x1E, 0xAC,
+                  0x1B, 0x1A, 0x80, 0xB0, 0x3D, 0xFF, 0xFF, 0x00, 0x28, 0x00, 0x21, 0x6E, 0x0C, 0x0C, 0x0C, 0x80,
+                  0x00, 0x01, 0xF4, 0x00, 0x00, 0x75, 0x30, 0x74, 0x30, 0x07, 0xD0, 0x00, 0x01, 0x31, 0x2D, 0x5D,
+                  0xE5, 0xC6, 0x86, 0x00, 0xFA, 0x00, 0x00, 0x26, 0x25, 0xAB, 0xBC, 0xB8, 0x50, 0x00, 0x00, 0x00,
+                  0x00, 0x01, 0x68, 0xEE, 0x38, 0x30, 0x00, 0x00, 0x00, 0x00, 0x01, 0x06, 0x00, 0x0D, 0xBC, 0xFF,
+                  0x87, 0x49, 0xB5, 0x16, 0x3C, 0xFF, 0x87, 0x49, 0xB5, 0x16, 0x40, 0x01, 0x04, 0x00, 0x78, 0x08,
+                  0x10, 0x06, 0x01, 0xC4, 0x80,};
+
+    UINT32 cpdSize = SIZEOF(cpd);
+    BYTE adaptedCpd[1000];
+    UINT32 adaptedCpdSize = SIZEOF(adaptedCpd);
+
+    EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, NULL, &adaptedCpdSize));
+    EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, adaptedCpd, &adaptedCpdSize));
 }
 
 TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_ValidH265) {

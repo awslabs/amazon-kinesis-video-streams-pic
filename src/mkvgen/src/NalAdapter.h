@@ -115,9 +115,27 @@ extern "C" {
 #define AVCC_SPS_OFFSET             8
 
 /**
+ * HEVC VPS NALu type
+ */
+#define HEVC_VPS_NALU_TYPE          0x20
+
+/**
  * HEVC SPS NALu type
  */
 #define HEVC_SPS_NALU_TYPE          0x21
+
+/**
+ * HEVC PPS NALu type
+ */
+#define HEVC_PPS_NALU_TYPE          0x22
+
+#ifdef FIXUP_ANNEX_B_TRAILING_NALU_ZERO
+#define HANDLING_TRAILING_NALU_ZERO TRUE
+#define MAX_ANNEX_B_ZERO_COUNT      4
+#else
+#define HANDLING_TRAILING_NALU_ZERO FALSE
+#define MAX_ANNEX_B_ZERO_COUNT      3
+#endif
 
 /**
  * NALu adaptation
