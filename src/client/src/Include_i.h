@@ -182,22 +182,6 @@ typedef struct __EndpointInfo* PEndpointInfo;
 #define GET_DATA_ENDPOINT_REAL_TIME_PUT_API_NAME            "PUT_MEDIA"
 
 /**
- * EMA (Exponential Moving Average) alpha value and 1-alpha value - over appx 20 samples
- */
-#define EMA_ALPHA_VALUE                 ((DOUBLE) 0.05)
-#define ONE_MINUS_EMA_ALPHA_VALUE       ((DOUBLE) (1 - EMA_ALPHA_VALUE))
-
-/**
- * Calculates the EMA (Exponential Moving Average) accumulator value
- *
- * a - Accumulator value
- * v - Next sample point
- *
- * @return the new Accumulator value
- */
-#define EMA_ACCUMULATOR_GET_NEXT(a, v)    (DOUBLE) (EMA_ALPHA_VALUE * (v) + ONE_MINUS_EMA_ALPHA_VALUE * (a))
-
-/**
  * Measuring the transfer rate after this time elapses to avoid precision issues with burst reads into the
  * networking clients transfer buffer.
  */
