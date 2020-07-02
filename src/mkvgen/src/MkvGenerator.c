@@ -1942,7 +1942,7 @@ STATUS mkvgenExtractCpdFromAnnexBFrame(PStreamMkvGenerator pStreamMkvGenerator, 
         if (((pStreamMkvGenerator->contentType & MKV_CONTENT_TYPE_H264) != MKV_CONTENT_TYPE_NONE &&
             (naluHeader & 0x80) == 0 && (naluHeader & 0x60) != 0 && (naluHeader & 0x1f) == IDR_NALU_TYPE) ||
             ((pStreamMkvGenerator->contentType & MKV_CONTENT_TYPE_H265) != MKV_CONTENT_TYPE_NONE &&
-            (naluHeader >> 1) == IDR_W_RADL_NALU_TYPE)) {
+                     ((naluHeader >> 1) == IDR_W_RADL_NALU_TYPE || (naluHeader >> 1) == IDR_N_LP_NALU_TYPE))) {
             parsedSize = (UINT32) ((PBYTE) pCurPtr - pCpd);
             iterate = FALSE;
         }

@@ -1036,6 +1036,18 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
                         0x10, 0x06, 0x01, 0xC4, 0x80, 0x00, 0x00, 0x00, 0x00, 0x01, 0x65, 0xB8, 0x00, 0x02, 0x00, 0x00,
                         0x03, 0x02, 0x7F, 0xEC, 0x0E, 0xD0, 0xE1, 0xA7, 0x9D, 0xA3, 0x7C, 0x49, 0x42, 0xC2, 0x23, 0x59,};
 
+    BYTE cpdH265WithIdr_N_Lp[] = {0x00, 0x00, 0x00, 0x01, 0x40, 0x01, 0x0c, 0x01, 0xff, 0xff, 0x01, 0x60,
+                                  0x00, 0x00, 0x03, 0x00, 0x90, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00,
+                                  0x5a, 0x95, 0x98, 0x09, 0x00, 0x00, 0x00, 0x01, 0x42, 0x01, 0x01, 0x01,
+                                  0x60, 0x00, 0x00, 0x03, 0x00, 0x90, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03,
+                                  0x00, 0x5a, 0xa0, 0x05, 0x02, 0x01, 0xe1, 0x65, 0x95, 0x9a, 0x49, 0x32,
+                                  0xbf, 0xfc, 0x00, 0x04, 0x00, 0x04, 0x04, 0x00, 0x00, 0x03, 0x00, 0x04,
+                                  0x00, 0x00, 0x03, 0x00, 0x64, 0x20, 0x00, 0x00, 0x00, 0x01, 0x44, 0x01,
+                                  0xc1, 0x72, 0xb4, 0x62, 0x40, 0x00, 0x00, 0x00, 0x01, 0x28, 0x01, 0xaf,
+                                  0x3c, 0x40, 0xeb, 0x4d, 0x2b, 0x2c, 0x9a, 0x4a, 0x2f, 0x09, 0x56, 0xe0,
+                                  0xdd, 0x7b, 0x56, 0xe5, 0x00, 0xc5, 0xb4, 0xbc, 0x5c, 0x27, 0x8a, 0xc0,
+                                  0x7e, 0xaa, 0x7d, 0xc6, 0xbf, 0xec, 0xc1, 0xb0, 0x8a, 0xfd, 0x07, 0x3a,};
+
     BYTE annexBStart[] = {0x00, 0x00, 0x00, 0x01};
 
     // Set the frame buffer
@@ -1707,6 +1719,47 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     EXPECT_NE(0, pStreamMkvGenerator->trackInfoList[0].codecPrivateDataSize);
     EXPECT_NE((PBYTE) NULL, pStreamMkvGenerator->trackInfoList[0].codecPrivateData);
     EXPECT_EQ(704, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackVideoConfig.videoWidth);
+    EXPECT_EQ(480, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackVideoConfig.videoHeight);
+
+    // Free the generator
+    EXPECT_EQ(STATUS_SUCCESS, freeMkvGenerator(pMkvGenerator));
+
+    //
+    // Valid H265 with IDR_N_LP in Annex-B format
+    //
+    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H265_CONTENT_TYPE,
+                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS | MKV_GEN_ADAPT_ANNEXB_CPD_NALS,
+                                                 MKV_TEST_TIMECODE_SCALE,
+                                                 MKV_TEST_CLUSTER_DURATION,
+                                                 MKV_TEST_SEGMENT_UUID,
+                                                 &mTrackInfo,
+                                                 mTrackInfoCount,
+                                                 MKV_TEST_CLIENT_ID,
+                                                 NULL,
+                                                 0,
+                                                 &pMkvGenerator));
+
+    pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
+    pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
+
+    // Ensure we have no width/height or CPD
+    EXPECT_EQ(0, pStreamMkvGenerator->trackInfoList[0].codecPrivateDataSize);
+    EXPECT_EQ((PBYTE) NULL, pStreamMkvGenerator->trackInfoList[0].codecPrivateData);
+    EXPECT_EQ(MKV_TEST_DEFAULT_TRACK_WIDTH, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackVideoConfig.videoWidth);
+    EXPECT_EQ(MKV_TEST_DEFAULT_TRACK_HEIGHT, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackVideoConfig.videoHeight);
+
+    // Set the frame buffer
+    frame.size = SIZEOF(cpdH265WithIdr_N_Lp);
+    MEMCPY(frame.frameData, cpdH265WithIdr_N_Lp, frame.size);
+    frame.flags = FRAME_FLAG_KEY_FRAME;
+
+    size = SIZEOF(frameBuf);
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenPackageFrame(pMkvGenerator, &frame, pTrackInfo, mBuffer, &size, &encodedFrameInfo));
+
+    // Ensure we have no width/height or CPD
+    EXPECT_NE(0, pStreamMkvGenerator->trackInfoList[0].codecPrivateDataSize);
+    EXPECT_NE((PBYTE) NULL, pStreamMkvGenerator->trackInfoList[0].codecPrivateData);
+    EXPECT_EQ(640, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackVideoConfig.videoWidth);
     EXPECT_EQ(480, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackVideoConfig.videoHeight);
 
     // Free the generator
