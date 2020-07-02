@@ -28,6 +28,7 @@ extern "C" {
 
 // H265 IDR NALU type value
 #define IDR_W_RADL_NALU_TYPE                0x13
+#define IDR_N_LP_NALU_TYPE                  0x14
 
 // AUD NALu value
 #define AUD_NALU_TYPE                       0x09
