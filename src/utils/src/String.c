@@ -450,3 +450,88 @@ CleanUp:
 
     return retStatus;
 }
+
+// This is a string search using Rabin–Karp algorithm.
+// Running time complexity:
+//   * Average: Θ(n + m)
+//   * Worst  : Θ((n−m)m)
+// Memory complexity: O(1)
+PCHAR defaultStrnstr(PCHAR haystack, PCHAR needle, SIZE_T len)
+{
+    UINT32 prime = 16777619;
+    UINT32 windowHash = 0;
+    UINT32 needleHash = 0;
+    UINT32 i;
+    UINT32 square = prime, power = 1;
+    UINT32 haystackSize, needleSize;
+
+    if (needle == NULL) {
+        return haystack;
+    }
+
+    if (haystack == NULL) {
+        return NULL;
+    }
+
+    haystackSize = (UINT32) STRNLEN(haystack, len);
+    needleSize = (UINT32) STRLEN(needle);
+    if (needleSize > haystackSize) {
+        return NULL;
+    }
+
+    for (i = 0; i < needleSize; i++) {
+        windowHash = windowHash * prime + (UINT32) haystack[i];
+        needleHash = needleHash * prime + (UINT32) needle[i];
+    }
+
+    if (windowHash == needleHash && STRNCMP(haystack, needle, needleSize) == 0) {
+        return haystack;
+    }
+
+    // Precompute the largest power in O(log n). 
+    //
+    // This algorithm takes an advantage for the fact that a number that's multiplied 
+    // by itself will double the power.
+    //
+    // For example:
+    //    a ^ 4 = (a ^ 2) * (a ^ 2) = a * a * a * a
+    //
+    //
+    // This largest power then can be used to efficiently slide the hash window.
+    //
+    // For example:
+    //    windowString = "abc"
+    //    ASCII table:
+    //        a = 97
+    //        b = 98
+    //        c = 99
+    //
+    //    windowHash = 97 * prime ^ 2 + 98 * prime ^ 1 + 99
+    //
+    //    After this calculation, power = prime ^ 2
+    //
+    // The idea is to not repeat recalculating prime ^ 2 everytime we slide
+    // the window.
+    for (i = needleSize - 1; i > 0; i /= 2) {
+        // When it's odd, bring back to even again by storing the extra square
+        // in power
+        if (i % 2 != 0) {
+            power *= square;
+        }
+        square *= square;
+    }
+
+    for (i = needleSize; i < haystackSize;) {
+        // slide the window hash, remove oldest char and add a new char
+        windowHash = windowHash - (((UINT32) haystack[i - needleSize]) * power);
+        windowHash = windowHash * prime + (UINT32) haystack[i];
+
+        i++;
+        // make sure that the hash is not collided
+        if (windowHash == needleHash && STRNCMP(haystack + i - needleSize, needle, needleSize) == 0) {
+            return haystack + i - needleSize;
+        }
+    }
+
+    return NULL;
+}
