@@ -110,6 +110,17 @@ PUBLIC_API STATUS strtoi64(PCHAR, PCHAR, UINT32, PINT64);
 PUBLIC_API PCHAR strnchr(PCHAR, UINT32, CHAR);
 
 /**
+ * Safe variant of strstr. This is a default implementation for strnstr when not available.
+ *
+ * @param 1 - IN - Input string to process
+ * @param 3 - IN - The string to look for
+ * @param 2 - IN - String length.
+ *
+ * @return - Pointer to the first occurrence or NULL
+ */
+PUBLIC_API PCHAR defaultStrnstr(PCHAR, PCHAR, SIZE_T);
+
+/**
  * Left and right trim of the whitespace
  *
  * @param 1 - IN - Input string to process

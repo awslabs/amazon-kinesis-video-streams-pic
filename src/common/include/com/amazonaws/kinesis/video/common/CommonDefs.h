@@ -803,7 +803,11 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 #define LTRIMSTR                   ltrimstr
 #define RTRIMSTR                   rtrimstr
 #define STRSTR                     strstr
+#ifdef strnstr
 #define STRNSTR                    strnstr
+#else
+#define STRNSTR                    defaultStrnstr
+#endif
 #define TOLOWER                    tolower
 #define TOUPPER                    toupper
 #define TOLOWERSTR                 tolowerstr
