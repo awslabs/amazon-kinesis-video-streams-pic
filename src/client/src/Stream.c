@@ -119,8 +119,8 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     // Shouldn't reset the generator on next key frame
     pKinesisVideoStream->resetGeneratorOnKeyFrame = FALSE;
 
-    // Shouldn't skip frames
-    pKinesisVideoStream->skipNonKeyFrames = FALSE;
+    // Skip non-key frames at start
+    pKinesisVideoStream->skipNonKeyFrames = TRUE;
 
     // Shouldn't reset the generator so set invalid time
     pKinesisVideoStream->resetGeneratorTime = INVALID_TIMESTAMP_VALUE;
