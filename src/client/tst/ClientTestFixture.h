@@ -87,6 +87,7 @@
 
 // Default producer configuration frame size
 #define TEST_DEFAULT_PRODUCER_CONFIG_FRAME_SIZE             50000
+#define TEST_DEFAULT_PRODUCER_CONFIG_FRAME_RATE             20
 
 #define PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE() \
     if ((mStreamInfo.retention == 0 || !mStreamInfo.streamCaps.fragmentAcks) && \
@@ -534,8 +535,8 @@ protected:
      * - sinlge track with track id 1
      */
     void initDefaultProducer() {
-        mMockProducerConfig.mFps = 20;
-        mMockProducerConfig.mKeyFrameInterval = 20;
+        mMockProducerConfig.mFps = TEST_DEFAULT_PRODUCER_CONFIG_FRAME_RATE;
+        mMockProducerConfig.mKeyFrameInterval = TEST_DEFAULT_PRODUCER_CONFIG_FRAME_RATE;
         mMockProducerConfig.mFrameSizeByte = TEST_DEFAULT_PRODUCER_CONFIG_FRAME_SIZE;
         mMockProducerConfig.mIsLive = TRUE;
         mMockProducerConfig.mSetEOFR = FALSE;
