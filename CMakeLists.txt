@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake;${CMAKE_MODULE_PATH}")
 include(Utilities)
+include(CheckIncludeFiles)
 project(pic_project)
 
 # User Flags
@@ -17,6 +18,11 @@ option(UNDEFINED_BEHAVIOR_SANITIZER "Build with UndefinedBehaviorSanitizer." OFF
 option(BUILD_DEBUG_HEAP "Build debug heap with guard bands and validation." OFF)
 option(ALIGNED_MEMORY_MODEL "Aligned memory model ONLY." OFF)
 option(FIXUP_ANNEX_B_TRAILING_NALU_ZERO "Fix-up some bad encoder behavior leaving a trailing zero at the end of NALu" OFF)
+
+CHECK_INCLUDE_FILES(sys/prctl.h   KVSPIC_HAVE_SYS_PRCTL_H)
+CHECK_INCLUDE_FILES(sys/utsname.h KVSPIC_HAVE_UTSNAME_H)
+CHECK_INCLUDE_FILES(dlfcn.h       KVCPIC_HAVE_DLFCN_H)
+
 
 if(CODE_COVERAGE)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g -fprofile-arcs -ftest-coverage")

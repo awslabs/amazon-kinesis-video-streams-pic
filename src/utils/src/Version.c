@@ -80,14 +80,19 @@ STATUS defaultGetOsVersion(PCHAR pResult, UINT32 len)
 {
     STATUS retStatus = STATUS_SUCCESS;
     INT32 requiredLen;
+    #ifdef KVSPIC_HAVE_UTSNAME_H
     struct utsname name;
+    #endif
 
     CHK(pResult != NULL, STATUS_NULL_ARG);
-
+    
+    #ifdef KVSPIC_HAVE_UTSNAME_H
     if (uname(&name) >= 0) {
         requiredLen = SNPRINTF(pResult, len, (PCHAR) "%s/%s", name.sysname, name.release);
-    } else {
-        requiredLen = SNPRINTF(pResult, len, (PCHAR) "%s", (PCHAR) "non-windows/unknown");
+    } else 
+    #endif
+    {
+        requiredLen = SNPRINTF(pResult, len, (PCHAR) "%s", (PCHAR) KVSPIC_OS_VERSION);
     }
 
     CHK(requiredLen > 0 && requiredLen < len, STATUS_NOT_ENOUGH_MEMORY);
@@ -100,14 +105,18 @@ STATUS defaultGetPlatformName(PCHAR pResult, UINT32 len)
 {
     STATUS retStatus = STATUS_SUCCESS;
     INT32 requiredLen;
+    #ifdef KVSPIC_HAVE_UTSNAME_H
     struct utsname name;
-
+    #endif
     CHK(pResult != NULL, STATUS_NULL_ARG);
 
+    #ifdef KVSPIC_HAVE_UTSNAME_H
     if (uname(&name) >= 0) {
         requiredLen = SNPRINTF(pResult, len, (PCHAR) "%s", name.machine);
-    } else {
-        requiredLen = SNPRINTF(pResult, len, (PCHAR) "%s", (PCHAR) "unknownArch");
+    } else 
+    #endif
+    {
+        requiredLen = SNPRINTF(pResult, len, (PCHAR) "%s", (PCHAR) KVSPIC_PLATFORM_NAME);
     }
 
     CHK(requiredLen > 0 && requiredLen < len, STATUS_NOT_ENOUGH_MEMORY);

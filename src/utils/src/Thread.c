@@ -122,7 +122,7 @@ CleanUp:
 
 PUBLIC_API STATUS defaultGetThreadName(TID thread, PCHAR name, UINT32 len)
 {
-    UINT32 retValue;
+    UINT32 retValue = STATUS_SUCCESS;
 
     if (NULL == name) {
         return STATUS_NULL_ARG;
@@ -136,10 +136,14 @@ PUBLIC_API STATUS defaultGetThreadName(TID thread, PCHAR name, UINT32 len)
     retValue = pthread_getname_np((pthread_t) thread, name, len);
 #elif defined ANDROID_BUILD
     // This will return the current thread name on Android
+    #ifdef KVSPIC_HAVE_SYS_PRCTL_H
     retValue = prctl(PR_GET_NAME, (UINT64) name, 0, 0, 0);
+    #endif
 #else
     // TODO need to handle case when other platform use old verison GLIBC and don't support prctl
+    #ifdef KVSPIC_HAVE_SYS_PRCTL_H
     retValue = prctl(PR_GET_NAME, (UINT64) name, 0, 0, 0);
+    #endif
 #endif
 
     return (0 == retValue) ? STATUS_SUCCESS : STATUS_INVALID_OPERATION;
