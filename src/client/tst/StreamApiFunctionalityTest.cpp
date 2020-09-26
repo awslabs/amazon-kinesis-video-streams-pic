@@ -1879,5 +1879,3 @@ TEST_F(StreamApiFunctionalityTest, streamingTokenJitter_preset_max)
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&clientHandle));
 }
-
-

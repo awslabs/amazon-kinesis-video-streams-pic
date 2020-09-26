@@ -220,6 +220,83 @@ TEST_P(StreamFunctionalityTest, CreateSyncPutFrameEoFR)
     }
 }
 
+TEST_P(StreamFunctionalityTest, CreateSyncPutFrameEoFRFirst)
+{
+    CreateScenarioTestClient();
+    std::vector<UPLOAD_HANDLE> currentUploadHandles;
+
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+
+    CreateStreamSync();
+    initDefaultProducer();
+    MockProducer producer(mMockProducerConfig, mStreamHandle);
+
+    // Put a eofr frame
+    EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(TRUE));
+
+    // Produce some frames
+    for (UINT32 i = 0; i < 2 * TEST_DEFAULT_PRODUCER_CONFIG_FRAME_RATE; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, producer.putFrame());
+    }
+
+    // Produce a few EoFRs
+    EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(TRUE));
+    EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(TRUE));
+    EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(TRUE));
+
+    // Produce some more frames
+    for (UINT32 i = 0; i < 2 * TEST_DEFAULT_PRODUCER_CONFIG_FRAME_RATE; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, producer.putFrame());
+    }
+
+    // Ensure the skipped frame count is not zero
+    StreamMetrics streamMetrics;
+    streamMetrics.version = STREAM_METRICS_CURRENT_VERSION;
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamMetrics(mStreamHandle, &streamMetrics));
+    EXPECT_EQ(1, streamMetrics.skippedFrames);
+}
+
+TEST_P(StreamFunctionalityTest, CreateSyncPutFrameEoFRFirstForceNotSkipping)
+{
+    CreateScenarioTestClient();
+    std::vector<UPLOAD_HANDLE> currentUploadHandles;
+
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+
+    CreateStreamSync();
+    initDefaultProducer();
+    MockProducer producer(mMockProducerConfig, mStreamHandle);
+
+    // Minor brain surgery - cast to internal struct and modify skip variable directly to force the EoFR
+    PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+    pKinesisVideoStream->skipNonKeyFrames = FALSE;
+
+    // Put a eofr frame - ensure fails
+    EXPECT_NE(STATUS_SUCCESS, producer.putFrame(TRUE));
+
+    // Produce some frames
+    for (UINT32 i = 0; i < 2 * TEST_DEFAULT_PRODUCER_CONFIG_FRAME_RATE; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, producer.putFrame());
+    }
+
+    // Produce a few EoFRs
+    EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(TRUE));
+    EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(TRUE));
+    EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(TRUE));
+
+    // Produce some more frames
+    for (UINT32 i = 0; i < 2 * TEST_DEFAULT_PRODUCER_CONFIG_FRAME_RATE; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, producer.putFrame());
+    }
+
+    // Ensure the skipped frame count is not zero
+    StreamMetrics streamMetrics;
+    streamMetrics.version = STREAM_METRICS_CURRENT_VERSION;
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamMetrics(mStreamHandle, &streamMetrics));
+    EXPECT_EQ(0, streamMetrics.skippedFrames);
+    // There should be no mem leaks
+}
+
 // Validate StreamDescription_V0 structure handling
 TEST_P(StreamFunctionalityTest, StreamDescription_V0_Test)
 {
