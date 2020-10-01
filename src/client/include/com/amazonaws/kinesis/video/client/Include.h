@@ -234,11 +234,14 @@ extern "C" {
 
 /**
  * Max update version length in chars
+ * https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_DeleteSignalingChannel.html#KinesisVideo-DeleteSignalingChannel-request-CurrentVersion
  */
-#define MAX_UPDATE_VERSION_LEN                   128
+#define MAX_UPDATE_VERSION_LEN                   64
 
 /**
  * Max ARN len in chars
+ * https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_DescribeSignalingChannel.html#API_DescribeSignalingChannel_RequestSyntax
+ * https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_CreateStream.html#KinesisVideo-CreateStream-request-KmsKeyId
  */
 #define MAX_ARN_LEN                              2048
 
