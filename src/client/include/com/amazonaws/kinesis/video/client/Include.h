@@ -241,8 +241,9 @@ extern "C" {
 /**
  * Max ARN len in chars
  * https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_DescribeSignalingChannel.html#API_DescribeSignalingChannel_RequestSyntax
+ * https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_CreateStream.html#KinesisVideo-CreateStream-request-KmsKeyId
  */
-#define MAX_ARN_LEN                              1024
+#define MAX_ARN_LEN                              2048
 
 /**
  * Max len of the auth data (STS or Cert) in bytes
