@@ -103,6 +103,12 @@
         return;\
     }
 
+#define PASS_TEST_FOR_OFFLINE_ZERO_REPLAY_DURATION() \
+    if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE || \
+        mStreamInfo.streamCaps.replayDuration == 0) { \
+        return;\
+    }
+
 #define PASS_TEST_FOR_OFFLINE() \
     if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE) { \
         return;\
@@ -666,7 +672,7 @@ protected:
     static PVOID stopStreamSyncRoutine(PVOID arg) {
         ClientTestBase *pClient = (ClientTestBase*) arg;
         pClient->mThreadReturnStatus = stopKinesisVideoStreamSync(pClient->mStreamHandle);
-        return 0;
+        return NULL;
     }
 
     static PVOID defaultProducerRoutine(PVOID arg) {

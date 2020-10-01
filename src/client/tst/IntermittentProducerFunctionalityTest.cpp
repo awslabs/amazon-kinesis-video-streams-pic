@@ -92,7 +92,7 @@ TEST_P(IntermittentProducerFunctionalityTest, CreateSyncStreamStopSyncFreeRepeat
 
     CreateScenarioTestClient();
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
-    for (int i = 0; i < (int) mRepeatTime; i++) {
+    for (int iter = 0; iter < (int) mRepeatTime; iter++) {
         CreateStreamSync();
         MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
         testTerminationTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + 5 * HUNDREDS_OF_NANOS_IN_A_SECOND;

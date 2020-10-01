@@ -22,7 +22,7 @@ extern "C" {
 // the packaging bits.
 //
 ////////////////////////////////////////////////////
-#define MKV_GENERATOR_CURRENT_VERSION_STRING            "1.0.0"
+#define MKV_GENERATOR_CURRENT_VERSION_STRING            "1.1.0"
 #define MKV_GENERATOR_CURRENT_VERSION_STRING_SIZE       (UINT32) ((SIZEOF(MKV_GENERATOR_CURRENT_VERSION_STRING) / SIZEOF(CHAR)) - 1)
 
 /**

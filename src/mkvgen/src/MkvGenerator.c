@@ -218,7 +218,7 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
     STATUS retStatus = STATUS_SUCCESS;
     PStreamMkvGenerator pStreamMkvGenerator = NULL;
     MKV_STREAM_STATE streamState = MKV_STATE_START_STREAM;
-    UINT32 bufferSize = 0, encodedLen = 0, packagedSize = 0, adaptedFrameSize = 0, overheadSize = 0;
+    UINT32 bufferSize = 0, encodedLen = 0, packagedSize = 0, adaptedFrameSize = 0, overheadSize = 0, dataOffset = 0;
     // Evaluated presentation and decode timestamps
     UINT64 pts = 0, dts = 0, duration = 0;
     PBYTE pCurrentPnt = pBuffer;
@@ -300,6 +300,9 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
 
                 pStreamMkvGenerator->generatorState = MKV_GENERATOR_STATE_CLUSTER_INFO;
             }
+
+            // We are only interested in the header size in the data offset return
+            dataOffset = overheadSize - mkvgenGetFrameOverhead(pStreamMkvGenerator, MKV_STATE_START_CLUSTER);
 
             // Fall-through
         case MKV_STATE_START_CLUSTER:
@@ -393,7 +396,7 @@ CleanUp:
             pEncodedFrameInfo->framePts = MKV_TIMECODE_TO_TIMESTAMP(pts, pStreamMkvGenerator->timecodeScale);
             pEncodedFrameInfo->frameDts = MKV_TIMECODE_TO_TIMESTAMP(dts, pStreamMkvGenerator->timecodeScale);
             pEncodedFrameInfo->duration = MKV_TIMECODE_TO_TIMESTAMP(duration, pStreamMkvGenerator->timecodeScale);
-            pEncodedFrameInfo->dataOffset = (UINT16) overheadSize;
+            pEncodedFrameInfo->dataOffset = (UINT16) dataOffset;
             pEncodedFrameInfo->streamState = streamState;
         }
     }
@@ -545,7 +548,7 @@ STATUS mkvgenGenerateTag(PMkvGenerator pMkvGenerator, PBYTE pBuffer, PCHAR tagNa
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PStreamMkvGenerator pStreamMkvGenerator;
-    UINT32 bufferSize, encodedLen, packagedSize = 0, tagNameLen, tagValueLen, overheadSize = 0;
+    UINT32 bufferSize, encodedLen, packagedSize = 0, tagNameLen, tagValueLen;
     UINT64 encodedElementLength;
     PBYTE pCurrentPnt = pBuffer;
     PBYTE pStartPnt = pBuffer;
@@ -561,14 +564,8 @@ STATUS mkvgenGenerateTag(PMkvGenerator pMkvGenerator, PBYTE pBuffer, PCHAR tagNa
 
     // Calculate the necessary size
 
-    // Get the overhead size. If we are just starting then we need to generate the MKV header
-    if (pStreamMkvGenerator->generatorState == MKV_GENERATOR_STATE_START) {
-        overheadSize = MKV_EBML_SEGMENT_SIZE;
-    }
-
     // Get the overhead when packaging MKV
-    packagedSize = overheadSize +
-                   MKV_TAGS_BITS_SIZE +
+    packagedSize = MKV_TAGS_BITS_SIZE +
                    MKV_TAG_NAME_BITS_SIZE +
                    MKV_TAG_STRING_BITS_SIZE +
                    tagNameLen +
@@ -582,19 +579,6 @@ STATUS mkvgenGenerateTag(PMkvGenerator pMkvGenerator, PBYTE pBuffer, PCHAR tagNa
 
     // Start with the full buffer
     bufferSize = *pSize;
-
-    if (pStreamMkvGenerator->generatorState == MKV_GENERATOR_STATE_START) {
-        // Encode in sequence and subtract the size
-        CHK_STATUS(mkvgenEbmlEncodeHeader(pCurrentPnt, bufferSize, &encodedLen));
-        bufferSize -= encodedLen;
-        pCurrentPnt += encodedLen;
-
-        CHK_STATUS(mkvgenEbmlEncodeSegmentHeader(pCurrentPnt, bufferSize, &encodedLen));
-        bufferSize -= encodedLen;
-        pCurrentPnt += encodedLen;
-
-        pStartPnt = pCurrentPnt;
-    }
 
     // Check the size and copy the structure first
     encodedLen = MKV_TAGS_BITS_SIZE;
@@ -632,15 +616,15 @@ STATUS mkvgenGenerateTag(PMkvGenerator pMkvGenerator, PBYTE pBuffer, PCHAR tagNa
     pCurrentPnt += tagValueLen;
 
     // Fix-up the tags element size
-    encodedElementLength = 0x100000000000000ULL | (UINT64) (packagedSize - overheadSize - MKV_TAG_ELEMENT_OFFSET);
+    encodedElementLength = 0x100000000000000ULL | (UINT64) (packagedSize - MKV_TAG_ELEMENT_OFFSET);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + MKV_TAGS_ELEMENT_SIZE_OFFSET), encodedElementLength);
 
     // Fix-up the tag element size
-    encodedElementLength = 0x100000000000000ULL | (UINT64) (packagedSize - overheadSize - MKV_SIMPLE_TAG_ELEMENT_OFFSET);
+    encodedElementLength = 0x100000000000000ULL | (UINT64) (packagedSize - MKV_SIMPLE_TAG_ELEMENT_OFFSET);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + MKV_TAG_ELEMENT_SIZE_OFFSET), encodedElementLength);
 
     // Fix-up the simple tag element size
-    encodedElementLength = 0x100000000000000ULL | (UINT64) (packagedSize - overheadSize - MKV_TAGS_BITS_SIZE);
+    encodedElementLength = 0x100000000000000ULL | (UINT64) (packagedSize - MKV_TAGS_BITS_SIZE);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + MKV_SIMPLE_TAG_ELEMENT_SIZE_OFFSET), encodedElementLength);
 
     // Fix-up the tag name element size
@@ -657,23 +641,6 @@ STATUS mkvgenGenerateTag(PMkvGenerator pMkvGenerator, PBYTE pBuffer, PCHAR tagNa
 
     // Validate the size
     CHK(packagedSize == (UINT32)(pCurrentPnt - pBuffer), STATUS_INTERNAL_ERROR);
-
-    // Move the generator to the started state if all successful and we are actually
-    // generating the data and not only returning the generated size.
-    // This will also indicate that the header has already been generated.
-    switch (pStreamMkvGenerator->generatorState) {
-        case MKV_GENERATOR_STATE_START:
-            pStreamMkvGenerator->generatorState = MKV_GENERATOR_STATE_SEGMENT_HEADER;
-            break;
-
-        case MKV_GENERATOR_STATE_SEGMENT_HEADER:
-            // Leave as is
-            break;
-
-        default:
-            // Set to tags state
-            pStreamMkvGenerator->generatorState = MKV_GENERATOR_STATE_TAGS;
-    }
 
 CleanUp:
 
@@ -820,7 +787,7 @@ UINT32 mkvgenGetFrameOverhead(PStreamMkvGenerator pStreamMkvGenerator, MKV_STREA
 {
     UINT32 overhead = 0;
 
-    switch(streamState) {
+    switch (streamState) {
         case MKV_STATE_START_STREAM:
             if (pStreamMkvGenerator->generatorState == MKV_GENERATOR_STATE_SEGMENT_HEADER) {
                 overhead = mkvgenGetMkvSegmentTrackInfoOverhead(pStreamMkvGenerator);
@@ -1086,7 +1053,7 @@ STATUS mkvgenEbmlEncodeSegmentInfo(PStreamMkvGenerator pStreamMkvGenerator, PBYT
     CHK(pEncodedLen != NULL && pStreamMkvGenerator != NULL, STATUS_NULL_ARG);
 
     // Set the size first
-     size = MKV_SEGMENT_INFO_BITS_SIZE;
+    size = MKV_SEGMENT_INFO_BITS_SIZE;
 
     // Account for the title
     size += MKV_TITLE_BITS_SIZE + MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE;

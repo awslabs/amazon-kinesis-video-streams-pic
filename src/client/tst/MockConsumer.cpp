@@ -231,8 +231,6 @@ CleanUp:
     return retStatus;
 }
 
-
-
 STATUS MockConsumer::submitErrorAck(SERVICE_CALL_RESULT service_call_result, PBOOL pSubmittedAck) {
     STATUS retStatus = STATUS_SUCCESS;
     *pSubmittedAck = FALSE;
@@ -240,7 +238,7 @@ STATUS MockConsumer::submitErrorAck(SERVICE_CALL_RESULT service_call_result, PBO
     EXPECT_NE(mConnectionClosed, TRUE);
 
     // Error ack needs to have a fragment timestamp.
-    if (mAckQueue.size() > 0) {
+    if (!mAckQueue.empty()) {
         *pSubmittedAck = TRUE;
         mFragmentAck.result = service_call_result;
         mFragmentAck.ackType = FRAGMENT_ACK_TYPE_ERROR;

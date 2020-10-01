@@ -237,5 +237,72 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsOutsideOfViewRangeFail) {
     } while(currentTime < stopTime && !submittedAck);
 }
 
+TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsTerminatedUploadHandle) {
+    CreateScenarioTestClient();
+    BOOL submittedAck = FALSE, didPutFrame, gotStreamData;
+    MockConsumer *mockConsumer;
+    UINT64 stopTime, currentTime, startTime;
+    std::vector<UPLOAD_HANDLE> currentUploadHandles;
+    STATUS retStatus;
+
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+    CreateStreamSync();
+    MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
+
+    // putFrame for a few seconds, should finish putting at least 2 fragment
+    startTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
+    stopTime = startTime + 20 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    do {
+        currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
+        EXPECT_EQ(STATUS_SUCCESS, mockProducer.timedPutFrame(currentTime, &didPutFrame));
+    } while(currentTime < stopTime);
+
+    mStreamingSession.getActiveUploadHandles(currentUploadHandles);
+    EXPECT_EQ(1, currentUploadHandles.size());
+    UPLOAD_HANDLE storedHandle = currentUploadHandles[0];
+
+    do {
+        currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
+
+        mStreamingSession.getActiveUploadHandles(currentUploadHandles);
+        EXPECT_EQ(1, currentUploadHandles.size());
+
+        UPLOAD_HANDLE uploadHandle = currentUploadHandles[0];
+        mockConsumer = mStreamingSession.getConsumer(uploadHandle);
+
+        retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
+        VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
+
+        // send one persisted ack
+        EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK, FRAGMENT_ACK_TYPE_PERSISTED, 0, &submittedAck));
+    } while(currentTime < stopTime && !submittedAck);
+
+    // Submit terminated
+    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mStreamHandle, storedHandle, SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT));
+
+    mStreamingSession.getActiveUploadHandles(currentUploadHandles);
+    EXPECT_EQ(2, currentUploadHandles.size());
+
+    // This should be benign and shouldn't affect anything
+    EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_OK, 0, &submittedAck));
+
+    // Continue with the new handle
+    do {
+        currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
+
+        mStreamingSession.getActiveUploadHandles(currentUploadHandles);
+        EXPECT_EQ(2, currentUploadHandles.size());
+
+        UPLOAD_HANDLE uploadHandle = currentUploadHandles[1];
+        mockConsumer = mStreamingSession.getConsumer(uploadHandle);
+
+        retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
+        VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
+    } while(currentTime < stopTime && !submittedAck);
+
+    // Validate that no errors actually been reported as the reported error was on an already closed handle
+    EXPECT_EQ(0, mStreamErrorReportFuncCount);
+}
+
 INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, AcksFunctionalityTest,
                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
