@@ -1403,7 +1403,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             // Fill the rest of the buffer of the current view item first
             // Map the storage
             CHK_STATUS(heapMap(pKinesisVideoClient->pHeap, pKinesisVideoStream->curViewItem.viewItem.handle, (PVOID *) &pAlloc, &allocSize));
-            CHK(allocSize < MAX_UINT32 && (UINT32) allocSize <= pKinesisVideoStream->curViewItem.viewItem.length, STATUS_INVALID_ALLOCATION_SIZE);
+            CHK(allocSize < MAX_UINT32 && (UINT32) allocSize >= pKinesisVideoStream->curViewItem.viewItem.length, STATUS_INVALID_ALLOCATION_SIZE);
             size = pKinesisVideoStream->curViewItem.viewItem.length;
 
             // Validate we had allocated enough storage just in case
@@ -2102,7 +2102,7 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
 
     // Get the existing frame allocation
     CHK_STATUS(heapMap(pKinesisVideoClient->pHeap, pViewItem->handle, (PVOID*) &pFrame, &allocSize));
-    CHK(allocSize < MAX_UINT32 && (UINT32) allocSize <= pViewItem->length, STATUS_INVALID_ALLOCATION_SIZE);
+    CHK(allocSize < MAX_UINT32 && (UINT32) allocSize >= pViewItem->length, STATUS_INVALID_ALLOCATION_SIZE);
 
     packagedSize = pViewItem->length;
     CHK(pFrame != NULL, STATUS_NOT_ENOUGH_MEMORY);
@@ -2159,7 +2159,7 @@ CleanUp:
             // Need to re-acquire the lock
             pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
         }
-        
+
         heapUnmap(pKinesisVideoClient->pHeap, (PVOID) pFrame);
         if (!clientLocked) {
             pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
