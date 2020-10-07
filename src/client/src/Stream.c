@@ -1404,10 +1404,9 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             // Map the storage
             CHK_STATUS(heapMap(pKinesisVideoClient->pHeap, pKinesisVideoStream->curViewItem.viewItem.handle, (PVOID *) &pAlloc, &allocSize));
             CHK(allocSize < MAX_UINT32 && (UINT32) allocSize >= pKinesisVideoStream->curViewItem.viewItem.length, STATUS_INVALID_ALLOCATION_SIZE);
-            size = pKinesisVideoStream->curViewItem.viewItem.length;
 
             // Validate we had allocated enough storage just in case
-            CHK(pKinesisVideoStream->curViewItem.viewItem.length - pKinesisVideoStream->curViewItem.offset <= size, STATUS_VIEW_ITEM_SIZE_GREATER_THAN_ALLOCATION);
+            CHK(pKinesisVideoStream->curViewItem.viewItem.length - pKinesisVideoStream->curViewItem.offset <= allocSize, STATUS_VIEW_ITEM_SIZE_GREATER_THAN_ALLOCATION);
 
             // Copy as much as we can
             size = MIN(remainingSize, pKinesisVideoStream->curViewItem.viewItem.length - pKinesisVideoStream->curViewItem.offset);
