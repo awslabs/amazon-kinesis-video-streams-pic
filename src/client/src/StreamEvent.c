@@ -819,7 +819,7 @@ STATUS streamFragmentAckEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HA
     PKinesisVideoClient pKinesisVideoClient = NULL;
     PUploadHandleInfo pUploadHandleInfo;
     BOOL locked = FALSE, inView = FALSE;
-    UINT64 timestamp = 0, curIndex;
+    UINT64 timestamp = 0, errorSkipStart, curIndex;
     PViewItem pViewItem;
 
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL && pFragmentAck != NULL, STATUS_NULL_ARG);
@@ -862,6 +862,15 @@ STATUS streamFragmentAckEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HA
         }
 
         timestamp = pViewItem->ackTimestamp;
+
+        // Set the start timestamp if no timestamp had been specified
+        if (!IS_VALID_TIMESTAMP(pFragmentAck->timestamp)) {
+            // If we already have an persisted ACK, no need to go farther back
+            errorSkipStart = IS_VALID_TIMESTAMP(pUploadHandleInfo->lastPersistedAckTs) ?
+                    pUploadHandleInfo->lastPersistedAckTs : pUploadHandleInfo->timestamp;
+        } else {
+            errorSkipStart = timestamp;
+        }
     } else {
         // Calculate the timestamp based on the ACK.
         // Convert the timestamp
@@ -908,7 +917,7 @@ STATUS streamFragmentAckEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HA
                 timestamp = pViewItem->ackTimestamp;
             }
 
-            CHK_STATUS(streamFragmentErrorAck(pKinesisVideoStream, timestamp, pFragmentAck->result));
+            CHK_STATUS(streamFragmentErrorAck(pKinesisVideoStream, errorSkipStart, timestamp, pFragmentAck->result));
 
             break;
         default:

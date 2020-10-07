@@ -326,19 +326,6 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvMixedTags) {
                 index += packagedSize;
                 size -= packagedSize;
             }
-
-            // Make sure adding a non-key frame fails on non start
-            if (frame.index != 0) {
-                frame.flags = FRAME_FLAG_NONE;
-                packagedSize = size;
-                EXPECT_NE(STATUS_SUCCESS, mkvgenPackageFrame(mkvGenerator,
-                                                             &frame,
-                                                             &trackInfo,
-                                                             mkvBuffer + index,
-                                                             &packagedSize,
-                                                             NULL));
-                frame.flags = FRAME_FLAG_KEY_FRAME;
-            }
         }
 
         // Add a frame

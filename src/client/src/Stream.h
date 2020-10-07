@@ -784,7 +784,7 @@ STATUS streamFragmentAckEvent(PKinesisVideoStream, UPLOAD_HANDLE, PFragmentAck);
 STATUS streamFragmentBufferingAck(PKinesisVideoStream, UINT64);
 STATUS streamFragmentReceivedAck(PKinesisVideoStream, UINT64);
 STATUS streamFragmentPersistedAck(PKinesisVideoStream, UINT64, PUploadHandleInfo);
-STATUS streamFragmentErrorAck(PKinesisVideoStream, UINT64, SERVICE_CALL_RESULT);
+STATUS streamFragmentErrorAck(PKinesisVideoStream, UINT64, UINT64, SERVICE_CALL_RESULT);
 
 ///////////////////////////////////////////////////////////////////////////
 // Streaming event functions

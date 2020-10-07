@@ -717,7 +717,8 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     ALLOCATION_HANDLE allocHandle = INVALID_ALLOCATION_HANDLE_VALUE;
     UINT64 remainingSize = 0, remainingDuration = 0, thresholdPercent = 0, duration = 0, viewByteSize = 0, allocSize = 0;
     PBYTE pAlloc = NULL;
-    UINT32 trackIndex, packagedSize = 0, packagedMetadataSize = 0, overallSize = 0, itemFlags = ITEM_FLAG_NONE;
+    UINT32 trackIndex, packagedSize = 0, packagedMetadataSize = 0, overallSize = 0,
+        itemFlags = ITEM_FLAG_NONE, clusterOverhead;
     BOOL streamLocked = FALSE, clientLocked = FALSE, freeOnError = TRUE;
     EncodedFrameInfo encodedFrameInfo;
     MKV_STREAM_STATE generatorState = MKV_STATE_START_BLOCK;
@@ -833,7 +834,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         // as tags are level 1 and will break MKV clusters.
         if (generatorState == MKV_STATE_START_STREAM || generatorState == MKV_STATE_START_CLUSTER) {
             // Calculate the size of the metadata first
-            CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, generatorState, FALSE, NULL, &packagedMetadataSize));
+            CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, FALSE, NULL, &packagedMetadataSize));
         }
     }
 
@@ -859,14 +860,14 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // Validate we had allocated enough storage just in case
     CHK(overallSize <= allocSize, STATUS_ALLOCATION_SIZE_SMALLER_THAN_REQUESTED);
 
-    // Store the metadata at the beginning of the allocation
-    if (packagedMetadataSize != 0) {
-        // Packaging the metadata if the packaged size is not zero
-        CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, generatorState, FALSE, pAlloc, &packagedMetadataSize));
-    }
-
     // Check if we are packaging special EoFr
     if (CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
+        // Store the metadata at the beginning of the allocation
+        if (packagedMetadataSize != 0) {
+            // Packaging the metadata if the packaged size is not zero
+            CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, generatorState, FALSE, pAlloc, &packagedMetadataSize));
+        }
+
         // Package the existing metadata that's not yet sent
         CHK_STATUS(packageStreamMetadata(pKinesisVideoStream,
                                          MKV_STATE_START_CLUSTER,
@@ -898,9 +899,23 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         CHK_STATUS(mkvgenPackageFrame(pKinesisVideoStream->pMkvGenerator,
                                       pFrame,
                                       pTrackInfo,
-                                      pAlloc + packagedMetadataSize,
+                                      pAlloc,
                                       &packagedSize,
                                       &encodedFrameInfo));
+
+        // Package the metadata if specified
+        if (packagedMetadataSize != 0) {
+            // Move the packaged bits out first to make room for the metadata
+            // NOTE: need to use MEMMOVE due to the overlapping ranges
+            MEMMOVE(pAlloc + encodedFrameInfo.dataOffset + packagedMetadataSize,
+                    pAlloc + encodedFrameInfo.dataOffset,
+                    packagedSize - encodedFrameInfo.dataOffset);
+
+            // Metadata will be packaged after the MKV header but before the cluster
+            CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, FALSE,
+                                             pAlloc + encodedFrameInfo.dataOffset,
+                                             &packagedMetadataSize));
+        }
     }
 
     // Unmap the storage for the frame
@@ -992,7 +1007,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
                                   encodedFrameInfo.duration,
                                   allocHandle,
                                   encodedFrameInfo.dataOffset,
-                                  packagedSize + packagedMetadataSize,
+                                  overallSize,
                                   itemFlags));
 
 
@@ -1227,7 +1242,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             CHK(FALSE, STATUS_END_OF_STREAM);
 
         case UPLOAD_HANDLE_STATE_ERROR:
-            DLOGW("Indicating an abort for a errorred stream upload handle %" PRIu64, uploadHandle);
+            DLOGW("Indicating an abort for a errored stream upload handle %" PRIu64, uploadHandle);
             CHK(FALSE, STATUS_UPLOAD_HANDLE_ABORTED);
         default:
             // no-op for other UPLOAD_HANDLE states
@@ -1388,11 +1403,10 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             // Fill the rest of the buffer of the current view item first
             // Map the storage
             CHK_STATUS(heapMap(pKinesisVideoClient->pHeap, pKinesisVideoStream->curViewItem.viewItem.handle, (PVOID *) &pAlloc, &allocSize));
-            CHK(allocSize < MAX_UINT32, STATUS_INVALID_ALLOCATION_SIZE);
-            size = (UINT32) allocSize;
+            CHK(allocSize < MAX_UINT32 && (UINT32) allocSize >= pKinesisVideoStream->curViewItem.viewItem.length, STATUS_INVALID_ALLOCATION_SIZE);
 
             // Validate we had allocated enough storage just in case
-            CHK(pKinesisVideoStream->curViewItem.viewItem.length - pKinesisVideoStream->curViewItem.offset <= size, STATUS_VIEW_ITEM_SIZE_GREATER_THAN_ALLOCATION);
+            CHK(pKinesisVideoStream->curViewItem.viewItem.length - pKinesisVideoStream->curViewItem.offset <= allocSize, STATUS_VIEW_ITEM_SIZE_GREATER_THAN_ALLOCATION);
 
             // Copy as much as we can
             size = MIN(remainingSize, pKinesisVideoStream->curViewItem.viewItem.length - pKinesisVideoStream->curViewItem.offset);
@@ -1905,7 +1919,7 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
     UINT64 streamStartTs;
     PViewItem pViewItem = NULL;
     BOOL streamLocked = FALSE, clientLocked = FALSE;
-    UINT32 headerSize, packagedSize, overallSize, dataOffset;
+    UINT32 headerSize, packagedSize, overallSize;
     UINT64 allocSize, currentItemCount, windowItemCount;
     PBYTE pAlloc = NULL, pFrame = NULL;
     PKinesisVideoClient pKinesisVideoClient = NULL;
@@ -1967,11 +1981,10 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
     // Get the existing frame allocation
     CHK_STATUS(heapMap(pKinesisVideoClient->pHeap, pViewItem->handle, (PVOID*) &pFrame, &allocSize));
     CHK(allocSize < MAX_UINT32, STATUS_INVALID_ALLOCATION_SIZE);
-    packagedSize = (UINT32) allocSize;
+    packagedSize = pViewItem->length;
     CHK(pFrame != NULL, STATUS_NOT_ENOUGH_MEMORY);
 
     // Allocate storage for the frame
-    dataOffset = GET_ITEM_DATA_OFFSET(pViewItem->flags);
     overallSize = packagedSize + headerSize;
     CHK_STATUS(heapAlloc(pKinesisVideoClient->pHeap, overallSize, &allocationHandle));
 
@@ -1980,7 +1993,7 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
 
     // Map the storage
     CHK_STATUS(heapMap(pKinesisVideoClient->pHeap, allocationHandle, (PVOID*) &pAlloc, &allocSize));
-    overallSize = (UINT32) allocSize;
+    CHK(overallSize == (UINT32) allocSize, STATUS_INTERNAL_ERROR);
 
     // Actually package the bits in the storage
     CHK_STATUS(mkvgenGenerateHeader(pKinesisVideoStream->pMkvGenerator,
@@ -1988,19 +2001,24 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
                                     &headerSize,
                                     &streamStartTs));
 
-    // Copy the rest of the packaged frame
+    // Copy the rest of the packaged frame which will include the possible tags and the cluster info
     MEMCPY(pAlloc + headerSize, pFrame, packagedSize);
 
-    // Set the old allocation handle to be freed
+    // At this stage we are done and need to swap the allocation handle with the old one so it can be freed later
+    // in the cleanup clause. The idea is to free either old one if all OK or the new one if something failed.
     oldAllocationHandle = pViewItem->handle;
     pViewItem->handle = allocationHandle;
+    allocationHandle = oldAllocationHandle;
     SET_ITEM_STREAM_START(pViewItem->flags);
     SET_ITEM_STREAM_START_DEBUG(pViewItem->flags);
-    SET_ITEM_DATA_OFFSET(pViewItem->flags, headerSize + dataOffset);
+    SET_ITEM_DATA_OFFSET(pViewItem->flags, headerSize);
     pViewItem->length = overallSize;
 
-    // Set the handle that will need to be freed on exit - now we should free the old one
-    allocationHandle = oldAllocationHandle;
+    // We will unmap the allocations while holding the lock
+    CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, (PVOID) pFrame));
+    pFrame = NULL;
+    CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, (PVOID) pAlloc));
+    pAlloc = NULL;
 
     // Unlock the client
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
@@ -2054,10 +2072,8 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
     BOOL streamLocked = FALSE, clientLocked = FALSE;
     UINT32 clusterHeaderSize, packagedSize, overallSize, dataOffset;
     UINT64 allocSize;
-    PBYTE pAlloc = NULL, pFrame = NULL;
+    PBYTE pFrame = NULL;
     PKinesisVideoClient pKinesisVideoClient = NULL;
-    ALLOCATION_HANDLE allocationHandle = INVALID_ALLOCATION_HANDLE_VALUE;
-    ALLOCATION_HANDLE oldAllocationHandle;
 
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
 
@@ -2068,7 +2084,7 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
     streamLocked = TRUE;
 
     // Quick check if we need to do anything by checking the current view items allocation handle
-    // and whether it has a stream start indicator. Early exit if it is.
+    // and whether it has a stream start indicator. Early exit if it's not a stream start.
     CHK(IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->curViewItem.viewItem.handle)
         && CHECK_ITEM_STREAM_START(pKinesisVideoStream->curViewItem.viewItem.flags), retStatus);
 
@@ -2079,38 +2095,28 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     clientLocked = TRUE;
 
-    // Get the required size for the cluster header
-    // NOTE: Stream start is only on a cluster boundary
-    CHK_STATUS(mkvgenGetMkvOverheadSize(pKinesisVideoStream->pMkvGenerator,
-                                        MKV_STATE_START_CLUSTER,
-                                        &clusterHeaderSize));
+    // As we are removing the MKV header, the resulting allocation size will be actually smaller
+    // We will simply copy/shift the data, including the MKV tags if any and the cluster header
+    // forward and will set the size of the allocation
 
     // Get the existing frame allocation
     CHK_STATUS(heapMap(pKinesisVideoClient->pHeap, pViewItem->handle, (PVOID*) &pFrame, &allocSize));
-    CHK(allocSize < MAX_UINT32, STATUS_INVALID_ALLOCATION_SIZE);
-    packagedSize = (UINT32) allocSize;
+    CHK(allocSize < MAX_UINT32 && (UINT32) allocSize >= pViewItem->length, STATUS_INVALID_ALLOCATION_SIZE);
+
+    packagedSize = pViewItem->length;
     CHK(pFrame != NULL, STATUS_NOT_ENOUGH_MEMORY);
 
-    // Allocate storage for the frame
+    // Calculate the overall size by subtracting the offset
     dataOffset = GET_ITEM_DATA_OFFSET(pViewItem->flags);
-    overallSize = packagedSize - dataOffset + clusterHeaderSize;
-    CHK_STATUS(heapAlloc(pKinesisVideoClient->pHeap, overallSize, &allocationHandle));
+    overallSize = packagedSize - dataOffset;
 
-    // Ensure we have space and if not then bail
-    CHK(IS_VALID_ALLOCATION_HANDLE(allocationHandle), STATUS_STORE_OUT_OF_MEMORY);
-
-    // Map the storage
-    CHK_STATUS(heapMap(pKinesisVideoClient->pHeap, allocationHandle, (PVOID*) &pAlloc, &allocSize));
-    overallSize = (UINT32) allocSize;
-
-    // Copy the rest of the packaged frame
-    MEMCPY(pAlloc, pFrame + dataOffset - clusterHeaderSize, overallSize);
+    // NOTE: we need to move the frame bits forward - can't use memcpy due to undefined
+    // behavior when copying overlapping ranges.
+    MEMMOVE(pFrame, pFrame + dataOffset, overallSize);
 
     // Set the old allocation handle to be freed
-    oldAllocationHandle = pViewItem->handle;
-    pViewItem->handle = allocationHandle;
     CLEAR_ITEM_STREAM_START(pViewItem->flags);
-    SET_ITEM_DATA_OFFSET(pViewItem->flags, clusterHeaderSize);
+    SET_ITEM_DATA_OFFSET(pViewItem->flags, 0);
 
     // Check if we need to reset the current view offset.
     // This should only happen if we have consumed the item and the offset
@@ -2120,11 +2126,12 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
         pKinesisVideoStream->curViewItem.offset = overallSize;
     }
 
-    // Set the new length
+    // Set the new length in the view
     pViewItem->length = overallSize;
 
-    // Set the handle that will need to be freed on exit - now we should free the old one
-    allocationHandle = oldAllocationHandle;
+    // No need to set the size of the actual allocation - just unmap
+    CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, pFrame));
+    pFrame = NULL;
 
     // Unlock the client
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
@@ -2145,25 +2152,19 @@ CleanUp:
         retStatus = STATUS_SUCCESS;
     }
 
-    // Unmap the old mapping
+    // Unmap the handle if not yet unmapped
     if (pFrame != NULL) {
-        heapUnmap(pKinesisVideoClient->pHeap, (PVOID) pFrame);
-    }
-
-    // Unmap the new mapping
-    if (pAlloc != NULL) {
-        heapUnmap(pKinesisVideoClient->pHeap, (PVOID) pAlloc);
-    }
-
-    // Clear up the previous allocation handle
-    if (IS_VALID_ALLOCATION_HANDLE(allocationHandle)) {
-        // Lock the client if it's not locked
         if (!clientLocked) {
+            // Need to re-acquire the lock
             pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
-            clientLocked = TRUE;
         }
 
-        heapFree(pKinesisVideoClient->pHeap, allocationHandle);
+        heapUnmap(pKinesisVideoClient->pHeap, (PVOID) pFrame);
+        if (!clientLocked) {
+            pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                               pKinesisVideoClient->base.lock);
+            clientLocked = FALSE;
+        }
     }
 
     if (clientLocked) {
@@ -2592,7 +2593,7 @@ CleanUp:
     return retStatus;
 }
 
-STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 timestamp, SERVICE_CALL_RESULT callResult)
+STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 startTimestamp, UINT64 timestamp, SERVICE_CALL_RESULT callResult)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -2616,6 +2617,22 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 ti
 
     // IMPORTANT!!! We are going to mark non-retriable fragments
     if (!serviceCallResultRetry(callResult)) {
+        // Need to mark from the start
+        if (startTimestamp != timestamp) {
+            // We need to move back marking the frames as bad first
+            while (iterate) {
+                if (STATUS_FAILED(contentViewGetItemAt(pKinesisVideoStream->pView, pCurItem->index - 1, &pCurItem)) ||
+                        pCurItem->ackTimestamp < startTimestamp) {
+                    iterate = FALSE;
+                } else {
+                    SET_ITEM_SKIP_ITEM(pCurItem->flags);
+                    pKinesisVideoStream->diagnostics.skippedFrames++;
+                }
+            }
+        }
+
+        iterate = TRUE;
+
         // Advance the current to the next one
         retStatus = contentViewGetNext(pKinesisVideoStream->pView, &pCurItem);
         CHK(retStatus == STATUS_CONTENT_VIEW_NO_MORE_ITEMS || retStatus == STATUS_SUCCESS, retStatus);
@@ -2838,22 +2855,7 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
             CHK(pSerializedMetadata != NULL, STATUS_INTERNAL_ERROR);
 
             if (!(pSerializedMetadata->applied && notSentOnly)) {
-                // Special processing for the first element in case of the stream start
-                // as we had packaged the metadata in the previous session and not incluincluded
-                // the MKV EBML header which will be required for the new session.
-                if (firstTimeCheck && generatorState == MKV_STATE_START_STREAM) {
-                    firstTimeCheck = FALSE;
-                    // Need to re-calculate the packaged metadata size again
-                    CHK_STATUS(mkvgenGenerateTag(pKinesisVideoStream->pMkvGenerator,
-                                                 NULL,
-                                                 pSerializedMetadata->name,
-                                                 pSerializedMetadata->value,
-                                                 &metadataSize));
-                    packagedSize += metadataSize;
-                } else {
-                    // Simply add the stored size from the packaged metadata.
-                    packagedSize += pSerializedMetadata->packagedSize;
-                }
+                packagedSize += pSerializedMetadata->packagedSize;
             }
         }
 
@@ -2929,15 +2931,6 @@ STATUS generateEosMetadata(PKinesisVideoStream pKinesisVideoStream) {
 
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
 
-    // NOTE: We will generate it twice - the first time it will get the generator into TAG state
-    size = MAX_PACKAGED_METADATA_LEN;
-    CHK_STATUS(mkvgenGenerateTag(pKinesisVideoStream->pMkvGenerator,
-                                 tempBuff,
-                                 (PCHAR) EOFR_METADATA_NAME,
-                                 (PCHAR) "",
-                                 &size));
-
-    // Now we will store it
     size = MAX_PACKAGED_METADATA_LEN;
     CHK_STATUS(mkvgenGenerateTag(pKinesisVideoStream->pMkvGenerator,
                                  tempBuff,
