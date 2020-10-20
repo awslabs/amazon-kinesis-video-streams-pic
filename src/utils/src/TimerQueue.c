@@ -61,6 +61,7 @@ STATUS timerQueueAddTimer(TIMER_QUEUE_HANDLE handle, UINT64 start, UINT64 period
 
     CHK(pTimerQueue != NULL && timerCallbackFn != NULL && pIndex != NULL, STATUS_NULL_ARG);
     CHK(period == TIMER_QUEUE_SINGLE_INVOCATION_PERIOD || period >= MIN_TIMER_QUEUE_PERIOD_DURATION, STATUS_INVALID_TIMER_PERIOD_VALUE);
+    CHK(!ATOMIC_LOAD_BOOL(&pTimerQueue->shutdown), STATUS_TIMER_QUEUE_SHUTDOWN);
 
     MUTEX_LOCK(pTimerQueue->executorLock);
     locked = TRUE;
@@ -314,11 +315,43 @@ PUBLIC_API STATUS timerQueueShutdown(TIMER_QUEUE_HANDLE handle)
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PTimerQueue pTimerQueue = FROM_TIMER_QUEUE_HANDLE(handle);
+    BOOL iterate = TRUE, killThread = FALSE, shutdown;
 
     CHK(pTimerQueue != NULL, STATUS_NULL_ARG);
 
-    ATOMIC_STORE_BOOL(&pTimerQueue->shutdown, TRUE);
+    // Terminate the executor thread
+    shutdown = ATOMIC_EXCHANGE_BOOL(&pTimerQueue->shutdown, TRUE);
+    CHK(!shutdown, retStatus);
+
+    // Signal the executor to wake up and quit
+    MUTEX_LOCK(pTimerQueue->executorLock);
     CVAR_SIGNAL(pTimerQueue->executorCvar);
+    MUTEX_UNLOCK(pTimerQueue->executorLock);
+
+    MUTEX_LOCK(pTimerQueue->exitLock);
+    while (iterate && !ATOMIC_LOAD_BOOL(&pTimerQueue->terminated)) {
+        retStatus = CVAR_WAIT(pTimerQueue->exitCvar, pTimerQueue->exitLock, TIMER_QUEUE_SHUTDOWN_TIMEOUT);
+
+        if (STATUS_FAILED(retStatus)) {
+            DLOGW("Awaiting for the executor to quit failed with 0x%08x", retStatus);
+
+            // Terminate the loop and kill the thread
+            iterate = FALSE;
+            killThread = TRUE;
+        }
+
+        // Reset the return
+        retStatus = STATUS_SUCCESS;
+    }
+
+    // Kill the thread if still available
+    if (killThread) {
+        DLOGW("Executor thread TID: 0x%" PRIx64 " didn't shutdown gracefully. Terminating...",
+              pTimerQueue->executorTid);
+        THREAD_CANCEL(pTimerQueue->executorTid);
+    }
+
+    MUTEX_UNLOCK(pTimerQueue->exitLock);
 
 CleanUp:
 
@@ -409,7 +442,6 @@ STATUS timerQueueFreeInternal(PTimerQueue* ppTimerQueue)
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PTimerQueue pTimerQueue;
-    BOOL iterate = TRUE, killThread = FALSE;
 
     CHK(ppTimerQueue != NULL, STATUS_NULL_ARG);
 
@@ -424,38 +456,7 @@ STATUS timerQueueFreeInternal(PTimerQueue* ppTimerQueue)
         && IS_VALID_MUTEX_VALUE(pTimerQueue->startLock)
         && IS_VALID_MUTEX_VALUE(pTimerQueue->executorLock)) {
 
-        // Terminate the executor thread
-        ATOMIC_STORE_BOOL(&pTimerQueue->shutdown, TRUE);
-
-        // Signal the executor to wake up and quit
-        MUTEX_LOCK(pTimerQueue->executorLock);
-        CVAR_SIGNAL(pTimerQueue->executorCvar);
-        MUTEX_UNLOCK(pTimerQueue->executorLock);
-
-        MUTEX_LOCK(pTimerQueue->exitLock);
-        while (iterate && !ATOMIC_LOAD_BOOL(&pTimerQueue->terminated)) {
-            retStatus = CVAR_WAIT(pTimerQueue->exitCvar, pTimerQueue->exitLock, TIMER_QUEUE_SHUTDOWN_TIMEOUT);
-
-            if (STATUS_FAILED(retStatus)) {
-                DLOGW("Awaiting for the executor to quit failed with 0x%08x", retStatus);
-
-                // Terminate the loop and kill the thread
-                iterate = FALSE;
-                killThread = TRUE;
-            }
-
-            // Reset the return
-            retStatus = STATUS_SUCCESS;
-        }
-
-        // Kill the thread if still available
-        if (killThread) {
-            DLOGW("Executor thread TID: 0x%" PRIx64 " didn't shutdown gracefully. Terminating...",
-                  pTimerQueue->executorTid);
-            THREAD_CANCEL(pTimerQueue->executorTid);
-        }
-
-        MUTEX_UNLOCK(pTimerQueue->exitLock);
+        timerQueueShutdown(TO_TIMER_QUEUE_HANDLE(pTimerQueue));
     }
 
     if (IS_VALID_MUTEX_VALUE(pTimerQueue->executorLock)) {
