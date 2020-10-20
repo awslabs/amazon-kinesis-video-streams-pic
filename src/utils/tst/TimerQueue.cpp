@@ -769,17 +769,20 @@ TEST_F(TimerQueueFunctionalityTest, shutdownTimerQueueTest)
     EXPECT_EQ(2, ATOMIC_LOAD(&invokeCount));
 
     // Make it sleep next time it fires
+    curTime = GETTIME();
     ATOMIC_STORE(&sleepFor, 3 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 
     // Wait for the next firing
     THREAD_SLEEP(250 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     // We should now block until the timer thread returns
-    curTime = GETTIME();
     EXPECT_EQ(STATUS_SUCCESS, timerQueueShutdown(handle));
 
     // Should have at least 3 seconds passed
-    EXPECT_LE(curTime, GETTIME());
+    EXPECT_LE(curTime + 3 * HUNDREDS_OF_NANOS_IN_A_SECOND, GETTIME());
+
+    // Ensure we can't add a new timer
+    EXPECT_EQ(STATUS_TIMER_QUEUE_SHUTDOWN, timerQueueAddTimer(handle, 0, 200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, testTimerCallback, (UINT64) this, &timerId));
 
     // Calling again has no effect
     EXPECT_EQ(STATUS_SUCCESS, timerQueueShutdown(handle));

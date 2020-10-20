@@ -61,6 +61,7 @@ STATUS timerQueueAddTimer(TIMER_QUEUE_HANDLE handle, UINT64 start, UINT64 period
 
     CHK(pTimerQueue != NULL && timerCallbackFn != NULL && pIndex != NULL, STATUS_NULL_ARG);
     CHK(period == TIMER_QUEUE_SINGLE_INVOCATION_PERIOD || period >= MIN_TIMER_QUEUE_PERIOD_DURATION, STATUS_INVALID_TIMER_PERIOD_VALUE);
+    CHK(!ATOMIC_LOAD_BOOL(&pTimerQueue->shutdown), STATUS_TIMER_QUEUE_SHUTDOWN);
 
     MUTEX_LOCK(pTimerQueue->executorLock);
     locked = TRUE;
