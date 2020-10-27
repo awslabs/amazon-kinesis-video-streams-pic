@@ -1120,6 +1120,7 @@ typedef STATUS (*TimerCallbackFunc)(UINT32, UINT64, UINT64);
 #define STATUS_INVALID_TIMER_COUNT_VALUE                            STATUS_TIMER_QUEUE_BASE + 0x00000002
 #define STATUS_INVALID_TIMER_PERIOD_VALUE                           STATUS_TIMER_QUEUE_BASE + 0x00000003
 #define STATUS_MAX_TIMER_COUNT_REACHED                              STATUS_TIMER_QUEUE_BASE + 0x00000004
+#define STATUS_TIMER_QUEUE_SHUTDOWN                                 STATUS_TIMER_QUEUE_BASE + 0x00000005
 
 /**
  * @param - PTIMER_QUEUE_HANDLE - OUT - Timer queue handle
