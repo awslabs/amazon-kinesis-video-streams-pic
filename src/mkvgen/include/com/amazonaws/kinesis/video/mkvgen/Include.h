@@ -150,6 +150,7 @@ extern "C" {
 #define MKV_AVC_CONTENT_TYPE                ((PCHAR) "video/avc")
 #define MKV_HEVC_CONTENT_TYPE               ((PCHAR) "video/hevc")
 #define MKV_H264_AAC_MULTI_CONTENT_TYPE     ((PCHAR) "video/h264,audio/aac")
+#define MKV_H264_MULAW_MULTI_CONTENT_TYPE     ((PCHAR) "video/h264,audio/mulaw")
 
 /**
  * Constant definitions for some known codec IDs
@@ -159,6 +160,9 @@ extern "C" {
 #define MKV_H265_HEVC_CODEC_ID              ((PCHAR) "V_MPEGH/ISO/HEVC")
 #define MKV_AAC_MPEG4_MAIN_CODEC_ID         ((PCHAR) "A_AAC/MPEG4/MAIN")
 #define MKV_AAC_CODEC_ID                    ((PCHAR) "A_AAC")
+#define MKV_PCM_INT_LIT_CODEC_ID            ((PCHAR) "A_PCM/INT/LIT")
+#define MKV_PCM_INT_BIG_CODEC_ID            ((PCHAR) "A_PCM/INT/BIG")
+#define MKV_PCM_FLOAT_IEEE_CODEC_ID         ((PCHAR) "A_PCM/FLOAT/IEEE")
 
 /**
  * Current versions of the public facing structures
