@@ -1,11 +1,6 @@
 #ifndef __MOCK_CONSUMER_H__
 #define __MOCK_CONSUMER_H__
 
-#include <com/amazonaws/kinesis/video/utils/Include.h>
-#include <com/amazonaws/kinesis/video/client/Include.h>
-#include <queue>
-#include <vector>
-
 typedef struct {
     UINT32 mDataBufferSizeByte;
     UINT64 mUploadSpeedBytesPerSecond;
