@@ -1,6 +1,4 @@
-#include "MockConsumer.h"
-#include "gtest/gtest.h"
-#include "src/client/src/Include_i.h"
+#include "ClientTestFixture.h"
 
 MockConsumer::MockConsumer(MockConsumerConfig config,
                            UPLOAD_HANDLE mUploadHandle,

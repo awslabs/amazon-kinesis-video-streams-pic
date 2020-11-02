@@ -1,5 +1,4 @@
-#include "StreamingSession.h"
-#include "gtest/gtest.h"
+#include "ClientTestFixture.h"
 
 UPLOAD_HANDLE StreamingSession::addNewConsumerSession(MockConsumerConfig consumerConfig,
                                                       STREAM_HANDLE mStreamHandle,

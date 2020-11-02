@@ -1,23 +1,3 @@
-#if 0
-#pragma GCC diagnostic ignored "-Wwrite-strings"
-#endif
-
-#include "gtest/gtest.h"
-#include <com/amazonaws/kinesis/video/utils/Include.h>
-#include <com/amazonaws/kinesis/video/client/Include.h>
-#include "src/client/src/Include_i.h"
-#include "src/client/src/Stream.h"
-#include "src/mkvgen/src/Include_i.h"
-
-#include <map>
-#include <vector>
-#include <string>
-#include <ostream>
-#include <iomanip>
-#include "MockConsumer.h"
-#include "MockProducer.h"
-#include "StreamingSession.h"
-
 #define TEST_DEVICE_NAME                ((PCHAR) "Test device name")
 #define MAX_TEST_STREAM_COUNT           10
 #define TEST_DEVICE_STORAGE_SIZE        ((UINT64) 10 * 1024 * 1024)
@@ -35,6 +15,9 @@
 #define TEST_TRACKID                    1
 #define TEST_TRACK_INDEX                0
 #define TEST_INVALID_TRACK_ID           100
+
+#define TEST_VIDEO_TRACK_ID             1
+#define TEST_AUDIO_TRACK_ID             2
 
 #define TEST_DEVICE_ARN                 ((PCHAR) "TestDeviceARN")
 
@@ -118,6 +101,27 @@
     if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_REALTIME) { \
         return;\
     }
+
+
+#include <string>
+#include <ostream>
+#include <iomanip>
+#include <functional>
+#include <queue>
+#include <vector>
+#include <map>
+#include <iostream>
+
+#include "gtest/gtest.h"
+#include <com/amazonaws/kinesis/video/utils/Include.h>
+#include <com/amazonaws/kinesis/video/client/Include.h>
+#include "src/client/src/Include_i.h"
+#include "src/client/src/Stream.h"
+#include "src/mkvgen/src/Include_i.h"
+
+#include "MockConsumer.h"
+#include "MockProducer.h"
+#include "StreamingSession.h"
 
 //
 // Default allocator functions
