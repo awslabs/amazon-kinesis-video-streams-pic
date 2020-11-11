@@ -733,7 +733,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     if (!CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
-        // Lookup the track that pFrame belong to
+        // Lookup the track that pFrame belongs to
         CHK_STATUS(mkvgenGetTrackInfo(pKinesisVideoStream->streamInfo.streamCaps.trackInfoList,
                                       pKinesisVideoStream->streamInfo.streamCaps.trackInfoCount,
                                       pFrame->trackId,
@@ -750,6 +750,9 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     streamLocked = TRUE;
 
     fixupFrame(pFrame);
+
+    // Set the last PutFrame time to current time
+    pKinesisVideoStream->lastPutFrameTimestamp = GETTIME();
 
     // Validate that we are not seeing EoFr explicit marker in a non-key-frame fragmented stream
     if (!pKinesisVideoStream->streamInfo.streamCaps.keyFrameFragmentation) {

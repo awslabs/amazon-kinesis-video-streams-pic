@@ -311,7 +311,7 @@ typedef struct {
 } Frame, *PFrame;
 
 /*
- * End-of-Fragment frame initializer. This is used to easier initialize a local variable in a form of
+ * End-of-Fragment frame initializer. This is used to easily initialize a local variable in a form of
  * Frame eofr = EOFR_FRAME_INITIALIZER;
  * putKinesisVideoFrame(&eofr));
  *

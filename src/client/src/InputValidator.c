@@ -307,6 +307,9 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
     // Assuming pClientInfo had been zeroed already
     if (pOrigClientInfo != NULL) {
         switch (pOrigClientInfo->version) {
+            case 2:
+                // Copy individual fields and skip to V1
+                pClientInfo->automaticStreamingFlags = pOrigClientInfo->automaticStreamingFlags;
             case 1:
                 // Copy individual fields and skip to V0
                 pClientInfo->metricLoggingPeriod = pOrigClientInfo->metricLoggingPeriod;

@@ -227,6 +227,16 @@ typedef struct __EndpointInfo* PEndpointInfo;
 #define AUTH_INFO_EXPIRATION_JITTER_RATIO                           0.1L
 
 /**
+ * How often the callback is invoked to check all video streams for past max timeout
+ */
+#define INTERMITTENT_PRODUCER_CHECK_INTERVAL                        (5 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+
+/**
+ * Time after which if no frames have been received we submit EoFR to close out the session
+ */
+#define INTERMITTENT_PRODUCER_MAX_TIMEOUT                           (20 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+
+/**
  * Kinesis Video client internal structure
  */
 typedef struct __KinesisVideoClient {
@@ -260,6 +270,12 @@ typedef struct __KinesisVideoClient {
 
     // Total memory allocation tracker
     UINT64 totalAllocationSize;
+
+    // Timer Queue for Automatic Intermittent Producer
+    TIMER_QUEUE_HANDLE timerQueueHandle;
+
+    // ID for timer created to wake and check if streams have incoming data
+    UINT32 timerId;
 
     // Stored function pointers to reset on exit
     memAlloc storedMemAlloc;
@@ -438,6 +454,8 @@ STATUS executeProvisionClientState(UINT64, UINT64);
 STATUS executeCreateClientState(UINT64, UINT64);
 STATUS executeTagClientState(UINT64, UINT64);
 STATUS executeReadyClientState(UINT64, UINT64);
+
+STATUS checkIntermittentProducerCallback(UINT32, UINT64, UINT64);
 
 #ifdef  __cplusplus
 }

@@ -20,6 +20,72 @@ extern UINT32 CLIENT_STATE_MACHINE_STATE_COUNT;
  */
 PKinesisVideoClient gKinesisVideoClient = NULL;
 
+
+/**
+ *
+ * @param timerId - timerId for timer
+ * @param currentTime - the current time when the call back was fired
+ * @param customData - pKinesisVideoClient, contains the streams and interval info
+ * @return
+ */
+STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UINT64 customData)
+{
+    ENTERS();
+    UNUSED_PARAM(timerId);
+    STATUS retStatus = STATUS_SUCCESS;
+    PKinesisVideoClient pKinesisVideoClient = (PKinesisVideoClient) customData;
+    UINT32 i;
+    BOOL clientLocked = FALSE, streamLocked = FALSE;
+    PKinesisVideoStream pCurrStream = NULL;
+    Frame eofr = EOFR_FRAME_INITIALIZER;
+
+    CHK(pKinesisVideoClient, STATUS_NULL_ARG);
+
+    // Lock the client
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                     pKinesisVideoClient->base.lock);
+    clientLocked = TRUE;
+
+    for (i = 0; i < pKinesisVideoClient->deviceInfo.streamCount; i++) {
+        if (NULL != pKinesisVideoClient->streams[i]) {
+            pCurrStream = pKinesisVideoClient->streams[i];
+            // Lock the Stream
+            pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                             pCurrStream->base.lock);
+            streamLocked = TRUE;
+
+            // Check if last PutFrame is older than max timeout, if so, send EoFR, if not, do nothing
+            if ((currentTime - pCurrStream->lastPutFrameTimestamp) > INTERMITTENT_PRODUCER_MAX_TIMEOUT) {
+                CHK_STATUS(putKinesisVideoFrame(TO_STREAM_HANDLE(pCurrStream), &eofr));
+            }
+
+            // Unlock the Stream
+            pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                             pCurrStream->base.lock);
+            streamLocked = FALSE;
+        }
+    }
+
+CleanUp:
+
+    CHK_LOG_ERR(retStatus);
+
+    // Unlock the stream and client if needed
+
+    if(streamLocked) {
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                           pCurrStream->base.lock);
+    }
+
+    if(clientLocked) {
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                           pKinesisVideoClient->base.lock);
+    }
+
+    LEAVES();
+    return retStatus;
+}
+
 /**
  * Creates a client
  */
@@ -145,6 +211,15 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
                                   &pStateMachine));
 
     pKinesisVideoClient->base.pStateMachine = pStateMachine;
+
+    if(pKinesisVideoClient->deviceInfo.clientInfo.automaticStreamingFlags == AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER) {
+
+        // Create timer queue
+        CHK_STATUS(timerQueueCreate(&pKinesisVideoClient->timerQueueHandle));
+        CHK_STATUS(timerQueueAddTimer(pKinesisVideoClient->timerQueueHandle, 0ULL, INTERMITTENT_PRODUCER_CHECK_INTERVAL,
+                                      checkIntermittentProducerCallback, (UINT64) pKinesisVideoClient,
+                                      &pKinesisVideoClient->timerId));
+    }
 
     // Set the call result to unknown to start
     pKinesisVideoClient->base.result = SERVICE_CALL_RESULT_NOT_SET;

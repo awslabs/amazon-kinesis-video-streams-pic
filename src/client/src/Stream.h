@@ -433,6 +433,9 @@ struct __KinesisVideoStream {
 
     // Manage the order of frames being put depending on FRAME_ORDER_MODE in streamCaps
     PFrameOrderCoordinator pFrameOrderCoordinator;
+
+    // Last PutFrame timestamp
+    UINT64 lastPutFrameTimestamp;
 };
 
 /**
