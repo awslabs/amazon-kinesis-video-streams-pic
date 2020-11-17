@@ -26,7 +26,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     PStateMachine pStateMachine = NULL;
     UINT32 allocationSize, maxViewItems, i;
     PBYTE pCurPnt = NULL;
-    BOOL locked = FALSE;
+    BOOL clientLocked = FALSE, clientStreamsListLocked = FALSE;
     BOOL tearDownOnError = TRUE;
     CHAR tempStreamName[MAX_STREAM_NAME_LEN];
     UINT32 trackInfoSize, tagsSize;
@@ -40,9 +40,15 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     CHK_STATUS(validateStreamInfo(pStreamInfo, &pKinesisVideoClient->clientCallbacks));
     logStreamInfo(pStreamInfo);
 
+    // Lock the client streams list lock because we will iterate over current streams + add more streams
+    // We follow the principle that the streamListLock is *never* acquired inside a client or streams lock,
+    // always outside to prevent deadlock
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
+    clientStreamsListLocked = TRUE;
+
     // Lock the client
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
-    locked = TRUE;
+    clientLocked = TRUE;
 
     // Check for the stream count
     CHK(pKinesisVideoClient->streamCount < pKinesisVideoClient->deviceInfo.streamCount, STATUS_MAX_STREAM_COUNT);
@@ -90,6 +96,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
         }
     }
 
+
     // set the maximum frame size observed to 0
     pKinesisVideoStream->maxFrameSizeSeen = 0;
 
@@ -130,6 +137,9 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
 
     // Set the last frame EoFr indicator
     pKinesisVideoStream->eofrFrame = FALSE;
+
+    // Set last PutFrame timestamp to invalid time value
+    pKinesisVideoStream->lastPutFrameTimestamp = INVALID_TIMESTAMP_VALUE;
 
     // Set the initial diagnostics information from the defaults
     pKinesisVideoStream->diagnostics.currentFrameRate = pStreamInfo->streamCaps.frameRate;
@@ -277,12 +287,12 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     // Setting this value will ensure we won't tear down the newly created object after this on failure
     tearDownOnError = FALSE;
 
-    // We can now unlock the client lock so we won't block it
-    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
-    locked = FALSE;
-
     // Set the initial state to new
     pKinesisVideoStream->streamState = STREAM_STATE_NEW;
+
+    // We can now unlock the client lock so we won't block it
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
+    clientLocked = FALSE;
 
     // Store the stream uptime start
     pKinesisVideoStream->diagnostics.createTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
@@ -296,12 +306,21 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
 
 CleanUp:
 
-    if (locked) {
+    if (clientLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     }
 
     if (STATUS_FAILED(retStatus) && tearDownOnError) {
+        if(!clientStreamsListLocked) {
+            pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
+            clientStreamsListLocked = TRUE;
+        }
         freeStream(pKinesisVideoStream);
+    }
+
+    // Need to be under streamListLock while calling freeStream() so wait until after that check to unlock
+    if(clientStreamsListLocked) {
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
     }
 
     LEAVES();
@@ -310,6 +329,9 @@ CleanUp:
 
 /**
  * Frees the stream object
+ * Important:  This method assumes caller has: pKinesisVideoClient->base.streamListLock
+ * DO NOT attempt to acquire that lock in this method, many other callers will already have it
+ * Acquiring the same lock twice (even in the same thread) might lead to undefined behavior
  */
 STATUS freeStream(PKinesisVideoStream pKinesisVideoStream)
 {
@@ -373,6 +395,7 @@ STATUS freeStream(PKinesisVideoStream pKinesisVideoStream)
         pKinesisVideoStream->streamClosedCondition = INVALID_CVAR_VALUE;
     }
 
+
     // Release the client lock
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
 
@@ -434,7 +457,7 @@ STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
     PKinesisVideoClient pKinesisVideoClient;
     UINT64 duration, viewByteSize;
     UINT32 i, sessionCount;
-    BOOL streamLocked = FALSE, clientLocked = FALSE, notSent = FALSE;
+    BOOL streamLocked = FALSE, clientLocked = FALSE, streamsListLock = FALSE, notSent = FALSE;
     PUploadHandleInfo pUploadHandleInfo = NULL;
     UINT64 item;
 
@@ -516,26 +539,29 @@ STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
         sessionCount == 0 && // If we have active handle, then eventually one of the handle will call streamClosedFn
         !pKinesisVideoStream->metadataTracker.send &&
         !pKinesisVideoStream->eosTracker.send) {
+        DLOGW("Calling notifyStreamClosed...");
         CHK_STATUS(notifyStreamClosed(pKinesisVideoStream, pUploadHandleInfo == NULL ?
                                       INVALID_UPLOAD_HANDLE_VALUE : pUploadHandleInfo->handle));
+        DLOGW("Finished Calling notifyStreamClosed...");
+
     }
+
+    // Unlock the stream (even though it will be unlocked in the cleanup)
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+    streamLocked = FALSE;
 
     // Unlock the client as we no longer need it locked
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     clientLocked = FALSE;
 
-    // Unlock the stream (even though it will be unlocked in the cleanup
-    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
-    streamLocked = FALSE;
-
 CleanUp:
-
-    if (clientLocked) {
-        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
-    }
 
     if (streamLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+    }
+
+    if (clientLocked) {
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     }
 
     LEAVES();
@@ -556,10 +582,14 @@ STATUS stopStreamSync(PKinesisVideoStream pKinesisVideoStream)
 
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
+
+    DLOGW("Waiting to acquire stream Lock");
+
     // Lock the stream
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     streamLocked = TRUE;
 
+    DLOGW("Stream is Locked");
     do {
         if (pKinesisVideoStream->streamClosed) {
             DLOGV("Kinesis Video Stream is Closed.");
@@ -594,6 +624,8 @@ CleanUp:
     // release stream lock
     if (streamLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+        DLOGW("Stream is unlocked");
+
     }
 
     LEAVES();
@@ -849,10 +881,12 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // Might need to block on the availability in the OFFLINE mode
     CHK_STATUS(handleAvailability(pKinesisVideoStream, overallSize, &allocHandle));
 
+
     // Lock the client
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
                                                      pKinesisVideoClient->base.lock);
     clientLocked = TRUE;
+
 
     // Ensure we have space and if not then bail
     CHK(IS_VALID_ALLOCATION_HANDLE(allocHandle), STATUS_STORE_OUT_OF_MEMORY);
@@ -1089,7 +1123,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     clientLocked = FALSE;
 
-    // Unlock the stream (even though it will be unlocked in the cleanup
+    // Unlock the stream (even though it will be unlocked in  cleanup)
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     streamLocked = FALSE;
 
@@ -1399,6 +1433,8 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
                 pUploadHandleInfo->lastFragmentTs = pKinesisVideoStream->curViewItem.viewItem.ackTimestamp;
             }
 
+
+
             // Lock the client
             pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
             clientLocked = TRUE;
@@ -1418,9 +1454,8 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             // Unmap the storage for the frame
             CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, ((PVOID) pAlloc)));
 
-            // Unlock the client
-            pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                               pKinesisVideoClient->base.lock);
+            // unLock the client
+            pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
             clientLocked = FALSE;
 
             // Set the values
@@ -1664,7 +1699,6 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
-    BOOL streamLocked = TRUE;
 
     while (TRUE) {
         // Check if we have enough space to proceed - the stream should be locked
@@ -1695,12 +1729,6 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
 
 CleanUp:
 
-    // Lock the stream again in order to proceed
-    if (!streamLocked) {
-        pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                         pKinesisVideoStream->base.lock);
-    }
-
     LEAVES();
     return retStatus;
 }
@@ -1709,7 +1737,7 @@ CleanUp:
  * Checks for the availability of space in the content store and if there is enough duration
  * is available in the content view.
  *
- * IMPORTANT: The stream SHOULD be locked and the client is NOT locked
+ * IMPORTANT: The stream and client SHOULD be locked
  *
  * All the parameters are assumed to have been sanitized.
  */
@@ -1761,7 +1789,6 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
     // Unlock the client
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     clientLocked = FALSE;
-
 CleanUp:
 
     // Unlock the client if locked.
@@ -1921,7 +1948,6 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
     UINT64 curIndex;
     UINT64 streamStartTs;
     PViewItem pViewItem = NULL;
-    BOOL streamLocked = FALSE, clientLocked = FALSE;
     UINT32 headerSize, packagedSize, overallSize;
     UINT64 allocSize, currentItemCount, windowItemCount;
     PBYTE pAlloc = NULL, pFrame = NULL;
@@ -1932,10 +1958,6 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
 
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
-
-    // Lock the stream
-    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
-    streamLocked = TRUE;
 
     // Fix-up the current item as it might be a stream start
     CHK_STATUS(resetCurrentViewItemStreamStart(pKinesisVideoStream));
@@ -1961,10 +1983,6 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
     // Get the current item
     CHK_STATUS(contentViewGetCurrentIndex(pKinesisVideoStream->pView, &curIndex));
     CHK_STATUS(contentViewGetItemAt(pKinesisVideoStream->pView, curIndex, &pViewItem));
-
-    // Lock the client
-    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
-    clientLocked = TRUE;
 
     // Get the required size for the header
     CHK_STATUS(mkvgenGenerateHeader(pKinesisVideoStream->pMkvGenerator,
@@ -2023,15 +2041,6 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
     CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, (PVOID) pAlloc));
     pAlloc = NULL;
 
-    // Unlock the client
-    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                       pKinesisVideoClient->base.lock);
-    clientLocked = FALSE;
-
-    // Unlock the stream (even though it will be unlocked in the cleanup
-    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
-    streamLocked = FALSE;
-
 CleanUp:
 
     // Unmap the old mapping
@@ -2046,21 +2055,7 @@ CleanUp:
 
     // Clear up the previous allocation handle
     if (IS_VALID_ALLOCATION_HANDLE(allocationHandle)) {
-        // Lock the client if it's not locked
-        if (!clientLocked) {
-            pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
-            clientLocked = TRUE;
-        }
-
         heapFree(pKinesisVideoClient->pHeap, allocationHandle);
-    }
-
-    if (clientLocked) {
-        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
-    }
-
-    if (streamLocked) {
-        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     }
 
     LEAVES();
@@ -2082,6 +2077,10 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
 
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
+    // Lock the client
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
+    clientLocked = TRUE;
+
     // Lock the stream
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     streamLocked = TRUE;
@@ -2093,10 +2092,6 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
 
     // Get the view item corresponding to the current item
     CHK_STATUS(contentViewGetItemAt(pKinesisVideoStream->pView, pKinesisVideoStream->curViewItem.viewItem.index, &pViewItem));
-
-    // Lock the client
-    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
-    clientLocked = TRUE;
 
     // As we are removing the MKV header, the resulting allocation size will be actually smaller
     // We will simply copy/shift the data, including the MKV tags if any and the cluster header
@@ -2136,17 +2131,17 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
     CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, pFrame));
     pFrame = NULL;
 
-    // Unlock the client
-    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                       pKinesisVideoClient->base.lock);
-    clientLocked = FALSE;
-
     // Re-set back the current
     pKinesisVideoStream->curViewItem.viewItem = *pViewItem;
 
     // Unlock the stream (even though it will be unlocked in the cleanup
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     streamLocked = FALSE;
+
+    // Unlock the client
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                       pKinesisVideoClient->base.lock);
+    clientLocked = FALSE;
 
 CleanUp:
 
@@ -2170,13 +2165,14 @@ CleanUp:
         }
     }
 
+    if (streamLocked) {
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+    }
+
     if (clientLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     }
 
-    if (streamLocked) {
-        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
-    }
 
     LEAVES();
     return retStatus;
@@ -3194,6 +3190,8 @@ STATUS notifyStreamClosed(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE
 
     // Set the indicator of the finished stream
     pKinesisVideoStream->streamClosed = TRUE;
+
+    DLOGW("signaling stream closed condition variable");
 
     // Signal the stopped condition variable
     CHK_STATUS(pKinesisVideoClient->clientCallbacks.signalConditionVariableFn(

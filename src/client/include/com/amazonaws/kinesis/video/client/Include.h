@@ -453,7 +453,7 @@ extern "C" {
 #define FRAGMENT_ACK_CURRENT_VERSION                        0
 #define STREAM_METRICS_CURRENT_VERSION                      1
 #define CLIENT_METRICS_CURRENT_VERSION                      0
-#define CLIENT_INFO_CURRENT_VERSION                         1
+#define CLIENT_INFO_CURRENT_VERSION                         2
 
 /**
  * Definition of the client handle
@@ -1099,6 +1099,8 @@ typedef struct __ClientInfo {
     // flag for automatic handling of intermittent producer
     AUTOMATIC_STREAMING_FLAGS automaticStreamingFlags;
 
+    // period (in hundreds of nanos) at which callback will be fired to check stream
+    UINT64 callbackPeriod;
 } ClientInfo, *PClientInfo;
 
 /**

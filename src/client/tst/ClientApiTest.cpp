@@ -23,7 +23,7 @@ TEST_F(ClientApiTest, createKinesisVideoClientSync_NullInput)
     EXPECT_EQ(STATUS_OPERATION_TIMED_OUT, createKinesisVideoClientSync(&mDeviceInfo, &mClientCallbacks, &clientHandle));
 }
 
-TEST_F(ClientApiTest, createKinesisVideoClient_ValiateCallbacks)
+TEST_F(ClientApiTest, createKinesisVideoClient_ValidateCallbacks)
 {
     CLIENT_HANDLE clientHandle;
 
@@ -155,7 +155,7 @@ TEST_F(ClientApiTest, createKinesisVideoClient_ValiateCallbacks)
     mClientCallbacks.putStreamFn = putStreamFunc;
 }
 
-TEST_F(ClientApiTest, createKinesisVideoClient_ValiateDeviceInfo)
+TEST_F(ClientApiTest, createKinesisVideoClient_ValidateDeviceInfo)
 {
     CLIENT_HANDLE clientHandle;
 

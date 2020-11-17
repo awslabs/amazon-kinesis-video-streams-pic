@@ -410,6 +410,8 @@ protected:
         mDeviceInfo.clientInfo.loggerLogLevel = logLevel;
         mDeviceInfo.clientInfo.logMetric = FALSE;
         mDeviceInfo.clientInfo.metricLoggingPeriod = 1 * HUNDREDS_OF_NANOS_IN_A_MINUTE;
+        mDeviceInfo.clientInfo.automaticStreamingFlags = AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER;
+        mDeviceInfo.clientInfo.callbackPeriod = INTERMITTENT_PRODUCER_CHECK_INTERVAL;
 
         // Initialize stream info
         mStreamInfo.version = STREAM_INFO_CURRENT_VERSION;
@@ -769,7 +771,7 @@ protected:
         return STATUS_SUCCESS;
     };
 
-    STATUS CreateStream(CLIENT_HANDLE clientHandle = INVALID_STREAM_HANDLE_VALUE)
+    STATUS CreateStream(CLIENT_HANDLE clientHandle = INVALID_CLIENT_HANDLE_VALUE)
     {
         clientHandle = IS_VALID_CLIENT_HANDLE(clientHandle) ? clientHandle : mClientHandle;
 
@@ -781,7 +783,7 @@ protected:
         return STATUS_SUCCESS;
     }
 
-    STATUS CreateStreamSync(CLIENT_HANDLE clientHandle = INVALID_STREAM_HANDLE_VALUE)
+    STATUS CreateStreamSync(CLIENT_HANDLE clientHandle = INVALID_CLIENT_HANDLE_VALUE)
     {
         clientHandle = IS_VALID_CLIENT_HANDLE(clientHandle) ? clientHandle : mClientHandle;
 
@@ -883,7 +885,7 @@ protected:
         return MoveFromEndpointToReady();
     }
 
-    virtual void SetUp()
+    virtual void SetUp(bool createClient = true)
     {
         UINT32 logLevel = 0;
         auto logLevelStr = GETENV("AWS_KVS_LOG_LEVEL");
@@ -895,7 +897,9 @@ protected:
         DLOGI("\nSetting up test: %s\n", GetTestName());
         mTestClientMutex = MUTEX_CREATE(TRUE);
         initTestMembers();
-        ASSERT_EQ(STATUS_SUCCESS, CreateClient());
+        if (createClient) {
+            ASSERT_EQ(STATUS_SUCCESS, CreateClient());
+        }
     };
 
     virtual void TearDown()

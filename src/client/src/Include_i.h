@@ -49,6 +49,9 @@ struct __KinesisVideoBase {
     // Sync mutex for fine grained interlocking the calls
     MUTEX lock;
 
+    // Lock needed to create/free a stream + iterating over a stream
+    MUTEX streamListLock;
+
     // Conditional variable for Ready state
     CVAR ready;
 
@@ -229,12 +232,12 @@ typedef struct __EndpointInfo* PEndpointInfo;
 /**
  * How often the callback is invoked to check all video streams for past max timeout
  */
-#define INTERMITTENT_PRODUCER_CHECK_INTERVAL                        (5 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+#define INTERMITTENT_PRODUCER_CHECK_INTERVAL                        (5000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
 
 /**
  * Time after which if no frames have been received we submit EoFR to close out the session
  */
-#define INTERMITTENT_PRODUCER_MAX_TIMEOUT                           (20 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+#define INTERMITTENT_PRODUCER_MAX_TIMEOUT                           (20LL * HUNDREDS_OF_NANOS_IN_A_SECOND)
 
 /**
  * Kinesis Video client internal structure
@@ -271,8 +274,10 @@ typedef struct __KinesisVideoClient {
     // Total memory allocation tracker
     UINT64 totalAllocationSize;
 
-    // Timer Queue for Automatic Intermittent Producer
+    // Timer Queue/Callback func for Automatic Intermittent Producer
     TIMER_QUEUE_HANDLE timerQueueHandle;
+    TimerCallbackFunc timerCallbackFunc;
+    volatile UINT32 timerCallbackInvocationCount;
 
     // ID for timer created to wake and check if streams have incoming data
     UINT32 timerId;

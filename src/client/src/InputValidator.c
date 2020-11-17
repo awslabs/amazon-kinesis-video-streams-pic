@@ -306,26 +306,27 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
 {
     // Assuming pClientInfo had been zeroed already
     if (pOrigClientInfo != NULL) {
+        pClientInfo->version = pOrigClientInfo->version;
+        pClientInfo->createClientTimeout = pOrigClientInfo->createClientTimeout;
+        pClientInfo->createStreamTimeout = pOrigClientInfo->createStreamTimeout;
+        pClientInfo->stopStreamTimeout = pOrigClientInfo->stopStreamTimeout;
+        pClientInfo->offlineBufferAvailabilityTimeout = pOrigClientInfo->offlineBufferAvailabilityTimeout;
+        pClientInfo->loggerLogLevel = pOrigClientInfo->loggerLogLevel;
+        pClientInfo->logMetric = pOrigClientInfo->logMetric;
+        pClientInfo->automaticStreamingFlags = AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER;
+        pClientInfo->callbackPeriod = INTERMITTENT_PRODUCER_CHECK_INTERVAL;
+
         switch (pOrigClientInfo->version) {
             case 2:
                 // Copy individual fields and skip to V1
                 pClientInfo->automaticStreamingFlags = pOrigClientInfo->automaticStreamingFlags;
+                pClientInfo->callbackPeriod = pOrigClientInfo->callbackPeriod;
+
+                //explicit fall-through
             case 1:
                 // Copy individual fields and skip to V0
                 pClientInfo->metricLoggingPeriod = pOrigClientInfo->metricLoggingPeriod;
-
-                // Explicit fall-through
-            case 0:
-                pClientInfo->version = pOrigClientInfo->version;
-                pClientInfo->createClientTimeout = pOrigClientInfo->createClientTimeout;
-                pClientInfo->createStreamTimeout = pOrigClientInfo->createStreamTimeout;
-                pClientInfo->stopStreamTimeout = pOrigClientInfo->stopStreamTimeout;
-                pClientInfo->offlineBufferAvailabilityTimeout = pOrigClientInfo->offlineBufferAvailabilityTimeout;
-                pClientInfo->loggerLogLevel = pOrigClientInfo->loggerLogLevel;
-                pClientInfo->logMetric = pOrigClientInfo->logMetric;
-
                 break;
-
             default:
                 DLOGW("Invalid ClientInfo version");
         }
