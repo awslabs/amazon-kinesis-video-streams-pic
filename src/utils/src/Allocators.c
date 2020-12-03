@@ -3,12 +3,12 @@
 //
 // Default allocator functions
 //
-PVOID defaultMemAlloc(SIZE_T size)
+INLINE PVOID defaultMemAlloc(SIZE_T size)
 {
     return malloc(size);
 }
 
-PVOID defaultMemAlignAlloc(SIZE_T size, SIZE_T alignment)
+INLINE PVOID defaultMemAlignAlloc(SIZE_T size, SIZE_T alignment)
 {
 #if defined (__MACH__)
     // On Mac allocations are 16 byte aligned. There is hardly an equivalent anyway
@@ -21,17 +21,17 @@ PVOID defaultMemAlignAlloc(SIZE_T size, SIZE_T alignment)
 #endif
 }
 
-PVOID defaultMemCalloc(SIZE_T num, SIZE_T size)
+INLINE PVOID defaultMemCalloc(SIZE_T num, SIZE_T size)
 {
     return calloc(num, size);
 }
 
-PVOID defaultMemRealloc(PVOID ptr, SIZE_T size)
+INLINE PVOID defaultMemRealloc(PVOID ptr, SIZE_T size)
 {
     return realloc(ptr, size);
 }
 
-VOID defaultMemFree(VOID* ptr)
+INLINE VOID defaultMemFree(VOID* ptr)
 {
     free(ptr);
 }
