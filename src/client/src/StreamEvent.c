@@ -764,7 +764,7 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                             pKinesisVideoClient->clientCallbacks.customData,
                             TO_STREAM_HANDLE(pKinesisVideoStream),
                             pKinesisVideoStream->streamInfo.name,
-                            pUploadHandleInfo->handle,
+                            pActiveUploadHandleInfo->handle,
                             0,
                             0);
                 }
