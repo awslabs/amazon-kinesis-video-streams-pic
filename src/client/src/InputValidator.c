@@ -314,13 +314,13 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
         pClientInfo->loggerLogLevel = pOrigClientInfo->loggerLogLevel;
         pClientInfo->logMetric = pOrigClientInfo->logMetric;
         pClientInfo->automaticStreamingFlags = AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER;
-        pClientInfo->callbackPeriod = INTERMITTENT_PRODUCER_CHECK_INTERVAL;
+        pClientInfo->reservedCallbackPeriod = INTERMITTENT_PRODUCER_PERIOD_SENTINEL_VALUE;
 
         switch (pOrigClientInfo->version) {
             case 2:
                 // Copy individual fields and skip to V1
                 pClientInfo->automaticStreamingFlags = pOrigClientInfo->automaticStreamingFlags;
-                pClientInfo->callbackPeriod = pOrigClientInfo->callbackPeriod;
+                pClientInfo->reservedCallbackPeriod = pOrigClientInfo->reservedCallbackPeriod;
 
                 //explicit fall-through
             case 1:
@@ -330,6 +330,10 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
             default:
                 DLOGW("Invalid ClientInfo version");
         }
+    }
+
+    if ( pClientInfo->reservedCallbackPeriod == INTERMITTENT_PRODUCER_PERIOD_SENTINEL_VALUE ) {
+        pClientInfo->reservedCallbackPeriod = INTERMITTENT_PRODUCER_PERIOD_DEFAULT;
     }
     
     // Set the defaults if older version or if the sentinel values have been specified

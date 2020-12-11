@@ -824,8 +824,8 @@ typedef enum {
     /**
      * With this option we'll create a timer (burns a thread) and periodically check
      * if there are any streams which haven't had any PutFrame calls
-     * over fixed period of time, in which case we'll close out the session
-     * to prevent back-end from timing out and clsoing the session
+     * over fixed period of time, in which case we'll close out the fragment
+     * to prevent back-end from timing out and closing the session
      */
     AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER          = 0,
 
@@ -1100,7 +1100,8 @@ typedef struct __ClientInfo {
     AUTOMATIC_STREAMING_FLAGS automaticStreamingFlags;
 
     // period (in hundreds of nanos) at which callback will be fired to check stream
-    UINT64 callbackPeriod;
+    // clients should set this value to 0.
+    UINT64 reservedCallbackPeriod;
 } ClientInfo, *PClientInfo;
 
 /**

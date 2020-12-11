@@ -539,29 +539,27 @@ STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
         sessionCount == 0 && // If we have active handle, then eventually one of the handle will call streamClosedFn
         !pKinesisVideoStream->metadataTracker.send &&
         !pKinesisVideoStream->eosTracker.send) {
-        DLOGW("Calling notifyStreamClosed...");
         CHK_STATUS(notifyStreamClosed(pKinesisVideoStream, pUploadHandleInfo == NULL ?
                                       INVALID_UPLOAD_HANDLE_VALUE : pUploadHandleInfo->handle));
-        DLOGW("Finished Calling notifyStreamClosed...");
 
     }
-
-    // Unlock the stream (even though it will be unlocked in the cleanup)
-    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
-    streamLocked = FALSE;
 
     // Unlock the client as we no longer need it locked
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     clientLocked = FALSE;
 
-CleanUp:
+    // Unlock the stream (even though it will be unlocked in the cleanup)
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+    streamLocked = FALSE;
 
-    if (streamLocked) {
-        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
-    }
+CleanUp:
 
     if (clientLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
+    }
+
+    if (streamLocked) {
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     }
 
     LEAVES();
@@ -582,14 +580,10 @@ STATUS stopStreamSync(PKinesisVideoStream pKinesisVideoStream)
 
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
-
-    DLOGW("Waiting to acquire stream Lock");
-
     // Lock the stream
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     streamLocked = TRUE;
 
-    DLOGW("Stream is Locked");
     do {
         if (pKinesisVideoStream->streamClosed) {
             DLOGV("Kinesis Video Stream is Closed.");
@@ -624,8 +618,6 @@ CleanUp:
     // release stream lock
     if (streamLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
-        DLOGW("Stream is unlocked");
-
     }
 
     LEAVES();
@@ -784,7 +776,8 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     fixupFrame(pFrame);
 
     // Set the last PutFrame time to current time
-    pKinesisVideoStream->lastPutFrameTimestamp = GETTIME();
+    currentTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
+    pKinesisVideoStream->lastPutFrameTimestamp = currentTime;
 
     // Validate that we are not seeing EoFr explicit marker in a non-key-frame fragmented stream
     if (!pKinesisVideoStream->streamInfo.streamCaps.keyFrameFragmentation) {
@@ -3190,8 +3183,6 @@ STATUS notifyStreamClosed(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE
 
     // Set the indicator of the finished stream
     pKinesisVideoStream->streamClosed = TRUE;
-
-    DLOGW("signaling stream closed condition variable");
 
     // Signal the stopped condition variable
     CHK_STATUS(pKinesisVideoClient->clientCallbacks.signalConditionVariableFn(

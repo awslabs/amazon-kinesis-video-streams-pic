@@ -232,7 +232,17 @@ typedef struct __EndpointInfo* PEndpointInfo;
 /**
  * How often the callback is invoked to check all video streams for past max timeout
  */
-#define INTERMITTENT_PRODUCER_CHECK_INTERVAL                        (5000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
+#define INTERMITTENT_PRODUCER_PERIOD_DEFAULT                        (5000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
+
+/**
+ * If this value is set that that means it's "unset" and we will set it to default
+ */
+#define INTERMITTENT_PRODUCER_PERIOD_SENTINEL_VALUE                 0
+
+/**
+ * Initial time to delay before firing first callback for automatic intermittent producer
+ */
+#define INTERMITTENT_PRODUCER_TIMER_START_DELAY                     (3 * HUNDREDS_OF_NANOS_IN_A_SECOND)
 
 /**
  * Time after which if no frames have been received we submit EoFR to close out the session
