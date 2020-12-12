@@ -35,8 +35,16 @@ TEST_P(ClientFunctionalityTest, CreateSyncAndFree)
 {
     TID thread;
     EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&thread, CreateClientRoutineSync, (PVOID) this));
-    THREAD_SLEEP(HUNDREDS_OF_NANOS_IN_A_SECOND);
-    // Satisfy the create device callback
+
+    // Satisfy the create device callback after the create device call
+    UINT64 iterateTime = GETTIME() + HUNDREDS_OF_NANOS_IN_A_SECOND;
+
+    while (mCreateDeviceDoneFuncCount != 2 && GETTIME() <= iterateTime) {
+        THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    }
+
+    EXPECT_NE(0, mCreateDeviceDoneFuncCount);
+
     EXPECT_EQ(STATUS_SUCCESS, createDeviceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_DEVICE_ARN));
     THREAD_JOIN(thread, NULL);
 
@@ -177,8 +185,13 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncPutFrameFreeClient)
     EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&thread, CreateStreamSyncRoutine, (PVOID) this));
 
     // wait until stream has been created so that we can submit describeStreamResult
-    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
-    EXPECT_TRUE(IS_VALID_STREAM_HANDLE(mStreamHandle));
+    UINT64 iterateTime = GETTIME() + HUNDREDS_OF_NANOS_IN_A_SECOND;
+
+    while (mDescribeStreamDoneFuncCount == 0 && GETTIME() <= iterateTime) {
+        THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    }
+
+    EXPECT_NE(0, mDescribeStreamDoneFuncCount);
 
     // enable auto submission so that submitting describeStreamResult will trigger stream ready, and unblock
     // CreateStreamSyncRoutine
@@ -215,8 +228,13 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncPutFrameStopStreamFr
     EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&thread, CreateStreamSyncRoutine, (PVOID) this));
 
     // wait until stream has been created so that we can submit describeStreamResult
-    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
-    EXPECT_TRUE(IS_VALID_STREAM_HANDLE(mStreamHandle));
+    UINT64 iterateTime = GETTIME() + HUNDREDS_OF_NANOS_IN_A_SECOND;
+
+    while (mDescribeStreamDoneFuncCount == 0 && GETTIME() <= iterateTime) {
+        THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    }
+
+    EXPECT_NE(0, mDescribeStreamDoneFuncCount);
 
     // enable auto submission so that submitting describeStreamResult will trigger stream ready, and unblock
     // CreateStreamSyncRoutine
@@ -252,8 +270,13 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncCreateSameStreamAndF
     EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&thread, CreateStreamSyncRoutine, (PVOID) this));
 
     // wait until stream has been created so that we can submit describeStreamResult
-    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
-    EXPECT_TRUE(IS_VALID_STREAM_HANDLE(mStreamHandle));
+    UINT64 iterateTime = GETTIME() + HUNDREDS_OF_NANOS_IN_A_SECOND;
+
+    while (mDescribeStreamDoneFuncCount == 0 && GETTIME() <= iterateTime) {
+        THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    }
+
+    EXPECT_NE(0, mDescribeStreamDoneFuncCount);
 
     // this should unblock CreateStreamSyncRoutine
     mSubmitServiceCallResultMode = STOP_AT_PUT_STREAM;

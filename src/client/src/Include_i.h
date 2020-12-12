@@ -413,6 +413,11 @@ UINT64 randomizeAuthInfoExpiration(PKinesisVideoClient, UINT64, UINT64);
  */
 STATUS setContentStoreAllocator(PKinesisVideoClient);
 
+/**
+ * Helper to step the client state machine
+ */
+STATUS stepClientStateMachine(PKinesisVideoClient);
+
 ///////////////////////////////////////////////////////////////////////////
 // Client service call event functions
 ///////////////////////////////////////////////////////////////////////////

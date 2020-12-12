@@ -26,7 +26,7 @@ PVOID ClientTestBase::basicProducerRoutine(UINT64 streamId)
     STREAM_HANDLE streamHandle = mStreamHandles[streamId];
 
     // Loop until we can start
-    while(!mStartThreads) {
+    while (!mStartThreads) {
         DLOGV("Producer waiting for stream %llu TID %016llx", streamId, GETTID());
 
         // Sleep a while
@@ -39,7 +39,7 @@ PVOID ClientTestBase::basicProducerRoutine(UINT64 streamId)
     frame.frameData = tempBuffer;
     frame.trackId = TEST_TRACKID;
 
-    while(!mTerminate) {
+    while (!mTerminate) {
         // Produce frames
         frame.index = index++;
         frame.decodingTs = timestamp;
@@ -72,7 +72,7 @@ PVOID ClientTestBase::basicConsumerRoutine(UINT64 streamId)
     STREAM_HANDLE streamHandle = mStreamHandles[streamId];
 
     // Loop until we can start
-    while(!mStartThreads) {
+    while (!mStartThreads) {
         DLOGV("Consumer waiting for stream %llu TID %016llx", streamId, GETTID());
 
         // Sleep a while
@@ -80,7 +80,7 @@ PVOID ClientTestBase::basicConsumerRoutine(UINT64 streamId)
     }
 
     // Loop until cancelled
-    while(!mTerminate) {
+    while (!mTerminate) {
         DLOGV("Consumer for stream %llu TID %016llx", streamId, GETTID());
         // Consume frames
         retStatus = getKinesisVideoStreamData(streamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),

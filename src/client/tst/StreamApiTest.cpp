@@ -561,8 +561,12 @@ PVOID streamStopNotifier(PVOID arg)
     STREAM_HANDLE streamHandle = (STREAM_HANDLE) arg;
     THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     DLOGI("Indicating stream closed");
-    notifyStreamClosed(FROM_STREAM_HANDLE(streamHandle), 0);
-    return 0;
+    // Need to interlock - this is for test only as test accesses the internal objects and methods directly
+    PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
+    MUTEX_LOCK(pKinesisVideoStream->base.lock);
+    notifyStreamClosed(pKinesisVideoStream, 0);
+    MUTEX_UNLOCK(pKinesisVideoStream->base.lock);
+    return NULL;
 }
 
 TEST_F(StreamApiTest, kinesisVideoStreamCreateSync_Valid)
@@ -586,6 +590,7 @@ TEST_F(StreamApiTest, kinesisVideoStreamCreateSync_Valid)
     // Spin up a thread to act as a delayed notification
     TID tid;
     EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&tid, streamStopNotifier, (PVOID) mStreamHandle));
+    EXPECT_EQ(STATUS_SUCCESS, THREAD_DETACH(tid));
 
     // Stop synchronously
     EXPECT_EQ(STATUS_SUCCESS, stopKinesisVideoStreamSync(mStreamHandle));

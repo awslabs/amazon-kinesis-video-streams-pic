@@ -732,6 +732,7 @@ STATUS ClientTestBase::describeStreamFunc(UINT64 customData,
         pClient->mStreamDescription.streamStatus = pClient->mDescribeStreamFuncCount < 3 ? STREAM_STATUS_CREATING : STREAM_STATUS_ACTIVE;
         retStatus = describeStreamResultEvent(pCallbackContext->customData, SERVICE_CALL_RESULT_OK, &pClient->mStreamDescription);
     }
+    pClient->mDescribeStreamDoneFuncCount++;
     MUTEX_UNLOCK(pClient->mTestClientMutex);
 
     return retStatus;
@@ -943,6 +944,7 @@ STATUS ClientTestBase::createDeviceFunc(UINT64 customData,
         EXPECT_EQ(STATUS_SUCCESS,
                   createDeviceResultEvent(pCallbackContext->customData, SERVICE_CALL_RESULT_OK, TEST_DEVICE_ARN));
     }
+    pClient->mCreateDeviceDoneFuncCount++;
     MUTEX_UNLOCK(pClient->mTestClientMutex);
 
     return STATUS_SUCCESS;

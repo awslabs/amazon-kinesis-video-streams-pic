@@ -151,7 +151,7 @@ TEST_F(StreamTokenRotationTest, basicTokenRotationNonPersistAwait)
         // consume after every 10th
         if (i != 0 && (i % 10 == 0)) {
             iterate = TRUE;
-            while(iterate) {
+            while (iterate) {
                 status = getKinesisVideoStreamData(streamHandle, uploadHandle, getDataBuffer, SIZEOF(getDataBuffer),
                                                    &filledSize);
                 EXPECT_TRUE(status == STATUS_SUCCESS ||
@@ -308,7 +308,7 @@ TEST_F(StreamTokenRotationTest, rotationWithAwaitingCheck)
         // consume after every 10th
         if (i != 0 && (i % 10 == 0)) {
             iterate = TRUE;
-            while(iterate) {
+            while (iterate) {
                 status = getKinesisVideoStreamData(streamHandle, uploadHandle, getDataBuffer, SIZEOF(getDataBuffer),
                                                    &filledSize);
                 EXPECT_TRUE(status == STATUS_SUCCESS ||

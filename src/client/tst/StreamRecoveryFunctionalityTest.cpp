@@ -60,7 +60,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionEns
             resetConnectionTime = INVALID_TIMESTAMP_VALUE; // reset connection only once.
         }
 
-    } while(currentTime < streamStopTime);
+    } while (currentTime < streamStopTime);
 
     VerifyStopStreamSyncAndFree();
 }
@@ -113,7 +113,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionAft
             resetConnectionTime = INVALID_TIMESTAMP_VALUE; // reset connection only once.
         }
 
-    } while(currentTime < streamStopTime);
+    } while (currentTime < streamStopTime);
 
     VerifyStopStreamSyncAndFree();
 }
@@ -214,7 +214,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamRollbackToLastRece
                 }
             }
         }
-    } while(currentTime < streamStopTime);
+    } while (currentTime < streamStopTime);
 
     VerifyStopStreamSyncAndFree();
 }
@@ -278,7 +278,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
 
         retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData, &retrievedDataSize);
         VerifyGetStreamDataResult(retStatus, gotStreamData, mockConsumer->mUploadHandle, &currentTime, &mockConsumer);
-    } while(!gotStreamData);
+    } while (!gotStreamData);
 
     // check that a new upload handle is created and the error handle is gone.
     mStreamingSession.getActiveUploadHandles(currentUploadHandles);
@@ -703,7 +703,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
 
         retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
         VerifyGetStreamDataResult(retStatus, gotStreamData, mockConsumer->mUploadHandle, &currentTime, &mockConsumer);
-    } while(!gotStreamData);
+    } while (!gotStreamData);
 
     // finishing putting all frames for the first fragment.
     for(i = 0; i < 5; i++) {
@@ -811,7 +811,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
 
         retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
         VerifyGetStreamDataResult(retStatus, gotStreamData, mockConsumer->mUploadHandle, &currentTime, &mockConsumer);
-    } while(!gotStreamData);
+    } while (!gotStreamData);
 
     // put in more fragments. At the end we are expecting totalFragmentPut * 3 acks.
     for(i = 0; i < mMockProducerConfig.mKeyFrameInterval * (totalFragmentPut-1); i++) {
@@ -1155,7 +1155,7 @@ TEST_P(StreamRecoveryFunctionalityTest, streamStartViewDroppedBeforeFullyConsume
     mockConsumer = mStreamingSession.getConsumer(uploadHandle);
 
     /* do ONE successful getStreamData */
-    while(!gotStreamData) {
+    while (!gotStreamData) {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
         status = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
         VerifyGetStreamDataResult(status, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
@@ -1170,7 +1170,7 @@ TEST_P(StreamRecoveryFunctionalityTest, streamStartViewDroppedBeforeFullyConsume
     gotStreamData = FALSE;
 
     /* do another getStreamData */
-    while(!gotStreamData) {
+    while (!gotStreamData) {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
         status = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
     }

@@ -20,6 +20,36 @@ StateMachineState CLIENT_STATE_MACHINE_STATES[] = {
 
 UINT32 CLIENT_STATE_MACHINE_STATE_COUNT = SIZEOF(CLIENT_STATE_MACHINE_STATES) / SIZEOF(StateMachineState);
 
+// Helper method for stepping the client state machine
+STATUS stepClientStateMachine(PKinesisVideoClient pKinesisVideoClient)
+{
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    BOOL clientLocked = FALSE;
+
+    CHK(pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+
+    // Interlock the state stepping
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                     pKinesisVideoClient->base.lock);
+    clientLocked = TRUE;
+
+    CHK_STATUS(stepStateMachine(pKinesisVideoClient->base.pStateMachine));
+
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
+    clientLocked = FALSE;
+
+
+CleanUp:
+
+    if (clientLocked) {
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
+    }
+
+    LEAVES();
+    return retStatus;
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // State machine callback functions
 ///////////////////////////////////////////////////////////////////////////
@@ -249,6 +279,10 @@ STATUS executeGetTokenClientState(UINT64 customData, UINT64 time)
 
     // Call API if specified. Raise and error at this stage if not.
     CHK(pKinesisVideoClient->clientCallbacks.deviceCertToTokenFn != NULL, STATUS_SERVICE_CALL_CALLBACKS_MISSING);
+
+    // NOTE: The following callback is a non-prompt operation.
+    // The client will be awaiting for the resulting event and
+    // the state machine will not be primed to continue.
     CHK_STATUS(pKinesisVideoClient->clientCallbacks.deviceCertToTokenFn(
         pKinesisVideoClient->clientCallbacks.customData,
         pKinesisVideoClient->deviceInfo.name,

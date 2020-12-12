@@ -115,6 +115,7 @@
 #include "gtest/gtest.h"
 #include <com/amazonaws/kinesis/video/utils/Include.h>
 #include <com/amazonaws/kinesis/video/client/Include.h>
+#include <stdatomic.h>
 #include "src/client/src/Include_i.h"
 #include "src/client/src/Stream.h"
 #include "src/mkvgen/src/Include_i.h"
@@ -271,20 +272,20 @@ protected:
     DeviceInfo mDeviceInfo;
     ClientCallbacks mClientCallbacks;
     UINT64 mMagic;
-    volatile UINT64 mTime;
+    volatile atomic_ullong mTime;
     UINT64 mStreamStartTime;
     UINT64 mDuration;
     UINT64 mFrameTime;
     UINT64 mFragmentTime;
     STATUS mStatus;
     FragmentAck mFragmentAck;
-    BOOL mStreamReady;
-    BOOL mStreamClosed;
-    BOOL mClientReady;
-    BOOL mClientShutdown;
-    BOOL mStreamShutdown;
-    BOOL mResetStream;
-    BOOL mAckRequired;
+    volatile atomic_bool mStreamReady;
+    volatile atomic_bool mStreamClosed;
+    volatile atomic_bool mClientReady;
+    volatile atomic_bool mClientShutdown;
+    volatile atomic_bool mStreamShutdown;
+    volatile atomic_bool mResetStream;
+    volatile atomic_bool mAckRequired;
     STREAM_ACCESS_MODE mAccessMode;
     CHAR mApiName[256];
     CHAR mDeviceName[MAX_DEVICE_NAME_LEN];
@@ -299,8 +300,8 @@ protected:
     UINT64 mDataReadyDuration;
     UINT64 mDataReadySize;
     StreamDescription mStreamDescription;
-    volatile BOOL mTerminate;
-    volatile BOOL mStartThreads;
+    volatile atomic_bool mTerminate;
+    volatile atomic_bool mStartThreads;
     TID mProducerThreads[MAX_TEST_STREAM_COUNT];
     TID mConsumerThreads[MAX_TEST_STREAM_COUNT];
     STREAM_HANDLE mStreamHandles[MAX_TEST_STREAM_COUNT];
@@ -326,44 +327,47 @@ protected:
     STATUS mThreadReturnStatus;
 
     // Callback function count
-    volatile UINT32 mGetCurrentTimeFuncCount;
-    volatile UINT32 mGetRandomNumberFuncCount;
-    volatile UINT32 mGetDeviceCertificateFuncCount;
-    volatile UINT32 mGetSecurityTokenFuncCount;
-    volatile UINT32 mGetDeviceFingerprintFuncCount;
-    volatile UINT32 mStreamUnderflowReportFuncCount;
-    volatile UINT32 mStorageOverflowPressureFuncCount;
-    volatile UINT32 mStreamLatencyPressureFuncCount;
-    volatile UINT32 mDroppedFrameReportFuncCount;
-    volatile UINT32 mBufferDurationOverflowPrssureFuncCount;
-    volatile UINT32 mDroppedFragmentReportFuncCount;
-    volatile UINT32 mStreamReadyFuncCount;
-    volatile UINT32 mStreamClosedFuncCount;
-    volatile UINT32 mCreateMutexFuncCount;
-    volatile UINT32 mLockMutexFuncCount;
-    volatile UINT32 mUnlockMutexFuncCount;
-    volatile UINT32 mTryLockMutexFuncCount;
-    volatile UINT32 mFreeMutexFuncCount;
-    volatile UINT32 mCreateConditionVariableFuncCount;
-    volatile UINT32 mSignalConditionVariableFuncCount;
-    volatile UINT32 mBroadcastConditionVariableFuncCount;
-    volatile UINT32 mWaitConditionVariableFuncCount;
-    volatile UINT32 mFreeConditionVariableFuncCount;
-    volatile UINT32 mCreateStreamFuncCount;
-    volatile UINT32 mDescribeStreamFuncCount;
-    volatile UINT32 mGetStreamingEndpointFuncCount;
-    volatile UINT32 mGetStreamingTokenFuncCount;
-    volatile UINT32 mPutStreamFuncCount;
-    volatile UINT32 mTagResourceFuncCount;
-    volatile UINT32 mCreateDeviceFuncCount;
-    volatile UINT32 mDeviceCertToTokenFuncCount;
-    volatile UINT32 mClientReadyFuncCount;
-    volatile UINT32 mStreamDataAvailableFuncCount;
-    volatile UINT32 mStreamErrorReportFuncCount;
-    volatile UINT32 mStreamConnectionStaleFuncCount;
-    volatile UINT32 mFragmentAckReceivedFuncCount;
-    volatile UINT32 mClientShutdownFuncCount;
-    volatile UINT32 mStreamShutdownFuncCount;
+    volatile atomic_long mGetCurrentTimeFuncCount;
+    volatile atomic_long mGetRandomNumberFuncCount;
+    volatile atomic_long mGetDeviceCertificateFuncCount;
+    volatile atomic_long mGetSecurityTokenFuncCount;
+    volatile atomic_long mGetDeviceFingerprintFuncCount;
+    volatile atomic_long mStreamUnderflowReportFuncCount;
+    volatile atomic_long mStorageOverflowPressureFuncCount;
+    volatile atomic_long mStreamLatencyPressureFuncCount;
+    volatile atomic_long mDroppedFrameReportFuncCount;
+    volatile atomic_long mBufferDurationOverflowPrssureFuncCount;
+    volatile atomic_long mDroppedFragmentReportFuncCount;
+    volatile atomic_long mStreamReadyFuncCount;
+    volatile atomic_long mStreamClosedFuncCount;
+    volatile atomic_long mCreateMutexFuncCount;
+    volatile atomic_long mLockMutexFuncCount;
+    volatile atomic_long mUnlockMutexFuncCount;
+    volatile atomic_long mTryLockMutexFuncCount;
+    volatile atomic_long mFreeMutexFuncCount;
+    volatile atomic_long mCreateConditionVariableFuncCount;
+    volatile atomic_long mSignalConditionVariableFuncCount;
+    volatile atomic_long mBroadcastConditionVariableFuncCount;
+    volatile atomic_long mWaitConditionVariableFuncCount;
+    volatile atomic_long mFreeConditionVariableFuncCount;
+    volatile atomic_long mCreateStreamFuncCount;
+    volatile atomic_long mDescribeStreamFuncCount;
+    volatile atomic_long mGetStreamingEndpointFuncCount;
+    volatile atomic_long mGetStreamingTokenFuncCount;
+    volatile atomic_long mPutStreamFuncCount;
+    volatile atomic_long mTagResourceFuncCount;
+    volatile atomic_long mCreateDeviceFuncCount;
+    volatile atomic_long mDeviceCertToTokenFuncCount;
+    volatile atomic_long mClientReadyFuncCount;
+    volatile atomic_long mStreamDataAvailableFuncCount;
+    volatile atomic_long mStreamErrorReportFuncCount;
+    volatile atomic_long mStreamConnectionStaleFuncCount;
+    volatile atomic_long mFragmentAckReceivedFuncCount;
+    volatile atomic_long mClientShutdownFuncCount;
+    volatile atomic_long mStreamShutdownFuncCount;
+
+    volatile atomic_long mDescribeStreamDoneFuncCount;
+    volatile atomic_long mCreateDeviceDoneFuncCount;
 
     void initTestMembers() {
         UINT32 logLevel = 0;
@@ -498,11 +502,13 @@ protected:
         mFreeConditionVariableFuncCount = 0;
         mCreateStreamFuncCount = 0;
         mDescribeStreamFuncCount = 0;
+        mDescribeStreamDoneFuncCount = 0;
         mGetStreamingEndpointFuncCount = 0;
         mGetStreamingTokenFuncCount = 0;
         mPutStreamFuncCount = 0;
         mTagResourceFuncCount = 0;
         mCreateDeviceFuncCount = 0;
+        mCreateDeviceDoneFuncCount = 0;
         mDeviceCertToTokenFuncCount = 0;
         mClientReadyFuncCount = 0;
         mClientShutdownFuncCount = 0;
@@ -689,12 +695,12 @@ protected:
         do {
             currentTime = pClient->mClientCallbacks.getCurrentTimeFn((UINT64) pClient);
             retStatus = producer.timedPutFrame(currentTime, &didPutFrame);
-        } while(!pClient->mTerminate && STATUS_SUCCEEDED(retStatus));
+        } while (!pClient->mTerminate && STATUS_SUCCEEDED(retStatus));
 
         MUTEX_LOCK(pClient->mTestClientMutex);
         pClient->mStatus = retStatus;
         MUTEX_UNLOCK(pClient->mTestClientMutex);
-        return 0;
+        return NULL;
     }
 
     static PVOID CreateClientRoutineSync(PVOID arg) {
@@ -705,14 +711,14 @@ protected:
         }
         EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoClientSync(&pClient->mDeviceInfo, &pClient->mClientCallbacks, &pClient->mClientHandle));
 
-        return 0;
+        return NULL;
     }
 
     static PVOID CreateStreamSyncRoutine(PVOID arg) {
         ClientTestBase *pClient = (ClientTestBase*) arg;
         EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoStreamSync(pClient->mClientHandle, &pClient->mStreamInfo, &pClient->mStreamHandle));
 
-        return 0;
+        return NULL;
     }
 
     void initScenarioTestMembers() {

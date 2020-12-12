@@ -200,7 +200,7 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamForMultipleRotationsStopS
             EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
             VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
         }
-    } while(currentTime < testTerminationTime);
+    } while (currentTime < testTerminationTime);
 
     VerifyStopStreamSyncAndFree();
 }
@@ -230,7 +230,8 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamNewPutStreamResultComesFa
         if (!eventReplied[mPutStreamFuncCount]) {
             UPLOAD_HANDLE localUploadHandle = mStreamingSession.addNewConsumerSession(mMockConsumerConfig,
                     mStreamHandle);
-            switch (mPutStreamFuncCount) {
+            UINT32 putStreamFuncCount = mPutStreamFuncCount;
+            switch (putStreamFuncCount) {
                 case 1:
                     putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, localUploadHandle);
                     break;
@@ -258,7 +259,7 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamNewPutStreamResultComesFa
                 VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             }
         }
-    } while(currentTime < testTerminationTime);
+    } while (currentTime < testTerminationTime);
 
     VerifyStopStreamSyncAndFree();
 }

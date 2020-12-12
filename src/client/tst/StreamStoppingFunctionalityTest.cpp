@@ -232,7 +232,7 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamStopSyncErrorAckWhileStr
                 EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_ACK_INTERNAL_ERROR, &submittedErrorAck));
             }
         }
-    } while(!submittedErrorAck);
+    } while (!submittedErrorAck);
 
     // remaining buffer should be streamed out successfully and stream closed callback called.
     consumeStream((STREAM_CLOSED_TIMEOUT_DURATION_IN_SECONDS) * HUNDREDS_OF_NANOS_IN_A_SECOND);

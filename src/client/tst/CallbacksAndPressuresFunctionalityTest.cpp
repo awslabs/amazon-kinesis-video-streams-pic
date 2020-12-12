@@ -114,7 +114,7 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, BiggerBufferDurationThanStorageCh
     // keep putting frame until fails.
     do {
         retStatus = mockProducer.putFrame();
-    } while(STATUS_SUCCEEDED(retStatus));
+    } while (STATUS_SUCCEEDED(retStatus));
 
     EXPECT_TRUE(mStorageOverflowPressureFuncCount > 0);
     EXPECT_EQ(STATUS_STORE_OUT_OF_MEMORY, retStatus);
@@ -161,6 +161,7 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, CheckBlockedOfflinePutFrameReturn
     UINT64 currentTime, stopTime;
     TID thread;
     STATUS *pRetValue;
+    STREAM_HANDLE streamHandle;
 
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
     PASS_TEST_FOR_REALTIME();
@@ -178,7 +179,11 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, CheckBlockedOfflinePutFrameReturn
     // Let producer run for 5 seconds. Producer thread should get blocked on space within 5 seconds.
     THREAD_SLEEP(5 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 
-    EXPECT_EQ(STATUS_SUCCESS, stopKinesisVideoStream(mStreamHandle));
+    MUTEX_LOCK(mTestClientMutex);
+    streamHandle = mStreamHandle;
+    MUTEX_UNLOCK(mTestClientMutex);
+
+    EXPECT_EQ(STATUS_SUCCESS, stopKinesisVideoStream(streamHandle));
 
     // Start consuming until a persisted ack is submitted
     stopTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + 1 * HUNDREDS_OF_NANOS_IN_A_MINUTE;
@@ -197,7 +202,7 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, CheckBlockedOfflinePutFrameReturn
         if (submittedAck && mFragmentAck.ackType == FRAGMENT_ACK_TYPE_PERSISTED) {
             break;
         }
-    } while(currentTime < stopTime);
+    } while (currentTime < stopTime);
 
     // The persisted ack should unblock the producer.
     THREAD_JOIN(thread, (PVOID *) &pRetValue);

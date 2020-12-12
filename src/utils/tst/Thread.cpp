@@ -77,6 +77,7 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndCancel)
         // Long sleep
         gThreadSleepTimes[index] = 20 * HUNDREDS_OF_NANOS_IN_A_SECOND;
         EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threads[index], testThreadRoutine, (PVOID)index));
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_DETACH(threads[index]));
     }
 
     // wait 2 seconds to make sure all threads are executed

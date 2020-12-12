@@ -68,7 +68,7 @@ void MockConsumer::initOldCurrent() {
     mOldCurrent = pKinesisVideoStream->curViewItem.viewItem.index;
     pViewItem = &pKinesisVideoStream->curViewItem.viewItem;
 
-    while(!CHECK_ITEM_STREAM_START_DEBUG(pViewItem->flags) && STATUS_SUCCEEDED(retStatus)) {
+    while (!CHECK_ITEM_STREAM_START_DEBUG(pViewItem->flags) && STATUS_SUCCEEDED(retStatus)) {
         mOldCurrent--;
         retStatus = contentViewGetItemAt(pKinesisVideoStream->pView, mOldCurrent, &pViewItem);
     }
@@ -139,9 +139,9 @@ void MockConsumer::purgeAckItemWithTimestamp(UINT64 ackTimestamp)
             tempAckQueue.push(ackItem);
         }
         mAckQueue.pop();
-    } while(ackPurged < 3 && !mAckQueue.empty());
+    } while (ackPurged < 3 && !mAckQueue.empty());
 
-    while(!tempAckQueue.empty()) {
+    while (!tempAckQueue.empty()) {
         mAckQueue.push(tempAckQueue.top());
         tempAckQueue.pop();
     }
