@@ -154,7 +154,7 @@ TEST_P(StreamFunctionalityTest, CreateAwaitReadyStopSyncFree)
 
     ReadyStream();
     EXPECT_EQ(STATUS_SUCCESS, stopKinesisVideoStream(mStreamHandle));
-    EXPECT_EQ(1, mStreamClosedFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamClosedFuncCount));
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 }
 

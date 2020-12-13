@@ -301,7 +301,7 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsTerminatedUploadHandle) {
     } while (currentTime < stopTime && !submittedAck);
 
     // Validate that no errors actually been reported as the reported error was on an already closed handle
-    EXPECT_EQ(0, mStreamErrorReportFuncCount);
+    EXPECT_EQ(0, ATOMIC_LOAD(&mStreamErrorReportFuncCount));
 }
 
 INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, AcksFunctionalityTest,

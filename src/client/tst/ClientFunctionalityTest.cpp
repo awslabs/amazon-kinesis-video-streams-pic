@@ -39,17 +39,17 @@ TEST_P(ClientFunctionalityTest, CreateSyncAndFree)
     // Satisfy the create device callback after the create device call
     UINT64 iterateTime = GETTIME() + HUNDREDS_OF_NANOS_IN_A_SECOND;
 
-    while (mCreateDeviceDoneFuncCount != 2 && GETTIME() <= iterateTime) {
+    while (ATOMIC_LOAD(&mCreateDeviceDoneFuncCount) != 2 && GETTIME() <= iterateTime) {
         THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     }
 
-    EXPECT_NE(0, mCreateDeviceDoneFuncCount);
+    EXPECT_NE(0, ATOMIC_LOAD(&mCreateDeviceDoneFuncCount));
 
     EXPECT_EQ(STATUS_SUCCESS, createDeviceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_DEVICE_ARN));
     THREAD_JOIN(thread, NULL);
 
     // Ensure the client ready is called
-    EXPECT_TRUE(mClientReady);
+    EXPECT_TRUE(ATOMIC_LOAD_BOOL(&mClientReady));
     EXPECT_EQ(mClientHandle, mReturnedClientHandle);
 }
 
@@ -84,19 +84,19 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamStopStreamFreeClient)
 
     EXPECT_EQ(STATUS_SUCCESS, CreateStream());
 
-    EXPECT_EQ(0, mClientShutdownFuncCount);
-    EXPECT_FALSE(mClientShutdown);
-    EXPECT_EQ(0, mStreamShutdownFuncCount);
-    EXPECT_FALSE(mStreamShutdown);
+    EXPECT_EQ(0, ATOMIC_LOAD(&mClientShutdownFuncCount));
+    EXPECT_FALSE(ATOMIC_LOAD_BOOL(&mClientShutdown));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mStreamShutdownFuncCount));
+    EXPECT_FALSE(ATOMIC_LOAD_BOOL(&mStreamShutdown));
 
     EXPECT_EQ(STATUS_SUCCESS, stopKinesisVideoStream(mStreamHandle));
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&mClientHandle));
     EXPECT_TRUE(!IS_VALID_CLIENT_HANDLE(mClientHandle));
-    EXPECT_EQ(1, mClientShutdownFuncCount);
-    EXPECT_TRUE(mClientShutdown);
-    EXPECT_EQ(1, mStreamShutdownFuncCount);
-    EXPECT_TRUE(mStreamShutdown);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mClientShutdownFuncCount));
+    EXPECT_TRUE(ATOMIC_LOAD_BOOL(&mClientShutdown));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamShutdownFuncCount));
+    EXPECT_TRUE(ATOMIC_LOAD_BOOL(&mStreamShutdown));
 }
 
 TEST_P(ClientFunctionalityTest, createClientCreateStreamSyncFreeClient)
@@ -168,7 +168,7 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamPutFrameStopStreamFreeCl
     EXPECT_EQ(STATUS_SUCCESS, stopKinesisVideoStream(mStreamHandle));
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&mClientHandle));
     EXPECT_TRUE(!IS_VALID_CLIENT_HANDLE(mClientHandle));
-    EXPECT_TRUE(mDroppedFrameReportFuncCount > 0); // the frame put should be dropped.
+    EXPECT_TRUE(ATOMIC_LOAD(&mDroppedFrameReportFuncCount) > 0); // the frame put should be dropped.
 }
 
 //Create Producer, Create Streams Sync, Await Ready, Put Frame, Free Producer
@@ -187,11 +187,11 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncPutFrameFreeClient)
     // wait until stream has been created so that we can submit describeStreamResult
     UINT64 iterateTime = GETTIME() + HUNDREDS_OF_NANOS_IN_A_SECOND;
 
-    while (mDescribeStreamDoneFuncCount == 0 && GETTIME() <= iterateTime) {
+    while (ATOMIC_LOAD(&mDescribeStreamDoneFuncCount) == 0 && GETTIME() <= iterateTime) {
         THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     }
 
-    EXPECT_NE(0, mDescribeStreamDoneFuncCount);
+    EXPECT_NE(0, ATOMIC_LOAD(&mDescribeStreamDoneFuncCount));
 
     // enable auto submission so that submitting describeStreamResult will trigger stream ready, and unblock
     // CreateStreamSyncRoutine
@@ -199,7 +199,7 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncPutFrameFreeClient)
     setupStreamDescription();
     EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, &mStreamDescription));
     THREAD_JOIN(thread, NULL);
-    EXPECT_TRUE(mStreamReadyFuncCount > 0);
+    EXPECT_TRUE(ATOMIC_LOAD(&mStreamReadyFuncCount) > 0);
 
     // mockProducer need to be destructed before client in case of DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC
     // because freeKinesisVideoClient also frees mockProducer MEMALLOC
@@ -230,11 +230,11 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncPutFrameStopStreamFr
     // wait until stream has been created so that we can submit describeStreamResult
     UINT64 iterateTime = GETTIME() + HUNDREDS_OF_NANOS_IN_A_SECOND;
 
-    while (mDescribeStreamDoneFuncCount == 0 && GETTIME() <= iterateTime) {
+    while (ATOMIC_LOAD(&mDescribeStreamDoneFuncCount) == 0 && GETTIME() <= iterateTime) {
         THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     }
 
-    EXPECT_NE(0, mDescribeStreamDoneFuncCount);
+    EXPECT_NE(0, ATOMIC_LOAD(&mDescribeStreamDoneFuncCount));
 
     // enable auto submission so that submitting describeStreamResult will trigger stream ready, and unblock
     // CreateStreamSyncRoutine
@@ -242,7 +242,7 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncPutFrameStopStreamFr
     setupStreamDescription();
     EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, &mStreamDescription));
     THREAD_JOIN(thread, NULL);
-    EXPECT_TRUE(mStreamReadyFuncCount > 0);
+    EXPECT_TRUE(ATOMIC_LOAD(&mStreamReadyFuncCount) > 0);
 
     // mockProducer need to be destructed before client in case of DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC
     // because freeKinesisVideoClient also frees mockProducer MEMALLOC
@@ -272,11 +272,11 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncCreateSameStreamAndF
     // wait until stream has been created so that we can submit describeStreamResult
     UINT64 iterateTime = GETTIME() + HUNDREDS_OF_NANOS_IN_A_SECOND;
 
-    while (mDescribeStreamDoneFuncCount == 0 && GETTIME() <= iterateTime) {
+    while (ATOMIC_LOAD(&mDescribeStreamDoneFuncCount) == 0 && GETTIME() <= iterateTime) {
         THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     }
 
-    EXPECT_NE(0, mDescribeStreamDoneFuncCount);
+    EXPECT_NE(0, ATOMIC_LOAD(&mDescribeStreamDoneFuncCount));
 
     // this should unblock CreateStreamSyncRoutine
     mSubmitServiceCallResultMode = STOP_AT_PUT_STREAM;
@@ -284,7 +284,7 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncCreateSameStreamAndF
     EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, &mStreamDescription));
 
     THREAD_JOIN(thread, NULL);
-    EXPECT_TRUE(mStreamReadyFuncCount > 0);
+    EXPECT_TRUE(ATOMIC_LOAD(&mStreamReadyFuncCount) > 0);
 
     // creating the same stream again should fail
     EXPECT_EQ(STATUS_DUPLICATE_STREAM_NAME, createKinesisVideoStream(mClientHandle, &mStreamInfo, &mStreamHandle));

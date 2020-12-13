@@ -41,10 +41,10 @@ TEST_F(StreamPutGetTest, putFrame_PutGetFrameBoundary)
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
 
         // Ensure put stream is called
-        EXPECT_EQ(1, mPutStreamFuncCount);
+        EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_ENDPOINT, mStreamingEndpoint));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -136,10 +136,10 @@ TEST_F(StreamPutGetTest, putFrame_PutGetFrameBoundaryInterleaved)
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
 
         // Ensure put stream is called
-        EXPECT_EQ(1, mPutStreamFuncCount);
+        EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_ENDPOINT, mStreamingEndpoint));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -231,10 +231,10 @@ TEST_F(StreamPutGetTest, putFrame_PutGetFrameBoundaryInterleavedUnderrun)
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
 
         // Ensure put stream is called
-        EXPECT_EQ(1, mPutStreamFuncCount);
+        EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_ENDPOINT, mStreamingEndpoint));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -340,10 +340,10 @@ TEST_F(StreamPutGetTest, putFrame_PutGetInterleavedUnderrun)
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
 
         // Ensure put stream is called
-        EXPECT_EQ(1, mPutStreamFuncCount);
+        EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_ENDPOINT, mStreamingEndpoint));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -439,10 +439,10 @@ TEST_F(StreamPutGetTest, putFrame_PutGetHalfBuffer)
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
 
         // Ensure put stream is called
-        EXPECT_EQ(1, mPutStreamFuncCount);
+        EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_ENDPOINT, mStreamingEndpoint));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -533,10 +533,10 @@ TEST_F(StreamPutGetTest, putFrame_PutGetHalfBufferInterleaved) {
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
 
         // Ensure put stream is called
-        EXPECT_EQ(1, mPutStreamFuncCount);
+        EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_ENDPOINT, mStreamingEndpoint));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -653,10 +653,10 @@ TEST_F(StreamPutGetTest, putFrame_PutGetDoubleBuffer)
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
 
         // Ensure put stream is called
-        EXPECT_EQ(1, mPutStreamFuncCount);
+        EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_ENDPOINT, mStreamingEndpoint));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -750,10 +750,10 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonBoundaryBuffer)
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
 
         // Ensure put stream is called
-        EXPECT_EQ(1, mPutStreamFuncCount);
+        EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_ENDPOINT, mStreamingEndpoint));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -863,10 +863,10 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonKeyFrameFirstFrame)
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
 
         // Ensure put stream is called
-        EXPECT_EQ(1, mPutStreamFuncCount);
+        EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_ENDPOINT, mStreamingEndpoint));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -961,10 +961,10 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonKeyFrameFirstFrameCpd1Byte)
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
 
         // Ensure put stream is called
-        EXPECT_EQ(1, mPutStreamFuncCount);
+        EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_ENDPOINT, mStreamingEndpoint));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -1060,10 +1060,10 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonKeyFrameFirstFrameCpd2Byte)
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
 
         // Ensure put stream is called
-        EXPECT_EQ(1, mPutStreamFuncCount);
+        EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_ENDPOINT, mStreamingEndpoint));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -1161,10 +1161,10 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonKeyFrameFirstFrameCpd3Byte)
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
 
         // Ensure put stream is called
-        EXPECT_EQ(1, mPutStreamFuncCount);
+        EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_ENDPOINT, mStreamingEndpoint));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));

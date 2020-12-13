@@ -119,15 +119,15 @@ TEST_F(StreamTokenRotationTest, basicTokenRotationNonPersistAwait)
 
         // Check for rotation
         if (timestamp > (UINT64)(rotation * MIN_STREAMING_TOKEN_EXPIRATION_DURATION - STREAMING_TOKEN_EXPIRATION_GRACE_PERIOD + TEST_LONG_FRAME_DURATION)) {
-            EXPECT_EQ(rotation + 1, mGetStreamingEndpointFuncCount);
-            EXPECT_EQ(rotation, mGetStreamingTokenFuncCount);
+            EXPECT_EQ(rotation + 1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+            EXPECT_EQ(rotation, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
             EXPECT_EQ(rotation, gPutStreamFuncCount);
 
             EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData,
                                                                       SERVICE_CALL_RESULT_OK,
                                                                       TEST_STREAMING_ENDPOINT));
-            EXPECT_EQ(rotation + 1, mGetStreamingEndpointFuncCount);
-            EXPECT_EQ(rotation + 1, mGetStreamingTokenFuncCount);
+            EXPECT_EQ(rotation + 1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+            EXPECT_EQ(rotation + 1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
             EXPECT_EQ(rotation, gPutStreamFuncCount);
             EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
                                                                    SERVICE_CALL_RESULT_OK,
@@ -174,7 +174,7 @@ TEST_F(StreamTokenRotationTest, basicTokenRotationNonPersistAwait)
     }
 
 
-    EXPECT_EQ(0, mStreamErrorReportFuncCount);
+    EXPECT_EQ(0, ATOMIC_LOAD(&mStreamErrorReportFuncCount));
     EXPECT_EQ(STATUS_SUCCESS, mStatus);
     EXPECT_TRUE(uploadHandle > TEST_UPLOAD_HANDLE); //upload handle rotated at least once.
 
@@ -275,15 +275,15 @@ TEST_F(StreamTokenRotationTest, rotationWithAwaitingCheck)
 
         // Check for rotation
         if ((INT64) timestamp > rotation * MIN_STREAMING_TOKEN_EXPIRATION_DURATION - STREAMING_TOKEN_EXPIRATION_GRACE_PERIOD + TEST_LONG_FRAME_DURATION) {
-            EXPECT_EQ(rotation + 1, mGetStreamingEndpointFuncCount);
-            EXPECT_EQ(rotation, mGetStreamingTokenFuncCount);
+            EXPECT_EQ(rotation + 1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+            EXPECT_EQ(rotation, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
             EXPECT_EQ(rotation, gPutStreamFuncCount);
 
             EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData,
                                                                       SERVICE_CALL_RESULT_OK,
                                                                       TEST_STREAMING_ENDPOINT));
-            EXPECT_EQ(rotation + 1, mGetStreamingEndpointFuncCount);
-            EXPECT_EQ(rotation + 1, mGetStreamingTokenFuncCount);
+            EXPECT_EQ(rotation + 1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+            EXPECT_EQ(rotation + 1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
             EXPECT_EQ(rotation, gPutStreamFuncCount);
             EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
                                                                    SERVICE_CALL_RESULT_OK,
@@ -343,7 +343,7 @@ TEST_F(StreamTokenRotationTest, rotationWithAwaitingCheck)
         }
     }
 
-    EXPECT_EQ(0, mStreamErrorReportFuncCount);
+    EXPECT_EQ(0, ATOMIC_LOAD(&mStreamErrorReportFuncCount));
     EXPECT_TRUE(uploadHandle > TEST_UPLOAD_HANDLE); //upload handle rotated at least once.
 
     if (IS_VALID_CLIENT_HANDLE(clientHandle)) {

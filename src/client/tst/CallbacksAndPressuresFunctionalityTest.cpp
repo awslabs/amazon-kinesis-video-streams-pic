@@ -34,7 +34,7 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, CreateStreamLatencyPressureCallba
     mStreamInfo.streamCaps.maxLatency = 2 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     CreateStreamSync();
 
-    EXPECT_EQ(0, mStreamLatencyPressureFuncCount);
+    EXPECT_EQ(0, ATOMIC_LOAD(&mStreamLatencyPressureFuncCount));
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
     streamStopTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + 4 * HUNDREDS_OF_NANOS_IN_A_SECOND;
@@ -45,9 +45,9 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, CreateStreamLatencyPressureCallba
     } while (currentTime < streamStopTime);
 
     if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE) {
-        EXPECT_TRUE(mStreamLatencyPressureFuncCount == 0);
+        EXPECT_TRUE(ATOMIC_LOAD(&mStreamLatencyPressureFuncCount) == 0);
     } else {
-        EXPECT_TRUE(mStreamLatencyPressureFuncCount > 0);
+        EXPECT_TRUE(ATOMIC_LOAD(&mStreamLatencyPressureFuncCount) > 0);
     }
 }
 
@@ -64,7 +64,7 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, CreateStreamDelayACKsStaleCallbac
     mStreamInfo.streamCaps.connectionStalenessDuration = 2 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     CreateStreamSync();
 
-    EXPECT_EQ(0, mStreamConnectionStaleFuncCount);
+    EXPECT_EQ(0, ATOMIC_LOAD(&mStreamConnectionStaleFuncCount));
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
     streamStopTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + 4 * HUNDREDS_OF_NANOS_IN_A_SECOND;
@@ -90,9 +90,9 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, CreateStreamDelayACKsStaleCallbac
     } while (currentTime < streamStopTime);
 
     if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE || mStreamInfo.streamCaps.fragmentAcks == FALSE) {
-        EXPECT_TRUE(mStreamConnectionStaleFuncCount == 0);
+        EXPECT_TRUE(ATOMIC_LOAD(&mStreamConnectionStaleFuncCount) == 0);
     } else {
-        EXPECT_TRUE(mStreamConnectionStaleFuncCount > 0);
+        EXPECT_TRUE(ATOMIC_LOAD(&mStreamConnectionStaleFuncCount) > 0);
     }
 }
 
@@ -116,7 +116,7 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, BiggerBufferDurationThanStorageCh
         retStatus = mockProducer.putFrame();
     } while (STATUS_SUCCEEDED(retStatus));
 
-    EXPECT_TRUE(mStorageOverflowPressureFuncCount > 0);
+    EXPECT_TRUE(ATOMIC_LOAD(&mStorageOverflowPressureFuncCount) > 0);
     EXPECT_EQ(STATUS_STORE_OUT_OF_MEMORY, retStatus);
 }
 
@@ -141,14 +141,14 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, BiggerBufferDurationThanStorageCh
     // keep putting frame until we get a few dropped frames.
     do {
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame());
-        if (mDroppedFrameReportFuncCount != 0) {
+        if (ATOMIC_LOAD(&mDroppedFrameReportFuncCount) != 0) {
             // Check the time stamps of the dropped frames
             EXPECT_EQ(timestamp, mFrameTime);
             timestamp += mockProducer.getCurrentFrame()->duration;
         }
-    } while (mDroppedFrameReportFuncCount < 100);
+    } while (ATOMIC_LOAD(&mDroppedFrameReportFuncCount) < 100);
 
-    EXPECT_TRUE(mStorageOverflowPressureFuncCount > 0);
+    EXPECT_TRUE(ATOMIC_LOAD(&mStorageOverflowPressureFuncCount) > 0);
     EXPECT_EQ(STATUS_SUCCESS, retStatus);
 }
 

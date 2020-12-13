@@ -105,7 +105,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingSuccessRecovery)
 
         // Ensure put stream is called
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -127,13 +127,13 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingSuccessRecovery)
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESULT_OK));
 
     // Validate that we have re-started at the get endpoint
-    EXPECT_EQ(1, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(2, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(2, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(2, mStreamReadyFuncCount);
-    EXPECT_EQ(2, mPutStreamFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mPutStreamFuncCount));
 }
 
 TEST_F(StreamStateTransitionsTest, stopStateFromStreamingSuccessNoRecovery)
@@ -169,7 +169,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingSuccessNoRecovery)
 
         // Ensure put stream is called
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -191,13 +191,13 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingSuccessNoRecovery)
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESULT_OK));
 
     // Validate that we have re-started at the get endpoint as we terminated with success
-    EXPECT_LE(2, mDescribeStreamFuncCount); // we are emulating creating state
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(2, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(2, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(2, mStreamReadyFuncCount);
-    EXPECT_EQ(2, mPutStreamFuncCount);
+    EXPECT_LE(2, ATOMIC_LOAD(&mDescribeStreamFuncCount)); // we are emulating creating state
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mPutStreamFuncCount));
 }
 
 TEST_F(StreamStateTransitionsTest, stopStateFromStreamingLimitRecovery)
@@ -233,7 +233,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingLimitRecovery)
 
         // Ensure put stream is called
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -255,24 +255,24 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingLimitRecovery)
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_STREAM_LIMIT));
 
     // Validate that we have re-started at the get endpoint
-    EXPECT_EQ(1, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(2, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(2, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(2, mStreamReadyFuncCount);
-    EXPECT_EQ(2, mPutStreamFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mPutStreamFuncCount));
 
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_DEVICE_LIMIT));
 
     // Validate that we have re-started at the get endpoint
-    EXPECT_EQ(1, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(3, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(3, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(3, mStreamReadyFuncCount);
-    EXPECT_EQ(3, mPutStreamFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mPutStreamFuncCount));
 }
 
 TEST_F(StreamStateTransitionsTest, stopStateFromStreamingLimitNoRecovery)
@@ -308,7 +308,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingLimitNoRecovery)
 
         // Ensure put stream is called
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -330,24 +330,24 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingLimitNoRecovery)
     EXPECT_EQ(STATUS_SERVICE_CALL_STREAM_LIMIT_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_STREAM_LIMIT));
 
     // Validate that we have not restarted
-    EXPECT_EQ(1, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(1, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(1, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(1, mStreamReadyFuncCount);
-    EXPECT_EQ(1, mPutStreamFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
 
     EXPECT_EQ(STATUS_SERVICE_CALL_DEVICE_LIMIT_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_DEVICE_LIMIT));
 
     // Validate that we have not restarted
-    EXPECT_EQ(1, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(1, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(1, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(1, mStreamReadyFuncCount);
-    EXPECT_EQ(1, mPutStreamFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
 }
 
 TEST_F(StreamStateTransitionsTest, stopStateFromStreamingNotAuthorizedRecovery)
@@ -383,7 +383,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingNotAuthorizedRecovery)
 
         // Ensure put stream is called
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -405,24 +405,24 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingNotAuthorizedRecovery)
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_NOT_AUTHORIZED));
 
     // Validate that we have re-started at the get token
-    EXPECT_EQ(1, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(1, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(2, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(2, mStreamReadyFuncCount);
-    EXPECT_EQ(2, mPutStreamFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mPutStreamFuncCount));
 
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_FORBIDDEN));
 
     // Validate that we have re-started at the get token
-    EXPECT_EQ(1, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(1, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(3, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(3, mStreamReadyFuncCount);
-    EXPECT_EQ(3, mPutStreamFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mPutStreamFuncCount));
 }
 
 TEST_F(StreamStateTransitionsTest, stopStateFromStreamingNotAuthorizedNoRecovery)
@@ -458,7 +458,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingNotAuthorizedNoRecovery
 
         // Ensure put stream is called
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -480,24 +480,24 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingNotAuthorizedNoRecovery
     EXPECT_EQ(STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_NOT_AUTHORIZED));
 
     // Validate that we have not restarted
-    EXPECT_EQ(1, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(1, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(1, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(1, mStreamReadyFuncCount);
-    EXPECT_EQ(1, mPutStreamFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
 
     EXPECT_EQ(STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_FORBIDDEN));
 
     // Validate that we have not restarted
-    EXPECT_EQ(1, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(1, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(1, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(1, mStreamReadyFuncCount);
-    EXPECT_EQ(1, mPutStreamFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
 }
 
 TEST_F(StreamStateTransitionsTest, stopStateFromStreamingResourceInUseRecovery)
@@ -533,7 +533,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingResourceInUseRecovery)
 
         // Ensure put stream is called
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -555,25 +555,25 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingResourceInUseRecovery)
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESOURCE_IN_USE));
 
     // Validate that we have re-started at the describe
-    EXPECT_EQ(3, mDescribeStreamFuncCount); // Due to test emulating async resolution
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(2, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(2, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(2, mStreamReadyFuncCount);
-    EXPECT_EQ(2, mPutStreamFuncCount);
+    EXPECT_EQ(3, ATOMIC_LOAD(&mDescribeStreamFuncCount)); // Due to test emulating async resolution
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mPutStreamFuncCount));
 
     // Unknown error - catch all case
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_UNKNOWN));
 
     // Validate that we have re-started at the describe
-    EXPECT_EQ(4, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(3, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(3, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(3, mStreamReadyFuncCount);
-    EXPECT_EQ(3, mPutStreamFuncCount);
+    EXPECT_EQ(4, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mPutStreamFuncCount));
 }
 
 TEST_F(StreamStateTransitionsTest, stopStateFromStreamingResourceInUseNoRecovery)
@@ -609,7 +609,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingResourceInUseNoRecovery
 
         // Ensure put stream is called
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -631,24 +631,24 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingResourceInUseNoRecovery
     EXPECT_EQ(STATUS_SERVICE_CALL_RESOURCE_IN_USE_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESOURCE_IN_USE));
 
     // Validate that we have not restarted
-    EXPECT_EQ(1, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(1, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(1, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(1, mStreamReadyFuncCount);
-    EXPECT_EQ(1, mPutStreamFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
 
     EXPECT_EQ(STATUS_SERVICE_CALL_UNKOWN_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_UNKNOWN));
 
     // Validate that we have not restarted
-    EXPECT_EQ(1, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(1, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(1, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(1, mStreamReadyFuncCount);
-    EXPECT_EQ(1, mPutStreamFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
 }
 
 TEST_F(StreamStateTransitionsTest, stopStateFromStreamingInternalRecovery)
@@ -684,7 +684,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingInternalRecovery)
 
         // Ensure put stream is called
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -706,13 +706,13 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingInternalRecovery)
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESULT_ACK_INTERNAL_ERROR));
 
     // Validate that we have re-started at the get token
-    EXPECT_EQ(3, mDescribeStreamFuncCount); // Due to test emulating async resolution
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(2, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(2, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(2, mStreamReadyFuncCount);
-    EXPECT_EQ(2, mPutStreamFuncCount);
+    EXPECT_EQ(3, ATOMIC_LOAD(&mDescribeStreamFuncCount)); // Due to test emulating async resolution
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mPutStreamFuncCount));
 }
 
 TEST_F(StreamStateTransitionsTest, stopStateFromStreamingInternalNoRecovery)
@@ -748,7 +748,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingInternalNoRecovery)
 
         // Ensure put stream is called
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -770,13 +770,13 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingInternalNoRecovery)
     EXPECT_EQ(STATUS_ACK_ERR_ACK_INTERNAL_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESULT_ACK_INTERNAL_ERROR));
 
     // Validate that we have not restarted
-    EXPECT_EQ(1, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(1, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(1, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(1, mStreamReadyFuncCount);
-    EXPECT_EQ(1, mPutStreamFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
 }
 
 TEST_F(StreamStateTransitionsTest, stopStateFromStreamingResourceNotFoundRecovery)
@@ -812,7 +812,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingResourceNotFoundRecover
 
         // Ensure put stream is called
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -834,24 +834,24 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingResourceNotFoundRecover
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESOURCE_NOT_FOUND));
 
     // Validate that we have re-started at the describe
-    EXPECT_EQ(3, mDescribeStreamFuncCount); // Due to test emulating async resolution
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(2, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(2, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(2, mStreamReadyFuncCount);
-    EXPECT_EQ(2, mPutStreamFuncCount);
+    EXPECT_EQ(3, ATOMIC_LOAD(&mDescribeStreamFuncCount)); // Due to test emulating async resolution
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mPutStreamFuncCount));
 
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESOURCE_DELETED));
 
     // Validate that we have re-started at the describe
-    EXPECT_EQ(4, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(3, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(3, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(3, mStreamReadyFuncCount);
-    EXPECT_EQ(3, mPutStreamFuncCount);
+    EXPECT_EQ(4, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mPutStreamFuncCount));
 }
 
 TEST_F(StreamStateTransitionsTest, stopStateFromStreamingResourceNotFoundNoRecovery)
@@ -887,7 +887,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingResourceNotFoundNoRecov
 
         // Ensure put stream is called
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -909,24 +909,24 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingResourceNotFoundNoRecov
     EXPECT_EQ(STATUS_SERVICE_CALL_RESOURCE_NOT_FOUND_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESOURCE_NOT_FOUND));
 
     // Validate that we have not restarted
-    EXPECT_EQ(1, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(1, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(1, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(1, mStreamReadyFuncCount);
-    EXPECT_EQ(1, mPutStreamFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
 
     EXPECT_EQ(STATUS_SERVICE_CALL_RESOURCE_DELETED_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESOURCE_DELETED));
 
     // Validate that we have not restarted
-    EXPECT_EQ(1, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(1, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(1, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(1, mStreamReadyFuncCount);
-    EXPECT_EQ(1, mPutStreamFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
 }
 
 TEST_F(StreamStateTransitionsTest, stopStateFromStreamingOtherRecovery)
@@ -962,7 +962,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingOtherRecovery)
 
         // Ensure put stream is called
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
@@ -984,13 +984,13 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingOtherRecovery)
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_DEVICE_NOT_FOUND));
 
     // Validate that we have re-started at the describe
-    EXPECT_EQ(3, mDescribeStreamFuncCount); // Due to test emulating async resolution
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(2, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(2, mGetStreamingTokenFuncCount);
-    EXPECT_EQ(2, mStreamReadyFuncCount);
-    EXPECT_EQ(2, mPutStreamFuncCount);
+    EXPECT_EQ(3, ATOMIC_LOAD(&mDescribeStreamFuncCount)); // Due to test emulating async resolution
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mStreamReadyFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mPutStreamFuncCount));
 }
 
 TEST_F(StreamStateTransitionsTest, stopStateFromStreamingOtherNoRecovery)
@@ -1026,7 +1026,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingOtherNoRecovery)
 
         // Ensure put stream is called
         EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
-        EXPECT_EQ(TRUE, mAckRequired);
+        EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mAckRequired));
         // Need to ensure we have a streaming token in the auth
         EXPECT_EQ(SIZEOF(TEST_STREAMING_TOKEN), mCallContext.pAuthInfo->size);
         EXPECT_EQ(0, STRCMP(TEST_STREAMING_TOKEN, (PCHAR) mCallContext.pAuthInfo->data));
