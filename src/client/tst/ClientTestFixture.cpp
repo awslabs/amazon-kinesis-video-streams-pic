@@ -10,12 +10,10 @@ UINT64 ClientTestBase::getCurrentTimeFunc(UINT64 customData)
 
     ClientTestBase *pClient = (ClientTestBase*) customData;
 
-    MUTEX_LOCK(pClient->mTestClientMutex);
     EXPECT_TRUE(pClient != NULL && ATOMIC_LOAD(&pClient->mMagic) == TEST_CLIENT_MAGIC_NUMBER);
 
     ATOMIC_INCREMENT(&pClient->mGetCurrentTimeFuncCount);
     pClient->setTestTimeVal(GETTIME());
-    MUTEX_UNLOCK(pClient->mTestClientMutex);
 
     return pClient->getTestTimeVal();
 }
@@ -28,15 +26,15 @@ UINT64 ClientTestBase::getCurrentPresetTimeFunc(UINT64 customData)
 
     ClientTestBase *pClient = (ClientTestBase*) customData;
 
-    MUTEX_LOCK(pClient->mTestClientMutex);
     EXPECT_TRUE(pClient != NULL && ATOMIC_LOAD(&pClient->mMagic) == TEST_CLIENT_MAGIC_NUMBER);
 
     ATOMIC_INCREMENT(&pClient->mGetCurrentTimeFuncCount);
     pClient->setTestTimeVal(gPresetCurrentTime);
 
-    // Increment the preset time
+    // Increment the preset time - wrap in the atomicizing locks
+    MUTEX_LOCK(pClient->mAtomicLock);
     gPresetCurrentTime++;
-    MUTEX_UNLOCK(pClient->mTestClientMutex);
+    MUTEX_UNLOCK(pClient->mAtomicLock);
 
     return pClient->getTestTimeVal();
 }
@@ -48,13 +46,11 @@ UINT64 ClientTestBase::getCurrentIncrementalTimeFunc(UINT64 customData)
 
     ClientTestBase *pClient = (ClientTestBase*) customData;
 
-    MUTEX_LOCK(pClient->mTestClientMutex);
     UINT64 time = pClient->getTestTimeVal();
     pClient->incrementTestTimeVal(TEST_TIME_INCREMENT);
     EXPECT_TRUE(pClient != NULL && ATOMIC_LOAD(&pClient->mMagic) == TEST_CLIENT_MAGIC_NUMBER);
 
     ATOMIC_INCREMENT(&pClient->mGetCurrentTimeFuncCount);
-    MUTEX_UNLOCK(pClient->mTestClientMutex);
 
     return time;
 }
@@ -65,11 +61,9 @@ UINT32 ClientTestBase::getRandomNumberFunc(UINT64 customData)
 
     ClientTestBase *pClient = (ClientTestBase*) customData;
 
-    MUTEX_LOCK(pClient->mTestClientMutex);
     EXPECT_TRUE(pClient != NULL && ATOMIC_LOAD(&pClient->mMagic) == TEST_CLIENT_MAGIC_NUMBER);
 
     ATOMIC_INCREMENT(&pClient->mGetRandomNumberFuncCount);
-    MUTEX_UNLOCK(pClient->mTestClientMutex);
 
     return RAND();
 }
@@ -83,11 +77,9 @@ UINT32 ClientTestBase::getRandomNumberConstFunc(UINT64 customData)
 
     ClientTestBase *pClient = (ClientTestBase*) customData;
 
-    MUTEX_LOCK(pClient->mTestClientMutex);
     EXPECT_TRUE(pClient != NULL && ATOMIC_LOAD(&pClient->mMagic) == TEST_CLIENT_MAGIC_NUMBER);
 
     ATOMIC_INCREMENT(&pClient->mGetRandomNumberFuncCount);
-    MUTEX_UNLOCK(pClient->mTestClientMutex);
 
     return gConstReturnFromRandomFunction;
 }

@@ -115,7 +115,6 @@
 #include "gtest/gtest.h"
 #include <com/amazonaws/kinesis/video/utils/Include.h>
 #include <com/amazonaws/kinesis/video/client/Include.h>
-#include <stdatomic.h>
 #include "src/client/src/Include_i.h"
 #include "src/client/src/Stream.h"
 #include "src/mkvgen/src/Include_i.h"

@@ -132,6 +132,7 @@ TEST_F(SemaphoreFunctionalityTest, acquireAwaitingTest)
     // Spin up a threads to await for the semaphore
     for (i = 0; i < SEMAPHORE_TEST_THREAD_COUNT; i++) {
         EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threadId, acquireThreadRoutine, (PVOID) this));
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_DETACH(threadId));
     }
 
     // Wait for a little
@@ -145,6 +146,7 @@ TEST_F(SemaphoreFunctionalityTest, acquireAwaitingTest)
     // Spin up the drain threads to await for the semaphore to release all
     for (i = 0; i < SEMAPHORE_TEST_DRAIN_THREAD_COUNT; i++) {
         EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threadId, drainThreadRoutine, (PVOID) this));
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_DETACH(threadId));
     }
 
     // Wait for a little
@@ -195,6 +197,7 @@ TEST_F(SemaphoreFunctionalityTest, drainTimeoutTest)
     // Spin up a threads to await for the semaphore
     for (i = 0; i < SEMAPHORE_TEST_THREAD_COUNT; i++) {
         EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threadId, acquireThreadRoutine, (PVOID) this));
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_DETACH(threadId));
     }
 
     // Wait for a little
@@ -263,6 +266,7 @@ TEST_F(SemaphoreFunctionalityTest, freeWithoutReleaseAllThreadsTest)
     // Spin up a threads to await for the semaphore
     for (i = 0; i < SEMAPHORE_TEST_THREAD_COUNT; i++) {
         EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threadId, acquireThreadRoutine, (PVOID) this));
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_DETACH(threadId));
     }
 
     // Wait for a little
