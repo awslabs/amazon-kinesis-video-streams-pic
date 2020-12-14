@@ -75,7 +75,7 @@ TEST_P(AcksFunctionalityTest, CheckRollbackFromErrorAckTime)
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     EXPECT_EQ(STATUS_SUCCESS, contentViewGetCurrentIndex(pKinesisVideoStream->pView, &currentIndex));
     EXPECT_EQ(STATUS_SUCCESS, contentViewGetItemAt(pKinesisVideoStream->pView, currentIndex, &pViewItem));
-    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     // mFragmentAck is the error ack that was submitted. Verify that error ack's timestamp equals current's timestamp.
     EXPECT_EQ(pViewItem->ackTimestamp, mFragmentAck.timestamp);
 }
