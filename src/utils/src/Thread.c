@@ -335,4 +335,3 @@ threadSleepUntil globalThreadSleepUntil = defaultThreadSleepUntil;
 joinThread globalJoinThread = defaultJoinThread;
 cancelThread globalCancelThread = defaultCancelThread;
 detachThread globalDetachThread = defaultDetachThread;
-

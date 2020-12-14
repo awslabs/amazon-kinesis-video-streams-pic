@@ -571,6 +571,8 @@ PVOID streamStopNotifier(PVOID arg)
 
 TEST_F(StreamApiTest, kinesisVideoStreamCreateSync_Valid)
 {
+    freeKinesisVideoStream(&mStreamHandle);
+
     // Create synchronously
     CreateStreamSync();
 

@@ -3,10 +3,11 @@
 class SemaphoreFunctionalityTest : public UtilTestBase {
 public:
     SemaphoreFunctionalityTest() :
-            acquired(FALSE),
-            threadCount(0),
-            drainThreadCount(0),
-            handle(INVALID_SEMAPHORE_HANDLE_VALUE) {}
+            handle(INVALID_SEMAPHORE_HANDLE_VALUE) {
+        ATOMIC_STORE_BOOL(&acquired, FALSE);
+        ATOMIC_STORE(&threadCount, 0);
+        ATOMIC_STORE(&drainThreadCount, 0);
+    }
 
     volatile ATOMIC_BOOL acquired;
     volatile SIZE_T threadCount;
