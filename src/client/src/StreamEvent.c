@@ -863,14 +863,9 @@ STATUS streamFragmentAckEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HA
 
         timestamp = pViewItem->ackTimestamp;
 
-        // Set the start timestamp if no timestamp had been specified
-        if (!IS_VALID_TIMESTAMP(pFragmentAck->timestamp)) {
-            // If we already have an persisted ACK, no need to go farther back
-            errorSkipStart = IS_VALID_TIMESTAMP(pUploadHandleInfo->lastPersistedAckTs) ?
-                    pUploadHandleInfo->lastPersistedAckTs : pUploadHandleInfo->timestamp;
-        } else {
-            errorSkipStart = timestamp;
-        }
+        // If we already have an persisted ACK, no need to go farther back
+        errorSkipStart = IS_VALID_TIMESTAMP(pUploadHandleInfo->lastPersistedAckTs) ?
+                pUploadHandleInfo->lastPersistedAckTs : pUploadHandleInfo->timestamp;
     } else {
         // Calculate the timestamp based on the ACK.
         // Convert the timestamp
@@ -883,6 +878,9 @@ STATUS streamFragmentAckEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HA
             // Adjust the relative timestamp to make an absolute timestamp
             timestamp += pUploadHandleInfo->timestamp;
         }
+
+        // No skipping farther than the given timestamp
+        errorSkipStart = timestamp;
     }
 
     // Quick check if we have the timestamp in the view window and if not then bail out early

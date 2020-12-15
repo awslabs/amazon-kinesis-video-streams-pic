@@ -233,7 +233,7 @@ TEST_P(ViewDropPolicyFunctionalityTest, consumedViewItemStayRetained)
     CreateContentView(mOverflowPolicy, 10000, TEST_MAX_BUFFER_DURATION);
 
     // keep putting view item until at least 100 view items have been dropped
-    while(gCallCount < 100) {
+    while (gCallCount < 100) {
         allocHandle = i == 0 ? FIRST_FRAME_ALLOCATION_HANDLE : INVALID_ALLOCATION_HANDLE_VALUE;
         EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
                                                      timestamp,
@@ -263,7 +263,7 @@ TEST_P(ViewDropPolicyFunctionalityTest, consumedViewItemStayRetained)
     gCallCount = 0;
 
     // put until new drop frame
-    while(gCallCount == 0) {
+    while (gCallCount == 0) {
         EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
                                                      timestamp,
                                                      timestamp,

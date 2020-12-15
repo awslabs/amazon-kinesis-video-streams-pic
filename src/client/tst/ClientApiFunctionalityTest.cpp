@@ -11,9 +11,9 @@ VOID ClientApiFunctionalityTest::authIntegrationTest(BOOL sync)
     PKinesisVideoClient pKinesisVideoClient;
 
     // Validate the client-level callbacks - starting from default base class object
-    EXPECT_EQ(1, mGetSecurityTokenFuncCount);
-    EXPECT_EQ(0, mGetDeviceCertificateFuncCount);
-    EXPECT_EQ(0, mGetDeviceFingerprintFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetSecurityTokenFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mGetDeviceCertificateFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mGetDeviceFingerprintFuncCount));
 
     // Try the certificate integration first
     mClientCallbacks.getSecurityTokenFn = NULL;
@@ -28,9 +28,9 @@ VOID ClientApiFunctionalityTest::authIntegrationTest(BOOL sync)
     EXPECT_EQ(0, STRCMP((PCHAR) pKinesisVideoClient->certAuthInfo.data, TEST_CERTIFICATE_BITS));
     EXPECT_EQ(TEST_AUTH_EXPIRATION, pKinesisVideoClient->certAuthInfo.expiration);
     // Extra one as the base test has already called the function once
-    EXPECT_EQ(1, mGetSecurityTokenFuncCount);
-    EXPECT_EQ(1, mGetDeviceCertificateFuncCount);
-    EXPECT_EQ(0, mGetDeviceFingerprintFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetSecurityTokenFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetDeviceCertificateFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mGetDeviceFingerprintFuncCount));
     mClientCallbacks.getDeviceCertificateFn = getDeviceCertificateFunc;
     mClientCallbacks.getSecurityTokenFn = getSecurityTokenFunc;
     mClientCallbacks.getDeviceFingerprintFn = getDeviceFingerprintFunc;
@@ -51,9 +51,9 @@ VOID ClientApiFunctionalityTest::authIntegrationTest(BOOL sync)
     pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);
     EXPECT_EQ(0, STRCMP(pKinesisVideoClient->deviceFingerprint, TEST_DEVICE_FINGERPRINT));
     // Extra one as the base test has already called the function once
-    EXPECT_EQ(1, mGetSecurityTokenFuncCount);
-    EXPECT_EQ(1, mGetDeviceCertificateFuncCount);
-    EXPECT_EQ(SERVICE_CALL_MAX_RETRY_COUNT + 1, mGetDeviceFingerprintFuncCount); // MAX_RETRY_COUNT + 1 times
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetSecurityTokenFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetDeviceCertificateFuncCount));
+    EXPECT_EQ(SERVICE_CALL_MAX_RETRY_COUNT + 1, ATOMIC_LOAD(&mGetDeviceFingerprintFuncCount)); // MAX_RETRY_COUNT + 1 times
     mClientCallbacks.getDeviceCertificateFn = getDeviceCertificateFunc;
     mClientCallbacks.getSecurityTokenFn = getSecurityTokenFunc;
     mClientCallbacks.getDeviceFingerprintFn = getDeviceFingerprintFunc;
@@ -77,9 +77,9 @@ VOID ClientApiFunctionalityTest::authIntegrationTest(BOOL sync)
     EXPECT_EQ(MAX_DEVICE_FINGERPRINT_LENGTH, STRLEN(pKinesisVideoClient->deviceFingerprint));
     // EXPECT_EQ(TEST_AUTH_EXPIRATION, pKinesisVideoClient->certAuthInfo.expiration);
     // Extra one as the base test has already called the function once
-    EXPECT_EQ(1, mGetSecurityTokenFuncCount);
-    EXPECT_EQ(1, mGetDeviceCertificateFuncCount);
-    EXPECT_EQ(SERVICE_CALL_MAX_RETRY_COUNT + 1, mGetDeviceFingerprintFuncCount); // MAX_RETRY_COUNT + 1
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetSecurityTokenFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetDeviceCertificateFuncCount));
+    EXPECT_EQ(SERVICE_CALL_MAX_RETRY_COUNT + 1, ATOMIC_LOAD(&mGetDeviceFingerprintFuncCount)); // MAX_RETRY_COUNT + 1
     mClientCallbacks.getDeviceCertificateFn = getDeviceCertificateFunc;
     mClientCallbacks.getSecurityTokenFn = getSecurityTokenFunc;
     mClientCallbacks.getDeviceFingerprintFn = getDeviceFingerprintFunc;
@@ -104,9 +104,9 @@ VOID ClientApiFunctionalityTest::authIntegrationTest(BOOL sync)
     EXPECT_EQ(0, STRCMP((PCHAR) pKinesisVideoClient->certAuthInfo.data, TEST_CERTIFICATE_BITS));
     EXPECT_EQ(TEST_AUTH_EXPIRATION, pKinesisVideoClient->certAuthInfo.expiration);
     // Extra one as the base test has already called the function once
-    EXPECT_EQ(2, mGetSecurityTokenFuncCount);
-    EXPECT_EQ(2, mGetDeviceCertificateFuncCount);
-    EXPECT_EQ(SERVICE_CALL_MAX_RETRY_COUNT + 1, mGetDeviceFingerprintFuncCount); // stays the same count
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetSecurityTokenFuncCount));
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetDeviceCertificateFuncCount));
+    EXPECT_EQ(SERVICE_CALL_MAX_RETRY_COUNT + 1, ATOMIC_LOAD(&mGetDeviceFingerprintFuncCount)); // stays the same count
     mClientCallbacks.getDeviceCertificateFn = getDeviceCertificateFunc;
     mClientCallbacks.getSecurityTokenFn = getSecurityTokenFunc;
     mClientCallbacks.getDeviceFingerprintFn = getDeviceFingerprintFunc;
@@ -131,9 +131,9 @@ VOID ClientApiFunctionalityTest::authIntegrationTest(BOOL sync)
     EXPECT_EQ(TEST_AUTH_EXPIRATION, pKinesisVideoClient->certAuthInfo.expiration);
     EXPECT_EQ('\0', pKinesisVideoClient->deviceFingerprint[0]);
     // Extra one as the base test has already called the function once
-    EXPECT_EQ(3, mGetSecurityTokenFuncCount);
-    EXPECT_EQ(3, mGetDeviceCertificateFuncCount);
-    EXPECT_EQ(SERVICE_CALL_MAX_RETRY_COUNT + 1, mGetDeviceFingerprintFuncCount);
+    EXPECT_EQ(3, ATOMIC_LOAD(&mGetSecurityTokenFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mGetDeviceCertificateFuncCount));
+    EXPECT_EQ(SERVICE_CALL_MAX_RETRY_COUNT + 1, ATOMIC_LOAD(&mGetDeviceFingerprintFuncCount));
     mClientCallbacks.getDeviceCertificateFn = getDeviceCertificateFunc;
     mClientCallbacks.getSecurityTokenFn = getSecurityTokenFunc;
     mClientCallbacks.getDeviceFingerprintFn = getDeviceFingerprintFunc;
@@ -157,9 +157,9 @@ VOID ClientApiFunctionalityTest::authIntegrationTest(BOOL sync)
     EXPECT_EQ(0, pKinesisVideoClient->tokenAuthInfo.expiration);
     EXPECT_EQ(MAX_DEVICE_FINGERPRINT_LENGTH, STRLEN(pKinesisVideoClient->deviceFingerprint));
     // Extra one as the base test has already called the function once
-    EXPECT_EQ(4, mGetSecurityTokenFuncCount);
-    EXPECT_EQ(4, mGetDeviceCertificateFuncCount);
-    EXPECT_EQ(12, mGetDeviceFingerprintFuncCount);
+    EXPECT_EQ(4, ATOMIC_LOAD(&mGetSecurityTokenFuncCount));
+    EXPECT_EQ(4, ATOMIC_LOAD(&mGetDeviceCertificateFuncCount));
+    EXPECT_EQ(12, ATOMIC_LOAD(&mGetDeviceFingerprintFuncCount));
     mClientCallbacks.getDeviceCertificateFn = getDeviceCertificateFunc;
     mClientCallbacks.getSecurityTokenFn = getSecurityTokenFunc;
     mClientCallbacks.getDeviceFingerprintFn = getDeviceFingerprintFunc;

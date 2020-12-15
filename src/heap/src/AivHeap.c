@@ -41,7 +41,7 @@ DEFINE_HEAP_CHK(aivHeapDebugCheckAllocator)
 
     pBlock = pAivHeap->pAlloc;
     // walk the allocated blocks
-    while(pBlock != NULL) {
+    while (pBlock != NULL) {
         if (dump) {
             DLOGV("Block:\t%p\t\trequested size:\t%d\t\tsize:\t%d", pBlock, pBlock->allocSize, GET_AIV_ALLOCATION_SIZE(pBlock));
         }
@@ -86,7 +86,7 @@ DEFINE_HEAP_CHK(aivHeapDebugCheckAllocator)
 
     pBlock = pAivHeap->pFree;
     // walk the free blocks
-    while(pBlock != NULL) {
+    while (pBlock != NULL) {
         if (dump) {
             DLOGV("Block:\t%p\t\tsize:\t%" PRIu64, pBlock, GET_AIV_ALLOCATION_SIZE(pBlock));
         }

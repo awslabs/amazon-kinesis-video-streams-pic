@@ -5,7 +5,6 @@ MockConsumer::MockConsumer(MockConsumerConfig config,
                            STREAM_HANDLE mStreamHandle)
         : mOldCurrent(0),
           mDataBufferSize(config.mDataBufferSizeByte),
-          mDataAvailable(FALSE),
           mUploadSpeed(config.mUploadSpeedBytesPerSecond),
           mNextGetStreamDataTime(0),
           mUploadHandle(mUploadHandle),
@@ -19,6 +18,7 @@ MockConsumer::MockConsumer(MockConsumerConfig config,
           mRetention(config.mRetention),
           mFragmentTimestamp(INVALID_TIMESTAMP_VALUE),
           mLastGetStreamDataTime(INVALID_TIMESTAMP_VALUE) {
+    ATOMIC_STORE_BOOL(&mDataAvailable, FALSE);
 
     // init FragmentAck struct
     mFragmentAck.timestamp = INVALID_TIMESTAMP_VALUE;
@@ -68,7 +68,7 @@ void MockConsumer::initOldCurrent() {
     mOldCurrent = pKinesisVideoStream->curViewItem.viewItem.index;
     pViewItem = &pKinesisVideoStream->curViewItem.viewItem;
 
-    while(!CHECK_ITEM_STREAM_START_DEBUG(pViewItem->flags) && STATUS_SUCCEEDED(retStatus)) {
+    while (!CHECK_ITEM_STREAM_START_DEBUG(pViewItem->flags) && STATUS_SUCCEEDED(retStatus)) {
         mOldCurrent--;
         retStatus = contentViewGetItemAt(pKinesisVideoStream->pView, mOldCurrent, &pViewItem);
     }
@@ -139,9 +139,9 @@ void MockConsumer::purgeAckItemWithTimestamp(UINT64 ackTimestamp)
             tempAckQueue.push(ackItem);
         }
         mAckQueue.pop();
-    } while(ackPurged < 3 && !mAckQueue.empty());
+    } while (ackPurged < 3 && !mAckQueue.empty());
 
-    while(!tempAckQueue.empty()) {
+    while (!tempAckQueue.empty()) {
         mAckQueue.push(tempAckQueue.top());
         tempAckQueue.pop();
     }
@@ -152,14 +152,14 @@ STATUS MockConsumer::timedGetStreamData(UINT64 currentTime, PBOOL pDidGetStreamD
     UINT32 actualDataSize;
     *pDidGetStreamData = FALSE;
 
-    if (mDataAvailable && (currentTime >= mNextGetStreamDataTime)) {
+    if (ATOMIC_LOAD_BOOL(&mDataAvailable) && (currentTime >= mNextGetStreamDataTime)) {
         *pDidGetStreamData = TRUE;
         retStatus = getKinesisVideoStreamData(mStreamHandle, mUploadHandle, mDataBuffer, mDataBufferSize,
                                               &actualDataSize);
 
         // stop calling getKinesisVideoStreamData if there is no more data.
         if (retStatus == STATUS_NO_MORE_DATA_AVAILABLE || retStatus == STATUS_AWAITING_PERSISTED_ACK) {
-            mDataAvailable = FALSE;
+            ATOMIC_STORE_BOOL(&mDataAvailable, FALSE);
         }
 
         if (actualDataSize > 0) {

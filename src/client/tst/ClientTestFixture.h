@@ -2,7 +2,7 @@
 #define MAX_TEST_STREAM_COUNT           10
 #define TEST_DEVICE_STORAGE_SIZE        ((UINT64) 10 * 1024 * 1024)
 
-#define TEST_CLIENT_MAGIC_NUMBER        0x1234567890ULL
+#define TEST_CLIENT_MAGIC_NUMBER        0x12345678ULL
 
 #define TEST_CERTIFICATE_BITS           "Test certificate bits"
 #define TEST_TOKEN_BITS                 "Test token bits"
@@ -194,6 +194,62 @@ typedef enum {
 } AutoSubmitServiceCallResultMode;
 
 class ClientTestBase : public ::testing::Test {
+protected:
+    // Lay out the atomics first
+    volatile ATOMIC_BOOL mStreamReady;
+    volatile ATOMIC_BOOL mStreamClosed;
+    volatile ATOMIC_BOOL mClientReady;
+    volatile ATOMIC_BOOL mClientShutdown;
+    volatile ATOMIC_BOOL mStreamShutdown;
+    volatile ATOMIC_BOOL mResetStream;
+    volatile ATOMIC_BOOL mAckRequired;
+    volatile ATOMIC_BOOL mTerminate;
+    volatile ATOMIC_BOOL mStartThreads;
+
+    // Callback function count
+    volatile SIZE_T mGetCurrentTimeFuncCount;
+    volatile SIZE_T mGetRandomNumberFuncCount;
+    volatile SIZE_T mGetDeviceCertificateFuncCount;
+    volatile SIZE_T mGetSecurityTokenFuncCount;
+    volatile SIZE_T mGetDeviceFingerprintFuncCount;
+    volatile SIZE_T mStreamUnderflowReportFuncCount;
+    volatile SIZE_T mStorageOverflowPressureFuncCount;
+    volatile SIZE_T mStreamLatencyPressureFuncCount;
+    volatile SIZE_T mDroppedFrameReportFuncCount;
+    volatile SIZE_T mBufferDurationOverflowPrssureFuncCount;
+    volatile SIZE_T mDroppedFragmentReportFuncCount;
+    volatile SIZE_T mStreamReadyFuncCount;
+    volatile SIZE_T mStreamClosedFuncCount;
+    volatile SIZE_T mCreateMutexFuncCount;
+    volatile SIZE_T mLockMutexFuncCount;
+    volatile SIZE_T mUnlockMutexFuncCount;
+    volatile SIZE_T mTryLockMutexFuncCount;
+    volatile SIZE_T mFreeMutexFuncCount;
+    volatile SIZE_T mCreateConditionVariableFuncCount;
+    volatile SIZE_T mSignalConditionVariableFuncCount;
+    volatile SIZE_T mBroadcastConditionVariableFuncCount;
+    volatile SIZE_T mWaitConditionVariableFuncCount;
+    volatile SIZE_T mFreeConditionVariableFuncCount;
+    volatile SIZE_T mCreateStreamFuncCount;
+    volatile SIZE_T mDescribeStreamFuncCount;
+    volatile SIZE_T mGetStreamingEndpointFuncCount;
+    volatile SIZE_T mGetStreamingTokenFuncCount;
+    volatile SIZE_T mPutStreamFuncCount;
+    volatile SIZE_T mTagResourceFuncCount;
+    volatile SIZE_T mCreateDeviceFuncCount;
+    volatile SIZE_T mDeviceCertToTokenFuncCount;
+    volatile SIZE_T mClientReadyFuncCount;
+    volatile SIZE_T mStreamDataAvailableFuncCount;
+    volatile SIZE_T mStreamErrorReportFuncCount;
+    volatile SIZE_T mStreamConnectionStaleFuncCount;
+    volatile SIZE_T mFragmentAckReceivedFuncCount;
+    volatile SIZE_T mClientShutdownFuncCount;
+    volatile SIZE_T mStreamShutdownFuncCount;
+
+    volatile SIZE_T mDescribeStreamDoneFuncCount;
+    volatile SIZE_T mCreateDeviceDoneFuncCount;
+
+    volatile SIZE_T mMagic;
 
 public:
     ClientTestBase()
@@ -214,7 +270,7 @@ public:
         globalMemFree = instrumentedClientMemFree;
 
         // Set the magic number for verification later
-        mMagic = TEST_CLIENT_MAGIC_NUMBER;
+        ATOMIC_STORE(&mMagic, TEST_CLIENT_MAGIC_NUMBER);
 
         // Initialize the callbacks
         mClientCallbacks.version = CALLBACKS_CURRENT_VERSION;
@@ -270,7 +326,6 @@ protected:
     STREAM_HANDLE mStreamHandle;
     DeviceInfo mDeviceInfo;
     ClientCallbacks mClientCallbacks;
-    UINT64 mMagic;
     volatile UINT64 mTime;
     UINT64 mStreamStartTime;
     UINT64 mDuration;
@@ -278,13 +333,6 @@ protected:
     UINT64 mFragmentTime;
     STATUS mStatus;
     FragmentAck mFragmentAck;
-    BOOL mStreamReady;
-    BOOL mStreamClosed;
-    BOOL mClientReady;
-    BOOL mClientShutdown;
-    BOOL mStreamShutdown;
-    BOOL mResetStream;
-    BOOL mAckRequired;
     STREAM_ACCESS_MODE mAccessMode;
     CHAR mApiName[256];
     CHAR mDeviceName[MAX_DEVICE_NAME_LEN];
@@ -299,8 +347,6 @@ protected:
     UINT64 mDataReadyDuration;
     UINT64 mDataReadySize;
     StreamDescription mStreamDescription;
-    volatile BOOL mTerminate;
-    volatile BOOL mStartThreads;
     TID mProducerThreads[MAX_TEST_STREAM_COUNT];
     TID mConsumerThreads[MAX_TEST_STREAM_COUNT];
     STREAM_HANDLE mStreamHandles[MAX_TEST_STREAM_COUNT];
@@ -325,45 +371,7 @@ protected:
 
     STATUS mThreadReturnStatus;
 
-    // Callback function count
-    volatile UINT32 mGetCurrentTimeFuncCount;
-    volatile UINT32 mGetRandomNumberFuncCount;
-    volatile UINT32 mGetDeviceCertificateFuncCount;
-    volatile UINT32 mGetSecurityTokenFuncCount;
-    volatile UINT32 mGetDeviceFingerprintFuncCount;
-    volatile UINT32 mStreamUnderflowReportFuncCount;
-    volatile UINT32 mStorageOverflowPressureFuncCount;
-    volatile UINT32 mStreamLatencyPressureFuncCount;
-    volatile UINT32 mDroppedFrameReportFuncCount;
-    volatile UINT32 mBufferDurationOverflowPrssureFuncCount;
-    volatile UINT32 mDroppedFragmentReportFuncCount;
-    volatile UINT32 mStreamReadyFuncCount;
-    volatile UINT32 mStreamClosedFuncCount;
-    volatile UINT32 mCreateMutexFuncCount;
-    volatile UINT32 mLockMutexFuncCount;
-    volatile UINT32 mUnlockMutexFuncCount;
-    volatile UINT32 mTryLockMutexFuncCount;
-    volatile UINT32 mFreeMutexFuncCount;
-    volatile UINT32 mCreateConditionVariableFuncCount;
-    volatile UINT32 mSignalConditionVariableFuncCount;
-    volatile UINT32 mBroadcastConditionVariableFuncCount;
-    volatile UINT32 mWaitConditionVariableFuncCount;
-    volatile UINT32 mFreeConditionVariableFuncCount;
-    volatile UINT32 mCreateStreamFuncCount;
-    volatile UINT32 mDescribeStreamFuncCount;
-    volatile UINT32 mGetStreamingEndpointFuncCount;
-    volatile UINT32 mGetStreamingTokenFuncCount;
-    volatile UINT32 mPutStreamFuncCount;
-    volatile UINT32 mTagResourceFuncCount;
-    volatile UINT32 mCreateDeviceFuncCount;
-    volatile UINT32 mDeviceCertToTokenFuncCount;
-    volatile UINT32 mClientReadyFuncCount;
-    volatile UINT32 mStreamDataAvailableFuncCount;
-    volatile UINT32 mStreamErrorReportFuncCount;
-    volatile UINT32 mStreamConnectionStaleFuncCount;
-    volatile UINT32 mFragmentAckReceivedFuncCount;
-    volatile UINT32 mClientShutdownFuncCount;
-    volatile UINT32 mStreamShutdownFuncCount;
+    MUTEX mAtomicLock;
 
     void initTestMembers() {
         UINT32 logLevel = 0;
@@ -449,68 +457,71 @@ protected:
         mTrackInfo.trackCustomData.trackVideoConfig.videoHeight = 720;
         mStreamInfo.streamCaps.trackInfoList = &mTrackInfo;
 
-        mTime = 0;
+        setTestTimeVal(0);
         mDuration = 0;
         mFrameTime = 0;
         mFragmentTime = 0;
         mStatus = STATUS_SUCCESS;
         mStreamHandle = INVALID_STREAM_HANDLE_VALUE;
-        mStreamReady = FALSE;
-        mStreamClosed = FALSE;
+        ATOMIC_STORE_BOOL(&mStreamReady, FALSE);
+        ATOMIC_STORE_BOOL(&mStreamClosed, FALSE);
         mClientHandle = INVALID_CLIENT_HANDLE_VALUE;
         mReturnedClientHandle = INVALID_CLIENT_HANDLE_VALUE;
-        mClientReady = FALSE;
+        ATOMIC_STORE_BOOL(&mClientReady, FALSE);
         mAccessMode = STREAM_ACCESS_MODE_READ;
         mClientSyncMode = FALSE;
         mStreamStartTime = 0;
-        mAckRequired = FALSE;
+        ATOMIC_STORE_BOOL(&mAckRequired, FALSE);
         mRemainingSize = 0;
         mRemainingDuration = 0;
-        mTerminate = FALSE;
+        ATOMIC_STORE_BOOL(&mTerminate, FALSE);
         mTagCount = 0;
         mStreamCount = 0;
-        mStartThreads = FALSE;
+        ATOMIC_STORE_BOOL(&mStartThreads, FALSE);
         mDataReadyDuration = 0;
         mDataReadySize = 0;
         mStreamUploadHandle = INVALID_UPLOAD_HANDLE_VALUE;
-        mGetCurrentTimeFuncCount = 0;
-        mGetRandomNumberFuncCount = 0;
-        mGetDeviceCertificateFuncCount = 0;
-        mGetSecurityTokenFuncCount = 0;
-        mGetDeviceFingerprintFuncCount = 0;
-        mStreamUnderflowReportFuncCount = 0;
-        mStorageOverflowPressureFuncCount = 0;
-        mStreamLatencyPressureFuncCount = 0;
-        mDroppedFrameReportFuncCount = 0;
-        mBufferDurationOverflowPrssureFuncCount = 0;
-        mDroppedFragmentReportFuncCount = 0;
-        mStreamReadyFuncCount = 0;
-        mStreamClosedFuncCount = 0;
-        mCreateMutexFuncCount = 0;
-        mLockMutexFuncCount = 0;
-        mUnlockMutexFuncCount = 0;
-        mTryLockMutexFuncCount = 0;
-        mFreeMutexFuncCount = 0;
-        mCreateConditionVariableFuncCount = 0;
-        mSignalConditionVariableFuncCount = 0;
-        mBroadcastConditionVariableFuncCount = 0;
-        mWaitConditionVariableFuncCount = 0;
-        mFreeConditionVariableFuncCount = 0;
-        mCreateStreamFuncCount = 0;
-        mDescribeStreamFuncCount = 0;
-        mGetStreamingEndpointFuncCount = 0;
-        mGetStreamingTokenFuncCount = 0;
-        mPutStreamFuncCount = 0;
-        mTagResourceFuncCount = 0;
-        mCreateDeviceFuncCount = 0;
-        mDeviceCertToTokenFuncCount = 0;
-        mClientReadyFuncCount = 0;
-        mClientShutdownFuncCount = 0;
-        mStreamShutdownFuncCount = 0;
-        mStreamDataAvailableFuncCount = 0;
-        mStreamErrorReportFuncCount = 0;
-        mStreamConnectionStaleFuncCount = 0;
-        mFragmentAckReceivedFuncCount = 0;
+        ATOMIC_STORE(&mGetCurrentTimeFuncCount, 0);
+        ATOMIC_STORE(&mGetRandomNumberFuncCount, 0);
+        ATOMIC_STORE(&mGetDeviceCertificateFuncCount, 0);
+        ATOMIC_STORE(&mGetSecurityTokenFuncCount, 0);
+        ATOMIC_STORE(&mGetDeviceFingerprintFuncCount, 0);
+        ATOMIC_STORE(&mStreamUnderflowReportFuncCount, 0);
+        ATOMIC_STORE(&mStorageOverflowPressureFuncCount, 0);
+        ATOMIC_STORE(&mStreamLatencyPressureFuncCount, 0);
+        ATOMIC_STORE(&mDroppedFrameReportFuncCount, 0);
+        ATOMIC_STORE(&mBufferDurationOverflowPrssureFuncCount, 0);
+        ATOMIC_STORE(&mDroppedFragmentReportFuncCount, 0);
+        ATOMIC_STORE(&mStreamReadyFuncCount, 0);
+        ATOMIC_STORE(&mStreamClosedFuncCount, 0);
+        ATOMIC_STORE(&mCreateMutexFuncCount, 0);
+        ATOMIC_STORE(&mLockMutexFuncCount, 0);
+        ATOMIC_STORE(&mUnlockMutexFuncCount, 0);
+        ATOMIC_STORE(&mTryLockMutexFuncCount, 0);
+        ATOMIC_STORE(&mFreeMutexFuncCount, 0);
+        ATOMIC_STORE(&mCreateConditionVariableFuncCount, 0);
+        ATOMIC_STORE(&mSignalConditionVariableFuncCount, 0);
+        ATOMIC_STORE(&mBroadcastConditionVariableFuncCount, 0);
+        ATOMIC_STORE(&mWaitConditionVariableFuncCount, 0);
+        ATOMIC_STORE(&mFreeConditionVariableFuncCount, 0);
+        ATOMIC_STORE(&mCreateStreamFuncCount, 0);
+        ATOMIC_STORE(&mDescribeStreamFuncCount, 0);
+        ATOMIC_STORE(&mDescribeStreamDoneFuncCount, 0);
+        ATOMIC_STORE(&mGetStreamingEndpointFuncCount, 0);
+        ATOMIC_STORE(&mGetStreamingTokenFuncCount, 0);
+        ATOMIC_STORE(&mPutStreamFuncCount, 0);
+        ATOMIC_STORE(&mTagResourceFuncCount, 0);
+        ATOMIC_STORE(&mCreateDeviceFuncCount, 0);
+        ATOMIC_STORE(&mCreateDeviceDoneFuncCount, 0);
+        ATOMIC_STORE(&mDeviceCertToTokenFuncCount, 0);
+        ATOMIC_STORE(&mClientReadyFuncCount, 0);
+        ATOMIC_STORE(&mClientShutdownFuncCount, 0);
+        ATOMIC_STORE(&mStreamShutdownFuncCount, 0);
+        ATOMIC_STORE(&mStreamDataAvailableFuncCount, 0);
+        ATOMIC_STORE(&mStreamErrorReportFuncCount, 0);
+        ATOMIC_STORE(&mStreamConnectionStaleFuncCount, 0);
+        ATOMIC_STORE(&mFragmentAckReceivedFuncCount, 0);
+
         mChainControlPlaneServiceCall = FALSE;
         mRepeatTime = 10;
         mSubmitServiceCallResultMode = DISABLE_AUTO_SUBMIT;
@@ -569,11 +580,11 @@ protected:
 
     STATUS CreateClient()
     {
-        mGetDeviceFingerprintFuncCount = 0;
-        mGetDeviceCertificateFuncCount = 0;
-        mDeviceCertToTokenFuncCount = 0;
-        mGetSecurityTokenFuncCount = 0;
-        mCreateDeviceFuncCount = 0;
+        ATOMIC_STORE(&mGetDeviceFingerprintFuncCount, 0);
+        ATOMIC_STORE(&mGetDeviceCertificateFuncCount, 0);
+        ATOMIC_STORE(&mDeviceCertToTokenFuncCount, 0);
+        ATOMIC_STORE(&mGetSecurityTokenFuncCount, 0);
+        ATOMIC_STORE(&mCreateDeviceFuncCount, 0);
 
         // Set the random number generator seed for reproducibility
         SRAND(12345);
@@ -586,11 +597,11 @@ protected:
 
         // Move the client through the state machine.
         // We should have the the security token called and not the cert or device fingerprint
-        EXPECT_EQ(0, mGetDeviceFingerprintFuncCount);
-        EXPECT_EQ(0, mGetDeviceCertificateFuncCount);
-        EXPECT_EQ(0, mDeviceCertToTokenFuncCount);
-        EXPECT_EQ(1, mGetSecurityTokenFuncCount);
-        EXPECT_EQ(1, mCreateDeviceFuncCount);
+        EXPECT_EQ(0, ATOMIC_LOAD(&mGetDeviceFingerprintFuncCount));
+        EXPECT_EQ(0, ATOMIC_LOAD(&mGetDeviceCertificateFuncCount));
+        EXPECT_EQ(0, ATOMIC_LOAD(&mDeviceCertToTokenFuncCount));
+        EXPECT_EQ(1, ATOMIC_LOAD(&mGetSecurityTokenFuncCount));
+        EXPECT_EQ(1, ATOMIC_LOAD(&mCreateDeviceFuncCount));
         EXPECT_EQ(0, STRNCMP(TEST_DEVICE_NAME, mDeviceName, SIZEOF(mDeviceName)));
 
         // Satisfy the create device callback in assync mode
@@ -600,7 +611,7 @@ protected:
         }
 
         // Ensure the OK is called
-        EXPECT_TRUE(mClientReady);
+        EXPECT_TRUE(ATOMIC_LOAD_BOOL(&mClientReady));
         EXPECT_EQ(mClientHandle, mReturnedClientHandle);
 
         return STATUS_SUCCESS;
@@ -649,7 +660,7 @@ protected:
         } else {
             EXPECT_TRUE(STATUS_SUCCESS == mThreadReturnStatus);
             EXPECT_TRUE(mStreamingSession.mConsumerList.empty());
-            EXPECT_EQ(TRUE, mStreamClosed);
+            EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mStreamClosed));
         }
 
         EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
@@ -689,12 +700,12 @@ protected:
         do {
             currentTime = pClient->mClientCallbacks.getCurrentTimeFn((UINT64) pClient);
             retStatus = producer.timedPutFrame(currentTime, &didPutFrame);
-        } while(!pClient->mTerminate && STATUS_SUCCEEDED(retStatus));
+        } while (!ATOMIC_LOAD_BOOL(&pClient->mTerminate) && STATUS_SUCCEEDED(retStatus));
 
         MUTEX_LOCK(pClient->mTestClientMutex);
         pClient->mStatus = retStatus;
         MUTEX_UNLOCK(pClient->mTestClientMutex);
-        return 0;
+        return NULL;
     }
 
     static PVOID CreateClientRoutineSync(PVOID arg) {
@@ -705,14 +716,14 @@ protected:
         }
         EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoClientSync(&pClient->mDeviceInfo, &pClient->mClientCallbacks, &pClient->mClientHandle));
 
-        return 0;
+        return NULL;
     }
 
     static PVOID CreateStreamSyncRoutine(PVOID arg) {
         ClientTestBase *pClient = (ClientTestBase*) arg;
         EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoStreamSync(pClient->mClientHandle, &pClient->mStreamInfo, &pClient->mStreamHandle));
 
-        return 0;
+        return NULL;
     }
 
     void initScenarioTestMembers() {
@@ -724,7 +735,7 @@ protected:
         // Override get time function
         mClientCallbacks.getCurrentTimeFn = getCurrentIncrementalTimeFunc;
         // set the starting point for getCurrentTimeFunc. Using non zero value for rollback purpose.
-        mTime = TEST_TIME_BEGIN;
+        setTestTimeVal(TEST_TIME_BEGIN);
         // Use absoluteFragmentTimes for easier mock ack timestamp calculation.
         mStreamInfo.streamCaps.absoluteFragmentTimes = TRUE;
         mStreamInfo.streamCaps.recoverOnError = TRUE;
@@ -741,11 +752,11 @@ protected:
         // Free the existing client
         if (IS_VALID_CLIENT_HANDLE(mClientHandle)) {
             status = freeKinesisVideoClient(&mClientHandle);
-            mClientShutdownFuncCount = 0;
-            mStreamShutdownFuncCount = 0;
-            mClientShutdown = FALSE;
-            mStreamShutdown = FALSE;
-            mResetStream = FALSE;
+            ATOMIC_STORE(&mClientShutdownFuncCount,  0);
+            ATOMIC_STORE(&mStreamShutdownFuncCount, 0);
+            ATOMIC_STORE_BOOL(&mClientShutdown, FALSE);
+            ATOMIC_STORE_BOOL(&mStreamShutdown, FALSE);
+            ATOMIC_STORE_BOOL(&mResetStream, FALSE);
             EXPECT_EQ(STATUS_SUCCESS, status);
         }
 
@@ -760,7 +771,7 @@ protected:
         EXPECT_EQ(STATUS_SUCCESS, createDeviceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_DEVICE_ARN));
 
         // Ensure the OK is called
-        EXPECT_TRUE(mClientReady);
+        EXPECT_TRUE(ATOMIC_LOAD_BOOL(&mClientReady));
         EXPECT_EQ(mClientHandle, mReturnedClientHandle);
 
         initDefaultProducer();
@@ -776,7 +787,7 @@ protected:
         EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoStream(clientHandle, &mStreamInfo, &mStreamHandle));
 
         // Ensure describe has been called
-        EXPECT_EQ(1, mDescribeStreamFuncCount);
+        EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
 
         return STATUS_SUCCESS;
     }
@@ -825,9 +836,9 @@ protected:
         EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN, SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 
         // Ensure the callbacks have been called
-        EXPECT_EQ(1, mDescribeStreamFuncCount);
-        EXPECT_EQ(1, mGetStreamingTokenFuncCount);
-        EXPECT_EQ(1, mGetStreamingEndpointFuncCount);
+        EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+        EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+        EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
 
         return STATUS_SUCCESS;
     }
@@ -845,7 +856,7 @@ protected:
     STATUS MoveFromEndpointToReady()
     {
         // Validate the callback count
-        EXPECT_EQ(2, mGetStreamingEndpointFuncCount);
+        EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
 
         // Move the next state
         mStreamName[0] = '\0';
@@ -856,7 +867,7 @@ protected:
         EXPECT_EQ(0, STRNCMP(GET_DATA_ENDPOINT_REAL_TIME_PUT_API_NAME, mApiName, SIZEOF(mApiName)));
 
         // Validate the callback count
-        EXPECT_EQ(2, mGetStreamingTokenFuncCount);
+        EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
 
         return MoveFromTokenToReady();
     }
@@ -864,7 +875,7 @@ protected:
     STATUS MoveFromDescribeToReady()
     {
         // Validate the callback count
-        EXPECT_EQ(2, mDescribeStreamFuncCount);
+        EXPECT_EQ(2, ATOMIC_LOAD(&mDescribeStreamFuncCount));
 
         // Move to ready state
         setupStreamDescription();
@@ -878,7 +889,7 @@ protected:
         EXPECT_EQ(0, STRNCMP(GET_DATA_ENDPOINT_REAL_TIME_PUT_API_NAME, mApiName, SIZEOF(mApiName)));
 
         // Validate the callback count
-        EXPECT_EQ(2, mDescribeStreamFuncCount);
+        EXPECT_EQ(2, ATOMIC_LOAD(&mDescribeStreamFuncCount));
 
         return MoveFromEndpointToReady();
     }
@@ -893,6 +904,7 @@ protected:
         }
 
         DLOGI("\nSetting up test: %s\n", GetTestName());
+        mAtomicLock = MUTEX_CREATE(TRUE); // atomicity lock for 64 bit primitives
         mTestClientMutex = MUTEX_CREATE(TRUE);
         initTestMembers();
         ASSERT_EQ(STATUS_SUCCESS, CreateClient());
@@ -910,6 +922,8 @@ protected:
         // Clear potential mock consumers from previous run
         mStreamingSession.clearSessions();
 
+        MUTEX_FREE(mAtomicLock);
+
         // Validate the allocations cleanup
         DLOGI("Final remaining allocation size is %llu\n", gTotalClientMemoryUsage);
         EXPECT_EQ(0, gTotalClientMemoryUsage);
@@ -923,6 +937,31 @@ protected:
     PCHAR GetTestName()
     {
         return (PCHAR) ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name();
+    };
+
+    UINT64 getTestTimeVal()
+    {
+        // Meed to atomize the get operation too due to 64 bit on 32 bit platform
+        UINT64 timeVal;
+        MUTEX_LOCK(mAtomicLock);
+        timeVal = mTime;
+        MUTEX_UNLOCK(mAtomicLock);
+
+        return timeVal;
+    };
+
+    VOID setTestTimeVal(UINT64 timeVal)
+    {
+        MUTEX_LOCK(mAtomicLock);
+        mTime = timeVal;
+        MUTEX_UNLOCK(mAtomicLock);
+    };
+
+    VOID incrementTestTimeVal(UINT64 timeVal)
+    {
+        MUTEX_LOCK(mAtomicLock);
+        mTime += timeVal;
+        MUTEX_UNLOCK(mAtomicLock);
     };
 
 protected:

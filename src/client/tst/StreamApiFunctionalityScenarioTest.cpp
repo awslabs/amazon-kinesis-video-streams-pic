@@ -232,7 +232,7 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationFragmentMultiTrackScenar
         }
 
         // Increment by the frame duration
-        mTime += 1000 / mMockProducerConfig.mFps * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+        incrementTestTimeVal(1000 / mMockProducerConfig.mFps * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     } while (currentTime < testTerminationTime + 1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 
@@ -303,7 +303,7 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationFragmentMultiTrackScenar
         }
 
         // Increment by the frame duration
-        mTime += 1000 / mMockProducerConfig.mFps * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+        incrementTestTimeVal(1000 / mMockProducerConfig.mFps * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     } while (currentTime < testTerminationTime + 1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 
@@ -374,7 +374,7 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationIntermittentMultiTrackSc
         }
 
         // Increment by the frame duration
-        mTime += (1000 / mMockProducerConfig.mFps * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+        incrementTestTimeVal(1000 / mMockProducerConfig.mFps * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     } while (currentTime < testTerminationTime + 1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 
@@ -445,7 +445,7 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationIntermittentMultiTrackSc
         }
 
         // Increment by the frame duration
-        mTime += 1000 / mMockProducerConfig.mFps * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+        incrementTestTimeVal(1000 / mMockProducerConfig.mFps * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     } while (currentTime < testTerminationTime + 1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 

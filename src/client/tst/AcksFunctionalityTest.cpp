@@ -42,7 +42,7 @@ TEST_P(AcksFunctionalityTest, CheckRollbackFromErrorAckTime)
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.timedPutFrame(currentTime, &didPutFrame));
-    } while(currentTime < stopTime);
+    } while (currentTime < stopTime);
 
     //give 10 seconds to getStreamData and submit error ack on the first fragment
     stopTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + 10 * HUNDREDS_OF_NANOS_IN_A_SECOND;
@@ -63,7 +63,7 @@ TEST_P(AcksFunctionalityTest, CheckRollbackFromErrorAckTime)
                 EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR, &submittedErrorAck));
             }
         }
-    } while(currentTime < stopTime && !submittedErrorAck);
+    } while (currentTime < stopTime && !submittedErrorAck);
 
 
     EXPECT_EQ(TRUE, submittedErrorAck);
@@ -75,7 +75,7 @@ TEST_P(AcksFunctionalityTest, CheckRollbackFromErrorAckTime)
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     EXPECT_EQ(STATUS_SUCCESS, contentViewGetCurrentIndex(pKinesisVideoStream->pView, &currentIndex));
     EXPECT_EQ(STATUS_SUCCESS, contentViewGetItemAt(pKinesisVideoStream->pView, currentIndex, &pViewItem));
-    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     // mFragmentAck is the error ack that was submitted. Verify that error ack's timestamp equals current's timestamp.
     EXPECT_EQ(pViewItem->ackTimestamp, mFragmentAck.timestamp);
 }
@@ -97,7 +97,7 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitPersistedAckBeforeReceivedAckSuc
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.timedPutFrame(currentTime, &didPutFrame));
-    } while(currentTime < stopTime);
+    } while (currentTime < stopTime);
 
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
@@ -135,7 +135,7 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitPersistedAckBeforeReceivedAckSuc
                 mockConsumer->mAckQueue.pop();
             }
         }
-    } while(currentTime < stopTime && !submittedAck);
+    } while (currentTime < stopTime && !submittedAck);
     VerifyStopStreamSyncAndFree();
 }
 
@@ -156,7 +156,7 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitReceivedAckBeforeBufferingAckSuc
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.timedPutFrame(currentTime, &didPutFrame));
-    } while(currentTime < stopTime);
+    } while (currentTime < stopTime);
 
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
@@ -194,7 +194,7 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitReceivedAckBeforeBufferingAckSuc
                 mockConsumer->mAckQueue.pop();
             }
         }
-    } while(currentTime < stopTime && !submittedAck);
+    } while (currentTime < stopTime && !submittedAck);
     VerifyStopStreamSyncAndFree();
 }
 
@@ -215,7 +215,7 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsOutsideOfViewRangeFail) {
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.timedPutFrame(currentTime, &didPutFrame));
-    } while(currentTime < stopTime);
+    } while (currentTime < stopTime);
 
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
@@ -234,7 +234,7 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsOutsideOfViewRangeFail) {
                 EXPECT_EQ(STATUS_ACK_TIMESTAMP_NOT_IN_VIEW_WINDOW, mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK, FRAGMENT_ACK_TYPE_PERSISTED, stopTime + 1 * HUNDREDS_OF_NANOS_IN_A_SECOND, &submittedAck));
             }
         }
-    } while(currentTime < stopTime && !submittedAck);
+    } while (currentTime < stopTime && !submittedAck);
 }
 
 TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsTerminatedUploadHandle) {
@@ -255,7 +255,7 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsTerminatedUploadHandle) {
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.timedPutFrame(currentTime, &didPutFrame));
-    } while(currentTime < stopTime);
+    } while (currentTime < stopTime);
 
     mStreamingSession.getActiveUploadHandles(currentUploadHandles);
     EXPECT_EQ(1, currentUploadHandles.size());
@@ -275,7 +275,7 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsTerminatedUploadHandle) {
 
         // send one persisted ack
         EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK, FRAGMENT_ACK_TYPE_PERSISTED, 0, &submittedAck));
-    } while(currentTime < stopTime && !submittedAck);
+    } while (currentTime < stopTime && !submittedAck);
 
     // Submit terminated
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mStreamHandle, storedHandle, SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT));
@@ -298,10 +298,10 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsTerminatedUploadHandle) {
 
         retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
         VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
-    } while(currentTime < stopTime && !submittedAck);
+    } while (currentTime < stopTime && !submittedAck);
 
     // Validate that no errors actually been reported as the reported error was on an already closed handle
-    EXPECT_EQ(0, mStreamErrorReportFuncCount);
+    EXPECT_EQ(0, ATOMIC_LOAD(&mStreamErrorReportFuncCount));
 }
 
 INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, AcksFunctionalityTest,

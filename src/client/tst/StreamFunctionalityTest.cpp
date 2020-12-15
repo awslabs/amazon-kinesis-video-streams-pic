@@ -154,7 +154,7 @@ TEST_P(StreamFunctionalityTest, CreateAwaitReadyStopSyncFree)
 
     ReadyStream();
     EXPECT_EQ(STATUS_SUCCESS, stopKinesisVideoStream(mStreamHandle));
-    EXPECT_EQ(1, mStreamClosedFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamClosedFuncCount));
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 }
 
@@ -212,7 +212,7 @@ TEST_P(StreamFunctionalityTest, CreateSyncPutFrameEoFR)
                 EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
             }
         }
-    } while((currentTime < stopTime) && !submittedAck);
+    } while ((currentTime < stopTime) && !submittedAck);
 
     // should have submitted ack because a complete fragment has been consumed.
     if (mStreamInfo.streamCaps.fragmentAcks) {

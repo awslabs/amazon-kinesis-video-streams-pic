@@ -232,14 +232,14 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamStopSyncErrorAckWhileStr
                 EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_ACK_INTERNAL_ERROR, &submittedErrorAck));
             }
         }
-    } while(!submittedErrorAck);
+    } while (!submittedErrorAck);
 
     // remaining buffer should be streamed out successfully and stream closed callback called.
     consumeStream((STREAM_CLOSED_TIMEOUT_DURATION_IN_SECONDS) * HUNDREDS_OF_NANOS_IN_A_SECOND);
     EXPECT_TRUE(mStreamingSession.mConsumerList.empty());
-    EXPECT_EQ(TRUE, mStreamClosed);
+    EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mStreamClosed));
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
-    EXPECT_EQ(0, mDroppedFrameReportFuncCount);
+    EXPECT_EQ(0, ATOMIC_LOAD(&mDroppedFrameReportFuncCount));
 }
 
 INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, StreamStoppingFunctionalityTest,

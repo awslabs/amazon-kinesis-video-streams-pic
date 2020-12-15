@@ -27,7 +27,7 @@ public:
 
 // Mimics a putMedia session that calls getKinesisVideoStreamData and kinesisVideoStreamFragmentAck periodlically
 class MockConsumer {
-    BOOL mDataAvailable; // where getKinesisVideoStreamData should be called.
+    volatile ATOMIC_BOOL mDataAvailable; // where getKinesisVideoStreamData should be called.
     BOOL mCurrentInitialized;
     STREAM_HANDLE mStreamHandle;
     UINT64 mOldCurrent; // stores the old current before getKinesisVideoStreamData call
@@ -100,7 +100,7 @@ public:
      * set mDataAvailable to TRUE, if mDataAvailable is FALSE, timedGetStreamData would do nothing.
      */
     void dataAvailable() {
-        mDataAvailable = TRUE;
+        ATOMIC_STORE_BOOL(&mDataAvailable, TRUE);
     }
 
     /**

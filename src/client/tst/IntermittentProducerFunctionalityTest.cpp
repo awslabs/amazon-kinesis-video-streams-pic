@@ -109,7 +109,7 @@ TEST_P(IntermittentProducerFunctionalityTest, CreateSyncStreamStopSyncFreeRepeat
                 EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
                 VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             }
-        } while(currentTime < testTerminationTime);
+        } while (currentTime < testTerminationTime);
 
         VerifyStopStreamSyncAndFree();
         mStreamingSession.clearSessions();
