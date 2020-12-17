@@ -263,6 +263,7 @@ public:
     PVOID basicProducerRoutine(UINT64);
     PVOID basicConsumerRoutine(UINT64);
     volatile UINT32 mStreamCount;
+    volatile UINT32 mTimerCallbackFuncCount;
 
 protected:
     CLIENT_HANDLE mClientHandle;
@@ -509,6 +510,7 @@ protected:
         mClientReadyFuncCount = 0;
         mClientShutdownFuncCount = 0;
         mStreamShutdownFuncCount = 0;
+        mTimerCallbackFuncCount = 0;
         mStreamDataAvailableFuncCount = 0;
         mStreamErrorReportFuncCount = 0;
         mStreamConnectionStaleFuncCount = 0;
@@ -517,7 +519,6 @@ protected:
         mRepeatTime = 10;
         mSubmitServiceCallResultMode = DISABLE_AUTO_SUBMIT;
         mTokenExpiration = TEST_AUTH_EXPIRATION;
-
         mThreadReturnStatus = STATUS_SUCCESS;
     }
 
@@ -988,7 +989,14 @@ protected:
     static STATUS describeStreamFunc(UINT64,
                                      PCHAR,
                                      PServiceCallContext);
+    static STATUS describeStreamMultiStreamFunc(UINT64,
+                                     PCHAR,
+                                     PServiceCallContext);
     static STATUS getStreamingEndpointFunc(UINT64,
+                                           PCHAR,
+                                           PCHAR,
+                                           PServiceCallContext);
+    static STATUS getStreamingEndpointMultiStreamFunc(UINT64,
                                            PCHAR,
                                            PCHAR,
                                            PServiceCallContext);
@@ -996,6 +1004,11 @@ protected:
                                         PCHAR,
                                         STREAM_ACCESS_MODE,
                                         PServiceCallContext);
+    static STATUS getStreamingTokenMultiStreamFunc(UINT64,
+                                        PCHAR,
+                                        STREAM_ACCESS_MODE,
+                                        PServiceCallContext);
+
     static STATUS putStreamFunc(UINT64,
                                 PCHAR,
                                 PCHAR,
@@ -1004,7 +1017,14 @@ protected:
                                 BOOL,
                                 PCHAR,
                                 PServiceCallContext);
-
+    static STATUS putStreamMultiStreamFunc(UINT64,
+                                PCHAR,
+                                PCHAR,
+                                UINT64,
+                                BOOL,
+                                BOOL,
+                                PCHAR,
+                                PServiceCallContext);
     static STATUS tagResourceFunc(UINT64,
                                   PCHAR,
                                   UINT32,

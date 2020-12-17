@@ -35,48 +35,54 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = (PKinesisVideoClient) customData;
     UINT32 i;
-    BOOL clientStreamsListLocked = FALSE, streamLocked = FALSE;
     PKinesisVideoStream pCurrStream = NULL;
     Frame eofr = EOFR_FRAME_INITIALIZER;
 
     CHK(pKinesisVideoClient, STATUS_NULL_ARG);
 
-    pKinesisVideoClient->timerCallbackInvocationCount++;
-
-    // Lock the client streams list lock
-    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                     pKinesisVideoClient->base.streamListLock);
-
-    currentTime = GETTIME();
-    for (i = 0; i < pKinesisVideoClient->deviceInfo.streamCount; i++) {
-        if (NULL != pKinesisVideoClient->streams[i]) {
-            pCurrStream = pKinesisVideoClient->streams[i];
-            // Validate stream isn't being shut down or is closed
-            if (!(pCurrStream->streamStopped || pCurrStream->streamClosed)) {
-                // Lock the Stream
-                pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                                 pCurrStream->base.lock);
-                // Check if last PutFrame is older than max timeout, if so, send EoFR, if not, do nothing
-                // Ignoring currentTime it COULD be smaller than pCurrStream->lastPutFrametimestamp
-                // Due to this method entering but waiting on stream lock from putFrame call
-                if (IS_VALID_TIMESTAMP(pCurrStream->lastPutFrameTimestamp) && currentTime > pCurrStream->lastPutFrameTimestamp
-                   && (currentTime - pCurrStream->lastPutFrameTimestamp) > INTERMITTENT_PRODUCER_MAX_TIMEOUT) {
-                    if(STATUS_SUCCEEDED(retStatus = putKinesisVideoFrame(TO_STREAM_HANDLE(pCurrStream), &eofr))) {
-                        pCurrStream->lastPutFrameTimestamp = INVALID_TIMESTAMP_VALUE;
-                    } else {
-                        DLOGW("Failed to submit auto eofr with 0x%08x, for stream name: %s", retStatus, pCurrStream->streamInfo.name);
-                    }
-                }
-
-                // Unlock the Stream
-                pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                                   pCurrStream->base.lock);
-            }
-        }
+    // call pre hook function, useful for testing
+    if(pKinesisVideoClient->timerCallbackPreHookFunc != NULL) {
+        retStatus = pKinesisVideoClient->timerCallbackPreHookFunc(pKinesisVideoClient->hookCustomData);
     }
 
-    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+    if(STATUS_SUCCEEDED(retStatus)) {
+        // Lock the client streams list lock
+        pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                         pKinesisVideoClient->base.streamListLock);
+
+        currentTime = GETTIME();
+        for (i = 0; i < pKinesisVideoClient->deviceInfo.streamCount; i++) {
+            if (NULL != pKinesisVideoClient->streams[i]) {
+                pCurrStream = pKinesisVideoClient->streams[i];
+                // Validate stream isn't being shut down or is closed
+                if (!(pCurrStream->streamStopped || pCurrStream->streamClosed)) {
+                    // Lock the Stream
+                    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                                     pCurrStream->base.lock);
+                    // Check if last PutFrame is older than max timeout, if so, send EoFR, if not, do nothing
+                    // Ignoring currentTime it COULD be smaller than pCurrStream->lastPutFrametimestamp
+                    // Due to this method entering but waiting on stream lock from putFrame call
+                    if (IS_VALID_TIMESTAMP(pCurrStream->lastPutFrameTimestamp) &&
+                        currentTime > pCurrStream->lastPutFrameTimestamp
+                        && (currentTime - pCurrStream->lastPutFrameTimestamp) > INTERMITTENT_PRODUCER_MAX_TIMEOUT) {
+                        if (STATUS_SUCCEEDED(retStatus = putKinesisVideoFrame(TO_STREAM_HANDLE(pCurrStream), &eofr))) {
+                            pCurrStream->lastPutFrameTimestamp = INVALID_TIMESTAMP_VALUE;
+                        } else {
+                            DLOGW("Failed to submit auto eofr with 0x%08x, for stream name: %s", retStatus,
+                                  pCurrStream->streamInfo.name);
+                        }
+                    }
+
+                    // Unlock the Stream
+                    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                                       pCurrStream->base.lock);
+                }
+            }
+        }
+
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
                                                            pKinesisVideoClient->base.streamListLock);
+    }
 
 CleanUp:
     CHK_LOG_ERR(retStatus);
@@ -137,8 +143,9 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     // Set the initial stream count
     pKinesisVideoClient->streamCount = 0;
 
-    // Set the initial invocation count
-    pKinesisVideoClient->timerCallbackInvocationCount = 0;
+    // Set prehook to null
+    pKinesisVideoClient->timerCallbackPreHookFunc = NULL;
+    pKinesisVideoClient->hookCustomData = 0;
 
     // Set the client to not-ready
     pKinesisVideoClient->clientReady = FALSE;

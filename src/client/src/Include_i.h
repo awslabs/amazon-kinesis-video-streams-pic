@@ -84,6 +84,9 @@ struct __EndpointInfo {
 };
 typedef struct __EndpointInfo* PEndpointInfo;
 
+// Testability hooks functions
+typedef STATUS (*KinesisVideoClientCallbackHookFunc)(UINT64);
+
 /**
  * The rest of the internal include files
  */
@@ -287,7 +290,9 @@ typedef struct __KinesisVideoClient {
     // Timer Queue/Callback func for Automatic Intermittent Producer
     TIMER_QUEUE_HANDLE timerQueueHandle;
     TimerCallbackFunc timerCallbackFunc;
-    volatile UINT32 timerCallbackInvocationCount;
+
+    KinesisVideoClientCallbackHookFunc timerCallbackPreHookFunc;
+    UINT64 hookCustomData;
 
     // ID for timer created to wake and check if streams have incoming data
     UINT32 timerId;
