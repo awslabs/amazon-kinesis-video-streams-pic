@@ -80,7 +80,7 @@ STATUS executeDescribeStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     // Step the client state machine first
-    CHK_STATUS(stepStateMachine(pKinesisVideoClient->base.pStateMachine));
+    CHK_STATUS(stepClientStateMachine(pKinesisVideoClient));
 
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
@@ -476,7 +476,7 @@ STATUS executeGetEndpointStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     // Step the client state machine first
-    CHK_STATUS(stepStateMachine(pKinesisVideoClient->base.pStateMachine));
+    CHK_STATUS(stepClientStateMachine(pKinesisVideoClient));
 
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
@@ -512,7 +512,7 @@ STATUS executeGetTokenStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     // Step the client state machine first
-    CHK_STATUS(stepStateMachine(pKinesisVideoClient->base.pStateMachine));
+    CHK_STATUS(stepClientStateMachine(pKinesisVideoClient));
 
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
@@ -548,7 +548,7 @@ STATUS executeCreateStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     // Step the client state machine first
-    CHK_STATUS(stepStateMachine(pKinesisVideoClient->base.pStateMachine));
+    CHK_STATUS(stepClientStateMachine(pKinesisVideoClient));
 
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
@@ -588,7 +588,7 @@ STATUS executeTagStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     // Step the client state machine first
-    CHK_STATUS(stepStateMachine(pKinesisVideoClient->base.pStateMachine));
+    CHK_STATUS(stepClientStateMachine(pKinesisVideoClient));
 
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
@@ -667,7 +667,7 @@ STATUS executePutStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     // Step the client state machine first
-    CHK_STATUS(stepStateMachine(pKinesisVideoClient->base.pStateMachine));
+    CHK_STATUS(stepClientStateMachine(pKinesisVideoClient));
 
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoStream->streamingAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;

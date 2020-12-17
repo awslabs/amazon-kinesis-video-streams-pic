@@ -81,7 +81,7 @@ PUBLIC_API VOID defaultThreadSleep(UINT64 time)
     // Time in milliseconds
     UINT64 remaining_time = time / HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     // The loop will be run till the complete Sleep() time is reached
-    while(remaining_time != 0) {
+    while (remaining_time != 0) {
         // Covers the last case when there is residual time left and
         // when the value provided is less than or equal to MAX_UINT32
         if(remaining_time <= MAX_UINT32) {
@@ -228,7 +228,7 @@ PUBLIC_API VOID defaultThreadSleep(UINT64 time)
     UINT64 remaining_time = time / HUNDREDS_OF_NANOS_IN_A_MICROSECOND;
 
     // The loop will be run till the complete usleep time is reached
-    while(remaining_time != 0) {
+    while (remaining_time != 0) {
         // Covers the last case when there is residual time left and
         // when the value provided is less than or equal to MAX_UINT32
         if(remaining_time <= MAX_UINT32) {
@@ -335,4 +335,3 @@ threadSleepUntil globalThreadSleepUntil = defaultThreadSleepUntil;
 joinThread globalJoinThread = defaultJoinThread;
 cancelThread globalCancelThread = defaultCancelThread;
 detachThread globalDetachThread = defaultDetachThread;
-

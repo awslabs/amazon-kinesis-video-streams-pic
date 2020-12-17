@@ -969,7 +969,7 @@ extern putUnalignedInt64Func putUnalignedInt64LittleEndian;
             CHECK_EXT(FALSE, "Bad alignment size.");            \
             break;                                              \
         }                                                       \
-    } while(0);
+    } while (0);
 
 ////////////////////////////////////////////////////
 // Dumping memory functionality

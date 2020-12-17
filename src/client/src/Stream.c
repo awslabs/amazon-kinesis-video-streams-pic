@@ -1822,7 +1822,7 @@ STATUS streamFormatChanged(PKinesisVideoStream pKinesisVideoStream, UINT32 codec
 
     CHK_STATUS(mkvgenSetCodecPrivateData(pKinesisVideoStream->pMkvGenerator, trackId, codecPrivateDataSize, codecPrivateData));
 
-    // Unlock the stream (even though it will be unlocked in the cleanup
+    // Unlock the stream (even though it will be unlocked in the cleanup)
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     streamLocked = FALSE;
 

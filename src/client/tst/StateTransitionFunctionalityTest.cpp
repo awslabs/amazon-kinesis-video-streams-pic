@@ -40,20 +40,20 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallRetryOnRetriable
     setupStreamDescription();
     // submit retriable error
     EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, &mStreamDescription));
-    EXPECT_EQ(2, mDescribeStreamFuncCount); // check retry happened
+    EXPECT_EQ(2, ATOMIC_LOAD(&mDescribeStreamFuncCount)); // check retry happened
     // submit not found result to move to create state
     EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESOURCE_NOT_FOUND, &mStreamDescription));
 
     EXPECT_EQ(STATUS_SUCCESS, createStreamResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, TEST_STREAM_ARN));
-    EXPECT_EQ(2, mCreateStreamFuncCount);
+    EXPECT_EQ(2, ATOMIC_LOAD(&mCreateStreamFuncCount));
     EXPECT_EQ(STATUS_SUCCESS, createStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAM_ARN));
 
     EXPECT_EQ(STATUS_SUCCESS, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN));
-    EXPECT_EQ(2, mTagResourceFuncCount);
+    EXPECT_EQ(2, ATOMIC_LOAD(&mTagResourceFuncCount));
     EXPECT_EQ(STATUS_SUCCESS, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK));
 
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, TEST_STREAMING_ENDPOINT));
-    EXPECT_EQ(2, mGetStreamingEndpointFuncCount);
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
 
     EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
@@ -61,7 +61,7 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallRetryOnRetriable
                                                            (PBYTE) TEST_STREAMING_TOKEN,
                                                            SIZEOF(TEST_STREAMING_TOKEN),
                                                            TEST_AUTH_EXPIRATION));
-    EXPECT_EQ(2, mGetStreamingTokenFuncCount);
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
     EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
                                                            SERVICE_CALL_RESULT_OK,
                                                            (PBYTE) TEST_STREAMING_TOKEN,
@@ -128,20 +128,20 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallReturnNotAuthori
     setupStreamDescription();
     // submit auth error which should be retriable
     EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_NOT_AUTHORIZED, &mStreamDescription));
-    EXPECT_EQ(2, mDescribeStreamFuncCount); // check retry happened
+    EXPECT_EQ(2, ATOMIC_LOAD(&mDescribeStreamFuncCount)); // check retry happened
     // submit not found result to move to create state
     EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESOURCE_NOT_FOUND, &mStreamDescription));
 
     EXPECT_EQ(STATUS_SUCCESS, createStreamResultEvent(mCallContext.customData, SERVICE_CALL_NOT_AUTHORIZED, TEST_STREAM_ARN));
-    EXPECT_EQ(2, mCreateStreamFuncCount);
+    EXPECT_EQ(2, ATOMIC_LOAD(&mCreateStreamFuncCount));
     EXPECT_EQ(STATUS_SUCCESS, createStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAM_ARN));
 
     EXPECT_EQ(STATUS_SUCCESS, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_NOT_AUTHORIZED));
-    EXPECT_EQ(2, mTagResourceFuncCount);
+    EXPECT_EQ(2, ATOMIC_LOAD(&mTagResourceFuncCount));
     EXPECT_EQ(STATUS_SUCCESS, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK));
 
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_NOT_AUTHORIZED, TEST_STREAMING_ENDPOINT));
-    EXPECT_EQ(2, mGetStreamingEndpointFuncCount);
+    EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
 
     EXPECT_EQ(STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, getStreamingTokenResultEvent(mCallContext.customData,
@@ -149,7 +149,7 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallReturnNotAuthori
                                                            (PBYTE) TEST_STREAMING_TOKEN,
                                                            SIZEOF(TEST_STREAMING_TOKEN),
                                                            TEST_AUTH_EXPIRATION));
-    EXPECT_EQ(1, mGetStreamingTokenFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
     EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
                                                            SERVICE_CALL_RESULT_OK,
                                                            (PBYTE) TEST_STREAMING_TOKEN,
@@ -176,7 +176,7 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallExhaustRetry)
     // exhaust retry for describeStreamResultEvent
     EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoStream(mClientHandle, &mStreamInfo, &mStreamHandle));
     for(i = 0; i < SERVICE_CALL_MAX_RETRY_COUNT; i++) {
-        EXPECT_EQ(i + 1, mDescribeStreamFuncCount);
+        EXPECT_EQ(i + 1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
         EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, &mStreamDescription));
     }
     EXPECT_EQ(STATUS_DESCRIBE_STREAM_CALL_FAILED, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, &mStreamDescription));
@@ -187,7 +187,7 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallExhaustRetry)
     // move to create state
     EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESOURCE_NOT_FOUND, &mStreamDescription));
     for(i = 0; i < SERVICE_CALL_MAX_RETRY_COUNT; i++) {
-        EXPECT_EQ(i + 1, mCreateStreamFuncCount);
+        EXPECT_EQ(i + 1, ATOMIC_LOAD(&mCreateStreamFuncCount));
         EXPECT_EQ(STATUS_SUCCESS, createStreamResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, TEST_STREAM_ARN));
     }
     EXPECT_EQ(STATUS_CREATE_STREAM_CALL_FAILED, createStreamResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, TEST_STREAM_ARN));
@@ -202,12 +202,12 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallExhaustRetry)
     // tagStream is special because it is not critical to streaming. After retries are exhausted it will move to the next
     // state and return success.
     for(i = 0; i < SERVICE_CALL_MAX_RETRY_COUNT; i++) {
-        EXPECT_EQ(i + 1, mTagResourceFuncCount);
+        EXPECT_EQ(i + 1, ATOMIC_LOAD(&mTagResourceFuncCount));
         EXPECT_EQ(STATUS_SUCCESS, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN));
     }
     EXPECT_EQ(STATUS_SUCCESS, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN));
-    EXPECT_EQ(1, mGetStreamingEndpointFuncCount); // moved to getStreamingEndPointState
-    mGetStreamingEndpointFuncCount = 0;
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount)); // moved to getStreamingEndPointState
+    ATOMIC_STORE(&mGetStreamingEndpointFuncCount, 0);
     freeKinesisVideoStream(&mStreamHandle);
 
     // exhaust retry for getStreamingEndpointResultEvent
@@ -218,7 +218,7 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallExhaustRetry)
     EXPECT_EQ(STATUS_SUCCESS, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK));
 
     for(i = 0; i < SERVICE_CALL_MAX_RETRY_COUNT; i++) {
-        EXPECT_EQ(i + 1, mGetStreamingEndpointFuncCount);
+        EXPECT_EQ(i + 1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
         EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, TEST_STREAMING_ENDPOINT));
     }
     EXPECT_EQ(STATUS_GET_STREAMING_ENDPOINT_CALL_FAILED, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, TEST_STREAMING_ENDPOINT));
@@ -233,7 +233,7 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallExhaustRetry)
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
 
     for(i = 0; i < SERVICE_CALL_MAX_RETRY_COUNT; i++) {
-        EXPECT_EQ(i + 1, mGetStreamingTokenFuncCount);
+        EXPECT_EQ(i + 1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
         EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
                                                                SERVICE_CALL_UNKNOWN,
                                                                (PBYTE) TEST_STREAMING_TOKEN,
@@ -278,9 +278,9 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToGetEndpointState
 
         mStreamingSession.getActiveUploadHandles(currentUploadHandles);
         EXPECT_EQ(1, currentUploadHandles.size());
-        oldGetStreamingEndpointFuncCount = mGetStreamingEndpointFuncCount;
-        oldGetTokenFuncCount = mGetStreamingTokenFuncCount;
-        oldDescribeFuncCount = mDescribeStreamFuncCount;
+        oldGetStreamingEndpointFuncCount = ATOMIC_LOAD(&mGetStreamingEndpointFuncCount);
+        oldGetTokenFuncCount = ATOMIC_LOAD(&mGetStreamingTokenFuncCount);
+        oldDescribeFuncCount = ATOMIC_LOAD(&mDescribeStreamFuncCount);
 
         // Submit a terminate event
         EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mStreamHandle, currentUploadHandles[0], service_call_result));
@@ -290,42 +290,42 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToGetEndpointState
         switch (retStatus) {
             case STATUS_SUCCESS:
                 // Should start from get endpoint
-                EXPECT_EQ(oldGetStreamingEndpointFuncCount + 1, mGetStreamingEndpointFuncCount);
-                EXPECT_EQ(oldGetTokenFuncCount + 1, mGetStreamingTokenFuncCount);
-                EXPECT_EQ(oldDescribeFuncCount, mDescribeStreamFuncCount);
+                EXPECT_EQ(oldGetStreamingEndpointFuncCount + 1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+                EXPECT_EQ(oldGetTokenFuncCount + 1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+                EXPECT_EQ(oldDescribeFuncCount, ATOMIC_LOAD(&mDescribeStreamFuncCount));
 
                 break;
 
             case STATUS_SERVICE_CALL_TIMEOUT_ERROR:
                 // Should start from ready
-                EXPECT_EQ(oldGetStreamingEndpointFuncCount, mGetStreamingEndpointFuncCount);
-                EXPECT_EQ(oldGetTokenFuncCount, mGetStreamingTokenFuncCount);
-                EXPECT_EQ(oldDescribeFuncCount, mDescribeStreamFuncCount);
+                EXPECT_EQ(oldGetStreamingEndpointFuncCount, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+                EXPECT_EQ(oldGetTokenFuncCount, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+                EXPECT_EQ(oldDescribeFuncCount, ATOMIC_LOAD(&mDescribeStreamFuncCount));
 
                 break;
 
             case STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR:
                 // Should start from token
-                EXPECT_EQ(oldGetStreamingEndpointFuncCount, mGetStreamingEndpointFuncCount);
-                EXPECT_EQ(oldGetTokenFuncCount + 1, mGetStreamingTokenFuncCount);
-                EXPECT_EQ(oldDescribeFuncCount, mDescribeStreamFuncCount);
+                EXPECT_EQ(oldGetStreamingEndpointFuncCount, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+                EXPECT_EQ(oldGetTokenFuncCount + 1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+                EXPECT_EQ(oldDescribeFuncCount, ATOMIC_LOAD(&mDescribeStreamFuncCount));
 
                 break;
 
             case STATUS_SERVICE_CALL_DEVICE_LIMIT_ERROR:
             case STATUS_SERVICE_CALL_STREAM_LIMIT_ERROR:
                 // Should start from get endpoint
-                EXPECT_EQ(oldGetStreamingEndpointFuncCount + 1, mGetStreamingEndpointFuncCount);
-                EXPECT_EQ(oldGetTokenFuncCount + 1, mGetStreamingTokenFuncCount);
-                EXPECT_EQ(oldDescribeFuncCount, mDescribeStreamFuncCount);
+                EXPECT_EQ(oldGetStreamingEndpointFuncCount + 1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+                EXPECT_EQ(oldGetTokenFuncCount + 1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+                EXPECT_EQ(oldDescribeFuncCount, ATOMIC_LOAD(&mDescribeStreamFuncCount));
 
                 break;
 
             default:
                 // Should start from describe
-                EXPECT_EQ(oldGetStreamingEndpointFuncCount + 1, mGetStreamingEndpointFuncCount);
-                EXPECT_EQ(oldGetTokenFuncCount + 1, mGetStreamingTokenFuncCount);
-                EXPECT_EQ(oldDescribeFuncCount + 1, mDescribeStreamFuncCount);
+                EXPECT_EQ(oldGetStreamingEndpointFuncCount + 1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+                EXPECT_EQ(oldGetTokenFuncCount + 1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+                EXPECT_EQ(oldDescribeFuncCount + 1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
         }
 
         mStreamingSession.clearSessions(); // remove current session for next iteration.
@@ -358,10 +358,10 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToDescribeState)
 
         mStreamingSession.getActiveUploadHandles(currentUploadHandles);
         EXPECT_EQ(1, currentUploadHandles.size());
-        oldDescribeStreamFuncCount = mDescribeStreamFuncCount;
+        oldDescribeStreamFuncCount = ATOMIC_LOAD(&mDescribeStreamFuncCount);
         EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mStreamHandle, currentUploadHandles[0], service_call_result));
         // describeStream has been called once, that means stream state moved to describeStream
-        EXPECT_EQ(mDescribeStreamFuncCount, oldDescribeStreamFuncCount + 1);
+        EXPECT_EQ(ATOMIC_LOAD(&mDescribeStreamFuncCount), oldDescribeStreamFuncCount + 1);
         mStreamingSession.clearSessions(); // remove current session for next iteration.
         EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
     }
@@ -389,10 +389,10 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToGetTokenState)
 
         mStreamingSession.getActiveUploadHandles(currentUploadHandles);
         EXPECT_EQ(1, currentUploadHandles.size());
-        oldGetStreamingTokenFuncCount = mGetStreamingTokenFuncCount;
+        oldGetStreamingTokenFuncCount = ATOMIC_LOAD(&mGetStreamingTokenFuncCount);
         EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mStreamHandle, currentUploadHandles[0], service_call_result));
         // getStreamingToken has been called once, that means stream state moved to getStreamingToken
-        EXPECT_EQ(mGetStreamingTokenFuncCount, oldGetStreamingTokenFuncCount + 1);
+        EXPECT_EQ(ATOMIC_LOAD(&mGetStreamingTokenFuncCount), oldGetStreamingTokenFuncCount + 1);
         mStreamingSession.clearSessions(); // remove current session for next iteration.
         EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
     }
@@ -421,10 +421,10 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToNewState)
 
         mStreamingSession.getActiveUploadHandles(currentUploadHandles);
         EXPECT_EQ(1, currentUploadHandles.size());
-        oldDescribeStreamFuncCount = mDescribeStreamFuncCount;
+        oldDescribeStreamFuncCount = ATOMIC_LOAD(&mDescribeStreamFuncCount);
         EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mStreamHandle, currentUploadHandles[0], service_call_result));
         // after stream state is moved to new, it automatically move to describeStream state
-        EXPECT_EQ(mDescribeStreamFuncCount, oldDescribeStreamFuncCount + 1);
+        EXPECT_EQ(ATOMIC_LOAD(&mDescribeStreamFuncCount), oldDescribeStreamFuncCount + 1);
         mStreamingSession.clearSessions(); // remove current session for next iteration.
         EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
     }

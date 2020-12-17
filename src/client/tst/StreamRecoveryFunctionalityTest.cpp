@@ -60,7 +60,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionEns
             resetConnectionTime = INVALID_TIMESTAMP_VALUE; // reset connection only once.
         }
 
-    } while(currentTime < streamStopTime);
+    } while (currentTime < streamStopTime);
 
     VerifyStopStreamSyncAndFree();
 }
@@ -113,7 +113,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionAft
             resetConnectionTime = INVALID_TIMESTAMP_VALUE; // reset connection only once.
         }
 
-    } while(currentTime < streamStopTime);
+    } while (currentTime < streamStopTime);
 
     VerifyStopStreamSyncAndFree();
 }
@@ -214,7 +214,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamRollbackToLastRece
                 }
             }
         }
-    } while(currentTime < streamStopTime);
+    } while (currentTime < streamStopTime);
 
     VerifyStopStreamSyncAndFree();
 }
@@ -278,7 +278,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
 
         retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData, &retrievedDataSize);
         VerifyGetStreamDataResult(retStatus, gotStreamData, mockConsumer->mUploadHandle, &currentTime, &mockConsumer);
-    } while(!gotStreamData);
+    } while (!gotStreamData);
 
     // check that a new upload handle is created and the error handle is gone.
     mStreamingSession.getActiveUploadHandles(currentUploadHandles);
@@ -311,7 +311,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
 
     EXPECT_TRUE(STATUS_SUCCESS == mThreadReturnStatus);
     EXPECT_TRUE(mStreamingSession.mConsumerList.empty());
-    EXPECT_EQ(TRUE, mStreamClosed);
+    EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mStreamClosed));
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 
@@ -417,7 +417,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorWithTime
 
     EXPECT_TRUE(STATUS_SUCCESS == mThreadReturnStatus);
     EXPECT_TRUE(mStreamingSession.mConsumerList.empty());
-    EXPECT_EQ(TRUE, mStreamClosed);
+    EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mStreamClosed));
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 
@@ -519,7 +519,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorWithoutT
 
     EXPECT_TRUE(STATUS_SUCCESS == mThreadReturnStatus);
     EXPECT_TRUE(mStreamingSession.mConsumerList.empty());
-    EXPECT_EQ(TRUE, mStreamClosed);
+    EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mStreamClosed));
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 
@@ -638,7 +638,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorWithoutT
 
     EXPECT_TRUE(STATUS_SUCCESS == mThreadReturnStatus);
     EXPECT_TRUE(mStreamingSession.mConsumerList.empty());
-    EXPECT_EQ(TRUE, mStreamClosed);
+    EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mStreamClosed));
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 
@@ -703,7 +703,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
 
         retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
         VerifyGetStreamDataResult(retStatus, gotStreamData, mockConsumer->mUploadHandle, &currentTime, &mockConsumer);
-    } while(!gotStreamData);
+    } while (!gotStreamData);
 
     // finishing putting all frames for the first fragment.
     for(i = 0; i < 5; i++) {
@@ -746,7 +746,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
 
     EXPECT_TRUE(STATUS_SUCCESS == mThreadReturnStatus);
     EXPECT_TRUE(mStreamingSession.mConsumerList.empty());
-    EXPECT_EQ(TRUE, mStreamClosed);
+    EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mStreamClosed));
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 
@@ -811,7 +811,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
 
         retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
         VerifyGetStreamDataResult(retStatus, gotStreamData, mockConsumer->mUploadHandle, &currentTime, &mockConsumer);
-    } while(!gotStreamData);
+    } while (!gotStreamData);
 
     // put in more fragments. At the end we are expecting totalFragmentPut * 3 acks.
     for(i = 0; i < mMockProducerConfig.mKeyFrameInterval * (totalFragmentPut-1); i++) {
@@ -849,7 +849,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
 
     EXPECT_TRUE(STATUS_SUCCESS == mThreadReturnStatus);
     EXPECT_TRUE(mStreamingSession.mConsumerList.empty());
-    EXPECT_EQ(TRUE, mStreamClosed);
+    EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mStreamClosed));
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 
@@ -904,7 +904,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithBuffer)
     EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitConnectionError(SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT));
     errorHandle = mockConsumer->mUploadHandle;
 
-    EXPECT_EQ(2, mPutStreamFuncCount);
+    EXPECT_EQ(2, ATOMIC_LOAD(&mPutStreamFuncCount));
 
     // loop until the error handle get end-of-stream
     do {
@@ -950,7 +950,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithBuffer)
 
     EXPECT_TRUE(STATUS_SUCCESS == mThreadReturnStatus);
     EXPECT_TRUE(mStreamingSession.mConsumerList.empty());
-    EXPECT_EQ(TRUE, mStreamClosed);
+    EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mStreamClosed));
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 }
@@ -1009,12 +1009,12 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithoutBuff
     EXPECT_EQ(1, currentUploadHandles.size());
 
     // Expected call counts
-    EXPECT_EQ(1, mPutStreamFuncCount);
-    EXPECT_EQ(3, mDescribeStreamFuncCount); // NOTE: Describe is made to fail a few times
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(1, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(1, mStreamReadyFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mDescribeStreamFuncCount)); // NOTE: Describe is made to fail a few times
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamReadyFuncCount));
 
     EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitConnectionError(SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT));
     errorHandle = mockConsumer->mUploadHandle;
@@ -1022,23 +1022,23 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithoutBuff
     THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     // No recovery
-    EXPECT_EQ(1, mPutStreamFuncCount);
-    EXPECT_EQ(3, mDescribeStreamFuncCount);
-    EXPECT_EQ(0, mCreateStreamFuncCount);
-    EXPECT_EQ(0, mTagResourceFuncCount);
-    EXPECT_EQ(1, mGetStreamingEndpointFuncCount);
-    EXPECT_EQ(1, mStreamReadyFuncCount);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
+    EXPECT_EQ(3, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamReadyFuncCount));
 
     // Put some non-key frames until the next key frame - stream should have recovered
     for (i = 0; i < mMockProducerConfig.mKeyFrameInterval - 1; i++) {
         mockProducer.putFrame();
         // Recovery till ready state
-        EXPECT_EQ(2, mPutStreamFuncCount);
-        EXPECT_EQ(3, mDescribeStreamFuncCount); // remains the same
-        EXPECT_EQ(0, mCreateStreamFuncCount);
-        EXPECT_EQ(0, mTagResourceFuncCount);
-        EXPECT_EQ(1, mGetStreamingEndpointFuncCount); // remains the same
-        EXPECT_EQ(2, mStreamReadyFuncCount);
+        EXPECT_EQ(2, ATOMIC_LOAD(&mPutStreamFuncCount));
+        EXPECT_EQ(3, ATOMIC_LOAD(&mDescribeStreamFuncCount)); // remains the same
+        EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+        EXPECT_EQ(0, ATOMIC_LOAD(&mTagResourceFuncCount));
+        EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount)); // remains the same
+        EXPECT_EQ(2, ATOMIC_LOAD(&mStreamReadyFuncCount));
     }
 
     // Next one should be a key frame.
@@ -1046,7 +1046,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithoutBuff
     // and the persisted ACK has not been submitted so the stream start
     // should be a key frame from past.
     mockProducer.putFrame();
-    EXPECT_EQ(2, mPutStreamFuncCount);
+    EXPECT_EQ(2, ATOMIC_LOAD(&mPutStreamFuncCount));
 
     // Put some non-key frames to complete the fragment
     for (i = 0; i < mMockProducerConfig.mKeyFrameInterval - 1; i++) {
@@ -1110,7 +1110,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithoutBuff
 
     EXPECT_TRUE(STATUS_SUCCESS == mThreadReturnStatus);
     EXPECT_TRUE(mStreamingSession.mConsumerList.empty());
-    EXPECT_EQ(TRUE, mStreamClosed);
+    EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mStreamClosed));
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 }
@@ -1155,7 +1155,7 @@ TEST_P(StreamRecoveryFunctionalityTest, streamStartViewDroppedBeforeFullyConsume
     mockConsumer = mStreamingSession.getConsumer(uploadHandle);
 
     /* do ONE successful getStreamData */
-    while(!gotStreamData) {
+    while (!gotStreamData) {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
         status = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
         VerifyGetStreamDataResult(status, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
@@ -1170,7 +1170,7 @@ TEST_P(StreamRecoveryFunctionalityTest, streamStartViewDroppedBeforeFullyConsume
     gotStreamData = FALSE;
 
     /* do another getStreamData */
-    while(!gotStreamData) {
+    while (!gotStreamData) {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
         status = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
     }
@@ -1245,7 +1245,7 @@ TEST_P(StreamRecoveryFunctionalityTest, FragmentMetadataStartStreamFailRecovery)
     THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     mockProducer.putFrame();
-    EXPECT_EQ(2, mPutStreamFuncCount);
+    EXPECT_EQ(2, ATOMIC_LOAD(&mPutStreamFuncCount));
 
     // Should have two
     mStreamingSession.getActiveUploadHandles(currentUploadHandles);

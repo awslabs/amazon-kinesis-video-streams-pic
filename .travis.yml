@@ -85,8 +85,11 @@ matrix:
     - name: "Linux Clang ThreadSanitizer"
       os: linux
       compiler: clang
-      env: allowTestFail=true
+      env: TSAN_OPTIONS=halt_on_error=1:suppressions=../src/utils/tst/suppressions/TSAN.supp
       before_script: mkdir build && cd build && cmake .. -DBUILD_TEST=TRUE -DTHREAD_SANITIZER=TRUE
+      script:
+        - make
+        - AWS_KVS_LOG_LEVEL=7 ./kvspic_test --gtest_break_on_failure --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:ThreadFunctionalityTest.ThreadCreateAndCancel"
 
     # Old Version GCC 4.4
     - name: "Linux GCC 4.4 Build"
