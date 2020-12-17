@@ -227,7 +227,7 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     pKinesisVideoClient->base.pStateMachine = pStateMachine;
 
     if(pKinesisVideoClient->deviceInfo.clientInfo.automaticStreamingFlags == AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER) {
-        if ( !IS_VALID_TIMER_QUEUE_HANDLE(pKinesisVideoClient->timerQueueHandle) ) {
+        if (!IS_VALID_TIMER_QUEUE_HANDLE(pKinesisVideoClient->timerQueueHandle)) {
             // Create timer queue
             CHK_STATUS(timerQueueCreate(&pKinesisVideoClient->timerQueueHandle));
             // Store callback in client so we can override in tests
