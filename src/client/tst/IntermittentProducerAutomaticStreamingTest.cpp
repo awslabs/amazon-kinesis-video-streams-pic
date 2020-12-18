@@ -371,6 +371,7 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, MultiTrackVerifyNoInvocations
     // Create synchronously
     CreateStreamSync();
     PKinesisVideoStream stream = FROM_STREAM_HANDLE(mStreamHandle);
+    STREAM_HANDLE streamHandle = mStreamHandle;
 
     // Lock the Stream because PIC can be reading/writing this value as well
     client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, stream->base.lock);
@@ -402,12 +403,12 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, MultiTrackVerifyNoInvocations
         frame.flags = frameCount % 10 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
 
         frame.trackId = 1;
-        EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
+        EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(streamHandle, &frame));
 
         // only put frames in track 2 for first 5s
         if ( frameCount <= track2FrameMax ) {
             frame.trackId = 2;
-            EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
+            EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(streamHandle, &frame));
         }
 
         frameCount++;

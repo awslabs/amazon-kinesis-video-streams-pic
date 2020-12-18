@@ -44,13 +44,13 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
                                                      pKinesisVideoClient->base.lock);
     // call pre hook function, useful for testing
-    if(pKinesisVideoClient->timerCallbackPreHookFunc != NULL) {
+    if (pKinesisVideoClient->timerCallbackPreHookFunc != NULL) {
         retStatus = pKinesisVideoClient->timerCallbackPreHookFunc(pKinesisVideoClient->hookCustomData);
     }
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
                                                      pKinesisVideoClient->base.lock);
 
-    if(STATUS_SUCCEEDED(retStatus)) {
+    if (STATUS_SUCCEEDED(retStatus)) {
         // Lock the client streams list lock
         pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
                                                          pKinesisVideoClient->base.streamListLock);
@@ -602,17 +602,18 @@ STATUS stopKinesisVideoStreamSync(STREAM_HANDLE streamHandle)
 
 CleanUp:
 
+
+    if(streamsListLock) {
+        pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.customData,
+                                                                                pKinesisVideoStream->pKinesisVideoClient->base.streamListLock);
+    }
+
     if (releaseStreamSemaphore) {
         semaphoreRelease(pKinesisVideoStream->base.shutdownSemaphore);
     }
 
     if (releaseClientSemaphore) {
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
-    }
-
-    if(streamsListLock) {
-        pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.customData,
-                                                                              pKinesisVideoStream->pKinesisVideoClient->base.streamListLock);
     }
 
     CHK_LOG_ERR(retStatus);

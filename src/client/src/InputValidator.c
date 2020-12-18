@@ -332,7 +332,7 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
         }
     }
 
-    if ( pClientInfo->reservedCallbackPeriod == INTERMITTENT_PRODUCER_PERIOD_SENTINEL_VALUE ) {
+    if (pClientInfo->reservedCallbackPeriod == INTERMITTENT_PRODUCER_PERIOD_SENTINEL_VALUE) {
         pClientInfo->reservedCallbackPeriod = INTERMITTENT_PRODUCER_PERIOD_DEFAULT;
     }
     
