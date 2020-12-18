@@ -1,6 +1,6 @@
 # Every exception in this file should be heavily justified
 
-# Suppressing lock order reports from TSAN. Our tests and the PIC codebase is based on differnt layer of locks which are re-entrant.
+# Suppressing lock order reports from TSAN. Our tests and the PIC codebase is based on differnet layer of locks which are re-entrant.
 deadlock:StreamApiTest_kinesisVideoStreamCreateSync_Valid_Test::TestBody
 deadlock:StreamApiTest_kinesisVideoStreamCreateSyncStopSync_Valid_Timeout_Test
 deadlock:clientReadyFunc

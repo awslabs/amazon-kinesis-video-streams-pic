@@ -72,7 +72,7 @@ STATUS timerCallbackPreHook(UINT64 hookCustomData)
     STATUS retStatus = STATUS_SUCCESS;
     IntermittentProducerAutomaticStreamingTest* pTest = (IntermittentProducerAutomaticStreamingTest*) hookCustomData;
     CHECK(pTest != NULL);
-    pTest->mTimerCallbackFuncCount++;
+    ATOMIC_INCREMENT(&pTest->mTimerCallbackFuncCount);
     return retStatus;
 };
 
@@ -81,10 +81,14 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateTimerInvokedBeforeTim
     ASSERT_EQ(STATUS_SUCCESS, CreateClient());
 
     PKinesisVideoClient client = FROM_CLIENT_HANDLE(mClientHandle);
-    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    // Lock client before setting hook custom data and callback because PIC reads these values
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, client->base.lock);
     client->hookCustomData = (UINT64) this;
+    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, client->base.lock);
 
-    EXPECT_EQ((int)mTimerCallbackFuncCount, 0);
+
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTimerCallbackFuncCount));
 
     // Create synchronously
     CreateStreamSync();
@@ -104,7 +108,7 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateTimerInvokedBeforeTim
 
     THREAD_SLEEP(1.2 * INTERMITTENT_PRODUCER_TIMER_START_DELAY);
 
-    EXPECT_EQ((int)mTimerCallbackFuncCount, 1);
+    EXPECT_EQ(1, ATOMIC_LOAD(&mTimerCallbackFuncCount));
 }
 
 TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateTimerInvokedAfterFirstPeriod) {
@@ -112,8 +116,11 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateTimerInvokedAfterFirs
     ASSERT_EQ(STATUS_SUCCESS, CreateClient());
 
     PKinesisVideoClient client = FROM_CLIENT_HANDLE(mClientHandle);
-    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    // Lock client before setting hook custom data and callback because PIC reads these values
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, client->base.lock);
     client->hookCustomData = (UINT64) this;
+    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, client->base.lock);
 
 // Create synchronously
     CreateStreamSync();
@@ -133,22 +140,19 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateTimerInvokedAfterFirs
 
     THREAD_SLEEP(INTERMITTENT_PRODUCER_TIMER_START_DELAY + 1.20 * mDeviceInfo.clientInfo.reservedCallbackPeriod);
 
-    EXPECT_EQ((int)mTimerCallbackFuncCount, 2);
+    EXPECT_EQ(2, ATOMIC_LOAD(&mTimerCallbackFuncCount));
 }
-
-/*
-This test fails, if I try to do only stopKinesisVideoStreamSync it fails there because the close
- stream CVAR is never signaled, the call to notifyStreamClosed is only made if I don't
- make any putFrame calls in the test
-*/
 
 TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateTimerContinueInvocationsAfterStopStream) {
     // Create new client so param value of callbackPeriod can be applied
     ASSERT_EQ(STATUS_SUCCESS, CreateClient());
 
     PKinesisVideoClient client = FROM_CLIENT_HANDLE(mClientHandle);
-    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    // Lock client before setting hook custom data and callback because PIC reads these values
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, client->base.lock);
     client->hookCustomData = (UINT64) this;
+    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, client->base.lock);
 
 // Create synchronously
     CreateStreamSync();
@@ -177,12 +181,12 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateTimerContinueInvocati
     EXPECT_EQ(STATUS_SUCCESS, stopKinesisVideoStreamSync(mStreamHandle));
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 
-    int beforeCount = mTimerCallbackFuncCount;
+    int beforeCount = ATOMIC_LOAD(&mTimerCallbackFuncCount);
     int m = 3;
 
     THREAD_SLEEP(m * mDeviceInfo.clientInfo.reservedCallbackPeriod);
 
-    int afterCount = mTimerCallbackFuncCount;
+    int afterCount = ATOMIC_LOAD(&mTimerCallbackFuncCount);
     // make sure call back is still firing after this stream is closed out
     EXPECT_TRUE(afterCount > beforeCount);
 
@@ -197,10 +201,13 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateTimerNoMoreInvocation
     ASSERT_EQ(STATUS_SUCCESS, CreateClient());
 
     PKinesisVideoClient client = FROM_CLIENT_HANDLE(mClientHandle);
-    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    // Lock client before setting hook custom data and callback because PIC reads these values
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, client->base.lock);
     client->hookCustomData = (UINT64) this;
+    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, client->base.lock);
 
-// Create synchronously
+    // Create synchronously
     CreateStreamSync();
 
     // Produce a frame
@@ -220,11 +227,11 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateTimerNoMoreInvocation
 
     freeKinesisVideoClient(&mClientHandle);
 
-    int val = mTimerCallbackFuncCount;
+    int val = ATOMIC_LOAD(&mTimerCallbackFuncCount);
 
     THREAD_SLEEP(INTERMITTENT_PRODUCER_TIMER_START_DELAY + 5 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 
-    EXPECT_EQ(val, (int)mTimerCallbackFuncCount);
+    EXPECT_EQ(val, ATOMIC_LOAD(&mTimerCallbackFuncCount));
 }
 
 TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateTimerNoInvocationsWithAutoStreamingOFF) {
@@ -234,8 +241,12 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateTimerNoInvocationsWit
     // Validate timerqueue is never constructed
     ASSERT_EQ(STATUS_SUCCESS, CreateClient());
     PKinesisVideoClient client = FROM_CLIENT_HANDLE(mClientHandle);
-    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    // Lock client before setting hook custom data and callback because PIC reads these values
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, client->base.lock);
     client->hookCustomData = (UINT64) this;
+    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, client->base.lock);
+
 
     // Create synchronously
     CreateStreamSync();
@@ -256,7 +267,7 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateTimerNoInvocationsWit
     THREAD_SLEEP(INTERMITTENT_PRODUCER_TIMER_START_DELAY + 2 * mDeviceInfo.clientInfo.reservedCallbackPeriod);
 
     EXPECT_TRUE(!IS_VALID_TIMER_QUEUE_HANDLE(client->timerQueueHandle));
-    EXPECT_EQ(0, (int)mTimerCallbackFuncCount);
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTimerCallbackFuncCount));
 }
 
 TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateLastUpdateTimeOfStreamUpdated) {
@@ -264,14 +275,20 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateLastUpdateTimeOfStrea
     ASSERT_EQ(STATUS_SUCCESS, CreateClient());
 
     PKinesisVideoClient client = FROM_CLIENT_HANDLE(mClientHandle);
-    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    // Lock client before setting hook custom data and callback because PIC reads these values
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, client->base.lock);
     client->hookCustomData = (UINT64) this;
+    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, client->base.lock);
 
     // Create synchronously
     CreateStreamSync();
     PKinesisVideoStream stream = FROM_STREAM_HANDLE(mStreamHandle);
 
+    // Lock the Stream because PIC can be reading/writing this value as well
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, stream->base.lock);
     EXPECT_EQ(stream->lastPutFrameTimestamp, INVALID_TIMESTAMP_VALUE);
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, stream->base.lock);
 
 // Produce a frame
     BYTE temp[100];
@@ -288,27 +305,38 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateLastUpdateTimeOfStrea
 
     THREAD_SLEEP(HUNDREDS_OF_NANOS_IN_A_SECOND);
 
+    // Lock the Stream because PIC can be reading/writing this value as well
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, stream->base.lock);
     UINT64 firstFrameTs = stream->lastPutFrameTimestamp;
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, stream->base.lock);
+
     UINT64 waitTime = 0;
     EXPECT_TRUE(IS_VALID_TIMESTAMP(firstFrameTs));
 
-    EXPECT_EQ(0, (int)mTimerCallbackFuncCount);
+    EXPECT_EQ(0, ATOMIC_LOAD(&mTimerCallbackFuncCount));
 
-    while(mTimerCallbackFuncCount < 1 && waitTime < 1.5*INTERMITTENT_PRODUCER_TIMER_START_DELAY) {
+    while(ATOMIC_LOAD(&mTimerCallbackFuncCount) < 1 && waitTime < 1.5*INTERMITTENT_PRODUCER_TIMER_START_DELAY) {
         THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
         waitTime += 200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     }
 
-    int callbackInvCount = (int)mTimerCallbackFuncCount;
+    int callbackInvCount = ATOMIC_LOAD(&mTimerCallbackFuncCount);
     // sleep for one invocation, verify we haven't updated the lastPutFrameTimestamp
     THREAD_SLEEP(1.20 * mDeviceInfo.clientInfo.reservedCallbackPeriod);
     // Verify callback executed 1 additional time and lastPutFrameTimestamp did NOT get updated
-    EXPECT_TRUE(callbackInvCount + 1 == (int)mTimerCallbackFuncCount);
+    EXPECT_TRUE(callbackInvCount + 1 == ATOMIC_LOAD(&mTimerCallbackFuncCount));
+    // Lock the Stream because PIC can be reading/writing this value as well
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, stream->base.lock);
     EXPECT_TRUE(firstFrameTs == stream->lastPutFrameTimestamp);
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, stream->base.lock);
 
     // Sleep long enough to reach timeout
     THREAD_SLEEP(INTERMITTENT_PRODUCER_MAX_TIMEOUT);
+    // Lock the Stream because PIC can be reading/writing this value as well
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, stream->base.lock);
     UINT64 eoFrFrameTs = stream->lastPutFrameTimestamp;
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, stream->base.lock);
+
     EXPECT_TRUE(eoFrFrameTs > firstFrameTs);
 }
 
@@ -318,8 +346,11 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, MultiTrackVerifyNoInvocations
     ASSERT_EQ(STATUS_SUCCESS, CreateClient());
 
     PKinesisVideoClient client = FROM_CLIENT_HANDLE(mClientHandle);
-    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    // Lock client before setting hook custom data and callback because PIC reads these values
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, client->base.lock);
     client->hookCustomData = (UINT64) this;
+    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, client->base.lock);
 
     // setup multi-track
     // Create multi-track configuration
@@ -341,7 +372,10 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, MultiTrackVerifyNoInvocations
     CreateStreamSync();
     PKinesisVideoStream stream = FROM_STREAM_HANDLE(mStreamHandle);
 
+    // Lock the Stream because PIC can be reading/writing this value as well
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, stream->base.lock);
     EXPECT_EQ(stream->lastPutFrameTimestamp, INVALID_TIMESTAMP_VALUE);
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, stream->base.lock);
 
     // Produce a frame
     BYTE temp[100];
@@ -383,10 +417,13 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, MultiTrackVerifyNoInvocations
         }
     }
 
-    EXPECT_TRUE(mTimerCallbackFuncCount >= expectedCalls);
+    EXPECT_TRUE(ATOMIC_LOAD(&mTimerCallbackFuncCount) >= expectedCalls);
 
+    // Lock the Stream because PIC can be reading/writing these values as well
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, stream->base.lock);
     EXPECT_TRUE(stream->eofrFrame);
     EXPECT_EQ(stream->lastPutFrameTimestamp, INVALID_TIMESTAMP_VALUE);
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, stream->base.lock);
 }
 
 TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateMultiStream) {
@@ -402,8 +439,11 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateMultiStream) {
     ASSERT_EQ(STATUS_SUCCESS, CreateClient());
 
     PKinesisVideoClient client = FROM_CLIENT_HANDLE(mClientHandle);
-    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    // Lock client before setting hook custom data and callback because PIC reads these values
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, client->base.lock);
     client->hookCustomData = (UINT64) this;
+    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, client->base.lock);
 
     // Create 2 streams synchronously
     // the callbacks all reset mStreamHandle, so creating sh2 first
@@ -470,13 +510,19 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateMultiStream) {
 
             if ( (ts > 40 * HUNDREDS_OF_NANOS_IN_A_SECOND) ) {
                 // We should no longer have eofr
+                // Lock the Stream because PIC can be reading/writing this value as well
+                client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, stream1->base.lock);
                 EXPECT_FALSE(stream1->eofrFrame);
+                client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, stream1->base.lock);
             }
         }
 
         // expect s1 to be in eofr state
         if ( ts < 35 * HUNDREDS_OF_NANOS_IN_A_SECOND && ts > 30 * HUNDREDS_OF_NANOS_IN_A_SECOND ) {
+            // Lock the Stream because PIC can be reading/writing this value as well
+            client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, stream1->base.lock);
             EXPECT_TRUE(stream1->eofrFrame);
+            client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, stream1->base.lock);
         }
 
         if ( ts < 15 * HUNDREDS_OF_NANOS_IN_A_SECOND || (ts > 45 * HUNDREDS_OF_NANOS_IN_A_SECOND)) {
@@ -486,14 +532,20 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateMultiStream) {
             EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(sh2, &frame));
 
             if ( (ts > 50 * HUNDREDS_OF_NANOS_IN_A_SECOND) ) {
+                // Lock the Stream because PIC can be reading/writing this value as well
+                client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, stream2->base.lock);
                 // We should no longer have eofr
                 EXPECT_FALSE(stream2->eofrFrame);
+                client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, stream2->base.lock);
             }
         }
 
         // expect s2 to be in eofr state
         if ( ts < 45 * HUNDREDS_OF_NANOS_IN_A_SECOND && ts > 40 * HUNDREDS_OF_NANOS_IN_A_SECOND ) {
+            // Lock the Stream because PIC can be reading/writing this value as well
+            client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, stream2->base.lock);
             EXPECT_TRUE(stream2->eofrFrame);
+            client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, stream2->base.lock);
         }
 
         UINT64 diff = GETTIME()-startTime;

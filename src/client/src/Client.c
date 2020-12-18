@@ -40,10 +40,15 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
 
     CHK(pKinesisVideoClient, STATUS_NULL_ARG);
 
+    // These values are set in another thread (so we need a lock)
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                     pKinesisVideoClient->base.lock);
     // call pre hook function, useful for testing
     if(pKinesisVideoClient->timerCallbackPreHookFunc != NULL) {
         retStatus = pKinesisVideoClient->timerCallbackPreHookFunc(pKinesisVideoClient->hookCustomData);
     }
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                     pKinesisVideoClient->base.lock);
 
     if(STATUS_SUCCEEDED(retStatus)) {
         // Lock the client streams list lock
@@ -54,29 +59,26 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
         for (i = 0; i < pKinesisVideoClient->deviceInfo.streamCount; i++) {
             if (NULL != pKinesisVideoClient->streams[i]) {
                 pCurrStream = pKinesisVideoClient->streams[i];
-                // Validate stream isn't being shut down or is closed
-                if (!(pCurrStream->streamStopped || pCurrStream->streamClosed)) {
-                    // Lock the Stream
-                    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                                     pCurrStream->base.lock);
-                    // Check if last PutFrame is older than max timeout, if so, send EoFR, if not, do nothing
-                    // Ignoring currentTime it COULD be smaller than pCurrStream->lastPutFrametimestamp
-                    // Due to this method entering but waiting on stream lock from putFrame call
-                    if (IS_VALID_TIMESTAMP(pCurrStream->lastPutFrameTimestamp) &&
-                        currentTime > pCurrStream->lastPutFrameTimestamp
-                        && (currentTime - pCurrStream->lastPutFrameTimestamp) > INTERMITTENT_PRODUCER_MAX_TIMEOUT) {
-                        if (STATUS_SUCCEEDED(retStatus = putKinesisVideoFrame(TO_STREAM_HANDLE(pCurrStream), &eofr))) {
-                            pCurrStream->lastPutFrameTimestamp = INVALID_TIMESTAMP_VALUE;
-                        } else {
-                            DLOGW("Failed to submit auto eofr with 0x%08x, for stream name: %s", retStatus,
-                                  pCurrStream->streamInfo.name);
-                        }
+                // Lock the Stream
+                pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                                 pCurrStream->base.lock);
+                // Check if last PutFrame is older than max timeout, if so, send EoFR, if not, do nothing
+                // Ignoring currentTime it COULD be smaller than pCurrStream->lastPutFrametimestamp
+                // Due to this method entering but waiting on stream lock from putFrame call
+                if (IS_VALID_TIMESTAMP(pCurrStream->lastPutFrameTimestamp) &&
+                    currentTime > pCurrStream->lastPutFrameTimestamp
+                    && (currentTime - pCurrStream->lastPutFrameTimestamp) > INTERMITTENT_PRODUCER_MAX_TIMEOUT) {
+                    if (STATUS_SUCCEEDED(retStatus = putKinesisVideoFrame(TO_STREAM_HANDLE(pCurrStream), &eofr))) {
+                        pCurrStream->lastPutFrameTimestamp = INVALID_TIMESTAMP_VALUE;
+                    } else {
+                        DLOGW("Failed to submit auto eofr with 0x%08x, for stream name: %s", retStatus,
+                              pCurrStream->streamInfo.name);
                     }
-
-                    // Unlock the Stream
-                    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                                       pCurrStream->base.lock);
                 }
+
+                // Unlock the Stream
+                pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                                   pCurrStream->base.lock);
             }
         }
 
