@@ -690,7 +690,9 @@ protected:
 
     static PVOID stopStreamSyncRoutine(PVOID arg) {
         ClientTestBase *pClient = (ClientTestBase*) arg;
+        MUTEX_LOCK(pClient->mTestClientMutex);
         pClient->mThreadReturnStatus = stopKinesisVideoStreamSync(pClient->mStreamHandle);
+        MUTEX_UNLOCK(pClient->mTestClientMutex);
         return NULL;
     }
 
