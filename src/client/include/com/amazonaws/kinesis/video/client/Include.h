@@ -453,7 +453,7 @@ extern "C" {
 #define FRAGMENT_ACK_CURRENT_VERSION                        0
 #define STREAM_METRICS_CURRENT_VERSION                      1
 #define CLIENT_METRICS_CURRENT_VERSION                      0
-#define CLIENT_INFO_CURRENT_VERSION                         1
+#define CLIENT_INFO_CURRENT_VERSION                         2
 
 /**
  * Definition of the client handle
@@ -816,6 +816,28 @@ struct __FragmentAck {
 typedef struct __FragmentAck* PFragmentAck;
 
 /**
+ *  In some streaming scenarios video is not constantly being produced,
+ *  in this case special handling must take place to handle various streaming
+ *  scenarios
+ */
+typedef enum {
+    /**
+     * With this option we'll create a timer (burns a thread) and periodically check
+     * if there are any streams which haven't had any PutFrame calls
+     * over fixed period of time, in which case we'll close out the fragment
+     * to prevent back-end from timing out and closing the session
+     */
+    AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER          = 0,
+
+    /**
+     * This option indicates a desire to do continuous recording with no gaps
+     * this doesn't mean we can't have dropped packets, this mode should NOT
+     * be used if for example only motion or event based video is to be recorded
+     */
+    AUTOMATIC_STREAMING_ALWAYS_CONTINUOUS              = (1 << 8),
+} AUTOMATIC_STREAMING_FLAGS;
+
+/**
  * NAL adaptation types enum. The bit flags correspond to the ones defined in the
  * mkvgen public header enumeration for simple copy forward.
  */
@@ -1071,6 +1093,15 @@ typedef struct __ClientInfo {
 
     // Time that allowed to be elapsed between the metric loggings if enabled
     UINT64 metricLoggingPeriod;
+
+    // ------------------------------ V1 compat --------------------------
+
+    // flag for automatic handling of intermittent producer
+    AUTOMATIC_STREAMING_FLAGS automaticStreamingFlags;
+
+    // period (in hundreds of nanos) at which callback will be fired to check stream
+    // clients should set this value to 0.
+    UINT64 reservedCallbackPeriod;
 } ClientInfo, *PClientInfo;
 
 /**

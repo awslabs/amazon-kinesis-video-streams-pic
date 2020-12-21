@@ -261,7 +261,7 @@ STATUS describeStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CAL
         }
 
         if (0 != STRNCMP(pKinesisVideoStream->streamInfo.name, streamDescription.streamName, MAX_STREAM_NAME_LEN)) {
-            DLOGW("Stream name returned from the DescribeStream call doesn't match the one specified in the StreamInfo");
+            DLOGW("Stream name returned from the DescribeStream(%s) call doesn't match the one specified in the StreamInfo(%s)", streamDescription.streamName, pKinesisVideoStream->streamInfo.name);
         }
 
         // Store the values we need

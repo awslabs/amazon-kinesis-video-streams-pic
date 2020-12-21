@@ -18,7 +18,7 @@ script:
   - export AWS_KVS_LOG_LEVEL=7
   - make
   - ulimit -c unlimited -S
-  - timeout --signal=SIGABRT 20m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+  - timeout --signal=SIGABRT 30m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
 
 after_failure:
   - for i in $(find ./ -maxdepth 1 -name 'core*' -print); do gdb $(pwd)/kvspic_test core* -ex "thread apply all bt" -ex "set pagination 0" -batch; done;
@@ -127,4 +127,4 @@ matrix:
           - unset CC CC_FOR_BUILD CXX CXX_FOR_BUILD # We want to use MSVC
           - .github/build_windows.bat
           - export "AWS_KVS_LOG_LEVEL=7"
-          - cd build && ./kvspic_test.exe --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:PermutatedStreamInfo/StateTransitionFunctionalityTest.ControlPlaneServiceCallExhaustRetry*"
+          - cd build && ./kvspic_test.exe --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:PermutatedStreamInfo/StateTransitionFunctionalityTest.ControlPlaneServiceCallExhaustRetry*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedBeforeTime*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedAfterFirstPeriod*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateLastUpdateTimeOfStreamUpdated*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.MultiTrackVerifyNoInvocationsWithSingleTrackProducer*"

@@ -710,6 +710,30 @@ STATUS ClientTestBase::describeStreamFunc(UINT64 customData,
     return retStatus;
 }
 
+STATUS ClientTestBase::describeStreamMultiStreamFunc(UINT64 customData,
+                                          PCHAR streamName,
+                                          PServiceCallContext pCallbackContext)
+{
+    DLOGV("TID 0x%016llx describeStreamMultiStreamFunc called.", GETTID());
+
+    ClientTestBase *pClient = (ClientTestBase*) customData;
+    STATUS retStatus = STATUS_SUCCESS;
+
+    MUTEX_LOCK(pClient->mTestClientMutex);
+    // Move to ready state
+    pClient->setupStreamDescription();
+
+    STRCPY(pClient->mStreamDescription.streamName, streamName);
+
+    // Execute a couple of times
+    pClient->mStreamDescription.streamStatus = STREAM_STATUS_ACTIVE;
+    retStatus = describeStreamResultEvent(pCallbackContext->customData, SERVICE_CALL_RESULT_OK, &pClient->mStreamDescription);
+
+    MUTEX_UNLOCK(pClient->mTestClientMutex);
+
+    return retStatus;
+}
+
 STATUS ClientTestBase::getStreamingEndpointFunc(UINT64 customData,
                                                 PCHAR streamName,
                                                 PCHAR apiName,
@@ -743,6 +767,28 @@ STATUS ClientTestBase::getStreamingEndpointFunc(UINT64 customData,
     if (pClient->mSubmitServiceCallResultMode >= STOP_AT_GET_STREAMING_ENDPOINT) {
         retStatus = getStreamingEndpointResultEvent(pCallbackContext->customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT);
     }
+    MUTEX_UNLOCK(pClient->mTestClientMutex);
+
+    return retStatus;
+}
+
+STATUS ClientTestBase::getStreamingEndpointMultiStreamFunc(UINT64 customData,
+                                                PCHAR streamName,
+                                                PCHAR apiName,
+                                                PServiceCallContext pCallbackContext)
+{
+    DLOGV("TID 0x%016llx getStreamingEndpointMultiStreamFunc called.", GETTID());
+
+    ClientTestBase *pClient = (ClientTestBase*) customData;
+    STATUS retStatus = STATUS_SUCCESS;
+
+    MUTEX_LOCK(pClient->mTestClientMutex);
+
+    STRCPY(pClient->mStreamName, streamName);
+    STRCPY(pClient->mApiName, apiName);
+
+    retStatus = getStreamingEndpointResultEvent(pCallbackContext->customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT);
+
     MUTEX_UNLOCK(pClient->mTestClientMutex);
 
     return retStatus;
@@ -804,6 +850,31 @@ STATUS ClientTestBase::getStreamingTokenFunc(UINT64 customData,
     return retStatus;
 }
 
+STATUS ClientTestBase::getStreamingTokenMultiStreamFunc(UINT64 customData,
+                                             PCHAR streamName,
+                                             STREAM_ACCESS_MODE accessMode,
+                                             PServiceCallContext pCallbackContext)
+{
+    DLOGV("TID 0x%016llx getStreamingTokenMultiStreamFunc called.", GETTID());
+
+    ClientTestBase *pClient = (ClientTestBase*) customData;
+    STATUS retStatus = STATUS_SUCCESS;
+
+    MUTEX_LOCK(pClient->mTestClientMutex);
+
+    STRCPY(pClient->mStreamName, streamName);
+
+
+    retStatus = getStreamingTokenResultEvent(pCallbackContext->customData,
+                                                 SERVICE_CALL_RESULT_OK,
+                                                 (PBYTE) TEST_STREAMING_TOKEN,
+                                                 SIZEOF(TEST_STREAMING_TOKEN),
+                                                 MAX_UINT64);
+    MUTEX_UNLOCK(pClient->mTestClientMutex);
+
+    return retStatus;
+}
+
 STATUS ClientTestBase::putStreamFunc(UINT64 customData,
                                      PCHAR streamName,
                                      PCHAR containerType,
@@ -846,6 +917,32 @@ STATUS ClientTestBase::putStreamFunc(UINT64 customData,
         EXPECT_EQ(STATUS_SUCCESS,
                   putStreamResultEvent(pClient->mCallContext.customData, SERVICE_CALL_RESULT_OK, uploadHandle));
     }
+    MUTEX_UNLOCK(pClient->mTestClientMutex);
+
+    return STATUS_SUCCESS;
+}
+
+STATUS ClientTestBase::putStreamMultiStreamFunc(UINT64 customData,
+                                     PCHAR streamName,
+                                     PCHAR containerType,
+                                     UINT64 streamStartTime,
+                                     BOOL absoluteFragmentTimestamp,
+                                     BOOL ackRequired,
+                                     PCHAR streamingEndpoint,
+                                     PServiceCallContext pCallbackContext)
+{
+    DLOGV("TID 0x%016llx putStreamMultiStreamFunc called.", GETTID());
+
+    ClientTestBase *pClient = (ClientTestBase*) customData;
+
+    MUTEX_LOCK(pClient->mTestClientMutex);
+
+    STRCPY(pClient->mStreamName, streamName);
+    STRCPY(pClient->mStreamingEndpoint, streamingEndpoint);
+    pClient->mStreamStartTime = streamStartTime;
+    pClient->mAckRequired = ackRequired;
+    EXPECT_EQ(STATUS_SUCCESS,
+                  putStreamResultEvent((STREAM_HANDLE) pCallbackContext->customData, SERVICE_CALL_RESULT_OK, (UPLOAD_HANDLE) 0));
     MUTEX_UNLOCK(pClient->mTestClientMutex);
 
     return STATUS_SUCCESS;

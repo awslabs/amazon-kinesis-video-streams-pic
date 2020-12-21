@@ -328,6 +328,7 @@ PUBLIC_API STATUS timerQueueShutdown(TIMER_QUEUE_HANDLE handle)
     CVAR_SIGNAL(pTimerQueue->executorCvar);
     MUTEX_UNLOCK(pTimerQueue->executorLock);
 
+
     MUTEX_LOCK(pTimerQueue->exitLock);
     while (iterate && !ATOMIC_LOAD_BOOL(&pTimerQueue->terminated)) {
         retStatus = CVAR_WAIT(pTimerQueue->exitCvar, pTimerQueue->exitLock, TIMER_QUEUE_SHUTDOWN_TIMEOUT);

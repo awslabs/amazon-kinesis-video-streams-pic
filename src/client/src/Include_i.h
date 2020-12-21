@@ -49,6 +49,9 @@ struct __KinesisVideoBase {
     // Sync mutex for fine grained interlocking the calls
     MUTEX lock;
 
+    // Lock needed to create/free a stream + iterating over a stream
+    MUTEX streamListLock;
+
     // Conditional variable for Ready state
     CVAR ready;
 
@@ -80,6 +83,9 @@ struct __EndpointInfo {
     PCHAR endpoint;
 };
 typedef struct __EndpointInfo* PEndpointInfo;
+
+// Testability hooks functions
+typedef STATUS (*KinesisVideoClientCallbackHookFunc)(UINT64);
 
 /**
  * The rest of the internal include files
@@ -227,6 +233,26 @@ typedef struct __EndpointInfo* PEndpointInfo;
 #define AUTH_INFO_EXPIRATION_JITTER_RATIO                           0.1L
 
 /**
+ * How often the callback is invoked to check all video streams for past max timeout
+ */
+#define INTERMITTENT_PRODUCER_PERIOD_DEFAULT                        (5000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
+
+/**
+ * If this value is set that that means it's "unset" and we will set it to default
+ */
+#define INTERMITTENT_PRODUCER_PERIOD_SENTINEL_VALUE                 0
+
+/**
+ * Initial time to delay before firing first callback for automatic intermittent producer
+ */
+#define INTERMITTENT_PRODUCER_TIMER_START_DELAY                     (3 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+
+/**
+ * Time after which if no frames have been received we submit EoFR to close out the session
+ */
+#define INTERMITTENT_PRODUCER_MAX_TIMEOUT                           (20LL * HUNDREDS_OF_NANOS_IN_A_SECOND)
+
+/**
  * Kinesis Video client internal structure
  */
 typedef struct __KinesisVideoClient {
@@ -260,6 +286,16 @@ typedef struct __KinesisVideoClient {
 
     // Total memory allocation tracker
     UINT64 totalAllocationSize;
+
+    // Timer Queue/Callback func for Automatic Intermittent Producer
+    TIMER_QUEUE_HANDLE timerQueueHandle;
+    TimerCallbackFunc timerCallbackFunc;
+
+    KinesisVideoClientCallbackHookFunc timerCallbackPreHookFunc;
+    UINT64 hookCustomData;
+
+    // ID for timer created to wake and check if streams have incoming data
+    UINT32 timerId;
 
     // Stored function pointers to reset on exit
     memAlloc storedMemAlloc;
@@ -443,6 +479,8 @@ STATUS executeProvisionClientState(UINT64, UINT64);
 STATUS executeCreateClientState(UINT64, UINT64);
 STATUS executeTagClientState(UINT64, UINT64);
 STATUS executeReadyClientState(UINT64, UINT64);
+
+STATUS checkIntermittentProducerCallback(UINT32, UINT64, UINT64);
 
 #ifdef  __cplusplus
 }

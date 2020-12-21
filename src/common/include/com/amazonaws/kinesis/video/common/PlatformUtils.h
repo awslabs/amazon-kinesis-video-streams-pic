@@ -55,7 +55,7 @@ extern logPrintFunc globalCustomLogPrintFn;
 #define LOG_LEVEL_FATAL_STR             (PCHAR) "FATAL"
 #define LOG_LEVEL_SILENT_STR            (PCHAR) "SILENT"
 
-// LOG_LEVEL_VERBOSE_STR string lenth
+// LOG_LEVEL_VERBOSE_STR string length
 #define MAX_LOG_LEVEL_STRLEN            7
 
 // Extra logging macros

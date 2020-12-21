@@ -52,7 +52,7 @@
 #define TEST_DEFAULT_CREATE_STREAM_TIMEOUT          STREAM_READY_TIMEOUT_DURATION_IN_SECONDS * HUNDREDS_OF_NANOS_IN_A_SECOND;
 #define TEST_DEFAULT_STOP_STREAM_TIMEOUT            STREAM_CLOSED_TIMEOUT_DURATION_IN_SECONDS * HUNDREDS_OF_NANOS_IN_A_SECOND;
 #define TEST_DEFAULT_BUFFER_AVAILABILITY_TIMEOUT    15 * HUNDREDS_OF_NANOS_IN_A_SECOND;
-#define TEST_STOP_STREAM_TIMEOUT_SHORT          3 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+#define TEST_STOP_STREAM_TIMEOUT_SHORT              3 * HUNDREDS_OF_NANOS_IN_A_SECOND;
 
 #define TEST_TIME_INCREMENT             (100 * HUNDREDS_OF_NANOS_IN_A_MICROSECOND)
 
@@ -319,6 +319,7 @@ public:
     PVOID basicProducerRoutine(UINT64);
     PVOID basicConsumerRoutine(UINT64);
     volatile UINT32 mStreamCount;
+    volatile SIZE_T mTimerCallbackFuncCount;
 
 protected:
     CLIENT_HANDLE mClientHandle;
@@ -418,6 +419,8 @@ protected:
         mDeviceInfo.clientInfo.loggerLogLevel = logLevel;
         mDeviceInfo.clientInfo.logMetric = FALSE;
         mDeviceInfo.clientInfo.metricLoggingPeriod = 1 * HUNDREDS_OF_NANOS_IN_A_MINUTE;
+        mDeviceInfo.clientInfo.automaticStreamingFlags = AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER;
+        mDeviceInfo.clientInfo.reservedCallbackPeriod = INTERMITTENT_PRODUCER_PERIOD_DEFAULT;
 
         // Initialize stream info
         mStreamInfo.version = STREAM_INFO_CURRENT_VERSION;
@@ -481,6 +484,7 @@ protected:
         mDataReadyDuration = 0;
         mDataReadySize = 0;
         mStreamUploadHandle = INVALID_UPLOAD_HANDLE_VALUE;
+
         ATOMIC_STORE(&mGetCurrentTimeFuncCount, 0);
         ATOMIC_STORE(&mGetRandomNumberFuncCount, 0);
         ATOMIC_STORE(&mGetDeviceCertificateFuncCount, 0);
@@ -517,6 +521,7 @@ protected:
         ATOMIC_STORE(&mClientReadyFuncCount, 0);
         ATOMIC_STORE(&mClientShutdownFuncCount, 0);
         ATOMIC_STORE(&mStreamShutdownFuncCount, 0);
+        ATOMIC_STORE(&mTimerCallbackFuncCount, 0);
         ATOMIC_STORE(&mStreamDataAvailableFuncCount, 0);
         ATOMIC_STORE(&mStreamErrorReportFuncCount, 0);
         ATOMIC_STORE(&mStreamConnectionStaleFuncCount, 0);
@@ -526,7 +531,6 @@ protected:
         mRepeatTime = 10;
         mSubmitServiceCallResultMode = DISABLE_AUTO_SUBMIT;
         mTokenExpiration = TEST_AUTH_EXPIRATION;
-
         mThreadReturnStatus = STATUS_SUCCESS;
     }
 
@@ -686,6 +690,10 @@ protected:
 
     static PVOID stopStreamSyncRoutine(PVOID arg) {
         ClientTestBase *pClient = (ClientTestBase*) arg;
+        MUTEX_LOCK(pClient->mTestClientMutex);
+        // need to release lock before calling stopKinesisVideoStreamSync or will deadlock
+        STREAM_HANDLE streamHandle = pClient->mStreamHandle;
+        MUTEX_UNLOCK(pClient->mTestClientMutex);
         pClient->mThreadReturnStatus = stopKinesisVideoStreamSync(pClient->mStreamHandle);
         return NULL;
     }
@@ -780,7 +788,7 @@ protected:
         return STATUS_SUCCESS;
     };
 
-    STATUS CreateStream(CLIENT_HANDLE clientHandle = INVALID_STREAM_HANDLE_VALUE)
+    STATUS CreateStream(CLIENT_HANDLE clientHandle = INVALID_CLIENT_HANDLE_VALUE)
     {
         clientHandle = IS_VALID_CLIENT_HANDLE(clientHandle) ? clientHandle : mClientHandle;
 
@@ -792,7 +800,7 @@ protected:
         return STATUS_SUCCESS;
     }
 
-    STATUS CreateStreamSync(CLIENT_HANDLE clientHandle = INVALID_STREAM_HANDLE_VALUE)
+    STATUS CreateStreamSync(CLIENT_HANDLE clientHandle = INVALID_CLIENT_HANDLE_VALUE)
     {
         clientHandle = IS_VALID_CLIENT_HANDLE(clientHandle) ? clientHandle : mClientHandle;
 
@@ -896,6 +904,11 @@ protected:
 
     virtual void SetUp()
     {
+        SetUpWithoutClientCreation();
+        ASSERT_EQ(STATUS_SUCCESS, CreateClient());
+    };
+
+    virtual void SetUpWithoutClientCreation() {
         UINT32 logLevel = 0;
         auto logLevelStr = GETENV("AWS_KVS_LOG_LEVEL");
         if (logLevelStr != NULL) {
@@ -907,8 +920,7 @@ protected:
         mAtomicLock = MUTEX_CREATE(TRUE); // atomicity lock for 64 bit primitives
         mTestClientMutex = MUTEX_CREATE(TRUE);
         initTestMembers();
-        ASSERT_EQ(STATUS_SUCCESS, CreateClient());
-    };
+    }
 
     virtual void TearDown()
     {
@@ -1021,7 +1033,14 @@ protected:
     static STATUS describeStreamFunc(UINT64,
                                      PCHAR,
                                      PServiceCallContext);
+    static STATUS describeStreamMultiStreamFunc(UINT64,
+                                     PCHAR,
+                                     PServiceCallContext);
     static STATUS getStreamingEndpointFunc(UINT64,
+                                           PCHAR,
+                                           PCHAR,
+                                           PServiceCallContext);
+    static STATUS getStreamingEndpointMultiStreamFunc(UINT64,
                                            PCHAR,
                                            PCHAR,
                                            PServiceCallContext);
@@ -1029,6 +1048,11 @@ protected:
                                         PCHAR,
                                         STREAM_ACCESS_MODE,
                                         PServiceCallContext);
+    static STATUS getStreamingTokenMultiStreamFunc(UINT64,
+                                        PCHAR,
+                                        STREAM_ACCESS_MODE,
+                                        PServiceCallContext);
+
     static STATUS putStreamFunc(UINT64,
                                 PCHAR,
                                 PCHAR,
@@ -1037,7 +1061,14 @@ protected:
                                 BOOL,
                                 PCHAR,
                                 PServiceCallContext);
-
+    static STATUS putStreamMultiStreamFunc(UINT64,
+                                PCHAR,
+                                PCHAR,
+                                UINT64,
+                                BOOL,
+                                BOOL,
+                                PCHAR,
+                                PServiceCallContext);
     static STATUS tagResourceFunc(UINT64,
                                   PCHAR,
                                   UINT32,
