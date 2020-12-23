@@ -153,10 +153,7 @@ DEFINE_INIT_HEAP(hybridHeapInit)
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PHybridHeap pHybridHeap = (PHybridHeap) pHeap;
-    UINT32 ret;
-    UINT32 memHeapLimit;
-    UINT32 vramHeapLimit;
-    UINT32 maxVramSize;
+    UINT32 ret, memHeapLimit, vramHeapLimit, maxVramSize;
 
     // Delegate the call directly
     CHK_STATUS(commonHeapInit(pHeap, heapLimit));
@@ -590,13 +587,16 @@ DEFINE_ALLOC_SIZE(hybridGetAllocationSize)
     PHybridHeap pHybridHeap = (PHybridHeap) pHeap;
     UINT32 vramHandle;
     PALLOCATION_HEADER pAllocation;
+    UINT64 memSizes, vramSizes, memHeapAllocationSize;
+
+    CHECK_EXT(pHeap != NULL, "Internal error with VRAM heap being null");
 
     // Check if this is a direct allocation
     if (IS_DIRECT_ALLOCATION_HANDLE(handle)) {
         // Get the allocation header and footer in order to compensate the accounting for vram header and footer.
-        UINT64 memSizes = pHybridHeap->pMemHeap->getAllocationHeaderSizeFn() + pHybridHeap->pMemHeap->getAllocationFooterSizeFn();
-        UINT64 vramSizes = hybridGetAllocationHeaderSize() + hybridGetAllocationFooterSize();
-        UINT64 memHeapAllocationSize = pHybridHeap->pMemHeap->getAllocationSizeFn((PHeap) pHybridHeap->pMemHeap, handle);
+        memSizes = pHybridHeap->pMemHeap->getAllocationHeaderSizeFn() + pHybridHeap->pMemHeap->getAllocationFooterSizeFn();
+        vramSizes = hybridGetAllocationHeaderSize() + hybridGetAllocationFooterSize();
+        memHeapAllocationSize = pHybridHeap->pMemHeap->getAllocationSizeFn((PHeap) pHybridHeap->pMemHeap, handle);
         return memHeapAllocationSize - memSizes + vramSizes;
     }
 

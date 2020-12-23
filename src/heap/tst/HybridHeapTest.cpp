@@ -1,9 +1,26 @@
 #include "HeapTestFixture.h"
 
-class HybridHeapTest : public HeapTestBase {
+using ::testing::WithParamInterface;
+using ::testing::Bool;
+using ::testing::Values;
+using ::testing::Combine;
+
+class HybridHeapTest : public HeapTestBase,
+        public WithParamInterface<::std::tuple<HEAP_BEHAVIOR_FLAGS>>
+{
+protected:
+    void SetUp() {
+        HeapTestBase::SetUp();
+
+        HEAP_BEHAVIOR_FLAGS primaryHeapType;
+        std::tie(primaryHeapType) = GetParam();
+        mHeapType = primaryHeapType | FLAGS_USE_HYBRID_VRAM_HEAP;
+    }
+
+    UINT32 mHeapType;
 };
 
-TEST_F(HybridHeapTest, hybridCreateHeap)
+TEST_P(HybridHeapTest, hybridCreateHeap)
 {
     PHeap pHeap;
     ALLOCATION_HANDLE handle;
@@ -23,9 +40,10 @@ TEST_F(HybridHeapTest, hybridCreateHeap)
 
     // Initialize
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
-                                             spillRatio,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
-                                             &pHeap)));
+                                                spillRatio,
+                                                mHeapType,
+                                                NULL,
+                                                &pHeap)));
 
     // Validate internal calls
     EXPECT_EQ(mVramGetMaxCount, 1);
@@ -97,18 +115,19 @@ TEST_F(HybridHeapTest, hybridCreateHeap)
     EXPECT_EQ(mDlSymCount, 7);
 }
 
-TEST_F(HybridHeapTest, hybridCreateHeapMemHeapSmall)
+TEST_P(HybridHeapTest, hybridCreateHeapMemHeapSmall)
 {
     PHeap pHeap;
 
     // Initialize should fail as MIN_HEAP_SIZE will be smaller for the mem heap with 20% reduction
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE,
                                              20,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
+                                             mHeapType,
+                                             NULL,
                                              &pHeap)));
 }
 
-TEST_F(HybridHeapTest, hybridCreateHeapDlOpenCount)
+TEST_P(HybridHeapTest, hybridCreateHeapDlOpenCount)
 {
     PHeap pHeap;
     UINT32 heapSize = MIN_HEAP_SIZE * 2 + 100000;
@@ -116,7 +135,8 @@ TEST_F(HybridHeapTest, hybridCreateHeapDlOpenCount)
     // Initialize with one time opening
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
                                                 50,
-                                                FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
+                                                mHeapType,
+                                                NULL,
                                                 &pHeap)));
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
     EXPECT_EQ(mDlCloseCount, 1);
@@ -125,14 +145,15 @@ TEST_F(HybridHeapTest, hybridCreateHeapDlOpenCount)
     // Initialize with reopen
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
                                                 50,
-                                                FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY,
+                                                mHeapType | FLAGS_REOPEN_VRAM_LIBRARY,
+                                                NULL,
                                                 &pHeap)));
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
     EXPECT_EQ(mDlCloseCount, 2);
     EXPECT_EQ(mDlOpenCount, 3);
 }
 
-TEST_F(HybridHeapTest, hybridCreateHeapDlOpenError)
+TEST_P(HybridHeapTest, hybridCreateHeapDlOpenError)
 {
     PHeap pHeap;
     UINT32 heapSize = MIN_HEAP_SIZE * 2 + 100000;
@@ -142,14 +163,15 @@ TEST_F(HybridHeapTest, hybridCreateHeapDlOpenError)
 
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(heapSize,
                                              50,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
+                                             mHeapType,
+                                             NULL,
                                              &pHeap)));
 
     // Validate the on error we don't attempt to close the library as the handle is NULL
     EXPECT_EQ(mDlCloseCount, 0);
 }
 
-TEST_F(HybridHeapTest, hybridCreateHeapDlSymError)
+TEST_P(HybridHeapTest, hybridCreateHeapDlSymError)
 {
     PHeap pHeap;
     UINT32 heapSize = MIN_HEAP_SIZE * 2 + 100000;
@@ -159,7 +181,8 @@ TEST_F(HybridHeapTest, hybridCreateHeapDlSymError)
 
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(heapSize,
                                              50,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
+                                             mHeapType,
+                                             NULL,
                                              &pHeap)));
 
 
@@ -167,7 +190,7 @@ TEST_F(HybridHeapTest, hybridCreateHeapDlSymError)
     EXPECT_EQ(mDlCloseCount, 1);
 }
 
-TEST_F(HybridHeapTest, hybridCreateHeapDlCloseError)
+TEST_P(HybridHeapTest, hybridCreateHeapDlCloseError)
 {
     PHeap pHeap;
     UINT32 heapSize = MIN_HEAP_SIZE * 2 + 100000;
@@ -176,16 +199,17 @@ TEST_F(HybridHeapTest, hybridCreateHeapDlCloseError)
     mDlClose = 1;
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
-                                             50,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
-                                             &pHeap)));
+                                                50,
+                                                mHeapType,
+                                                NULL,
+                                                &pHeap)));
 
     EXPECT_TRUE(STATUS_FAILED(heapRelease(pHeap)));
     // Validate the on error we close the library
     EXPECT_EQ(mDlCloseCount, 1);
 }
 
-TEST_F(HybridHeapTest, hybridCreateHeapVRamInitError)
+TEST_P(HybridHeapTest, hybridCreateHeapVRamInitError)
 {
     PHeap pHeap;
     UINT32 heapSize = MIN_HEAP_SIZE * 2 + 100000;
@@ -196,11 +220,12 @@ TEST_F(HybridHeapTest, hybridCreateHeapVRamInitError)
     // Initialize should fail as we will fail to vram init
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(heapSize,
                                              50,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
+                                             mHeapType,
+                                             NULL,
                                              &pHeap)));
 }
 
-TEST_F(HybridHeapTest, hybridCreateHeapGetMaxVramSmall)
+TEST_P(HybridHeapTest, hybridCreateHeapGetMaxVramSmall)
 {
     PHeap pHeap;
     UINT32 heapSize = MIN_HEAP_SIZE * 2 + 100000;
@@ -211,11 +236,12 @@ TEST_F(HybridHeapTest, hybridCreateHeapGetMaxVramSmall)
     // Initialize should fail as requested vram size will be smaller than the max vram
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(heapSize,
                                              50,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
+                                             mHeapType,
+                                             NULL,
                                              &pHeap)));
 }
 
-TEST_F(HybridHeapTest, hybridCreateHeapVRamReleaseError)
+TEST_P(HybridHeapTest, hybridCreateHeapVRamReleaseError)
 {
     PHeap pHeap;
     UINT32 heapSize = MIN_HEAP_SIZE * 2 + 100000;
@@ -225,13 +251,14 @@ TEST_F(HybridHeapTest, hybridCreateHeapVRamReleaseError)
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
                                                 50,
-                                                FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
+                                                mHeapType,
+                                                NULL,
                                                 &pHeap)));
 
     EXPECT_TRUE(STATUS_FAILED(heapRelease(pHeap)));
 }
 
-TEST_F(HybridHeapTest, hybridCreateHeapVRamAllocError)
+TEST_P(HybridHeapTest, hybridCreateHeapVRamAllocError)
 {
     PHeap pHeap;
     ALLOCATION_HANDLE handle;
@@ -254,7 +281,8 @@ TEST_F(HybridHeapTest, hybridCreateHeapVRamAllocError)
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
                                                 spillRatio,
-                                                FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
+                                                mHeapType,
+                                                NULL,
                                                 &pHeap)));
 
     DLOGV("Allocating from RAM");
@@ -275,7 +303,7 @@ TEST_F(HybridHeapTest, hybridCreateHeapVRamAllocError)
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HybridHeapTest, hybridCreateHeapVRamMapError)
+TEST_P(HybridHeapTest, hybridCreateHeapVRamMapError)
 {
     PHeap pHeap;
     ALLOCATION_HANDLE handle;
@@ -297,7 +325,8 @@ TEST_F(HybridHeapTest, hybridCreateHeapVRamMapError)
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
                                                 spillRatio,
-                                                FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
+                                                mHeapType,
+                                                NULL,
                                                 &pHeap)));
 
     DLOGV("Allocating from RAM");
@@ -319,7 +348,7 @@ TEST_F(HybridHeapTest, hybridCreateHeapVRamMapError)
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HybridHeapTest, hybridCreateHeapVRamUnmapError)
+TEST_P(HybridHeapTest, hybridCreateHeapVRamUnmapError)
 {
     PHeap pHeap;
     ALLOCATION_HANDLE handle;
@@ -343,7 +372,8 @@ TEST_F(HybridHeapTest, hybridCreateHeapVRamUnmapError)
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
                                                 spillRatio,
-                                                FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
+                                                mHeapType,
+                                                NULL,
                                                 &pHeap)));
 
     DLOGV("Allocating from RAM");
@@ -372,7 +402,7 @@ TEST_F(HybridHeapTest, hybridCreateHeapVRamUnmapError)
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HybridHeapTest, hybridCreateHeapVRamFreeError)
+TEST_P(HybridHeapTest, hybridCreateHeapVRamFreeError)
 {
     PHeap pHeap;
     ALLOCATION_HANDLE handle;
@@ -396,7 +426,8 @@ TEST_F(HybridHeapTest, hybridCreateHeapVRamFreeError)
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
                                                 spillRatio,
-                                                FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
+                                                mHeapType,
+                                                NULL,
                                                 &pHeap)));
 
     DLOGV("Allocating from RAM");
@@ -428,7 +459,7 @@ TEST_F(HybridHeapTest, hybridCreateHeapVRamFreeError)
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HybridHeapTest, hybridFillResizeAlloc)
+TEST_P(HybridHeapTest, hybridFillResizeAlloc)
 {
     PHeap pHeap;
     ALLOCATION_HANDLE handle, storedHandle;
@@ -448,7 +479,8 @@ TEST_F(HybridHeapTest, hybridFillResizeAlloc)
 
     EXPECT_EQ(STATUS_SUCCESS, heapInitialize(heapSize,
                                              spillRatio,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
+                                             mHeapType,
+                                             NULL,
                                              &pHeap));
 
     // Allocate from ram - account for the service structs
@@ -486,3 +518,6 @@ TEST_F(HybridHeapTest, hybridFillResizeAlloc)
 
     EXPECT_EQ(STATUS_SUCCESS, heapRelease(pHeap));
 }
+
+INSTANTIATE_TEST_CASE_P(PermutatedHeapType, HybridHeapTest,
+                        Values(FLAGS_USE_AIV_HEAP, FLAGS_USE_SYSTEM_HEAP));

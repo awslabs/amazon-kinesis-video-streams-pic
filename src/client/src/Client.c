@@ -187,6 +187,7 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     CHK_STATUS(heapInitialize(pKinesisVideoClient->deviceInfo.storageInfo.storageSize,
                               pKinesisVideoClient->deviceInfo.storageInfo.spillRatio,
                               heapFlags,
+                              pKinesisVideoClient->deviceInfo.storageInfo.rootDirectory,
                               &pKinesisVideoClient->pHeap));
 
     // Using content store allocator if needed

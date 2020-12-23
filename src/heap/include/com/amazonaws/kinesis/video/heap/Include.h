@@ -118,7 +118,7 @@ typedef struct
 /**
  * Error values
  */
-#define STATUS_HEAP_BASE                                        0x010000000
+#define STATUS_HEAP_BASE                                        0x10000000
 #define STATUS_HEAP_FLAGS_ERROR                                 STATUS_HEAP_BASE + 0x00000001
 #define STATUS_HEAP_NOT_INITIALIZED                             STATUS_HEAP_BASE + 0x00000002
 #define STATUS_HEAP_CORRUPTED                                   STATUS_HEAP_BASE + 0x00000003
@@ -141,6 +141,7 @@ typedef struct
 #define STATUS_HEAP_VRAM_UNINIT_FAILED                          STATUS_HEAP_BASE + 0x00000014
 #define STATUS_INVALID_ALLOCATION_SIZE                          STATUS_HEAP_BASE + 0x00000015
 #define STATUS_HEAP_REALLOC_ERROR                               STATUS_HEAP_BASE + 0x00000016
+#define STATUS_HEAP_FILE_HEAP_FILE_CORRUPT                      STATUS_HEAP_BASE + 0x00000017
 
 //////////////////////////////////////////////////////////////////////////
 // Public functions
@@ -148,7 +149,7 @@ typedef struct
 /**
  * Creates and initializes the heap
  */
-PUBLIC_API STATUS heapInitialize(UINT64, UINT32, UINT32, PHeap*);
+PUBLIC_API STATUS heapInitialize(UINT64, UINT32, UINT32, PCHAR, PHeap*);
 
 /**
  * Releases the entire heap.

@@ -285,7 +285,7 @@ TEST_F(HeapApiFunctionalityTest, GetHeapSizeAndGetAllocSize)
     ALLOCATION_HANDLE handles[10];
 
     // AIV heap
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
     for (i = 0; i < 10; i++) {
         // Allocate a block block
         EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, 1000, &handle)));
@@ -299,7 +299,7 @@ TEST_F(HeapApiFunctionalityTest, GetHeapSizeAndGetAllocSize)
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 
     // System heap
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP, NULL, &pHeap)));
     for (i = 0; i < 10; i++) {
         // Allocate a block block
         EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, 1000, &handle)));
@@ -318,7 +318,7 @@ TEST_F(HeapApiFunctionalityTest, GetHeapSizeAndGetAllocSize)
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 
     // AIV hybrid heap
-    EXPECT_EQ(STATUS_SUCCESS, heapInitialize(MIN_HEAP_SIZE * 2 + 100000, 50, FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP, &pHeap));
+    EXPECT_EQ(STATUS_SUCCESS, heapInitialize(MIN_HEAP_SIZE * 2 + 100000, 50, FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP, NULL, &pHeap));
     for (i = 0; i < 10; i++) {
         // Allocate a block block
         EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, 1000, &handle)));
@@ -330,7 +330,7 @@ TEST_F(HeapApiFunctionalityTest, GetHeapSizeAndGetAllocSize)
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 
     // System hybrid heap
-    EXPECT_EQ(STATUS_SUCCESS, heapInitialize(MIN_HEAP_SIZE * 2 + 100000, 50, FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP, &pHeap));
+    EXPECT_EQ(STATUS_SUCCESS, heapInitialize(MIN_HEAP_SIZE * 2 + 100000, 50, FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP, NULL, &pHeap));
     for (i = 0; i < 10; i++) {
         // Allocate a block block
         EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, 1000, &handle)));
@@ -352,10 +352,10 @@ TEST_F(HeapApiFunctionalityTest, SingleLargeAlloc)
 {
     PHeap pHeap;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
     singleLargeAlloc(pHeap);
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP, NULL, &pHeap)));
     singleLargeAlloc(pHeap);
 }
 
@@ -363,10 +363,10 @@ TEST_F(HeapApiFunctionalityTest, MultipleLargeAlloc)
 {
     PHeap pHeap;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
     multipleLargeAlloc(pHeap);
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP, NULL, &pHeap)));
     multipleLargeAlloc(pHeap);
 }
 
@@ -374,7 +374,7 @@ TEST_F(HeapApiFunctionalityTest, DefragmentationAlloc)
 {
     PHeap pHeap;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
     defragmentationAlloc(pHeap);
 }
 
@@ -382,7 +382,7 @@ TEST_F(HeapApiFunctionalityTest, SingleByteAlloc)
 {
     PHeap pHeap;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
     singleByteAlloc(pHeap);
 }
 
@@ -390,7 +390,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapMinBlockFitAlloc)
 {
     PHeap pHeap;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
     minBlockFitAlloc(pHeap);
 }
 
@@ -398,7 +398,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapBlockCoallesceAlloc)
 {
     PHeap pHeap;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
     blockCoalesceAlloc(pHeap);
 }
 
@@ -406,7 +406,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapMinBlockFitResize)
 {
     PHeap pHeap;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
     minBlockFitAllocResize(pHeap);
 }
 
@@ -414,7 +414,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapUnalignedHeapLimit)
 {
     PHeap pHeap;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE + 1, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE + 1, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
 #ifdef ALIGNED_MEMORY_MODEL
     EXPECT_EQ(MIN_HEAP_SIZE + 8, pHeap->heapLimit);
 #else
@@ -434,7 +434,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeEdgeCases)
     UINT64 setSize, iter;
     PVOID pAlloc;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
 
     // Set to default
     zeroHandleArray(handles, NUM_ITERATIONS);
@@ -548,7 +548,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeUpDownBottomUp)
     UINT64 setSize;
     PVOID pAlloc;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
 
     // Set to default
     zeroHandleArray(handles, NUM_ITERATIONS);
@@ -618,7 +618,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeUpDownTopDown)
     UINT64 setSize;
     PVOID pAlloc;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
 
     // Set to default
     zeroHandleArray(handles, NUM_ITERATIONS);
@@ -682,9 +682,9 @@ TEST_F(HeapApiFunctionalityTest, MultipleMapUnmapByteAlloc)
 {
     PHeap pHeap;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
     multipleMapUnmapByteAlloc(pHeap);
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP, &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP, NULL, &pHeap)));
     multipleMapUnmapByteAlloc(pHeap);
 }
