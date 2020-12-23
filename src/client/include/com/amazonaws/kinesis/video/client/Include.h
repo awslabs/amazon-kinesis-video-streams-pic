@@ -405,6 +405,12 @@ extern "C" {
 #define RETENTION_PERIOD_SENTINEL                           0
 
 /**
+ * If this value is set that that means it's "unset" and we
+ * will set it to default during input validation
+ */
+#define INTERMITTENT_PRODUCER_PERIOD_SENTINEL_VALUE         0
+
+/**
  * Max number of tracks allowed per stream
  */
 #define MAX_SUPPORTED_TRACK_COUNT_PER_STREAM                3
