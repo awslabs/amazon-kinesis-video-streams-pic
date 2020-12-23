@@ -1730,7 +1730,7 @@ CleanUp:
  * Checks for the availability of space in the content store and if there is enough duration
  * is available in the content view.
  *
- * IMPORTANT: The stream and client SHOULD be locked
+ * IMPORTANT: The stream SHOULD be locked and the client is NOT locked
  *
  * All the parameters are assumed to have been sanitized.
  */
