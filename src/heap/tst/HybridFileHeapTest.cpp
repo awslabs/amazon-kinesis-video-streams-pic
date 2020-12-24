@@ -9,7 +9,7 @@ class HybridFileHeapTest : public HeapTestBase,
                            public WithParamInterface<::std::tuple<HEAP_BEHAVIOR_FLAGS>>
 {
 protected:
-    void SetUp() {
+    VOID SetUp() {
         HeapTestBase::SetUp();
 
         HEAP_BEHAVIOR_FLAGS primaryHeapType;
@@ -33,7 +33,7 @@ TEST_P(HybridFileHeapTest, hybridFileHeapOperationsAivPrimaryHeap)
     UINT32 heapSize = MIN_HEAP_SIZE * 2 + 100000;
     UINT32 spillRatio = 50;
     UINT32 numAlloc = AllocationCount / 2;
-    UINT32 i, fileHandleIndex;
+    UINT32 i, fileHandleIndex, skip;
     CHAR filePath[MAX_PATH_LEN + 1];
     BOOL exist;
     UINT64 fileSize, allocSize, retAllocSize;
@@ -44,6 +44,11 @@ TEST_P(HybridFileHeapTest, hybridFileHeapOperationsAivPrimaryHeap)
     fileHeapLimit = heapSize - memHeapLimit;
     fileAllocSize = fileHeapLimit / numAlloc;
     ramAllocSize = memHeapLimit / numAlloc;
+
+    // Set the invalid allocation handles
+    for (i = 0; i < AllocationCount; i++) {
+        handles[i] = INVALID_ALLOCATION_HANDLE_VALUE;
+    }
 
     // Initialize
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
@@ -139,9 +144,12 @@ TEST_P(HybridFileHeapTest, hybridFileHeapOperationsAivPrimaryHeap)
         EXPECT_EQ(fileAllocSize + SIZEOF(ALLOCATION_HEADER) - 1, fileSize);
     }
 
-    // Free odd allocations
-    for (i = 0; i < AllocationCount; i += 2) {
-        EXPECT_EQ(STATUS_SUCCESS, heapFree(pHeap, handles[i]));
+    // Free odd allocations in case of AIV heap and all of the allocations in case of system heap
+    skip = (mHeapType & FLAGS_USE_SYSTEM_HEAP) != HEAP_FLAGS_NONE ? 1 : 2;
+    for (i = 0; i < AllocationCount; i += skip) {
+        if (IS_VALID_ALLOCATION_HANDLE(handles[i])) {
+            EXPECT_EQ(STATUS_SUCCESS, heapFree(pHeap, handles[i]));
+        }
     }
 
     // Release the heap which should free the rest of the allocations

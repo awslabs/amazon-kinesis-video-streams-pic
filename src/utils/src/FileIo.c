@@ -205,8 +205,8 @@ STATUS setFileLength(PCHAR filePath, UINT64 length)
     INT32 retVal, errCode, fileDesc;
 
     CHK(filePath != NULL, STATUS_NULL_ARG);
-    
-#if defined _WIN32 || defined _WIN64 || defined __CYGWIN__
+
+#if defined __WINDOWS_BUILD__
     fileDesc = _open(filePath, _O_BINARY | _O_RANDOM | _O_RDWR, 0);
 
     if (fileDesc != -1) {
