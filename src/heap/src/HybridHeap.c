@@ -117,8 +117,20 @@ STATUS hybridCreateHeap(PHeap pHeap, UINT32 spillRatio, UINT32 behaviorFlags, PH
     pBaseHeap->getHeapLimitsFn = hybridGetHeapLimits;
 
 CleanUp:
-    if (STATUS_FAILED(retStatus) && handle != NULL) {
-        DLCLOSE(handle);
+    if (STATUS_FAILED(retStatus)) {
+        if (handle != NULL) {
+            DLCLOSE(handle);
+        }
+
+        if (pHybridHeap != NULL) {
+            // Ensure it doesn't get closed again
+            pHybridHeap->libHandle = NULL;
+
+            // Base heap will be released by the common heap
+            pHybridHeap->pMemHeap = NULL;
+
+            hybridHeapRelease((PHeap) pHybridHeap);
+        }
     }
 
     LEAVES();
@@ -209,7 +221,7 @@ DEFINE_RELEASE_HEAP(hybridHeapRelease)
     retStatus = commonHeapRelease(pHeap);
 
     // Release the direct memory heap
-    if (STATUS_SUCCESS != (memHeapStatus = pHybridHeap->pMemHeap->heapReleaseFn((PHeap) pHybridHeap->pMemHeap))) {
+    if (pHybridHeap->pMemHeap != NULL && STATUS_SUCCESS != (memHeapStatus = pHybridHeap->pMemHeap->heapReleaseFn((PHeap) pHybridHeap->pMemHeap))) {
         DLOGW("Failed to release in-memory heap with 0x%08x", memHeapStatus);
     }
 

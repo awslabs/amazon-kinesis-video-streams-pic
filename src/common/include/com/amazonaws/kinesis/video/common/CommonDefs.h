@@ -495,6 +495,7 @@ typedef CID*                PCID;
 #if defined __WINDOWS_BUILD__
 
 // Include the posix IO
+#include <fcntl.h>
 #include <io.h>
 
 #include "dlfcn_win_stub.h"

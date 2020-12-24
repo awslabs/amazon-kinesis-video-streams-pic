@@ -381,7 +381,6 @@ TEST_P(HybridHeapTest, hybridCreateHeapVRamUnmapError)
     UINT32 heapSize = MIN_HEAP_SIZE * 2 + 100000;
     UINT32 spillRatio = 50;
     UINT32 numAlloc = AllocationCount / 2;
-    ALLOCATION_HANDLE handles[AllocationCount];
     // Split the 50% and allocate half from ram and half from vram
     memHeapLimit = (UINT32)(heapSize * ((DOUBLE)spillRatio / 100));
     vramHeapLimit = heapSize - memHeapLimit;
@@ -403,7 +402,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapVRamUnmapError)
     for (UINT32 i = 0; i < numAlloc - 1; i++) {
         EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(mHeap, ramAllocSize, &handle)));
         EXPECT_TRUE(IS_VALID_ALLOCATION_HANDLE(handle));
-        handles[i] = handle;
+        mHandles[i] = handle;
     }
 
     DLOGV("Allocating from VRAM");
@@ -420,7 +419,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapVRamUnmapError)
         // Try un-mapping it - should fail
         EXPECT_TRUE(STATUS_FAILED(heapUnmap(mHeap, pAlloc)));
 
-        handles[numAlloc - 1 + i] = handle;
+        mHandles[numAlloc - 1 + i] = handle;
     }
 
     freeAllocations();

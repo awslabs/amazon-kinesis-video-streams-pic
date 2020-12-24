@@ -966,9 +966,9 @@ STATUS calculateCallLatency(PKinesisVideoStream pKinesisVideoStream, BOOL cplApi
 
     // Exponential mean averaging
     if (cplApiCall) {
-        pKinesisVideoStream->diagnostics.cplApiCallLatency = EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.cplApiCallLatency, latency);
+        pKinesisVideoStream->diagnostics.cplApiCallLatency = (UINT64) EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.cplApiCallLatency, latency);
     } else {
-        pKinesisVideoStream->diagnostics.dataApiCallLatency = EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.dataApiCallLatency, latency);
+        pKinesisVideoStream->diagnostics.dataApiCallLatency = (UINT64) EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.dataApiCallLatency, latency);
     }
 
 CleanUp:

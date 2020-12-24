@@ -74,6 +74,13 @@ STATUS hybridFileCreateHeap(PHeap pHeap, UINT32 spillRatio, PCHAR pRootDirectory
 
 CleanUp:
 
+    if (STATUS_FAILED(retStatus) && pHybridHeap != NULL) {
+        // Set the base heap to NULL to avoid releasing again in the caller common function
+        pHybridHeap->pMemHeap = NULL;
+
+        hybridFileHeapRelease((PHeap) pHybridHeap);
+    }
+
     LEAVES();
     return retStatus;
 }
@@ -111,8 +118,8 @@ DEFINE_INIT_HEAP(hybridFileHeapInit)
     // Calling base "class" functionality first
     CHK_STATUS(commonHeapInit(pHeap, heapLimit));
 
-    // Calculate the in-memory and vram based heap sizes
-    memHeapLimit = heapLimit * pHybridHeap->spillRatio;
+    // Calculate the in-memory and file based heap sizes
+    memHeapLimit = (UINT64) (heapLimit * pHybridHeap->spillRatio);
     fileHeapLimit = heapLimit - memHeapLimit;
 
     CHK_ERR(fileHeapLimit < MAX_LARGE_HEAP_SIZE,
@@ -153,7 +160,7 @@ DEFINE_RELEASE_HEAP(hybridFileHeapRelease)
     retStatus = commonHeapRelease(pHeap);
 
     // Release the direct memory heap
-    if (STATUS_FAILED(memHeapStatus = pHybridHeap->pMemHeap->heapReleaseFn((PHeap) pHybridHeap->pMemHeap))) {
+    if (pHybridHeap->pMemHeap != NULL && STATUS_FAILED(memHeapStatus = pHybridHeap->pMemHeap->heapReleaseFn((PHeap) pHybridHeap->pMemHeap))) {
         DLOGW("Failed to release in-memory heap with 0x%08x", memHeapStatus);
     }
 
@@ -316,7 +323,7 @@ DEFINE_HEAP_GET_ALLOC_SIZE(hybridFileHeapGetAllocSize)
 
     // Convert the handle
     fileHandle = TO_FILE_HANDLE(handle);
-    DLOGS("File heap allocation. Handle 0x%016" PRIx64 " File handle 0x%08x", handle, vramHandle);
+    DLOGS("File heap allocation. Handle 0x%016" PRIx64 " File handle 0x%08x", handle, fileHandle);
 
     SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
     CHK_STATUS(readFileSegment(filePath, TRUE, (PBYTE) &allocationHeader, 0, FILE_ALLOCATION_HEADER_SIZE));
@@ -556,7 +563,7 @@ STATUS removeHeapFile(UINT64 callerData, DIR_ENTRY_TYPES entryType, PCHAR path, 
 {
     STATUS retStatus = STATUS_SUCCESS;
     INT32 retCode;
-    UINT32 strLen;
+    SIZE_T strLen;
 
     UNUSED_PARAM(callerData);
 

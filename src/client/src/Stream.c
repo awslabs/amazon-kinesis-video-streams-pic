@@ -742,7 +742,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     UINT64 remainingSize = 0, remainingDuration = 0, thresholdPercent = 0, duration = 0, viewByteSize = 0, allocSize = 0;
     PBYTE pAlloc = NULL;
     UINT32 trackIndex, packagedSize = 0, packagedMetadataSize = 0, overallSize = 0,
-        itemFlags = ITEM_FLAG_NONE, clusterOverhead;
+        itemFlags = ITEM_FLAG_NONE;
     BOOL streamLocked = FALSE, clientLocked = FALSE, freeOnError = TRUE;
     EncodedFrameInfo encodedFrameInfo;
     MKV_STREAM_STATE generatorState = MKV_STATE_START_BLOCK;
@@ -2061,7 +2061,7 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
     STATUS retStatus = STATUS_SUCCESS;
     PViewItem pViewItem = NULL;
     BOOL streamLocked = FALSE, clientLocked = FALSE;
-    UINT32 clusterHeaderSize, packagedSize, overallSize, dataOffset;
+    UINT32 packagedSize, overallSize, dataOffset;
     UINT64 allocSize;
     PBYTE pFrame = NULL;
     PKinesisVideoClient pKinesisVideoClient = NULL;
@@ -2329,7 +2329,7 @@ VOID deleteStreamUploadInfo(PKinesisVideoStream pKinesisVideoStream, PUploadHand
 
         if (currentTime >= pUploadHandleInfo->createTime) {
             UINT64 uptime = currentTime - pUploadHandleInfo->createTime;
-            pKinesisVideoStream->diagnostics.avgSessionDuration = EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.avgSessionDuration, uptime);
+            pKinesisVideoStream->diagnostics.avgSessionDuration = (UINT64) EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.avgSessionDuration, uptime);
         }
 
         MEMFREE(pUploadHandleInfo);

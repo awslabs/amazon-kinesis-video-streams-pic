@@ -81,8 +81,7 @@ STATUS getVideoWidthAndHeightFromH265Sps(PBYTE codecPrivateData, UINT32 codecPri
     BYTE naluType;
     UINT16 numNalus, naluIterator, naluLen;
     BOOL spsNaluFound = FALSE;
-    PBYTE pRun;
-    UINT32 adaptedSize, naluSize;
+    UINT32 adaptedSize;
 
     CHK(codecPrivateData != NULL && pWidth != NULL && pHeight != NULL, STATUS_NULL_ARG);
     CHK(codecPrivateDataSize >= MIN_H264_H265_CPD_SIZE, STATUS_MKV_INVALID_H264_H265_CPD);
