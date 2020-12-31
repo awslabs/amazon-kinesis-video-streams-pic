@@ -779,6 +779,11 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     currentTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
     pKinesisVideoStream->lastPutFrameTimestamp = currentTime;
 
+    if(pKinesisVideoStream->eofrFrame) {
+        // After EOFR we again need to skip non-key frames before starting up new fragment
+        pKinesisVideoStream->skipNonKeyFrames = TRUE;
+    }
+
     // Validate that we are not seeing EoFr explicit marker in a non-key-frame fragmented stream
     if (!pKinesisVideoStream->streamInfo.streamCaps.keyFrameFragmentation) {
         CHK(!CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags), STATUS_END_OF_FRAGMENT_FRAME_INVALID_STATE);
