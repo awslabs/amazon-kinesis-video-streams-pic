@@ -3216,6 +3216,7 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
+    BOOL streamLocked = FALSE;
 
     PKinesisVideoClient pKinesisVideoClient = NULL;
 
@@ -3231,6 +3232,7 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
 
     // Lock the stream
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+    streamLocked = TRUE;
 
     // Reset the current view item
     MEMSET(&pKinesisVideoStream->curViewItem, 0x00, SIZEOF(CurrentViewItem));
@@ -3334,8 +3336,14 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
 
     // Unlock the stream
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+    streamLocked = FALSE;
 
 CleanUp:
+
+    if (streamLocked) {
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+    }
+
     LEAVES();
     return retStatus;
 }
