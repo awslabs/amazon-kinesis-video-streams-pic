@@ -423,7 +423,6 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, MultiTrackVerifyNoInvocations
     // Lock the Stream because PIC can be reading/writing these values as well
     client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, stream->base.lock);
     EXPECT_TRUE(stream->eofrFrame);
-    EXPECT_EQ(stream->lastPutFrameTimestamp, INVALID_TIMESTAMP_VALUE);
     client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, stream->base.lock);
 }
 

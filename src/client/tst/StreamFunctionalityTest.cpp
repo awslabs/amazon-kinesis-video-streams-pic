@@ -231,8 +231,9 @@ TEST_P(StreamFunctionalityTest, CreateSyncPutFrameEoFRFirst)
     initDefaultProducer();
     MockProducer producer(mMockProducerConfig, mStreamHandle);
 
-    // Put a eofr frame
-    EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(TRUE));
+    // Put a eofr frame, this should fail we
+    // should not allow first frame to be eofr
+    EXPECT_NE(STATUS_SUCCESS, producer.putFrame(TRUE));
 
     // Produce some frames
     for (UINT32 i = 0; i < 2 * TEST_DEFAULT_PRODUCER_CONFIG_FRAME_RATE; i++) {
@@ -249,11 +250,12 @@ TEST_P(StreamFunctionalityTest, CreateSyncPutFrameEoFRFirst)
         EXPECT_EQ(STATUS_SUCCESS, producer.putFrame());
     }
 
-    // Ensure the skipped frame count is not zero
+    // Ensure the skipped frame count is zero -- the first eofr is NOT skipped
+    // even if skipNonKeyFrames is true
     StreamMetrics streamMetrics;
     streamMetrics.version = STREAM_METRICS_CURRENT_VERSION;
     EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamMetrics(mStreamHandle, &streamMetrics));
-    EXPECT_EQ(1, streamMetrics.skippedFrames);
+    EXPECT_EQ(0, streamMetrics.skippedFrames);
 }
 
 TEST_P(StreamFunctionalityTest, CreateSyncPutFrameEoFRFirstForceNotSkipping)
@@ -289,7 +291,7 @@ TEST_P(StreamFunctionalityTest, CreateSyncPutFrameEoFRFirstForceNotSkipping)
         EXPECT_EQ(STATUS_SUCCESS, producer.putFrame());
     }
 
-    // Ensure the skipped frame count is not zero
+    // Ensure the skipped frame count is zero
     StreamMetrics streamMetrics;
     streamMetrics.version = STREAM_METRICS_CURRENT_VERSION;
     EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamMetrics(mStreamHandle, &streamMetrics));

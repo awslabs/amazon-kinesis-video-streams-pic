@@ -777,7 +777,6 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 
     // Set the last PutFrame time to current time
     currentTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
-    pKinesisVideoStream->lastPutFrameTimestamp = currentTime;
 
     if(pKinesisVideoStream->eofrFrame) {
         // After EOFR we again need to skip non-key frames before starting up new fragment
@@ -817,10 +816,11 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     }
 
     // Check if the frames should be skipped and whether the skip flag needs to be reset
+    // If current frame is EOFR, We will package EOFR frame and we do not need to reset skip flag
     if (pKinesisVideoStream->skipNonKeyFrames) {
         if (CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)) {
             pKinesisVideoStream->skipNonKeyFrames = FALSE;
-        } else {
+        } else if(!CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
             pKinesisVideoStream->diagnostics.skippedFrames++;
             CHK(FALSE, retStatus); // skip processing the frame
         }
@@ -1115,6 +1115,11 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 
         // Store the last frame timestamp
         pKinesisVideoStream->diagnostics.lastFrameRateTimestamp = currentTime;
+    }
+
+    if (retStatus == STATUS_SUCCESS) {
+        // Only update the timestamp on success
+        pKinesisVideoStream->lastPutFrameTimestamp = currentTime;
     }
 
     // Unlock the client as we no longer need it locked
