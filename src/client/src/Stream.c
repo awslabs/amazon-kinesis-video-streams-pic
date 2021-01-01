@@ -1117,10 +1117,8 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         pKinesisVideoStream->diagnostics.lastFrameRateTimestamp = currentTime;
     }
 
-    if (retStatus == STATUS_SUCCESS) {
-        // Only update the timestamp on success
-        pKinesisVideoStream->lastPutFrameTimestamp = currentTime;
-    }
+    // Only update the timestamp on success
+    pKinesisVideoStream->lastPutFrameTimestamp = currentTime;
 
     // Unlock the client as we no longer need it locked
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
