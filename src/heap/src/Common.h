@@ -38,6 +38,7 @@ typedef struct
     union {
         UINT32 vramHandle;
         UINT32 flags;
+        UINT32 fileHandle;
     };
 
 #ifdef HEAP_DEBUG

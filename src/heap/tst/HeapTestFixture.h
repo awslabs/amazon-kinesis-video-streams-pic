@@ -12,7 +12,6 @@ public:
     };
 
 protected:
-    static VOID SetUpTestCase();
     static VOID SetUpInternal();
 
     virtual VOID SetUp();

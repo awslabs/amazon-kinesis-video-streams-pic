@@ -163,7 +163,9 @@ STATUS tolowerupperstr(PCHAR, UINT32, BOOL, PCHAR);
 PUBLIC_API STATUS readFile(PCHAR filePath, BOOL binMode, PBYTE pBuffer, PUINT64 pSize);
 PUBLIC_API STATUS readFileSegment(PCHAR filePath, BOOL binMode, PBYTE pBuffer, UINT64 offset, UINT64 readSize);
 PUBLIC_API STATUS writeFile(PCHAR filePath, BOOL binMode, BOOL append, PBYTE pBuffer, UINT64 size);
+PUBLIC_API STATUS updateFile(PCHAR filePath, BOOL binMode, PBYTE pBuffer, UINT64 offset, UINT64 size);
 PUBLIC_API STATUS getFileLength(PCHAR filePath, PUINT64 pSize);
+PUBLIC_API STATUS setFileLength(PCHAR filePath, UINT64 size);
 PUBLIC_API STATUS fileExists(PCHAR filePath, PBOOL pExists);
 PUBLIC_API STATUS createFile(PCHAR filePath, UINT64 size);
 

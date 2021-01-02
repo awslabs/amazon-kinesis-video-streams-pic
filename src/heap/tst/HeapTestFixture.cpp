@@ -32,6 +32,11 @@ UINT8 HeapTestBase::mScratchBuf[];
 
 VOID HeapTestBase::SetUpInternal()
 {
+    globalDlOpen = HeapTestBase::mockDlOpen;
+    globalDlClose = HeapTestBase::mockDlClose;
+    globalDlSym = HeapTestBase::mockDlSym;
+    globalDlError = HeapTestBase::mockDlError;
+
     mVramGetMax = MIN_HEAP_SIZE * 2;
     mVramInit = 0;
     mVramFree = 0;
@@ -55,14 +60,6 @@ VOID HeapTestBase::SetUpInternal()
     mDlErrorCount = 0;
     mDlSymCount = 0;
     mDlCloseCount = 0;
-}
-
-VOID HeapTestBase::SetUpTestCase()
-{
-    globalDlOpen = HeapTestBase::mockDlOpen;
-    globalDlClose = HeapTestBase::mockDlClose;
-    globalDlSym = HeapTestBase::mockDlSym;
-    globalDlError = HeapTestBase::mockDlError;
 }
 
 VOID HeapTestBase::SetUp()
