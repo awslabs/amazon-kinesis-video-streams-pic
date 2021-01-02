@@ -154,6 +154,7 @@ typedef struct
 #include "SystemHeap.h"
 #include "AivHeap.h"
 #include "HybridHeap.h"
+#include "HybridFileHeap.h"
 
 #ifdef __cplusplus
 }

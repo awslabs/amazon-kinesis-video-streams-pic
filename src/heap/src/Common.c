@@ -187,8 +187,8 @@ DEFINE_HEAP_SET_ALLOC_SIZE(commonHeapSetAllocSize)
     // Check if the larger size can spill over the heap limit
     if (newSize > size) {
         diff = newSize - size;
-        CHK_ERR(diff + pHeap->heapSize <= pHeap->heapLimit, STATUS_NOT_ENOUGH_MEMORY,
-                "Allocating %" PRIu64 " bytes failed due to heap limit", newSize);
+        CHK_WARN(diff + pHeap->heapSize <= pHeap->heapLimit, STATUS_NOT_ENOUGH_MEMORY,
+                 "Allocating %" PRIu64 " bytes failed due to heap limit", newSize);
         // Increment the current allocations size
         pHeap->heapSize += diff;
     } else {
@@ -234,8 +234,8 @@ DEFINE_HEAP_ALLOC(commonHeapAlloc)
     overallSize = pBaseHeap->getAllocationHeaderSizeFn() +
             pBaseHeap->getAllocationAlignedSizeFn(size) +
             pBaseHeap->getAllocationFooterSizeFn();
-    CHK_ERR(overallSize + pHeap->heapSize <= pHeap->heapLimit, STATUS_NOT_ENOUGH_MEMORY,
-            "Allocating %" PRIu64 " bytes failed due to heap limit", size);
+    CHK_WARN(overallSize + pHeap->heapSize <= pHeap->heapLimit, STATUS_NOT_ENOUGH_MEMORY,
+             "Allocating %" PRIu64 " bytes failed due to heap limit", size);
 
     // Validate the heap
     CHK_STATUS(validateHeap(pHeap));

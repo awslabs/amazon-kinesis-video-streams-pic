@@ -492,7 +492,11 @@ typedef CID*                PCID;
 #include <malloc.h>
 #endif
 
-#if defined _WIN32 || defined _WIN64 || defined __CYGWIN__
+#if defined __WINDOWS_BUILD__
+
+// Include the posix IO
+#include <fcntl.h>
+#include <io.h>
 
 #include "dlfcn_win_stub.h"
 

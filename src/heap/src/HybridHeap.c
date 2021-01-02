@@ -117,8 +117,20 @@ STATUS hybridCreateHeap(PHeap pHeap, UINT32 spillRatio, UINT32 behaviorFlags, PH
     pBaseHeap->getHeapLimitsFn = hybridGetHeapLimits;
 
 CleanUp:
-    if (STATUS_FAILED(retStatus) && handle != NULL) {
-        DLCLOSE(handle);
+    if (STATUS_FAILED(retStatus)) {
+        if (handle != NULL) {
+            DLCLOSE(handle);
+        }
+
+        if (pHybridHeap != NULL) {
+            // Ensure it doesn't get closed again
+            pHybridHeap->libHandle = NULL;
+
+            // Base heap will be released by the common heap
+            pHybridHeap->pMemHeap = NULL;
+
+            hybridHeapRelease((PHeap) pHybridHeap);
+        }
     }
 
     LEAVES();
@@ -153,10 +165,7 @@ DEFINE_INIT_HEAP(hybridHeapInit)
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PHybridHeap pHybridHeap = (PHybridHeap) pHeap;
-    UINT32 ret;
-    UINT32 memHeapLimit;
-    UINT32 vramHeapLimit;
-    UINT32 maxVramSize;
+    UINT32 ret, memHeapLimit, vramHeapLimit, maxVramSize;
 
     // Delegate the call directly
     CHK_STATUS(commonHeapInit(pHeap, heapLimit));
@@ -212,7 +221,7 @@ DEFINE_RELEASE_HEAP(hybridHeapRelease)
     retStatus = commonHeapRelease(pHeap);
 
     // Release the direct memory heap
-    if (STATUS_SUCCESS != (memHeapStatus = pHybridHeap->pMemHeap->heapReleaseFn((PHeap) pHybridHeap->pMemHeap))) {
+    if (pHybridHeap->pMemHeap != NULL && STATUS_SUCCESS != (memHeapStatus = pHybridHeap->pMemHeap->heapReleaseFn((PHeap) pHybridHeap->pMemHeap))) {
         DLOGW("Failed to release in-memory heap with 0x%08x", memHeapStatus);
     }
 
@@ -590,13 +599,16 @@ DEFINE_ALLOC_SIZE(hybridGetAllocationSize)
     PHybridHeap pHybridHeap = (PHybridHeap) pHeap;
     UINT32 vramHandle;
     PALLOCATION_HEADER pAllocation;
+    UINT64 memSizes, vramSizes, memHeapAllocationSize;
+
+    CHECK_EXT(pHeap != NULL, "Internal error with VRAM heap being null");
 
     // Check if this is a direct allocation
     if (IS_DIRECT_ALLOCATION_HANDLE(handle)) {
         // Get the allocation header and footer in order to compensate the accounting for vram header and footer.
-        UINT64 memSizes = pHybridHeap->pMemHeap->getAllocationHeaderSizeFn() + pHybridHeap->pMemHeap->getAllocationFooterSizeFn();
-        UINT64 vramSizes = hybridGetAllocationHeaderSize() + hybridGetAllocationFooterSize();
-        UINT64 memHeapAllocationSize = pHybridHeap->pMemHeap->getAllocationSizeFn((PHeap) pHybridHeap->pMemHeap, handle);
+        memSizes = pHybridHeap->pMemHeap->getAllocationHeaderSizeFn() + pHybridHeap->pMemHeap->getAllocationFooterSizeFn();
+        vramSizes = hybridGetAllocationHeaderSize() + hybridGetAllocationFooterSize();
+        memHeapAllocationSize = pHybridHeap->pMemHeap->getAllocationSizeFn((PHeap) pHybridHeap->pMemHeap, handle);
         return memHeapAllocationSize - memSizes + vramSizes;
     }
 
