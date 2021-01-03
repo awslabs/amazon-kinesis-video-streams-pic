@@ -68,9 +68,7 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
                 if (IS_VALID_TIMESTAMP(pCurrStream->lastPutFrameTimestamp) &&
                     currentTime > pCurrStream->lastPutFrameTimestamp
                     && (currentTime - pCurrStream->lastPutFrameTimestamp) > INTERMITTENT_PRODUCER_MAX_TIMEOUT) {
-                    if (STATUS_SUCCEEDED(retStatus = putKinesisVideoFrame(TO_STREAM_HANDLE(pCurrStream), &eofr))) {
-                        pCurrStream->lastPutFrameTimestamp = INVALID_TIMESTAMP_VALUE;
-                    } else {
+                    if (!STATUS_SUCCEEDED(retStatus = putKinesisVideoFrame(TO_STREAM_HANDLE(pCurrStream), &eofr))) {
                         DLOGW("Failed to submit auto eofr with 0x%08x, for stream name: %s", retStatus,
                               pCurrStream->streamInfo.name);
                     }
