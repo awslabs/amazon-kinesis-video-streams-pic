@@ -3323,6 +3323,11 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
         CHK_STATUS(resetStateMachineRetryCount(pKinesisVideoStream->base.pStateMachine));
     }
 
+    // Reset client state machine retry status
+    if (pKinesisVideoClient->base.pStateMachine != NULL) {
+        CHK_STATUS(resetStateMachineRetryCount(pKinesisVideoClient->base.pStateMachine));
+    }
+
     // Release the condition variable
     if (IS_VALID_CVAR_VALUE(pKinesisVideoStream->bufferAvailabilityCondition)) {
         pKinesisVideoClient->clientCallbacks.broadcastConditionVariableFn(pKinesisVideoClient->clientCallbacks.customData,
