@@ -378,7 +378,7 @@ STATUS contentViewGetTail(PContentView pContentView, PViewItem* ppItem)
     CHK(pContentView != NULL && ppItem != NULL, STATUS_NULL_ARG);
 
     // Quick check if any items exist - early return
-    CHK(pRollingView->head != pRollingView->tail, STATUS_CONTENT_VIEW_NO_MORE_ITEMS);
+    CHK(pRollingView->head != 0, STATUS_CONTENT_VIEW_NO_MORE_ITEMS);
 
     // Get the tail item
     *ppItem = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail);
@@ -402,7 +402,7 @@ STATUS contentViewGetHead(PContentView pContentView, PViewItem* ppItem)
     CHK(pContentView != NULL && ppItem != NULL, STATUS_NULL_ARG);
 
     // Quick check if any items exist - early return
-    CHK(pRollingView->head != pRollingView->tail, STATUS_CONTENT_VIEW_NO_MORE_ITEMS);
+    CHK(pRollingView->head != 0, STATUS_CONTENT_VIEW_NO_MORE_ITEMS);
 
     // Get the head item
     *ppItem = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->head - 1);
