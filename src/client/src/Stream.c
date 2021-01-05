@@ -1017,9 +1017,29 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
                 pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
 
         if (currentTime >= pKinesisVideoStream->diagnostics.nextLoggingTime) {
+            // unlock the client
+            pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                               pKinesisVideoClient->base.lock);
+            clientLocked = FALSE;
+
+            // unlock the stream
+            pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                             pKinesisVideoStream->base.lock);
+            streamLocked = FALSE;
+
             if (STATUS_FAILED(logStreamMetric(pKinesisVideoStream))) {
                 DLOGW("Failed to log stream metric with error 0x%08x", retStatus);
             }
+            // lock the stream
+            pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                               pKinesisVideoStream->base.lock);
+            streamLocked = TRUE;
+
+            // lock the client
+            pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                               pKinesisVideoClient->base.lock);
+            clientLocked = TRUE;
+
         }
 
         // Update the next log time
