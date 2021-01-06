@@ -898,16 +898,10 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // Check if we are packaging special EoFr
     if (CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
         // Store the metadata at the beginning of the allocation
-        if (packagedMetadataSize != 0) {
-            // Packaging the metadata if the packaged size is not zero
-            CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, generatorState, FALSE, pAlloc, &packagedMetadataSize));
-        }
-
-        // Package the existing metadata that's not yet sent
         CHK_STATUS(packageStreamMetadata(pKinesisVideoStream,
                                          MKV_STATE_START_CLUSTER,
                                          TRUE,
-                                         pAlloc + packagedMetadataSize,
+                                         pAlloc,
                                          &packagedSize));
 
         // Synthesize the encodedFrameInfo

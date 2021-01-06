@@ -184,6 +184,7 @@ TEST_F(ViewApiTest, contentViewResetCurrent_NullPointer)
 TEST_F(ViewApiTest, contentViewGetTail_NullPointer)
 {
     PViewItem pViewItem;
+    UINT64 currentCount, windowCount;
 
     EXPECT_TRUE(STATUS_FAILED(contentViewGetTail(NULL, &pViewItem)));
     EXPECT_TRUE(STATUS_FAILED(contentViewGetTail(NULL, NULL)));
@@ -193,11 +194,32 @@ TEST_F(ViewApiTest, contentViewGetTail_NullPointer)
 
     // Shouldn't be any tail
     EXPECT_EQ(STATUS_CONTENT_VIEW_NO_MORE_ITEMS, contentViewGetTail(mContentView, &pViewItem));
+
+    // Add a few items, try to get the tail (success), remove tail for all,
+    // get the head again - the view should have no items but
+    // getting the tail should succeed
+    EXPECT_EQ(STATUS_SUCCESS,contentViewAddItem(mContentView, 5, 5, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_STREAM_START));
+    EXPECT_EQ(STATUS_SUCCESS,contentViewAddItem(mContentView, 6, 6, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_FRAGMENT_START));
+    EXPECT_EQ(STATUS_SUCCESS,contentViewAddItem(mContentView, 7, 7, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_NONE));
+    EXPECT_EQ(STATUS_SUCCESS, contentViewGetWindowItemCount(mContentView, &currentCount, &windowCount));
+    EXPECT_EQ(3, currentCount);
+    EXPECT_EQ(3, windowCount);
+
+    EXPECT_EQ(STATUS_SUCCESS, contentViewGetTail(mContentView, &pViewItem));
+
+    // Remove all
+    EXPECT_EQ(STATUS_SUCCESS, contentViewRemoveAll(mContentView));
+    EXPECT_EQ(STATUS_SUCCESS, contentViewGetWindowItemCount(mContentView, &currentCount, &windowCount));
+    EXPECT_EQ(0, currentCount);
+    EXPECT_EQ(0, windowCount);
+
+    EXPECT_EQ(STATUS_SUCCESS, contentViewGetTail(mContentView, &pViewItem));
 }
 
 TEST_F(ViewApiTest, contentViewGetHead_NullPointer)
 {
     PViewItem pViewItem;
+    UINT64 currentCount, windowCount;
 
     EXPECT_TRUE(STATUS_FAILED(contentViewGetHead(NULL, &pViewItem)));
     EXPECT_TRUE(STATUS_FAILED(contentViewGetHead(NULL, NULL)));
@@ -207,6 +229,26 @@ TEST_F(ViewApiTest, contentViewGetHead_NullPointer)
 
     // Shouldn't be any tail
     EXPECT_EQ(STATUS_CONTENT_VIEW_NO_MORE_ITEMS, contentViewGetHead(mContentView, &pViewItem));
+
+    // Add a few items, try to get the head (success), remove tail for all,
+    // get the head again - the view should have no items but
+    // getting the head should succeed
+    EXPECT_EQ(STATUS_SUCCESS,contentViewAddItem(mContentView, 5, 5, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_STREAM_START));
+    EXPECT_EQ(STATUS_SUCCESS,contentViewAddItem(mContentView, 6, 6, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_FRAGMENT_START));
+    EXPECT_EQ(STATUS_SUCCESS,contentViewAddItem(mContentView, 7, 7, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_NONE));
+    EXPECT_EQ(STATUS_SUCCESS, contentViewGetWindowItemCount(mContentView, &currentCount, &windowCount));
+    EXPECT_EQ(3, currentCount);
+    EXPECT_EQ(3, windowCount);
+
+    EXPECT_EQ(STATUS_SUCCESS, contentViewGetHead(mContentView, &pViewItem));
+
+    // Remove all
+    EXPECT_EQ(STATUS_SUCCESS, contentViewRemoveAll(mContentView));
+    EXPECT_EQ(STATUS_SUCCESS, contentViewGetWindowItemCount(mContentView, &currentCount, &windowCount));
+    EXPECT_EQ(0, currentCount);
+    EXPECT_EQ(0, windowCount);
+
+    EXPECT_EQ(STATUS_SUCCESS, contentViewGetHead(mContentView, &pViewItem));
 }
 
 TEST_F(ViewApiTest, contentViewGetAllocationSize_NullPointer)
