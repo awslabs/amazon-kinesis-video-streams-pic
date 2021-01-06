@@ -1584,7 +1584,7 @@ STATUS mkvgenGenerateAacCpd(KVS_MPEG4_AUDIO_OBJECT_TYPES objectType, UINT32 samp
     CHK(pBuffer != NULL, STATUS_NULL_ARG);
     CHK(channelConfig > 0 && channelConfig < MKV_AAC_CHANNEL_CONFIG_MAX && bufferLen >= KVS_AAC_CPD_SIZE_BYTE, STATUS_INVALID_ARG);
 
-    for (i = 0; i < MKV_AAC_SAMPLING_FREQUNECY_IDX_MAX && !samplingFreqFound; ++i) {
+    for (i = 0; i < (UINT16) MKV_AAC_SAMPLING_FREQUNECY_IDX_MAX && !samplingFreqFound; ++i) {
         if (gMkvAACSamplingFrequencies[i] == samplingFrequency) {
             samplingFreqIndex = i;
             samplingFreqFound = TRUE;
