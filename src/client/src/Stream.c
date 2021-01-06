@@ -782,7 +782,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         // After EOFR we again need to skip non-key frames before starting up new fragment
         pKinesisVideoStream->skipNonKeyFrames = TRUE;
         // Check we're not seeing an EOFR frame immediately after an EOFR frame
-        CHK(!CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags), STATUS_TWO_CONSECUTIVE_EFOR);
+        CHK(!CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags), STATUS_TWO_CONSECUTIVE_EOFR);
     }
 
     // Validate that we are not seeing EoFr explicit marker in a non-key-frame fragmented stream
