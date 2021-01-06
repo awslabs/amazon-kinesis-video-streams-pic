@@ -562,7 +562,7 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateErrorOnForceConsecuti
             client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, stream->base.lock);
 
             // attempt to put another eofr, expect this failure
-            EXPECT_EQ(STATUS_TWO_CONSECUTIVE_EOFR, putKinesisVideoFrame(streamHandle, &eofrFrame));
+            EXPECT_EQ(STATUS_MULTIPLE_CONSECUTIVE_EOFR, putKinesisVideoFrame(streamHandle, &eofrFrame));
         }
 
         UINT64 diff = GETTIME()-startTime;
