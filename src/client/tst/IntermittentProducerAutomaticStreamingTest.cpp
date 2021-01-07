@@ -426,6 +426,152 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, MultiTrackVerifyNoInvocations
     client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, stream->base.lock);
 }
 
+TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateNoConsecutiveEOFR) {
+    // Create new client so param value of callbackPeriod can be applied
+    ASSERT_EQ(STATUS_SUCCESS, CreateClient());
+
+    PKinesisVideoClient client = FROM_CLIENT_HANDLE(mClientHandle);
+    // Lock client before setting hook custom data and callback because PIC reads these values
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, client->base.lock);
+    client->hookCustomData = (UINT64) this;
+    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, client->base.lock);
+
+    // Produce a frame
+    BYTE temp[100];
+    Frame frame;
+    frame.trackId = 1;
+    frame.size = SIZEOF(temp);
+    frame.duration = HUNDREDS_OF_NANOS_IN_A_SECOND;
+    frame.frameData = temp;
+    frame.duration = HUNDREDS_OF_NANOS_IN_A_SECOND;
+
+    // Create synchronously
+    CreateStreamSync();
+    PKinesisVideoStream stream = FROM_STREAM_HANDLE(mStreamHandle);
+    STREAM_HANDLE streamHandle = mStreamHandle;
+
+    THREAD_SLEEP(INTERMITTENT_PRODUCER_TIMER_START_DELAY);
+
+    UINT64 ts, startTime;
+    int frameCountS1 = 0;
+
+    /*
+     *      |
+     *      |
+     *  S1  |*****                               *************
+     *      -----------------------------------------------------
+     *    t=0    5                              55          60
+     *
+     *    `*` denotes frames are being produced, gaps mean no frames.
+     *    s1 produces frames from t=0 to t=5, then stops for 50s, at this point
+     *    we assume INTERMITTENT_PRODUCER_MAX_TIMEOUT = 20s, so by this time
+     *    the callback should have fired with an EOFR once, but we wait an additional
+     *    time period to make sure we don't accidentally send eofr twice (this would result in
+     *    an error in put frame).
+     */
+
+
+    for (ts = 0; ts < 60 * HUNDREDS_OF_NANOS_IN_A_SECOND; ts += HUNDREDS_OF_NANOS_IN_A_SECOND) {
+        startTime = GETTIME();
+        frame.presentationTs = ts;
+        frame.decodingTs = ts;
+        frame.duration = HUNDREDS_OF_NANOS_IN_A_SECOND;
+
+        if ( ts < 5 * HUNDREDS_OF_NANOS_IN_A_SECOND || ts > 55 * HUNDREDS_OF_NANOS_IN_A_SECOND) {
+            frame.flags = frameCountS1 % 5 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
+            frame.index = frameCountS1++;
+
+            EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(streamHandle, &frame));
+            EXPECT_EQ(0, ATOMIC_LOAD(&mStreamErrorReportFuncCount));
+        }
+
+        UINT64 diff = GETTIME()-startTime;
+        if ( diff < HUNDREDS_OF_NANOS_IN_A_SECOND ) {
+            THREAD_SLEEP(HUNDREDS_OF_NANOS_IN_A_SECOND - diff);
+        }
+    }
+}
+
+TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateErrorOnForceConsecutiveEOFR) {
+    // Create new client so param value of callbackPeriod can be applied
+    ASSERT_EQ(STATUS_SUCCESS, CreateClient());
+
+    PKinesisVideoClient client = FROM_CLIENT_HANDLE(mClientHandle);
+    // Lock client before setting hook custom data and callback because PIC reads these values
+    client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, client->base.lock);
+    client->hookCustomData = (UINT64) this;
+    client->timerCallbackPreHookFunc = timerCallbackPreHook;
+    client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, client->base.lock);
+
+    // Produce a frame
+    BYTE temp[100];
+    Frame frame;
+    frame.trackId = 1;
+    frame.size = SIZEOF(temp);
+    frame.duration = HUNDREDS_OF_NANOS_IN_A_SECOND;
+    frame.frameData = temp;
+    frame.duration = HUNDREDS_OF_NANOS_IN_A_SECOND;
+
+    // Create synchronously
+    CreateStreamSync();
+    PKinesisVideoStream stream = FROM_STREAM_HANDLE(mStreamHandle);
+    STREAM_HANDLE streamHandle = mStreamHandle;
+
+    THREAD_SLEEP(INTERMITTENT_PRODUCER_TIMER_START_DELAY);
+
+    UINT64 ts, startTime;
+    int frameCountS1 = 0;
+
+    /*
+     *      |
+     *      |
+     *  S1  |*****                        +++++++++
+     *      --------------------------------------------
+     *    t=0    5                        35      40
+     *
+     *    '*' denotes frames are being produced, gaps mean no frames.
+     *    '+' denotes we manually submit eofr, expect error
+     *    s1 produces frames from t=0 to t=5, then stops for 30s, at this point
+     *    we assume INTERMITTENT_PRODUCER_MAX_TIMEOUT = 20s, so by this time
+     *    the callback should have fired with an EOFR once, now we manually
+     *    fire eofr frames and expect error
+     */
+
+    Frame eofrFrame = EOFR_FRAME_INITIALIZER;
+
+    for (ts = 0; ts < 2 * INTERMITTENT_PRODUCER_MAX_TIMEOUT; ts += HUNDREDS_OF_NANOS_IN_A_SECOND) {
+        startTime = GETTIME();
+        frame.presentationTs = ts;
+        frame.decodingTs = ts;
+        frame.duration = HUNDREDS_OF_NANOS_IN_A_SECOND;
+
+        if ( ts < 5 * HUNDREDS_OF_NANOS_IN_A_SECOND) {
+            frame.flags = frameCountS1 % 5 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
+            frame.index = frameCountS1++;
+
+            EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(streamHandle, &frame));
+            EXPECT_EQ(0, ATOMIC_LOAD(&mStreamErrorReportFuncCount));
+        }
+
+
+        if ( ts >= 35 * HUNDREDS_OF_NANOS_IN_A_SECOND) {
+            // Lock the Stream because PIC can be reading/writing this value as well
+            client->clientCallbacks.lockMutexFn(client->clientCallbacks.customData, stream->base.lock);
+            EXPECT_TRUE(stream->eofrFrame);
+            client->clientCallbacks.unlockMutexFn(client->clientCallbacks.customData, stream->base.lock);
+
+            // attempt to put another eofr, expect this failure
+            EXPECT_EQ(STATUS_MULTIPLE_CONSECUTIVE_EOFR, putKinesisVideoFrame(streamHandle, &eofrFrame));
+        }
+
+        UINT64 diff = GETTIME()-startTime;
+        if ( diff < HUNDREDS_OF_NANOS_IN_A_SECOND ) {
+            THREAD_SLEEP(HUNDREDS_OF_NANOS_IN_A_SECOND - diff);
+        }
+    }
+}
+
 TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateMultiStream) {
     // Create new client so param value of callbackPeriod can be applied
     mClientCallbacks.describeStreamFn = describeStreamMultiStreamFunc;

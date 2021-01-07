@@ -242,8 +242,8 @@ TEST_P(StreamFunctionalityTest, CreateSyncPutFrameEoFRFirst)
 
     // Produce a few EoFRs
     EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(TRUE));
-    EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(TRUE));
-    EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(TRUE));
+    EXPECT_EQ(STATUS_MULTIPLE_CONSECUTIVE_EOFR, producer.putFrame(TRUE));
+    EXPECT_EQ(STATUS_MULTIPLE_CONSECUTIVE_EOFR, producer.putFrame(TRUE));
 
     // Produce some more frames
     for (UINT32 i = 0; i < 2 * TEST_DEFAULT_PRODUCER_CONFIG_FRAME_RATE; i++) {
@@ -283,8 +283,8 @@ TEST_P(StreamFunctionalityTest, CreateSyncPutFrameEoFRFirstForceNotSkipping)
 
     // Produce a few EoFRs
     EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(TRUE));
-    EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(TRUE));
-    EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(TRUE));
+    EXPECT_EQ(STATUS_MULTIPLE_CONSECUTIVE_EOFR, producer.putFrame(TRUE));
+    EXPECT_EQ(STATUS_MULTIPLE_CONSECUTIVE_EOFR, producer.putFrame(TRUE));
 
     // Produce some more frames
     for (UINT32 i = 0; i < 2 * TEST_DEFAULT_PRODUCER_CONFIG_FRAME_RATE; i++) {

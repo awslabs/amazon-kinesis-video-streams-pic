@@ -781,6 +781,8 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     if(pKinesisVideoStream->eofrFrame) {
         // After EOFR we again need to skip non-key frames before starting up new fragment
         pKinesisVideoStream->skipNonKeyFrames = TRUE;
+        // Check we're not seeing an EOFR frame immediately after an EOFR frame
+        CHK(!CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags), STATUS_MULTIPLE_CONSECUTIVE_EOFR);
     }
 
     // Validate that we are not seeing EoFr explicit marker in a non-key-frame fragmented stream
@@ -1132,8 +1134,11 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     }
 
     // Only update the timestamp on success
-    pKinesisVideoStream->lastPutFrameTimestamp = currentTime;
-
+    if (pKinesisVideoStream->eofrFrame) {
+        pKinesisVideoStream->lastPutFrameTimestamp = INVALID_TIMESTAMP_VALUE;
+    } else {
+        pKinesisVideoStream->lastPutFrameTimestamp = currentTime;
+    }
     // Unlock the client as we no longer need it locked
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     clientLocked = FALSE;
