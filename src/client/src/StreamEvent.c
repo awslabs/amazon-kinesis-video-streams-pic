@@ -206,11 +206,8 @@ STATUS describeStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CAL
 
     // Basic checks
     retStatus = serviceCallResultCheck(callResult);
-    CHK(retStatus == STATUS_SUCCESS ||
-                retStatus == STATUS_SERVICE_CALL_RESOURCE_NOT_FOUND_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR,
+    CHK(retStatus == STATUS_SUCCESS || retStatus == STATUS_SERVICE_CALL_RESOURCE_NOT_FOUND_ERROR || retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR ||
+            retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR || retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR,
         retStatus);
 
     // Reset the status
@@ -248,7 +245,7 @@ STATUS describeStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CAL
         // Check the rest of the values and warn on mismatch
         // NOTE: We need to compare non-empty KMS keys only as the default is used when none is specified
         if ((pKinesisVideoStream->streamInfo.kmsKeyId[0] != '\0') &&
-                (0 != STRNCMP(pKinesisVideoStream->streamInfo.kmsKeyId, streamDescription.kmsKeyId, MAX_ARN_LEN))) {
+            (0 != STRNCMP(pKinesisVideoStream->streamInfo.kmsKeyId, streamDescription.kmsKeyId, MAX_ARN_LEN))) {
             DLOGW("KMS key ID returned from the DescribeStream call doesn't match the one specified in the StreamInfo");
         }
 
@@ -261,7 +258,8 @@ STATUS describeStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CAL
         }
 
         if (0 != STRNCMP(pKinesisVideoStream->streamInfo.name, streamDescription.streamName, MAX_STREAM_NAME_LEN)) {
-            DLOGW("Stream name returned from the DescribeStream(%s) call doesn't match the one specified in the StreamInfo(%s)", streamDescription.streamName, pKinesisVideoStream->streamInfo.name);
+            DLOGW("Stream name returned from the DescribeStream(%s) call doesn't match the one specified in the StreamInfo(%s)",
+                  streamDescription.streamName, pKinesisVideoStream->streamInfo.name);
         }
 
         // Store the values we need
@@ -309,10 +307,9 @@ STATUS createStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_
 
     // Basic checks
     retStatus = serviceCallResultCheck(callResult);
-    CHK(retStatus == STATUS_SUCCESS ||
-                retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, retStatus);
+    CHK(retStatus == STATUS_SUCCESS || retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR || retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
+            retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR,
+        retStatus);
 
     // Reset the status
     retStatus = STATUS_SUCCESS;
@@ -326,8 +323,7 @@ STATUS createStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_
     // store the info
     if (callResult == SERVICE_CALL_RESULT_OK) {
         // Should have the stream arn
-        CHK(streamArn != NULL &&
-            STRNLEN(streamArn, MAX_ARN_LEN + 1) <= MAX_ARN_LEN, STATUS_INVALID_CREATE_STREAM_RESPONSE);
+        CHK(streamArn != NULL && STRNLEN(streamArn, MAX_ARN_LEN + 1) <= MAX_ARN_LEN, STATUS_INVALID_CREATE_STREAM_RESPONSE);
         STRNCPY(pKinesisVideoStream->base.arn, streamArn, MAX_ARN_LEN);
         pKinesisVideoStream->base.arn[MAX_ARN_LEN] = '\0';
     }
@@ -349,7 +345,8 @@ CleanUp:
 /**
  * Get streaming token result event func
  */
-STATUS getStreamingTokenResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RESULT callResult, PBYTE pToken, UINT32 tokenSize, UINT64 expiration)
+STATUS getStreamingTokenResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RESULT callResult, PBYTE pToken, UINT32 tokenSize,
+                               UINT64 expiration)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -373,9 +370,7 @@ STATUS getStreamingTokenResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_
 
     // Basic checks
     retStatus = serviceCallResultCheck(callResult);
-    CHK(retStatus == STATUS_SUCCESS ||
-                retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR, retStatus);
+    CHK(retStatus == STATUS_SUCCESS || retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR || retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR, retStatus);
 
     // Reset the status
     retStatus = STATUS_SUCCESS;
@@ -403,9 +398,8 @@ STATUS getStreamingTokenResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_
         pKinesisVideoStream->streamingAuthInfo.expiration = MIN(expiration, currentTime + MAX_ENFORCED_TOKEN_EXPIRATION_DURATION);
 
         // Introduce jitter to the expiration time
-        pKinesisVideoStream->streamingAuthInfo.expiration = randomizeAuthInfoExpiration(pKinesisVideoClient,
-                                                                                        pKinesisVideoStream->streamingAuthInfo.expiration,
-                                                                                        currentTime);
+        pKinesisVideoStream->streamingAuthInfo.expiration =
+            randomizeAuthInfoExpiration(pKinesisVideoClient, pKinesisVideoStream->streamingAuthInfo.expiration, currentTime);
 
         // If we don't have a token we assume there is no auth.
         if (pToken == NULL || tokenSize == 0) {
@@ -459,10 +453,9 @@ STATUS getStreamingEndpointResult(PKinesisVideoStream pKinesisVideoStream, SERVI
 
     // Basic checks
     retStatus = serviceCallResultCheck(callResult);
-    CHK(retStatus == STATUS_SUCCESS ||
-                retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, retStatus);
+    CHK(retStatus == STATUS_SUCCESS || retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR || retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
+            retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR,
+        retStatus);
 
     // Reset the status
     retStatus = STATUS_SUCCESS;
@@ -522,10 +515,9 @@ STATUS putStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
 
     // Basic checks
     retStatus = serviceCallResultCheck(callResult);
-    CHK(retStatus == STATUS_SUCCESS ||
-                retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, retStatus);
+    CHK(retStatus == STATUS_SUCCESS || retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR || retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
+            retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR,
+        retStatus);
 
     // Calculate the latency of the API call
     CHK_STATUS(calculateCallLatency(pKinesisVideoStream, FALSE));
@@ -601,10 +593,9 @@ STATUS tagStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
 
     // Basic checks
     retStatus = serviceCallResultCheck(callResult);
-    CHK(retStatus == STATUS_SUCCESS ||
-                retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
-                retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, retStatus);
+    CHK(retStatus == STATUS_SUCCESS || retStatus == STATUS_SERVICE_CALL_TIMEOUT_ERROR || retStatus == STATUS_SERVICE_CALL_UNKOWN_ERROR ||
+            retStatus == STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR,
+        retStatus);
 
     // Reset the status
     retStatus = STATUS_SUCCESS;
@@ -622,12 +613,9 @@ STATUS tagStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
     // Override tagStream failure because it is not critical to streaming.
     if (retStatus == STATUS_TAG_STREAM_CALL_FAILED) {
         DLOGW("tagResourceResultEvent failed with status 0x%08x. Overriding service call result to move to next state", retStatus);
-        pKinesisVideoClient->clientCallbacks.streamErrorReportFn(
-                pKinesisVideoClient->clientCallbacks.customData,
-                TO_STREAM_HANDLE(pKinesisVideoStream),
-                INVALID_UPLOAD_HANDLE_VALUE,
-                INVALID_TIMESTAMP_VALUE,
-                STATUS_TAG_STREAM_CALL_FAILED);
+        pKinesisVideoClient->clientCallbacks.streamErrorReportFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                                 TO_STREAM_HANDLE(pKinesisVideoStream), INVALID_UPLOAD_HANDLE_VALUE,
+                                                                 INVALID_TIMESTAMP_VALUE, STATUS_TAG_STREAM_CALL_FAILED);
 
         pKinesisVideoStream->base.result = SERVICE_CALL_RESULT_OK;
         retStatus = stepStateMachine(pKinesisVideoStream->base.pStateMachine);
@@ -647,8 +635,8 @@ CleanUp:
 /**
  * Stream terminated notification
  */
-STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uploadHandle,
-                             SERVICE_CALL_RESULT callResult, BOOL connectionStillAlive)
+STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uploadHandle, SERVICE_CALL_RESULT callResult,
+                             BOOL connectionStillAlive)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -668,14 +656,12 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
 
     // We should handle the in-grace termination differently by not setting the terminated state
     if (SERVICE_CALL_STREAM_AUTH_IN_GRACE_PERIOD != callResult) {
-
         // Set default to UPLOAD_CONNECTION_STATE_IN_USE which will trigger rollback
         pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_IN_USE;
 
         // If invalid upload handle is specified, terminated all uploading session, and let
         // state machine spawn new session.
         if (!IS_VALID_UPLOAD_HANDLE(uploadHandle)) {
-
             CHK_STATUS(stackQueueGetCount(pKinesisVideoStream->pUploadInfoQueue, &sessionCount));
 
             for (i = 0; i < sessionCount; i++) {
@@ -689,15 +675,10 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                 // upper layer uploading session should not be dead and should call getStreamData
                 // after receiving streamDataAvailable callback.
                 CHK_STATUS(pKinesisVideoClient->clientCallbacks.streamDataAvailableFn(
-                        pKinesisVideoClient->clientCallbacks.customData,
-                        TO_STREAM_HANDLE(pKinesisVideoStream),
-                        pKinesisVideoStream->streamInfo.name,
-                        pUploadHandleInfo->handle,
-                        0,
-                        0));
+                    pKinesisVideoClient->clientCallbacks.customData, TO_STREAM_HANDLE(pKinesisVideoStream), pKinesisVideoStream->streamInfo.name,
+                    pUploadHandleInfo->handle, 0, 0));
             }
         } else {
-
             pUploadHandleInfo = getStreamUploadInfo(pKinesisVideoStream, uploadHandle);
 
             if (pUploadHandleInfo == NULL) {
@@ -722,17 +703,13 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                         pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_NOT_IN_USE;
 
                         DLOGW("Last fragment with timestamp %" PRIu64 " for upload handle %" PRIu64 " might not be fully persisted",
-                              pUploadHandleInfo->lastFragmentTs,
-                              uploadHandle);
+                              pUploadHandleInfo->lastFragmentTs, uploadHandle);
 
                         if (pUploadHandleInfo->state == UPLOAD_HANDLE_STATE_AWAITING_ACK &&
                             pKinesisVideoClient->clientCallbacks.streamErrorReportFn != NULL) {
                             pKinesisVideoClient->clientCallbacks.streamErrorReportFn(
-                                    pKinesisVideoClient->clientCallbacks.customData,
-                                    TO_STREAM_HANDLE(pKinesisVideoStream),
-                                    uploadHandle,
-                                    pUploadHandleInfo->lastFragmentTs,
-                                    STATUS_PUTMEDIA_LAST_PERSIST_ACK_NOT_RECEIVED);
+                                pKinesisVideoClient->clientCallbacks.customData, TO_STREAM_HANDLE(pKinesisVideoStream), uploadHandle,
+                                pUploadHandleInfo->lastFragmentTs, STATUS_PUTMEDIA_LAST_PERSIST_ACK_NOT_RECEIVED);
                         }
                     }
                 }
@@ -740,13 +717,9 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                 // In case of reset connection and error acks, need to ping the terminated upload handle so that it
                 // can unpause if paused and then call getStreamData and receive the end-of-stream status
                 if (connectionStillAlive) {
-                    pKinesisVideoClient->clientCallbacks.streamDataAvailableFn(
-                            pKinesisVideoClient->clientCallbacks.customData,
-                            TO_STREAM_HANDLE(pKinesisVideoStream),
-                            pKinesisVideoStream->streamInfo.name,
-                            pUploadHandleInfo->handle,
-                            0,
-                            0);
+                    pKinesisVideoClient->clientCallbacks.streamDataAvailableFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                                               TO_STREAM_HANDLE(pKinesisVideoStream),
+                                                                               pKinesisVideoStream->streamInfo.name, pUploadHandleInfo->handle, 0, 0);
                 } else {
                     // If the connection that upload handle represents is already dead. Then it will not make anymore
                     // getStreamData call so it should be removed.
@@ -761,12 +734,8 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                     // dont spawn new session since we already have a active one
                     spawnNewUploadSession = FALSE;
                     pKinesisVideoClient->clientCallbacks.streamDataAvailableFn(
-                            pKinesisVideoClient->clientCallbacks.customData,
-                            TO_STREAM_HANDLE(pKinesisVideoStream),
-                            pKinesisVideoStream->streamInfo.name,
-                            pActiveUploadHandleInfo->handle,
-                            0,
-                            0);
+                        pKinesisVideoClient->clientCallbacks.customData, TO_STREAM_HANDLE(pKinesisVideoStream), pKinesisVideoStream->streamInfo.name,
+                        pActiveUploadHandleInfo->handle, 0, 0);
                 }
             }
         }
@@ -774,12 +743,9 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
 
     // return early if pic is already in process of spawning new uploading session
     CHK(!STATUS_SUCCEEDED(acceptStateMachineState(pKinesisVideoStream->base.pStateMachine,
-                                                 STREAM_STATE_DESCRIBE |
-                                                 STREAM_STATE_CREATE |
-                                                 STREAM_STATE_TAG_STREAM |
-                                                 STREAM_STATE_GET_TOKEN |
-                                                 STREAM_STATE_GET_ENDPOINT |
-                                                 STREAM_STATE_READY)), retStatus);
+                                                  STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE | STREAM_STATE_TAG_STREAM | STREAM_STATE_GET_TOKEN |
+                                                      STREAM_STATE_GET_ENDPOINT | STREAM_STATE_READY)),
+        retStatus);
 
     if (spawnNewUploadSession) {
         // Stop the stream
@@ -864,8 +830,8 @@ STATUS streamFragmentAckEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HA
         timestamp = pViewItem->ackTimestamp;
 
         // If we already have an persisted ACK, no need to go farther back
-        errorSkipStart = IS_VALID_TIMESTAMP(pUploadHandleInfo->lastPersistedAckTs) ?
-                pUploadHandleInfo->lastPersistedAckTs : pUploadHandleInfo->timestamp;
+        errorSkipStart =
+            IS_VALID_TIMESTAMP(pUploadHandleInfo->lastPersistedAckTs) ? pUploadHandleInfo->lastPersistedAckTs : pUploadHandleInfo->timestamp;
     } else {
         // Calculate the timestamp based on the ACK.
         // Convert the timestamp
@@ -873,8 +839,7 @@ STATUS streamFragmentAckEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HA
 
         // In case we have a relative cluster timestamp stream we need to adjust for the stream start.
         // The stream start timestamp is extracted from the stream session map.
-        if (!pKinesisVideoStream->streamInfo.streamCaps.absoluteFragmentTimes &&
-            IS_VALID_TIMESTAMP(pUploadHandleInfo->timestamp)) {
+        if (!pKinesisVideoStream->streamInfo.streamCaps.absoluteFragmentTimes && IS_VALID_TIMESTAMP(pUploadHandleInfo->timestamp)) {
             // Adjust the relative timestamp to make an absolute timestamp
             timestamp += pUploadHandleInfo->timestamp;
         }
@@ -928,14 +893,11 @@ STATUS streamFragmentAckEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HA
 
 CleanUp:
 
-    if (pKinesisVideoClient != NULL)
-    {
+    if (pKinesisVideoClient != NULL) {
         // We will notify the fragment ACK received callback even if the processing failed
         if (pKinesisVideoClient->clientCallbacks.fragmentAckReceivedFn != NULL) {
             pKinesisVideoClient->clientCallbacks.fragmentAckReceivedFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                                       TO_STREAM_HANDLE(pKinesisVideoStream),
-                                                                       uploadHandle,
-                                                                       pFragmentAck);
+                                                                       TO_STREAM_HANDLE(pKinesisVideoStream), uploadHandle, pFragmentAck);
         }
 
         // Unlock the stream
@@ -966,9 +928,11 @@ STATUS calculateCallLatency(PKinesisVideoStream pKinesisVideoStream, BOOL cplApi
 
     // Exponential mean averaging
     if (cplApiCall) {
-        pKinesisVideoStream->diagnostics.cplApiCallLatency = (UINT64) EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.cplApiCallLatency, latency);
+        pKinesisVideoStream->diagnostics.cplApiCallLatency =
+            (UINT64) EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.cplApiCallLatency, latency);
     } else {
-        pKinesisVideoStream->diagnostics.dataApiCallLatency = (UINT64) EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.dataApiCallLatency, latency);
+        pKinesisVideoStream->diagnostics.dataApiCallLatency =
+            (UINT64) EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.dataApiCallLatency, latency);
     }
 
 CleanUp:

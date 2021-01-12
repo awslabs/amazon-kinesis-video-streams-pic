@@ -21,11 +21,11 @@ class MockProducer {
     UINT64 mTimestamp; // Used to assigned to Frame pts and dts. In hundreds of nanos.
     BOOL mSetEOFR;
 
-public:
-    MockProducer(MockProducerConfig config,
-                 STREAM_HANDLE mStreamHandle);
+  public:
+    MockProducer(MockProducerConfig config, STREAM_HANDLE mStreamHandle);
 
-    ~MockProducer() {
+    ~MockProducer()
+    {
         MEMFREE(mFrame.frameData);
     }
 
@@ -54,6 +54,5 @@ public:
      */
     PFrame getCurrentFrame();
 };
-
 
 #endif //__MOCK_PRODUCER_H__

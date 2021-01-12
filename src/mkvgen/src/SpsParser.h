@@ -14,34 +14,36 @@ extern "C" {
 ////////////////////////////////////////////////////
 
 // Check whether to generate video config element based on the width not being 0
-#define GENERATE_VIDEO_CONFIG(x)        (((PTrackInfo) (x))->trackType == MKV_TRACK_INFO_TYPE_VIDEO && ((PTrackInfo) (x))->trackCustomData.trackVideoConfig.videoWidth != 0)
-#define GENERATE_AUDIO_CONFIG(x)        (((PTrackInfo) (x))->trackType == MKV_TRACK_INFO_TYPE_AUDIO && ((PTrackInfo) (x))->trackCustomData.trackAudioConfig.samplingFrequency != 0)
+#define GENERATE_VIDEO_CONFIG(x)                                                                                                                     \
+    (((PTrackInfo)(x))->trackType == MKV_TRACK_INFO_TYPE_VIDEO && ((PTrackInfo)(x))->trackCustomData.trackVideoConfig.videoWidth != 0)
+#define GENERATE_AUDIO_CONFIG(x)                                                                                                                     \
+    (((PTrackInfo)(x))->trackType == MKV_TRACK_INFO_TYPE_AUDIO && ((PTrackInfo)(x))->trackCustomData.trackAudioConfig.samplingFrequency != 0)
 
 // SPS NALU type value
-#define SPS_NALU_TYPE                       0x07
+#define SPS_NALU_TYPE 0x07
 
 // PPS NALU type value
-#define PPS_NALU_TYPE                       0x08
+#define PPS_NALU_TYPE 0x08
 
 // IDR NALU type value
-#define IDR_NALU_TYPE                       0x05
+#define IDR_NALU_TYPE 0x05
 
 // H265 IDR NALU type value
-#define IDR_W_RADL_NALU_TYPE                0x13
-#define IDR_N_LP_NALU_TYPE                  0x14
+#define IDR_W_RADL_NALU_TYPE 0x13
+#define IDR_N_LP_NALU_TYPE   0x14
 
 // AUD NALu value
-#define AUD_NALU_TYPE                       0x09
+#define AUD_NALU_TYPE 0x09
 
 /**
  * Bitmap info header size
  */
-#define BITMAP_INFO_HEADER_SIZE     40
+#define BITMAP_INFO_HEADER_SIZE 40
 
 /**
  * Max sub-layers in H265 SPS
  */
-#define MAX_H265_SPS_SUB_LAYERS     8
+#define MAX_H265_SPS_SUB_LAYERS 8
 
 /**
  * H265 SPS info structure containing only items needed for resolution calculation

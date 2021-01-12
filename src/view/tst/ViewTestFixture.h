@@ -8,22 +8,24 @@
 
 #include "src/view/src/Include_i.h"
 
-#define MAX_VIEW_ITEM_COUNT                         100
-#define MAX_VIEW_BUFFER_DURATION                    1000
-#define VIEW_NOTIFICATION_CALLBACK_CUSTOM_DATA      1122
-#define CHECK_AGAINST_ACKTIMESTAMP                   TRUE
+#define MAX_VIEW_ITEM_COUNT                    100
+#define MAX_VIEW_BUFFER_DURATION               1000
+#define VIEW_NOTIFICATION_CALLBACK_CUSTOM_DATA 1122
+#define CHECK_AGAINST_ACKTIMESTAMP             TRUE
 
 #define MAX_VIEW_ITERATION_COUNT 50
-#define VIEW_ITEM_DURATION 10
+#define VIEW_ITEM_DURATION       10
 #define VIEW_ITEM_DURATION_LARGE 20
 
 #define VIEW_ITEM_ALLOCAITON_SIZE 100
 
 class ViewTestBase : public ::testing::Test {
-public:
-    ViewTestBase(): mContentView(NULL) {}
+  public:
+    ViewTestBase() : mContentView(NULL)
+    {
+    }
 
-protected:
+  protected:
     PContentView mContentView;
 
     PContentView gContentView;
@@ -38,13 +40,11 @@ protected:
     static VOID removeNotificationCallback(PContentView pContentView, UINT64 customData, PViewItem pViewItem, BOOL consumed);
 
     STATUS CreateContentView(CONTENT_VIEW_OVERFLOW_POLICY contentViewOverflowStrategy = CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM,
-                             UINT32 maxViewItemCount = MAX_VIEW_ITEM_COUNT,
-                             UINT64 maxViewBufferDuration = MAX_VIEW_BUFFER_DURATION)
+                             UINT32 maxViewItemCount = MAX_VIEW_ITEM_COUNT, UINT64 maxViewBufferDuration = MAX_VIEW_BUFFER_DURATION)
     {
         // Create the content view
-        EXPECT_TRUE(STATUS_SUCCEEDED(createContentView(maxViewItemCount, maxViewBufferDuration, removeNotificationCallback,
-                                                       (UINT64) this, contentViewOverflowStrategy,
-                                                       &mContentView)));
+        EXPECT_TRUE(STATUS_SUCCEEDED(createContentView(maxViewItemCount, maxViewBufferDuration, removeNotificationCallback, (UINT64) this,
+                                                       contentViewOverflowStrategy, &mContentView)));
         return STATUS_SUCCESS;
     };
 
@@ -80,10 +80,8 @@ protected:
 
     PCHAR GetTestName()
     {
-        return (PCHAR) ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name();
+        return (PCHAR)::testing::UnitTest::GetInstance()->current_test_info()->test_case_name();
     };
 
-
-private:
-
+  private:
 };

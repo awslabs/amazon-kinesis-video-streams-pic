@@ -6,7 +6,7 @@ PutFrameCoordinator internal include file
 
 #pragma once
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -25,7 +25,6 @@ typedef STATUS (*FrameTimestampCompareFunc)(PFrameOrderTrackData, PFrameOrderTra
 
 typedef struct __FrameOrderCoordinator FrameOrderCoordinator;
 struct __FrameOrderCoordinator {
-
     // whether any eofr frame has been put
     volatile BOOL eofrPut;
 
@@ -74,7 +73,7 @@ STATUS frameOrderCoordinatorFlush(PKinesisVideoStream);
  */
 STATUS audioVideoFrameTimestampComparator(PFrameOrderTrackData, PFrameOrderTrackData, UINT64, PBOOL);
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif
 #endif /*__KINESIS_VIDEO_PUT_FRAME_COORDINATOR_INCLUDE_I__*/

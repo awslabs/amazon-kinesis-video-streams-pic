@@ -9,8 +9,7 @@
 /**
  * Extracts the video width and height from the SPS
  */
-STATUS getVideoWidthAndHeightFromH264Sps(PBYTE codecPrivateData, UINT32 codecPrivateDataSize, PUINT16 pWidth,
-                                         PUINT16 pHeight)
+STATUS getVideoWidthAndHeightFromH264Sps(PBYTE codecPrivateData, UINT32 codecPrivateDataSize, PUINT16 pWidth, PUINT16 pHeight)
 {
     STATUS retStatus = STATUS_SUCCESS;
     PBYTE pSps, pPps;
@@ -42,9 +41,8 @@ STATUS getVideoWidthAndHeightFromH264Sps(PBYTE codecPrivateData, UINT32 codecPri
         // Retrieve the SPS
         CHK_STATUS(getH264SpsPpsNalusFromAvccNalus(pAdaptedBits, adaptedSize, &pSps, &size, &pPps, &ppsSize));
         CHK(pSps != NULL, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
-    } else if (codecPrivateData[0] == AVCC_VERSION_CODE
-               && codecPrivateData[4] == AVCC_NALU_LEN_MINUS_ONE
-               && codecPrivateData[5] == AVCC_NUMBER_OF_SPS_ONE) {
+    } else if (codecPrivateData[0] == AVCC_VERSION_CODE && codecPrivateData[4] == AVCC_NALU_LEN_MINUS_ONE &&
+               codecPrivateData[5] == AVCC_NUMBER_OF_SPS_ONE) {
         // Avcc encoded sps
         size = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PINT16) &codecPrivateData[6]);
         pSps = codecPrivateData + AVCC_SPS_OFFSET;
@@ -68,8 +66,7 @@ CleanUp:
 /**
  * Extracts the video width and height from the H265 SPS
  */
-STATUS getVideoWidthAndHeightFromH265Sps(PBYTE codecPrivateData, UINT32 codecPrivateDataSize, PUINT16 pWidth,
-                                         PUINT16 pHeight)
+STATUS getVideoWidthAndHeightFromH265Sps(PBYTE codecPrivateData, UINT32 codecPrivateDataSize, PUINT16 pWidth, PUINT16 pHeight)
 {
     STATUS retStatus = STATUS_SUCCESS;
     PBYTE pSps = codecPrivateData;
@@ -119,7 +116,7 @@ STATUS getVideoWidthAndHeightFromH265Sps(PBYTE codecPrivateData, UINT32 codecPri
 
         // Iterate over the raw array and extract the SPS
         while (size > HEVC_NALU_ARRAY_ENTRY_SIZE) {
-            naluType = (BYTE) (pSps[0] & 0x3f);
+            naluType = (BYTE)(pSps[0] & 0x3f);
             numNalus = (UINT16) GET_UNALIGNED_BIG_ENDIAN((PINT16) &pSps[1]);
             pSps += HEVC_NALU_ARRAY_ENTRY_SIZE;
             size -= HEVC_NALU_ARRAY_ENTRY_SIZE;
@@ -171,14 +168,9 @@ CleanUp:
 BOOL checkHevcFormatHeader(PBYTE codecPrivateData, UINT32 codecPrivateDataSize)
 {
     BOOL hevc = TRUE;
-    if (codecPrivateData == NULL ||
-            codecPrivateDataSize <= HEVC_CPD_HEADER_SIZE ||
-            codecPrivateData[0] != 1 ||
-            (codecPrivateData[13] & 0xf0) != 0xf0 ||
-            (codecPrivateData[15] & 0xfc) != 0xfc ||
-            (codecPrivateData[16] & 0xfc) != 0xfc ||
-            (codecPrivateData[17] & 0xf8) != 0xf8 ||
-            (codecPrivateData[18] & 0xf8) != 0xf8) {
+    if (codecPrivateData == NULL || codecPrivateDataSize <= HEVC_CPD_HEADER_SIZE || codecPrivateData[0] != 1 ||
+        (codecPrivateData[13] & 0xf0) != 0xf0 || (codecPrivateData[15] & 0xfc) != 0xfc || (codecPrivateData[16] & 0xfc) != 0xfc ||
+        (codecPrivateData[17] & 0xf8) != 0xf8 || (codecPrivateData[18] & 0xf8) != 0xf8) {
         hevc = FALSE;
     }
 
@@ -188,8 +180,7 @@ BOOL checkHevcFormatHeader(PBYTE codecPrivateData, UINT32 codecPrivateDataSize)
 /**
  * Extracts the video width and height from the BitmapInfoHeader
  */
-STATUS getVideoWidthAndHeightFromBih(PBYTE codecPrivateData, UINT32 codecPrivateDataSize, PUINT16 pWidth,
-                                     PUINT16 pHeight)
+STATUS getVideoWidthAndHeightFromBih(PBYTE codecPrivateData, UINT32 codecPrivateDataSize, PUINT16 pWidth, PUINT16 pHeight)
 {
     STATUS retStatus = STATUS_SUCCESS;
 
@@ -198,11 +189,11 @@ STATUS getVideoWidthAndHeightFromBih(PBYTE codecPrivateData, UINT32 codecPrivate
 
     // NOTE: Bitmap info header structure defines the data in a LITTLE-ENDIAN format. :(
     if (isBigEndian()) {
-        *pWidth = (UINT16) SWAP_INT32(*((PINT32)codecPrivateData + 1));
-        *pHeight = (UINT16) SWAP_INT32(*((PINT32)codecPrivateData + 2));
+        *pWidth = (UINT16) SWAP_INT32(*((PINT32) codecPrivateData + 1));
+        *pHeight = (UINT16) SWAP_INT32(*((PINT32) codecPrivateData + 2));
     } else {
-        *pWidth = (UINT16) *((PINT32)codecPrivateData + 1);
-        *pHeight = (UINT16) *((PINT32)codecPrivateData + 2);
+        *pWidth = (UINT16) * ((PINT32) codecPrivateData + 1);
+        *pHeight = (UINT16) * ((PINT32) codecPrivateData + 2);
     }
 
 CleanUp:
@@ -213,25 +204,11 @@ CleanUp:
 STATUS parseH264SpsGetResolution(PBYTE pSps, UINT32 spsSize, PUINT16 pWidth, PUINT16 pHeight)
 {
     STATUS retStatus = STATUS_SUCCESS;
-    UINT32 frameCropLeftOffset = 0,
-            frameCropRightOffset = 0,
-            frameCropTopOffset = 0,
-            frameCropBottomOffset = 0,
-            picWidthInMbsMinus1 = 0,
-            frameMbsOnlyFlag = 0,
-            picHeightInMapUnitsMinus1 = 0,
-            profileIdc = 0,
-            sizeOfScalingList = 0,
-            lastScale = 8,
-            nextScale = 8,
-            picOrderCntType = 0,
-            numRefFramesInPicOrderCntCycle = 0,
-            deltaScale = 0,
-            chromaFormatIdc = 1,
-            separateColourPlaneFlag = 0;
+    UINT32 frameCropLeftOffset = 0, frameCropRightOffset = 0, frameCropTopOffset = 0, frameCropBottomOffset = 0, picWidthInMbsMinus1 = 0,
+           frameMbsOnlyFlag = 0, picHeightInMapUnitsMinus1 = 0, profileIdc = 0, sizeOfScalingList = 0, lastScale = 8, nextScale = 8,
+           picOrderCntType = 0, numRefFramesInPicOrderCntCycle = 0, deltaScale = 0, chromaFormatIdc = 1, separateColourPlaneFlag = 0;
     UINT32 i, j, read;
-    INT32 readInt, width, height, pixelWidth, pixelHeight,
-        subWidthC, subHeightC, arrayWidth, cropUnitX, cropUnitY;
+    INT32 readInt, width, height, pixelWidth, pixelHeight, subWidthC, subHeightC, arrayWidth, cropUnitX, cropUnitY;
 
     BitReader bitReader;
 
@@ -255,11 +232,8 @@ STATUS parseH264SpsGetResolution(PBYTE pSps, UINT32 spsSize, PUINT16 pWidth, PUI
     // Read exp golomb for seq_parameter_set_id
     CHK_STATUS(bitReaderReadExpGolomb(&bitReader, &read));
 
-    if (profileIdc == 100 || profileIdc == 110
-        || profileIdc == 122 || profileIdc == 244
-        || profileIdc == 44 || profileIdc == 83
-        || profileIdc == 86 || profileIdc == 118
-        || profileIdc == 128 || profileIdc == 138) {
+    if (profileIdc == 100 || profileIdc == 110 || profileIdc == 122 || profileIdc == 244 || profileIdc == 44 || profileIdc == 83 ||
+        profileIdc == 86 || profileIdc == 118 || profileIdc == 128 || profileIdc == 138) {
         // Read chroma_format_idc
         CHK_STATUS(bitReaderReadExpGolomb(&bitReader, &chromaFormatIdc));
 
@@ -433,11 +407,10 @@ CleanUp:
 STATUS parseH265Sps(PBYTE pSps, UINT32 spsSize, PH265SpsInfo pSpsInfo)
 {
     STATUS retStatus = STATUS_SUCCESS;
-    UINT32 i, read, sps_sub_layer_ordering_info_present_flag,
-            scaling_list_enabled_flag, sps_scaling_list_data_present_flag,
-            pcm_enabled_flag, num_short_term_ref_pic_sets, log2_max_pic_order_cnt_lsb_minus4;
+    UINT32 i, read, sps_sub_layer_ordering_info_present_flag, scaling_list_enabled_flag, sps_scaling_list_data_present_flag, pcm_enabled_flag,
+        num_short_term_ref_pic_sets, log2_max_pic_order_cnt_lsb_minus4;
 
-    BitReader bitReader;    
+    BitReader bitReader;
     UINT32 adaptedSize = spsSize;
     PBYTE pAdaptedBits = NULL;
     BOOL gotSpsData = FALSE;
@@ -822,15 +795,15 @@ STATUS extractResolutionFromH265SpsInfo(PH265SpsInfo pSpsInfo, PUINT16 pWidth, P
         crop_y = sub_height_c * (pSpsInfo->conf_win_bottom_offset + pSpsInfo->conf_win_top_offset);
     }
 
-    *pWidth = (UINT16) (pSpsInfo->pic_width_in_luma_samples - crop_x);
-    *pHeight = (UINT16) (pSpsInfo->pic_height_in_luma_samples - crop_y);
+    *pWidth = (UINT16)(pSpsInfo->pic_width_in_luma_samples - crop_x);
+    *pHeight = (UINT16)(pSpsInfo->pic_height_in_luma_samples - crop_y);
 
 CleanUp:
 
     return retStatus;
 }
 
-STATUS getH264SpsPpsNalusFromAvccNalus(PBYTE pAvccNalus, UINT32 nalusSize, PBYTE *ppSps, PUINT32 pSpsSize, PBYTE *ppPps, PUINT32 pPpsSize)
+STATUS getH264SpsPpsNalusFromAvccNalus(PBYTE pAvccNalus, UINT32 nalusSize, PBYTE* ppSps, PUINT32 pSpsSize, PBYTE* ppPps, PUINT32 pPpsSize)
 {
     STATUS retStatus = STATUS_SUCCESS;
     PBYTE pSps = NULL, pPps = NULL;
@@ -841,26 +814,26 @@ STATUS getH264SpsPpsNalusFromAvccNalus(PBYTE pAvccNalus, UINT32 nalusSize, PBYTE
 
     CHK(pAvccNalus != NULL && ppSps != NULL && pSpsSize != NULL && ppPps != NULL && pPpsSize != NULL, STATUS_NULL_ARG);
 
-    while (iterate && (PBYTE) (pCurPtr + 1) < pAvccNalus + nalusSize) {
+    while (iterate && (PBYTE)(pCurPtr + 1) < pAvccNalus + nalusSize) {
         runLen = GET_UNALIGNED_BIG_ENDIAN(pCurPtr);
-        naluHeader = *(PBYTE) (pCurPtr + 1);
+        naluHeader = *(PBYTE)(pCurPtr + 1);
 
         // Check for the SPS header
         if (pSps == NULL && (naluHeader & 0x80) == 0 && (naluHeader & 0x60) != 0 && (naluHeader & 0x1f) == SPS_NALU_TYPE) {
-            pSps = (PBYTE) (pCurPtr + 1);
+            pSps = (PBYTE)(pCurPtr + 1);
             spsSize = runLen;
         }
 
         // Check for the PPS header
         if (pPps == NULL && (naluHeader & 0x80) == 0 && (naluHeader & 0x60) != 0 && (naluHeader & 0x1f) == PPS_NALU_TYPE) {
-            pPps = (PBYTE) (pCurPtr + 1);
+            pPps = (PBYTE)(pCurPtr + 1);
             ppsSize = runLen;
         }
 
         iterate = (pSps == NULL || pPps == NULL);
 
         // Advance the current ptr taking into account the 4 byte length and the size of the run
-        pCurPtr = (PUINT32) ((PBYTE) (pCurPtr + 1) + runLen);
+        pCurPtr = (PUINT32)((PBYTE)(pCurPtr + 1) + runLen);
     }
 
     *ppSps = pSps;
@@ -873,7 +846,7 @@ CleanUp:
     return retStatus;
 }
 
-STATUS getH265SpsNalusFromAvccNalus(PBYTE pAvccNalus, UINT32 nalusSize, PBYTE *ppSps, PUINT32 pSpsSize)
+STATUS getH265SpsNalusFromAvccNalus(PBYTE pAvccNalus, UINT32 nalusSize, PBYTE* ppSps, PUINT32 pSpsSize)
 {
     STATUS retStatus = STATUS_SUCCESS;
     PBYTE pSps = NULL;
@@ -884,20 +857,20 @@ STATUS getH265SpsNalusFromAvccNalus(PBYTE pAvccNalus, UINT32 nalusSize, PBYTE *p
 
     CHK(pAvccNalus != NULL && ppSps != NULL && pSpsSize != NULL, STATUS_NULL_ARG);
 
-    while (iterate && (PBYTE) (pCurPtr + 1) < pAvccNalus + nalusSize) {
+    while (iterate && (PBYTE)(pCurPtr + 1) < pAvccNalus + nalusSize) {
         runLen = GET_UNALIGNED_BIG_ENDIAN(pCurPtr);
-        naluHeader = *(PBYTE) (pCurPtr + 1);
+        naluHeader = *(PBYTE)(pCurPtr + 1);
 
         // Check for the SPS header
         if (pSps == NULL && (naluHeader >> 1) == HEVC_SPS_NALU_TYPE) {
-            pSps = (PBYTE) (pCurPtr + 1);
+            pSps = (PBYTE)(pCurPtr + 1);
             spsSize = runLen;
         }
 
         iterate = (pSps == NULL);
 
         // Advance the current ptr taking into account the 4 byte length and the size of the run
-        pCurPtr = (PUINT32) ((PBYTE) (pCurPtr + 1) + runLen);
+        pCurPtr = (PUINT32)((PBYTE)(pCurPtr + 1) + runLen);
     }
 
     *ppSps = pSps;

@@ -56,9 +56,9 @@ STATUS singleListGetNodeAtInternal(PSingleList, UINT32, PSingleListNode*);
 /**
  * Internal Hash Table operations
  */
-#define DEFAULT_HASH_TABLE_BUCKET_LENGTH        2
-#define DEFAULT_HASH_TABLE_BUCKET_COUNT         10000
-#define MIN_HASH_TABLE_ENTRIES_ALLOC_LENGTH     8
+#define DEFAULT_HASH_TABLE_BUCKET_LENGTH    2
+#define DEFAULT_HASH_TABLE_BUCKET_COUNT     10000
+#define MIN_HASH_TABLE_ENTRIES_ALLOC_LENGTH 8
 
 /**
  * Bucket declaration
@@ -121,7 +121,7 @@ INLINE VOID putUnalignedInt64Le(PVOID, INT64);
 /**
  * Startup and shutdown timeout value
  */
-#define TIMER_QUEUE_SHUTDOWN_TIMEOUT                                (200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
+#define TIMER_QUEUE_SHUTDOWN_TIMEOUT (200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
 
 /**
  * Timer entry structure definition
@@ -154,8 +154,8 @@ typedef struct {
 } TimerQueue, *PTimerQueue;
 
 // Public handle to and from object converters
-#define TO_TIMER_QUEUE_HANDLE(p) ((TIMER_QUEUE_HANDLE) (p))
-#define FROM_TIMER_QUEUE_HANDLE(h) (IS_VALID_TIMER_QUEUE_HANDLE(h) ? (PTimerQueue) (h) : NULL)
+#define TO_TIMER_QUEUE_HANDLE(p)   ((TIMER_QUEUE_HANDLE)(p))
+#define FROM_TIMER_QUEUE_HANDLE(h) (IS_VALID_TIMER_QUEUE_HANDLE(h) ? (PTimerQueue)(h) : NULL)
 
 // Internal Functions
 STATUS timerQueueCreateInternal(UINT32, PTimerQueue*);
@@ -170,7 +170,7 @@ PVOID timerQueueExecutor(PVOID);
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // Shutdown spinlock will sleep this period and check
-#define SEMAPHORE_SHUTDOWN_SPINLOCK_SLEEP_DURATION                              (5 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
+#define SEMAPHORE_SHUTDOWN_SPINLOCK_SLEEP_DURATION (5 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
 
 /**
  * Internal semaphore definition
@@ -202,8 +202,8 @@ typedef struct {
 } Semaphore, *PSemaphore;
 
 // Public handle to and from object converters
-#define TO_SEMAPHORE_HANDLE(p) ((SEMAPHORE_HANDLE) (p))
-#define FROM_SEMAPHORE_HANDLE(h) (IS_VALID_SEMAPHORE_HANDLE(h) ? (PSemaphore) (h) : NULL)
+#define TO_SEMAPHORE_HANDLE(p)   ((SEMAPHORE_HANDLE)(p))
+#define FROM_SEMAPHORE_HANDLE(h) (IS_VALID_SEMAPHORE_HANDLE(h) ? (PSemaphore)(h) : NULL)
 
 // Internal Functions
 STATUS semaphoreCreateInternal(UINT32, PSemaphore*);
@@ -229,7 +229,7 @@ VOID instrumentedAllocatorsMemFree(PVOID);
 /**
  * Default values for the limits
  */
-#define KVS_COMMON_FILE_INDEX_BUFFER_SIZE           256
+#define KVS_COMMON_FILE_INDEX_BUFFER_SIZE 256
 
 /**
  * file logger declaration

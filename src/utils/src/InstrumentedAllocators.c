@@ -12,11 +12,10 @@ STATUS setInstrumentedAllocators()
 {
     STATUS retStatus = STATUS_SUCCESS;
     // Check if we are attempting to set the instrumented allocators again
-    CHK(gInstrumentedAllocatorsStoredMemAlloc == NULL &&
-        gInstrumentedAllocatorsStoredMemAlignAlloc == NULL &&
-        gInstrumentedAllocatorsStoredMemCalloc == NULL &&
-        gInstrumentedAllocatorsStoredMemFree == NULL &&
-        gInstrumentedAllocatorsStoredMemRealloc == NULL, STATUS_INVALID_OPERATION);
+    CHK(gInstrumentedAllocatorsStoredMemAlloc == NULL && gInstrumentedAllocatorsStoredMemAlignAlloc == NULL &&
+            gInstrumentedAllocatorsStoredMemCalloc == NULL && gInstrumentedAllocatorsStoredMemFree == NULL &&
+            gInstrumentedAllocatorsStoredMemRealloc == NULL,
+        STATUS_INVALID_OPERATION);
 
     // Store the existing function pointers
     gInstrumentedAllocatorsStoredMemAlloc = globalMemAlloc;
@@ -50,11 +49,10 @@ STATUS resetInstrumentedAllocators()
     SIZE_T totalRemainingSize = ATOMIC_LOAD(&gInstrumentedAllocatorsTotalAllocationSize);
 
     // Check if we are attempting to reset without setting or attempting to reset again
-    CHK(globalMemAlloc == instrumentedAllocatorsMemAlloc &&
-        globalMemAlignAlloc == instrumentedAllocatorsMemAlignAlloc &&
-        globalMemCalloc == instrumentedAllocatorsMemCalloc &&
-        globalMemFree == instrumentedAllocatorsMemFree &&
-        globalMemRealloc == instrumentedAllocatorsMemRealloc, STATUS_INVALID_OPERATION);
+    CHK(globalMemAlloc == instrumentedAllocatorsMemAlloc && globalMemAlignAlloc == instrumentedAllocatorsMemAlignAlloc &&
+            globalMemCalloc == instrumentedAllocatorsMemCalloc && globalMemFree == instrumentedAllocatorsMemFree &&
+            globalMemRealloc == instrumentedAllocatorsMemRealloc,
+        STATUS_INVALID_OPERATION);
 
     // Reset the global allocators with the stored ones
     globalMemAlloc = gInstrumentedAllocatorsStoredMemAlloc;
@@ -71,8 +69,7 @@ STATUS resetInstrumentedAllocators()
     gInstrumentedAllocatorsStoredMemRealloc = NULL;
 
     // Check the final total value
-    CHK_WARN(totalRemainingSize == 0, STATUS_MEMORY_NOT_FREED,
-             "Possible memory leak of size %" PRIu64, (UINT64)totalRemainingSize);
+    CHK_WARN(totalRemainingSize == 0, STATUS_MEMORY_NOT_FREED, "Possible memory leak of size %" PRIu64, (UINT64) totalRemainingSize);
 
 CleanUp:
 

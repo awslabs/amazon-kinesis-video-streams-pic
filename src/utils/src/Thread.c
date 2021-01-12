@@ -7,7 +7,7 @@
 //
 PUBLIC_API TID defaultGetThreadId()
 {
-    return (TID)GetCurrentThread();
+    return (TID) GetCurrentThread();
 }
 
 PUBLIC_API STATUS defaultGetThreadName(TID thread, PCHAR name, UINT32 len)
@@ -21,7 +21,7 @@ PUBLIC_API STATUS defaultGetThreadName(TID thread, PCHAR name, UINT32 len)
 PUBLIC_API DWORD WINAPI startWrapperRoutine(LPVOID data)
 {
     // Get the data
-    PWindowsThreadRoutineWrapper pWrapper = (PWindowsThreadRoutineWrapper)data;
+    PWindowsThreadRoutineWrapper pWrapper = (PWindowsThreadRoutineWrapper) data;
     WindowsThreadRoutineWrapper wrapper;
     CHECK(NULL != pWrapper);
 
@@ -32,7 +32,7 @@ PUBLIC_API DWORD WINAPI startWrapperRoutine(LPVOID data)
     // Free the heap allocated wrapper as we have a local stack copy
     MEMFREE(pWrapper);
 
-    UINT32 retVal = (UINT32) (UINT64) wrapper.storedStartRoutine(wrapper.storedArgs);
+    UINT32 retVal = (UINT32)(UINT64) wrapper.storedStartRoutine(wrapper.storedArgs);
 
     return retVal;
 }
@@ -46,7 +46,7 @@ PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID 
     CHK(pThreadId != NULL, STATUS_NULL_ARG);
 
     // Allocate temporary wrapper and store it
-    pWrapper = (PWindowsThreadRoutineWrapper)MEMALLOC(SIZEOF(WindowsThreadRoutineWrapper));
+    pWrapper = (PWindowsThreadRoutineWrapper) MEMALLOC(SIZEOF(WindowsThreadRoutineWrapper));
     CHK(pWrapper != NULL, STATUS_NOT_ENOUGH_MEMORY);
     pWrapper->storedArgs = args;
     pWrapper->storedStartRoutine = start;
@@ -54,7 +54,7 @@ PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID 
     threadHandle = CreateThread(NULL, 0, startWrapperRoutine, pWrapper, 0, NULL);
     CHK(threadHandle != NULL, STATUS_CREATE_THREAD_FAILED);
 
-    *pThreadId = (TID)threadHandle;
+    *pThreadId = (TID) threadHandle;
 
 CleanUp:
     if (STATUS_FAILED(retStatus) && pWrapper != NULL) {
@@ -69,8 +69,8 @@ PUBLIC_API STATUS defaultJoinThread(TID threadId, PVOID* retVal)
     STATUS retStatus = STATUS_SUCCESS;
     UNUSED_PARAM(retVal);
 
-    CHK(WAIT_OBJECT_0 == WaitForSingleObject((HANDLE)threadId, INFINITE), STATUS_JOIN_THREAD_FAILED);
-    CloseHandle((HANDLE)threadId);
+    CHK(WAIT_OBJECT_0 == WaitForSingleObject((HANDLE) threadId, INFINITE), STATUS_JOIN_THREAD_FAILED);
+    CloseHandle((HANDLE) threadId);
 
 CleanUp:
     return retStatus;
@@ -84,7 +84,7 @@ PUBLIC_API VOID defaultThreadSleep(UINT64 time)
     while (remaining_time != 0) {
         // Covers the last case when there is residual time left and
         // when the value provided is less than or equal to MAX_UINT32
-        if(remaining_time <= MAX_UINT32) {
+        if (remaining_time <= MAX_UINT32) {
             Sleep((UINT32) remaining_time);
             remaining_time = 0;
         }
@@ -111,7 +111,7 @@ CleanUp:
 PUBLIC_API STATUS defaultDetachThread(TID threadId)
 {
     STATUS retStatus = STATUS_SUCCESS;
-    CloseHandle((HANDLE)threadId);
+    CloseHandle((HANDLE) threadId);
 
 CleanUp:
     return retStatus;
@@ -155,7 +155,7 @@ PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID 
     STATUS retStatus = STATUS_SUCCESS;
     pthread_t threadId;
     INT32 result;
-    pthread_attr_t *pAttr = NULL;
+    pthread_attr_t* pAttr = NULL;
 
     CHK(pThreadId != NULL, STATUS_NULL_ARG);
 
@@ -170,21 +170,21 @@ PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID 
 
     result = pthread_create(&threadId, pAttr, start, args);
     switch (result) {
-    case 0:
-        // Successful case
-        break;
-    case EAGAIN:
-        CHK(FALSE, STATUS_THREAD_NOT_ENOUGH_RESOURCES);
-    case EINVAL:
-        CHK(FALSE, STATUS_THREAD_INVALID_ARG);
-    case EPERM:
-        CHK(FALSE, STATUS_THREAD_PERMISSIONS);
-    default:
-        // Generic error
-        CHK(FALSE, STATUS_CREATE_THREAD_FAILED);
+        case 0:
+            // Successful case
+            break;
+        case EAGAIN:
+            CHK(FALSE, STATUS_THREAD_NOT_ENOUGH_RESOURCES);
+        case EINVAL:
+            CHK(FALSE, STATUS_THREAD_INVALID_ARG);
+        case EPERM:
+            CHK(FALSE, STATUS_THREAD_PERMISSIONS);
+        default:
+            // Generic error
+            CHK(FALSE, STATUS_CREATE_THREAD_FAILED);
     }
 
-    *pThreadId = (TID)threadId;
+    *pThreadId = (TID) threadId;
 
 CleanUp:
 
@@ -204,18 +204,18 @@ PUBLIC_API STATUS defaultJoinThread(TID threadId, PVOID* retVal)
     INT32 joinResult = pthread_join((pthread_t) threadId, retVal);
 
     switch (joinResult) {
-    case 0:
-        // Successful case
-        break;
-    case EDEADLK:
-        CHK(FALSE, STATUS_THREAD_DEADLOCKED);
-    case EINVAL:
-        CHK(FALSE, STATUS_THREAD_INVALID_ARG);
-    case ESRCH:
-        CHK(FALSE, STATUS_THREAD_DOES_NOT_EXIST);
-    default:
-        // Generic error
-        CHK(FALSE, STATUS_JOIN_THREAD_FAILED);
+        case 0:
+            // Successful case
+            break;
+        case EDEADLK:
+            CHK(FALSE, STATUS_THREAD_DEADLOCKED);
+        case EINVAL:
+            CHK(FALSE, STATUS_THREAD_INVALID_ARG);
+        case ESRCH:
+            CHK(FALSE, STATUS_THREAD_DOES_NOT_EXIST);
+        default:
+            // Generic error
+            CHK(FALSE, STATUS_JOIN_THREAD_FAILED);
     }
 
 CleanUp:
@@ -231,7 +231,7 @@ PUBLIC_API VOID defaultThreadSleep(UINT64 time)
     while (remaining_time != 0) {
         // Covers the last case when there is residual time left and
         // when the value provided is less than or equal to MAX_UINT32
-        if(remaining_time <= MAX_UINT32) {
+        if (remaining_time <= MAX_UINT32) {
             usleep(remaining_time);
             remaining_time = 0;
         }

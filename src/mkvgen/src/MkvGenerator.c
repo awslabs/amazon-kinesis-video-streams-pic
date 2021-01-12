@@ -12,9 +12,9 @@
 /**
  * Creates an mkv generator object
  */
-STATUS createMkvGenerator(PCHAR contentType, UINT32 behaviorFlags, UINT64 timecodeScale, UINT64 clusterDuration,
-                          PBYTE segmentUuid, PTrackInfo trackInfoList, UINT32 trackInfoCount, PCHAR clientId,
-                          GetCurrentTimeFunc getTimeFn, UINT64 customData, PMkvGenerator* ppMkvGenerator)
+STATUS createMkvGenerator(PCHAR contentType, UINT32 behaviorFlags, UINT64 timecodeScale, UINT64 clusterDuration, PBYTE segmentUuid,
+                          PTrackInfo trackInfoList, UINT32 trackInfoCount, PCHAR clientId, GetCurrentTimeFunc getTimeFn, UINT64 customData,
+                          PMkvGenerator* ppMkvGenerator)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -78,7 +78,8 @@ STATUS createMkvGenerator(PCHAR contentType, UINT32 behaviorFlags, UINT64 timeco
     // Set the values
     pMkvGenerator->mkvGenerator.version = 0;
     pMkvGenerator->timecodeScale = timecodeScale * DEFAULT_TIME_UNIT_IN_NANOS; // store in nanoseconds
-    pMkvGenerator->clusterDuration = clusterDuration * DEFAULT_TIME_UNIT_IN_NANOS / pMkvGenerator->timecodeScale; // No chance of an overflow as we check against max earlier
+    pMkvGenerator->clusterDuration =
+        clusterDuration * DEFAULT_TIME_UNIT_IN_NANOS / pMkvGenerator->timecodeScale; // No chance of an overflow as we check against max earlier
     pMkvGenerator->contentType = mkvgenGetContentTypeFromContentTypeString(contentType);
     pMkvGenerator->generatorState = MKV_GENERATOR_STATE_START;
     pMkvGenerator->keyFrameClustering = (behaviorFlags & MKV_GEN_KEY_FRAME_PROCESSING) != MKV_GEN_FLAG_NONE;
@@ -93,13 +94,16 @@ STATUS createMkvGenerator(PCHAR contentType, UINT32 behaviorFlags, UINT64 timeco
 
     // Package the version
     if (clientId != NULL && clientId[0] != '\0') {
-        pMkvGenerator->versionSize = SNPRINTF(pMkvGenerator->version, SIZEOF(pMkvGenerator->version), (PCHAR)"%c%s%c%s", MKV_VERSION_STRING_DELIMITER, MKV_GENERATOR_CURRENT_VERSION_STRING, MKV_VERSION_STRING_DELIMITER, clientId);
+        pMkvGenerator->versionSize =
+            SNPRINTF(pMkvGenerator->version, SIZEOF(pMkvGenerator->version), (PCHAR) "%c%s%c%s", MKV_VERSION_STRING_DELIMITER,
+                     MKV_GENERATOR_CURRENT_VERSION_STRING, MKV_VERSION_STRING_DELIMITER, clientId);
     } else {
-        pMkvGenerator->versionSize = SNPRINTF(pMkvGenerator->version, SIZEOF(pMkvGenerator->version), (PCHAR)"%c%s", MKV_VERSION_STRING_DELIMITER, MKV_GENERATOR_CURRENT_VERSION_STRING);
+        pMkvGenerator->versionSize = SNPRINTF(pMkvGenerator->version, SIZEOF(pMkvGenerator->version), (PCHAR) "%c%s", MKV_VERSION_STRING_DELIMITER,
+                                              MKV_GENERATOR_CURRENT_VERSION_STRING);
     }
 
     // Copy TrackInfoList to the end of MkvGenerator struct
-    pMkvGenerator->trackInfoList = (PTrackInfo) (pMkvGenerator + 1);
+    pMkvGenerator->trackInfoList = (PTrackInfo)(pMkvGenerator + 1);
     MEMCPY(pMkvGenerator->trackInfoList, trackInfoList, SIZEOF(TrackInfo) * trackInfoCount);
 
     if (adaptAnnexB) {
@@ -128,14 +132,9 @@ STATUS createMkvGenerator(PCHAR contentType, UINT32 behaviorFlags, UINT64 timeco
     pDstTrackInfo = pMkvGenerator->trackInfoList;
     pSrcTrackInfo = trackInfoList;
     for (i = 0; i < trackInfoCount; i++, pDstTrackInfo++, pSrcTrackInfo++) {
-        CHK_STATUS(mkvgenAdaptCodecPrivateData(pMkvGenerator,
-                                               pSrcTrackInfo->trackType,
-                                               pSrcTrackInfo->codecId,
-                                               pSrcTrackInfo->codecPrivateDataSize,
-                                               pSrcTrackInfo->codecPrivateData,
-                                               &pDstTrackInfo->codecPrivateDataSize,
-                                               &pDstTrackInfo->codecPrivateData,
-                                               &pDstTrackInfo->trackCustomData));
+        CHK_STATUS(mkvgenAdaptCodecPrivateData(pMkvGenerator, pSrcTrackInfo->trackType, pSrcTrackInfo->codecId, pSrcTrackInfo->codecPrivateDataSize,
+                                               pSrcTrackInfo->codecPrivateData, &pDstTrackInfo->codecPrivateDataSize,
+                                               &pDstTrackInfo->codecPrivateData, &pDstTrackInfo->trackCustomData));
     }
 
     // Assign the created object
@@ -163,7 +162,7 @@ STATUS freeMkvGenerator(PMkvGenerator pMkvGenerator)
 
     // Call is idempotent
     CHK(pMkvGenerator != NULL, retStatus);
-    for(i = 0; i < pStreamMkvGenerator->trackInfoCount; ++i) {
+    for (i = 0; i < pStreamMkvGenerator->trackInfoCount; ++i) {
         if (pStreamMkvGenerator->trackInfoList[i].codecPrivateData != NULL) {
             MEMFREE(pStreamMkvGenerator->trackInfoList[i].codecPrivateData);
             pStreamMkvGenerator->trackInfoList[i].codecPrivateData = NULL;
@@ -212,7 +211,8 @@ CleanUp:
 /**
  * Package frame in MKV format
  */
-STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo pTrackInfo, PBYTE pBuffer, PUINT32 pSize, PEncodedFrameInfo pEncodedFrameInfo)
+STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo pTrackInfo, PBYTE pBuffer, PUINT32 pSize,
+                          PEncodedFrameInfo pEncodedFrameInfo)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -239,10 +239,8 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
     // * We have a video track
     // * We have a key frame
     // * The content type is either H264 or H265
-    if (pStreamMkvGenerator->nalsAdaptation == MKV_NALS_ADAPT_ANNEXB &&
-        pTrackInfo->codecPrivateDataSize == 0 &&
-        pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO &&
-        CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags) &&
+    if (pStreamMkvGenerator->nalsAdaptation == MKV_NALS_ADAPT_ANNEXB && pTrackInfo->codecPrivateDataSize == 0 &&
+        pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO && CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags) &&
         (pStreamMkvGenerator->contentType & MKV_CONTENT_TYPE_H264_H265) != MKV_CONTENT_TYPE_NONE) {
         if (STATUS_FAILED(mkvgenExtractCpdFromAnnexBFrame(pStreamMkvGenerator, pFrame, pTrackInfo))) {
             DLOGW("Warning: Failed auto-extracting the CPD from the key frame.");
@@ -271,7 +269,7 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
     bufferSize = *pSize;
 
     // Generate the actual data
-    switch(streamState) {
+    switch (streamState) {
         case MKV_STATE_START_STREAM:
             if (pStreamMkvGenerator->generatorState == MKV_GENERATOR_STATE_START) {
                 // Encode in sequence and subtract the size
@@ -291,10 +289,7 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
                 bufferSize -= encodedLen;
                 pCurrentPnt += encodedLen;
 
-                CHK_STATUS(mkvgenEbmlEncodeTrackInfo(pCurrentPnt,
-                                                     bufferSize,
-                                                     pStreamMkvGenerator,
-                                                     &encodedLen));
+                CHK_STATUS(mkvgenEbmlEncodeTrackInfo(pCurrentPnt, bufferSize, pStreamMkvGenerator, &encodedLen));
                 bufferSize -= encodedLen;
                 pCurrentPnt += encodedLen;
 
@@ -312,10 +307,7 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
                 bufferSize -= encodedLen;
                 pCurrentPnt += encodedLen;
 
-                CHK_STATUS(mkvgenEbmlEncodeTrackInfo(pCurrentPnt,
-                                                     bufferSize,
-                                                     pStreamMkvGenerator,
-                                                     &encodedLen));
+                CHK_STATUS(mkvgenEbmlEncodeTrackInfo(pCurrentPnt, bufferSize, pStreamMkvGenerator, &encodedLen));
                 bufferSize -= encodedLen;
                 pCurrentPnt += encodedLen;
 
@@ -329,10 +321,8 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
             }
 
             // Adjust the timestamp to the beginning of the stream if no absolute clustering
-            CHK_STATUS(mkvgenEbmlEncodeClusterInfo(pCurrentPnt,
-                                                   bufferSize,
-                                                   pStreamMkvGenerator->absoluteTimeClusters ?
-                                                       pts : pts - pStreamMkvGenerator->streamStartTimestamp,
+            CHK_STATUS(mkvgenEbmlEncodeClusterInfo(pCurrentPnt, bufferSize,
+                                                   pStreamMkvGenerator->absoluteTimeClusters ? pts : pts - pStreamMkvGenerator->streamStartTimestamp,
                                                    &encodedLen));
             bufferSize -= encodedLen;
             pCurrentPnt += encodedLen;
@@ -348,7 +338,7 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
         case MKV_STATE_START_BLOCK:
             // Ensure we are not in a TAGs state
             CHK(pStreamMkvGenerator->generatorState == MKV_GENERATOR_STATE_CLUSTER_INFO ||
-                        pStreamMkvGenerator->generatorState == MKV_GENERATOR_STATE_SIMPLE_BLOCK,
+                    pStreamMkvGenerator->generatorState == MKV_GENERATOR_STATE_SIMPLE_BLOCK,
                 STATUS_MKV_INVALID_GENERATOR_STATE_TAGS);
 
             // Calculate the timestamp of the Frame relative to the cluster start
@@ -364,14 +354,8 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
             CHK(pts <= MAX_INT16, STATUS_MKV_LARGE_FRAME_TIMECODE);
 
             // Adjust the timestamp to the start of the cluster
-            CHK_STATUS(mkvgenEbmlEncodeSimpleBlock(pCurrentPnt,
-                                                   bufferSize,
-                                                   (INT16) pts,
-                                                   pFrame,
-                                                   nalsAdaptation,
-                                                   adaptedFrameSize,
-                                                   pStreamMkvGenerator,
-                                                   &encodedLen));
+            CHK_STATUS(mkvgenEbmlEncodeSimpleBlock(pCurrentPnt, bufferSize, (INT16) pts, pFrame, nalsAdaptation, adaptedFrameSize,
+                                                   pStreamMkvGenerator, &encodedLen));
             bufferSize -= encodedLen;
             pCurrentPnt += encodedLen;
 
@@ -390,7 +374,8 @@ CleanUp:
         *pSize = packagedSize;
 
         if (pEncodedFrameInfo != NULL && pStreamMkvGenerator != NULL) {
-            pEncodedFrameInfo->streamStartTs = MKV_TIMECODE_TO_TIMESTAMP(pStreamMkvGenerator->streamStartTimestamp, pStreamMkvGenerator->timecodeScale);
+            pEncodedFrameInfo->streamStartTs =
+                MKV_TIMECODE_TO_TIMESTAMP(pStreamMkvGenerator->streamStartTimestamp, pStreamMkvGenerator->timecodeScale);
             pEncodedFrameInfo->clusterPts = MKV_TIMECODE_TO_TIMESTAMP(pStreamMkvGenerator->lastClusterPts, pStreamMkvGenerator->timecodeScale);
             pEncodedFrameInfo->clusterDts = MKV_TIMECODE_TO_TIMESTAMP(pStreamMkvGenerator->lastClusterDts, pStreamMkvGenerator->timecodeScale);
             pEncodedFrameInfo->framePts = MKV_TIMECODE_TO_TIMESTAMP(pts, pStreamMkvGenerator->timecodeScale);
@@ -422,8 +407,7 @@ STATUS mkvgenSetCodecPrivateData(PMkvGenerator pMkvGenerator, UINT64 trackId, UI
     CHK(codecPrivateDataSize == 0 || codecPrivateData != NULL, STATUS_MKV_CODEC_PRIVATE_NULL);
 
     // Find the right track
-    CHK_STATUS(mkvgenGetTrackInfo(pStreamMkvGenerator->trackInfoList, pStreamMkvGenerator->trackInfoCount,
-                                  trackId, &pTrackInfo, &trackIndex));
+    CHK_STATUS(mkvgenGetTrackInfo(pStreamMkvGenerator->trackInfoList, pStreamMkvGenerator->trackInfoCount, trackId, &pTrackInfo, &trackIndex));
 
     // Free the CPD if any
     if (pTrackInfo->codecPrivateData != NULL) {
@@ -435,14 +419,8 @@ STATUS mkvgenSetCodecPrivateData(PMkvGenerator pMkvGenerator, UINT64 trackId, UI
     // See if we need to do anything
     CHK(codecPrivateDataSize != 0, retStatus);
 
-    CHK_STATUS(mkvgenAdaptCodecPrivateData(pStreamMkvGenerator,
-                                           pTrackInfo->trackType,
-                                           pTrackInfo->codecId,
-                                           codecPrivateDataSize,
-                                           codecPrivateData,
-                                           &pTrackInfo->codecPrivateDataSize,
-                                           &pTrackInfo->codecPrivateData,
-                                           &pTrackInfo->trackCustomData));
+    CHK_STATUS(mkvgenAdaptCodecPrivateData(pStreamMkvGenerator, pTrackInfo->trackType, pTrackInfo->codecId, codecPrivateDataSize, codecPrivateData,
+                                           &pTrackInfo->codecPrivateDataSize, &pTrackInfo->codecPrivateData, &pTrackInfo->trackCustomData));
 
 CleanUp:
 
@@ -493,10 +471,7 @@ STATUS mkvgenGenerateHeader(PMkvGenerator pMkvGenerator, PBYTE pBuffer, PUINT32 
     bufferSize -= encodedLen;
     pCurrentPnt += encodedLen;
 
-    CHK_STATUS(mkvgenEbmlEncodeTrackInfo(pCurrentPnt,
-                                         bufferSize,
-                                         pStreamMkvGenerator,
-                                         &encodedLen));
+    CHK_STATUS(mkvgenEbmlEncodeTrackInfo(pCurrentPnt, bufferSize, pStreamMkvGenerator, &encodedLen));
     bufferSize -= encodedLen;
     pCurrentPnt += encodedLen;
 
@@ -555,21 +530,16 @@ STATUS mkvgenGenerateTag(PMkvGenerator pMkvGenerator, PBYTE pBuffer, PCHAR tagNa
 
     // Check the input params
     CHK(pSize != NULL && pMkvGenerator != NULL && tagName != NULL && tagValue != NULL, STATUS_NULL_ARG);
-    CHK((tagNameLen = (UINT32) STRNLEN(tagName, MKV_MAX_TAG_NAME_LEN + 1)) <= MKV_MAX_TAG_NAME_LEN &&
-        tagNameLen > 0, STATUS_MKV_INVALID_TAG_NAME_LENGTH);
-    CHK((tagValueLen = (UINT32) STRNLEN(tagValue, MKV_MAX_TAG_VALUE_LEN + 1)) <= MKV_MAX_TAG_VALUE_LEN,
-        STATUS_MKV_INVALID_TAG_VALUE_LENGTH);
+    CHK((tagNameLen = (UINT32) STRNLEN(tagName, MKV_MAX_TAG_NAME_LEN + 1)) <= MKV_MAX_TAG_NAME_LEN && tagNameLen > 0,
+        STATUS_MKV_INVALID_TAG_NAME_LENGTH);
+    CHK((tagValueLen = (UINT32) STRNLEN(tagValue, MKV_MAX_TAG_VALUE_LEN + 1)) <= MKV_MAX_TAG_VALUE_LEN, STATUS_MKV_INVALID_TAG_VALUE_LENGTH);
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
 
     // Calculate the necessary size
 
     // Get the overhead when packaging MKV
-    packagedSize = MKV_TAGS_BITS_SIZE +
-                   MKV_TAG_NAME_BITS_SIZE +
-                   MKV_TAG_STRING_BITS_SIZE +
-                   tagNameLen +
-                   tagValueLen;
+    packagedSize = MKV_TAGS_BITS_SIZE + MKV_TAG_NAME_BITS_SIZE + MKV_TAG_STRING_BITS_SIZE + tagNameLen + tagValueLen;
 
     // Check if we are asked for size only and early return if so
     CHK(pBuffer != NULL, STATUS_SUCCESS);
@@ -616,28 +586,25 @@ STATUS mkvgenGenerateTag(PMkvGenerator pMkvGenerator, PBYTE pBuffer, PCHAR tagNa
     pCurrentPnt += tagValueLen;
 
     // Fix-up the tags element size
-    encodedElementLength = 0x100000000000000ULL | (UINT64) (packagedSize - MKV_TAG_ELEMENT_OFFSET);
+    encodedElementLength = 0x100000000000000ULL | (UINT64)(packagedSize - MKV_TAG_ELEMENT_OFFSET);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + MKV_TAGS_ELEMENT_SIZE_OFFSET), encodedElementLength);
 
     // Fix-up the tag element size
-    encodedElementLength = 0x100000000000000ULL | (UINT64) (packagedSize - MKV_SIMPLE_TAG_ELEMENT_OFFSET);
+    encodedElementLength = 0x100000000000000ULL | (UINT64)(packagedSize - MKV_SIMPLE_TAG_ELEMENT_OFFSET);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + MKV_TAG_ELEMENT_SIZE_OFFSET), encodedElementLength);
 
     // Fix-up the simple tag element size
-    encodedElementLength = 0x100000000000000ULL | (UINT64) (packagedSize - MKV_TAGS_BITS_SIZE);
+    encodedElementLength = 0x100000000000000ULL | (UINT64)(packagedSize - MKV_TAGS_BITS_SIZE);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + MKV_SIMPLE_TAG_ELEMENT_SIZE_OFFSET), encodedElementLength);
 
     // Fix-up the tag name element size
-    encodedElementLength = 0x100000000000000ULL | (UINT64) (tagNameLen);
+    encodedElementLength = 0x100000000000000ULL | (UINT64)(tagNameLen);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + MKV_TAGS_BITS_SIZE + MKV_TAG_NAME_ELEMENT_SIZE_OFFSET), encodedElementLength);
 
     // Fix-up the tag string element size
-    encodedElementLength = 0x100000000000000ULL | (UINT64) (tagValueLen);
-    PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt +
-                           MKV_TAGS_BITS_SIZE +
-                           MKV_TAG_NAME_BITS_SIZE +
-                           tagNameLen +
-                           MKV_TAG_STRING_ELEMENT_SIZE_OFFSET), encodedElementLength);
+    encodedElementLength = 0x100000000000000ULL | (UINT64)(tagValueLen);
+    PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + MKV_TAGS_BITS_SIZE + MKV_TAG_NAME_BITS_SIZE + tagNameLen + MKV_TAG_STRING_ELEMENT_SIZE_OFFSET),
+                             encodedElementLength);
 
     // Validate the size
     CHK(packagedSize == (UINT32)(pCurrentPnt - pBuffer), STATUS_INTERNAL_ERROR);
@@ -704,19 +671,16 @@ CleanUp:
 /**
  * Simple and fast validation of a frame and extraction of the current frame timestamp
  */
-STATUS mkvgenValidateFrame(PStreamMkvGenerator pStreamMkvGenerator, PFrame pFrame, PTrackInfo pTrackInfo, PUINT64 pPts, PUINT64 pDts, PUINT64 pDuration, PMKV_STREAM_STATE pStreamState)
+STATUS mkvgenValidateFrame(PStreamMkvGenerator pStreamMkvGenerator, PFrame pFrame, PTrackInfo pTrackInfo, PUINT64 pPts, PUINT64 pDts,
+                           PUINT64 pDuration, PMKV_STREAM_STATE pStreamState)
 {
     UINT64 dts = 0, pts = 0, duration = 0;
     MKV_STREAM_STATE streamState;
     STATUS retStatus = STATUS_SUCCESS;
 
-    CHK(pStreamMkvGenerator != NULL
-        && pFrame != NULL
-        && pTrackInfo != NULL
-        && pPts != NULL
-        && pDts != NULL
-        && pDuration != NULL
-        && pStreamState != NULL, STATUS_NULL_ARG);
+    CHK(pStreamMkvGenerator != NULL && pFrame != NULL && pTrackInfo != NULL && pPts != NULL && pDts != NULL && pDuration != NULL &&
+            pStreamState != NULL,
+        STATUS_NULL_ARG);
     CHK(pFrame->size > 0 && pFrame->frameData != NULL && pFrame->trackId == pTrackInfo->trackId, STATUS_MKV_INVALID_FRAME_DATA);
 
     // Calculate the timestamp - based on in stream or current time
@@ -738,8 +702,7 @@ STATUS mkvgenValidateFrame(PStreamMkvGenerator pStreamMkvGenerator, PFrame pFram
     dts = TIMESTAMP_TO_MKV_TIMECODE(dts, pStreamMkvGenerator->timecodeScale);
     duration = TIMESTAMP_TO_MKV_TIMECODE(duration, pStreamMkvGenerator->timecodeScale);
 
-    CHK(pts >= pStreamMkvGenerator->lastClusterPts && dts >= pStreamMkvGenerator->lastClusterDts,
-        STATUS_MKV_INVALID_FRAME_TIMESTAMP);
+    CHK(pts >= pStreamMkvGenerator->lastClusterPts && dts >= pStreamMkvGenerator->lastClusterDts, STATUS_MKV_INVALID_FRAME_TIMESTAMP);
 
     // Evaluate the current state
     streamState = mkvgenGetStreamState(pStreamMkvGenerator, pFrame->flags, pts);
@@ -761,7 +724,7 @@ MKV_STREAM_STATE mkvgenGetStreamState(PStreamMkvGenerator pStreamMkvGenerator, F
 {
     // Input params have been already validated
     if (pStreamMkvGenerator->generatorState == MKV_GENERATOR_STATE_START ||
-            pStreamMkvGenerator->generatorState == MKV_GENERATOR_STATE_SEGMENT_HEADER) {
+        pStreamMkvGenerator->generatorState == MKV_GENERATOR_STATE_SEGMENT_HEADER) {
         // We haven't yet started the stream
         return MKV_STATE_START_STREAM;
     }
@@ -770,8 +733,7 @@ MKV_STREAM_STATE mkvgenGetStreamState(PStreamMkvGenerator pStreamMkvGenerator, F
     if (CHECK_FRAME_FLAG_KEY_FRAME(flags)) {
         // if we are processing on key frame boundary then return just the cluster
         // or if enough time has passed since the last cluster start
-        if (pStreamMkvGenerator->keyFrameClustering ||
-                timeCode - pStreamMkvGenerator->lastClusterPts >= pStreamMkvGenerator->clusterDuration) {
+        if (pStreamMkvGenerator->keyFrameClustering || timeCode - pStreamMkvGenerator->lastClusterPts >= pStreamMkvGenerator->clusterDuration) {
             return MKV_STATE_START_CLUSTER;
         }
     }
@@ -822,7 +784,7 @@ MKV_CONTENT_TYPE mkvgenGetContentTypeFromContentTypeString(PCHAR contentTypeStr)
     // Iterate until the end of the string and tokenize using the delimiter
     while (*pEnd != '\0') {
         if (*pEnd == MKV_CONTENT_TYPE_DELIMITER) {
-            contentType |= mkvgenGetContentTypeFromContentTypeTokenString(pStart, (UINT32) (pEnd - pStart));
+            contentType |= mkvgenGetContentTypeFromContentTypeTokenString(pStart, (UINT32)(pEnd - pStart));
             pStart = pEnd + 1;
         }
         pEnd++;
@@ -830,7 +792,7 @@ MKV_CONTENT_TYPE mkvgenGetContentTypeFromContentTypeString(PCHAR contentTypeStr)
 
     // See if we have some more at the end
     if (pEnd != pStart) {
-        contentType |= mkvgenGetContentTypeFromContentTypeTokenString(pStart, (UINT32) (pEnd - pStart));
+        contentType |= mkvgenGetContentTypeFromContentTypeTokenString(pStart, (UINT32)(pEnd - pStart));
     }
 
     return (MKV_CONTENT_TYPE) contentType;
@@ -889,7 +851,8 @@ MKV_CONTENT_TYPE mkvgenGetContentTypeFromContentTypeTokenString(PCHAR contentTyp
 /**
  * EBML encodes a number
  */
-STATUS mkvgenEbmlEncodeNumber(UINT64 number, PBYTE pBuffer, UINT32 bufferSize, PUINT32 pEncodedLen) {
+STATUS mkvgenEbmlEncodeNumber(UINT64 number, PBYTE pBuffer, UINT32 bufferSize, PUINT32 pEncodedLen)
+{
     STATUS retStatus = STATUS_SUCCESS;
     UINT64 encoded = 0;
     UINT32 byteLen = 0;
@@ -968,7 +931,7 @@ STATUS mkvgenBigEndianNumber(UINT64 number, PBYTE pBuffer, UINT32 bufferSize, PU
         byteLen = 1;
     } else {
         for (i = 8, byteLen = 0; i > 0; i--) {
-            bits = (BYTE) (number >> ((i - 1) * 8));
+            bits = (BYTE)(number >> ((i - 1) * 8));
             if (started || bits != 0) {
                 started = TRUE;
                 storage[byteLen++] = bits;
@@ -1082,7 +1045,7 @@ STATUS mkvgenEbmlEncodeSegmentInfo(PStreamMkvGenerator pStreamMkvGenerator, PBYT
     MEMCPY(pCurPtr + MKV_TITLE_BITS_SIZE, MKV_GENERATOR_APPLICATION_NAME_STRING, MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE);
 
     // Fix-up the title size
-    *(pCurPtr + MKV_APP_ELEMENT_SIZE_OFFSET) = (UINT8) (0x80 | (UINT8) (MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE));
+    *(pCurPtr + MKV_APP_ELEMENT_SIZE_OFFSET) = (UINT8)(0x80 | (UINT8)(MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE));
 
     // Current should be advanced by the bits size + the string itself
     pCurPtr += MKV_TITLE_BITS_SIZE + MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE;
@@ -1090,10 +1053,11 @@ STATUS mkvgenEbmlEncodeSegmentInfo(PStreamMkvGenerator pStreamMkvGenerator, PBYT
     // Copy the muxing app
     MEMCPY(pCurPtr, MKV_MUXING_APP_BITS, MKV_MUXING_APP_BITS_SIZE);
     MEMCPY(pCurPtr + MKV_MUXING_APP_BITS_SIZE, MKV_GENERATOR_APPLICATION_NAME_STRING, MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE);
-    MEMCPY(pCurPtr + MKV_MUXING_APP_BITS_SIZE + MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE, pStreamMkvGenerator->version, pStreamMkvGenerator->versionSize);
+    MEMCPY(pCurPtr + MKV_MUXING_APP_BITS_SIZE + MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE, pStreamMkvGenerator->version,
+           pStreamMkvGenerator->versionSize);
 
     // Fix-up the title size
-    *(pCurPtr + MKV_APP_ELEMENT_SIZE_OFFSET) = (UINT8) (0x80 | (UINT8) (MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE + pStreamMkvGenerator->versionSize));
+    *(pCurPtr + MKV_APP_ELEMENT_SIZE_OFFSET) = (UINT8)(0x80 | (UINT8)(MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE + pStreamMkvGenerator->versionSize));
 
     // Current should be advanced by the bits size + the string itself
     pCurPtr += MKV_MUXING_APP_BITS_SIZE + MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE + pStreamMkvGenerator->versionSize;
@@ -1101,10 +1065,11 @@ STATUS mkvgenEbmlEncodeSegmentInfo(PStreamMkvGenerator pStreamMkvGenerator, PBYT
     // Copy the writing app
     MEMCPY(pCurPtr, MKV_WRITING_APP_BITS, MKV_WRITING_APP_BITS_SIZE);
     MEMCPY(pCurPtr + MKV_WRITING_APP_BITS_SIZE, MKV_GENERATOR_APPLICATION_NAME_STRING, MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE);
-    MEMCPY(pCurPtr + MKV_WRITING_APP_BITS_SIZE + MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE, pStreamMkvGenerator->version, pStreamMkvGenerator->versionSize);
+    MEMCPY(pCurPtr + MKV_WRITING_APP_BITS_SIZE + MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE, pStreamMkvGenerator->version,
+           pStreamMkvGenerator->versionSize);
 
     // Fix-up the title size
-    *(pCurPtr + MKV_APP_ELEMENT_SIZE_OFFSET) = (UINT8) (0x80 | (UINT8) (MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE + pStreamMkvGenerator->versionSize));
+    *(pCurPtr + MKV_APP_ELEMENT_SIZE_OFFSET) = (UINT8)(0x80 | (UINT8)(MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE + pStreamMkvGenerator->versionSize));
 
     // Current should be advanced by the bits size + the string itself
     pCurPtr += MKV_WRITING_APP_BITS_SIZE + MKV_GENERATOR_APPLICATION_NAME_STRING_SIZE + pStreamMkvGenerator->versionSize;
@@ -1159,7 +1124,6 @@ STATUS mkvgenEbmlEncodeTrackInfo(PBYTE pBuffer, UINT32 bufferSize, PStreamMkvGen
     pTrackStart = pBuffer + MKV_TRACK_ENTRY_OFFSET;
 
     for (j = 0; j < pMkvGenerator->trackInfoCount; ++j) {
-
         pTrackInfo = &pMkvGenerator->trackInfoList[j];
 
         MEMCPY(pTrackStart, MKV_TRACK_INFO_BITS, MKV_TRACK_INFO_BITS_SIZE);
@@ -1178,10 +1142,8 @@ STATUS mkvgenEbmlEncodeTrackInfo(PBYTE pBuffer, UINT32 bufferSize, PStreamMkvGen
             trackSpecificDataOffset += MKV_TRACK_NAME_BITS_SIZE;
 
             // Encode the track name
-            CHK_STATUS(mkvgenEbmlEncodeNumber(trackNameDataSize,
-                                              pTrackStart + trackSpecificDataOffset,
-                                              bufferSize - trackSpecificDataOffset,
-                                              &encodedLen));
+            CHK_STATUS(
+                mkvgenEbmlEncodeNumber(trackNameDataSize, pTrackStart + trackSpecificDataOffset, bufferSize - trackSpecificDataOffset, &encodedLen));
             trackSpecificDataOffset += encodedLen;
 
             MEMCPY(pTrackStart + trackSpecificDataOffset, pTrackInfo->trackName, trackNameDataSize);
@@ -1197,10 +1159,8 @@ STATUS mkvgenEbmlEncodeTrackInfo(PBYTE pBuffer, UINT32 bufferSize, PStreamMkvGen
             trackSpecificDataOffset += MKV_CODEC_ID_BITS_SIZE;
 
             // Encode the codec id size
-            CHK_STATUS(mkvgenEbmlEncodeNumber(codecIdDataSize,
-                                              pTrackStart + trackSpecificDataOffset,
-                                              bufferSize - trackSpecificDataOffset,
-                                              &encodedLen));
+            CHK_STATUS(
+                mkvgenEbmlEncodeNumber(codecIdDataSize, pTrackStart + trackSpecificDataOffset, bufferSize - trackSpecificDataOffset, &encodedLen));
             trackSpecificDataOffset += encodedLen;
             mkvTrackDataSize += MKV_CODEC_ID_BITS_SIZE + encodedLen + codecIdDataSize;
             MEMCPY(pTrackStart + trackSpecificDataOffset, pTrackInfo->codecId, codecIdDataSize);
@@ -1209,7 +1169,7 @@ STATUS mkvgenEbmlEncodeTrackInfo(PBYTE pBuffer, UINT32 bufferSize, PStreamMkvGen
         // done packaging codec id
 
         // Fix up track number. Use trackInfo's index as mkv track number. Mkv track number starts from 1
-        *(pTrackStart + MKV_TRACK_NUMBER_OFFSET) = (BYTE) (j + 1);
+        *(pTrackStart + MKV_TRACK_NUMBER_OFFSET) = (BYTE)(j + 1);
 
         // Fix up the track UID
         PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pTrackStart + MKV_TRACK_ID_OFFSET), pTrackInfo->trackId);
@@ -1223,8 +1183,10 @@ STATUS mkvgenEbmlEncodeTrackInfo(PBYTE pBuffer, UINT32 bufferSize, PStreamMkvGen
             MEMCPY(pTrackStart + trackSpecificDataOffset, MKV_TRACK_VIDEO_BITS, MKV_TRACK_VIDEO_BITS_SIZE);
 
             // Fix-up the width and height
-            PUT_UNALIGNED_BIG_ENDIAN((PINT16)(pTrackStart + trackSpecificDataOffset + MKV_TRACK_VIDEO_WIDTH_OFFSET), pTrackInfo->trackCustomData.trackVideoConfig.videoWidth);
-            PUT_UNALIGNED_BIG_ENDIAN((PINT16)(pTrackStart + trackSpecificDataOffset + MKV_TRACK_VIDEO_HEIGHT_OFFSET), pTrackInfo->trackCustomData.trackVideoConfig.videoHeight);
+            PUT_UNALIGNED_BIG_ENDIAN((PINT16)(pTrackStart + trackSpecificDataOffset + MKV_TRACK_VIDEO_WIDTH_OFFSET),
+                                     pTrackInfo->trackCustomData.trackVideoConfig.videoWidth);
+            PUT_UNALIGNED_BIG_ENDIAN((PINT16)(pTrackStart + trackSpecificDataOffset + MKV_TRACK_VIDEO_HEIGHT_OFFSET),
+                                     pTrackInfo->trackCustomData.trackVideoConfig.videoHeight);
 
             trackSpecificDataOffset += MKV_TRACK_VIDEO_BITS_SIZE;
 
@@ -1237,16 +1199,19 @@ STATUS mkvgenEbmlEncodeTrackInfo(PBYTE pBuffer, UINT32 bufferSize, PStreamMkvGen
             // Copy the element first
             MEMCPY(pTrackStart + trackSpecificDataOffset, MKV_TRACK_AUDIO_BITS, MKV_TRACK_AUDIO_BITS_SIZE);
 
-            PUT_UNALIGNED_BIG_ENDIAN((PINT64) (pTrackStart + trackSpecificDataOffset + MKV_TRACK_AUDIO_SAMPLING_RATE_OFFSET), *((PINT64) (&pTrackInfo->trackCustomData.trackAudioConfig.samplingFrequency)));
-            *(pTrackStart + trackSpecificDataOffset + MKV_TRACK_AUDIO_CHANNELS_OFFSET) = (UINT8) pTrackInfo->trackCustomData.trackAudioConfig.channelConfig;
+            PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pTrackStart + trackSpecificDataOffset + MKV_TRACK_AUDIO_SAMPLING_RATE_OFFSET),
+                                     *((PINT64)(&pTrackInfo->trackCustomData.trackAudioConfig.samplingFrequency)));
+            *(pTrackStart + trackSpecificDataOffset + MKV_TRACK_AUDIO_CHANNELS_OFFSET) =
+                (UINT8) pTrackInfo->trackCustomData.trackAudioConfig.channelConfig;
 
             if (pMkvGenerator->trackInfoList[j].trackCustomData.trackAudioConfig.bitDepth != 0) {
                 MEMCPY(pTrackStart + trackSpecificDataOffset + MKV_TRACK_AUDIO_BITS_SIZE, MKV_TRACK_AUDIO_BIT_DEPTH_BITS,
                        MKV_TRACK_AUDIO_BIT_DEPTH_BITS_SIZE);
-                *(pTrackStart + trackSpecificDataOffset + MKV_TRACK_AUDIO_BIT_DEPTH_OFFSET) = (UINT8) pTrackInfo->trackCustomData.trackAudioConfig.bitDepth;
+                *(pTrackStart + trackSpecificDataOffset + MKV_TRACK_AUDIO_BIT_DEPTH_OFFSET) =
+                    (UINT8) pTrackInfo->trackCustomData.trackAudioConfig.bitDepth;
 
                 // fix up audio element data size
-                encodedLen = (0x10000000 | (UINT32) (mkvAudioBitsSize)) - MKV_TRACK_AUDIO_EBML_HEADER_SIZE;
+                encodedLen = (0x10000000 | (UINT32)(mkvAudioBitsSize)) - MKV_TRACK_AUDIO_EBML_HEADER_SIZE;
                 // +1 to skip the audio element
                 PUT_UNALIGNED_BIG_ENDIAN((PINT32)(pTrackStart + trackSpecificDataOffset + 1), encodedLen);
             }
@@ -1264,9 +1229,7 @@ STATUS mkvgenEbmlEncodeTrackInfo(PBYTE pBuffer, UINT32 bufferSize, PStreamMkvGen
             cpdSize = MKV_CODEC_PRIVATE_DATA_ELEM_SIZE;
 
             // Encode the CPD size
-            CHK_STATUS(mkvgenEbmlEncodeNumber(pTrackInfo->codecPrivateDataSize,
-                                              pTrackStart + cpdOffset + cpdSize,
-                                              bufferSize - cpdOffset - cpdSize,
+            CHK_STATUS(mkvgenEbmlEncodeNumber(pTrackInfo->codecPrivateDataSize, pTrackStart + cpdOffset + cpdSize, bufferSize - cpdOffset - cpdSize,
                                               &encodedCpdLen));
             cpdSize += encodedCpdLen;
 
@@ -1278,10 +1241,9 @@ STATUS mkvgenEbmlEncodeTrackInfo(PBYTE pBuffer, UINT32 bufferSize, PStreamMkvGen
             mkvTrackDataSize += cpdSize;
         }
 
-
         // Important! Need to fix-up the overall track header element size and the track entry element size
         // Encode and fix-up the size - encode 4 bytes
-        encodedLen = 0x10000000 | (UINT32) (mkvTrackDataSize);
+        encodedLen = 0x10000000 | (UINT32)(mkvTrackDataSize);
         PUT_UNALIGNED_BIG_ENDIAN((PINT32)(pTrackStart + MKV_TRACK_ENTRY_SIZE_OFFSET), encodedLen);
 
         // Need to add back TrackEntry header bits to skip to the end of current TrackEntry
@@ -1290,11 +1252,10 @@ STATUS mkvgenEbmlEncodeTrackInfo(PBYTE pBuffer, UINT32 bufferSize, PStreamMkvGen
         mkvTracksDataSize += mkvTrackDataSize + MKV_TRACK_ENTRY_HEADER_BITS_SIZE;
         // Reset mkvTrackDataSize as we are starting for a new track
         mkvTrackDataSize = 0;
-
     }
     // Important! Need to fix-up the overall track header element size and the track entry element size
     // Encode and fix-up the size - encode 4 bytes
-    encodedLen = 0x10000000 | (UINT32) (mkvTracksDataSize);
+    encodedLen = 0x10000000 | (UINT32)(mkvTracksDataSize);
     PUT_UNALIGNED_BIG_ENDIAN((PINT32)(pBuffer + MKV_TRACK_HEADER_SIZE_OFFSET), encodedLen);
 
 CleanUp:
@@ -1332,7 +1293,8 @@ CleanUp:
 /**
  * EBML encodes a simple block
  */
-STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 timestamp, PFrame pFrame, MKV_NALS_ADAPTATION nalsAdaptation, UINT32 adaptedFrameSize, PStreamMkvGenerator pStreamMkvGenerator, PUINT32 pEncodedLen)
+STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 timestamp, PFrame pFrame, MKV_NALS_ADAPTATION nalsAdaptation,
+                                   UINT32 adaptedFrameSize, PStreamMkvGenerator pStreamMkvGenerator, PUINT32 pEncodedLen)
 {
     STATUS retStatus = STATUS_SUCCESS;
     UINT64 encodedLength;
@@ -1364,32 +1326,27 @@ STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 times
             MEMCPY(pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE, pFrame->frameData, adaptedFrameSize);
 
             // Adapt from Avcc to Annex-B nals
-            CHK_STATUS(adaptFrameNalsFromAvccToAnnexB(pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE,
-                                                      adaptedFrameSize));
+            CHK_STATUS(adaptFrameNalsFromAvccToAnnexB(pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE, adaptedFrameSize));
             break;
 
         case MKV_NALS_ADAPT_ANNEXB:
             // Adapt from Annex-B to Avcc nals. NOTE: The conversion is not 'in-place'
-            CHK_STATUS(adaptFrameNalsFromAnnexBToAvcc(pFrame->frameData,
-                                                      pFrame->size,
-                                                      FALSE,
-                                                      pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE,
-                                                      &adaptedFrameSize));
+            CHK_STATUS(
+                adaptFrameNalsFromAnnexBToAvcc(pFrame->frameData, pFrame->size, FALSE, pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE, &adaptedFrameSize));
     }
 
     // Encode and fix-up the size - encode 8 bytes
-    encodedLength = 0x100000000000000ULL | (UINT64) (adaptedFrameSize + MKV_SIMPLE_BLOCK_PAYLOAD_HEADER_SIZE);
+    encodedLength = 0x100000000000000ULL | (UINT64)(adaptedFrameSize + MKV_SIMPLE_BLOCK_PAYLOAD_HEADER_SIZE);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pBuffer + MKV_SIMPLE_BLOCK_SIZE_OFFSET), encodedLength);
 
     // Fix up the timecode
     PUT_UNALIGNED_BIG_ENDIAN((PINT16)(pBuffer + MKV_SIMPLE_BLOCK_TIMECODE_OFFSET), timestamp);
 
     // track must exist because we already checked in putKinesisVideoFrame
-    CHK_STATUS(mkvgenGetTrackInfo(pStreamMkvGenerator->trackInfoList, pStreamMkvGenerator->trackInfoCount,
-                                  pFrame->trackId, NULL, &trackIndex));
+    CHK_STATUS(mkvgenGetTrackInfo(pStreamMkvGenerator->trackInfoList, pStreamMkvGenerator->trackInfoCount, pFrame->trackId, NULL, &trackIndex));
 
     // fix up track number for each block
-    *(pBuffer + MKV_SIMPLE_BLOCK_TRACK_NUMBER_OFFSET) = (UINT8) (0x80 | (UINT8) (trackIndex + 1));
+    *(pBuffer + MKV_SIMPLE_BLOCK_TRACK_NUMBER_OFFSET) = (UINT8)(0x80 | (UINT8)(trackIndex + 1));
 
     // Fix up the flags
     flags = MKV_SIMPLE_BLOCK_FLAGS_NONE;
@@ -1429,11 +1386,7 @@ STATUS getAdaptedFrameSize(PFrame pFrame, MKV_NALS_ADAPTATION nalsAdaptation, PU
             break;
         case MKV_NALS_ADAPT_ANNEXB:
             // Get the size after conversion
-            CHK_STATUS(adaptFrameNalsFromAnnexBToAvcc(pFrame->frameData,
-                                                      pFrame->size,
-                                                      FALSE,
-                                                      NULL,
-                                                      &adaptedFrameSize));
+            CHK_STATUS(adaptFrameNalsFromAnnexBToAvcc(pFrame->frameData, pFrame->size, FALSE, NULL, &adaptedFrameSize));
             break;
     }
 
@@ -1512,8 +1465,8 @@ UINT32 mkvgenGetMkvSegmentTrackInfoOverhead(PStreamMkvGenerator pStreamMkvGenera
 
 UINT32 mkvgenGetMkvAudioBitsSize(PTrackInfo pTrackInfo)
 {
-    return pTrackInfo->trackCustomData.trackAudioConfig.bitDepth == 0 ? MKV_TRACK_AUDIO_BITS_SIZE :
-           MKV_TRACK_AUDIO_BITS_SIZE + MKV_TRACK_AUDIO_BIT_DEPTH_BITS_SIZE;
+    return pTrackInfo->trackCustomData.trackAudioConfig.bitDepth == 0 ? MKV_TRACK_AUDIO_BITS_SIZE
+                                                                      : MKV_TRACK_AUDIO_BITS_SIZE + MKV_TRACK_AUDIO_BIT_DEPTH_BITS_SIZE;
 }
 
 /**
@@ -1522,8 +1475,7 @@ UINT32 mkvgenGetMkvAudioBitsSize(PTrackInfo pTrackInfo)
 UINT32 mkvgenGetByteCount(UINT64 number)
 {
     UINT32 count = 0;
-    while (number != 0)
-    {
+    while (number != 0) {
         number >>= 8;
         count++;
     }
@@ -1544,10 +1496,7 @@ UINT64 getTimeAdapter(UINT64 customData)
 /**
  * Parse AAC Cpd
  */
-STATUS getSamplingFreqAndChannelFromAacCpd(PBYTE pCpd,
-                                           UINT32 cpdSize,
-                                           PDOUBLE pSamplingFrequency,
-                                           PUINT16 pChannelConfig)
+STATUS getSamplingFreqAndChannelFromAacCpd(PBYTE pCpd, UINT32 cpdSize, PDOUBLE pSamplingFrequency, PUINT16 pChannelConfig)
 {
     STATUS retStatus = STATUS_SUCCESS;
     INT16 cpdContainer;
@@ -1563,11 +1512,11 @@ STATUS getSamplingFreqAndChannelFromAacCpd(PBYTE pCpd,
      * aac cpd structure
      * 5 bits (Audio Object Type) | 4 bits (frequency index) | 4 bits (channel configuration) | 3 bits (not used)
      */
-    channelConfig = (UINT16) ((cpdContainer >> 3) & 0x000f);
+    channelConfig = (UINT16)((cpdContainer >> 3) & 0x000f);
     CHK(channelConfig < MKV_AAC_CHANNEL_CONFIG_MAX, STATUS_MKV_INVALID_AAC_CPD_CHANNEL_CONFIG);
     *pChannelConfig = channelConfig;
 
-    samplingRateIdx = (UINT16) ((cpdContainer >> 7) & 0x000f);
+    samplingRateIdx = (UINT16)((cpdContainer >> 7) & 0x000f);
     CHK(samplingRateIdx < MKV_AAC_SAMPLING_FREQUNECY_IDX_MAX, STATUS_MKV_INVALID_AAC_CPD_SAMPLING_FREQUENCY_INDEX);
     *pSamplingFrequency = gMkvAACSamplingFrequencies[samplingRateIdx];
 
@@ -1617,11 +1566,7 @@ CleanUp:
 /**
  * Parse A_MS/ACM Cpd
  */
-STATUS getAudioConfigFromAmsAcmCpd(PBYTE pCpd,
-                                   UINT32 cpdSize,
-                                   PDOUBLE pSamplingFrequency,
-                                   PUINT16 pChannelCount,
-                                   PUINT16 pBitDepth)
+STATUS getAudioConfigFromAmsAcmCpd(PBYTE pCpd, UINT32 cpdSize, PDOUBLE pSamplingFrequency, PUINT16 pChannelCount, PUINT16 pBitDepth)
 {
     STATUS retStatus = STATUS_SUCCESS;
     UINT16 channelCount = 0, bitDepth = 0, formatCode = 0;
@@ -1642,10 +1587,10 @@ STATUS getAudioConfigFromAmsAcmCpd(PBYTE pCpd,
      * - 2 bytes bit depth
      * - 2 bytes extra data (usually 0)
      */
-    formatCode = (UINT16) (*((PINT16) pCpd));
-    channelCount = (UINT16) *((PINT16) (pCpd + 2));
-    samplingFrequency = (UINT32) *((PINT32) (pCpd + 4));
-    bitDepth = (UINT16) *((PINT16) (pCpd + 14));
+    formatCode = (UINT16)(*((PINT16) pCpd));
+    channelCount = (UINT16) * ((PINT16)(pCpd + 2));
+    samplingFrequency = (UINT32) * ((PINT32)(pCpd + 4));
+    bitDepth = (UINT16) * ((PINT16)(pCpd + 14));
 
     // cpd is in little endian
     if (isBigEndian()) {
@@ -1679,10 +1624,9 @@ STATUS mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE format, UINT32 samplingRate, UIN
     CHK_ERR(bufferLen >= KVS_PCM_CPD_SIZE_BYTE, STATUS_INVALID_ARG, "Buffer is too small");
     CHK_ERR(format == KVS_PCM_FORMAT_CODE_ALAW || format == KVS_PCM_FORMAT_CODE_MULAW, STATUS_INVALID_ARG,
             "Invalid pcm format, should be alaw (0x%04x) or mulaw (0x%04x)", KVS_PCM_FORMAT_CODE_ALAW, KVS_PCM_FORMAT_CODE_MULAW);
-    CHK_ERR(samplingRate <= MAX_PCM_SAMPLING_RATE && samplingRate >= MIN_PCM_SAMPLING_RATE, STATUS_INVALID_ARG,
-            "Invalid sampling rate %u", samplingRate);
-    CHK_ERR(channels == 2 || channels == 1, STATUS_INVALID_ARG,
-            "Invalid channels count %u", channels);
+    CHK_ERR(samplingRate <= MAX_PCM_SAMPLING_RATE && samplingRate >= MIN_PCM_SAMPLING_RATE, STATUS_INVALID_ARG, "Invalid sampling rate %u",
+            samplingRate);
+    CHK_ERR(channels == 2 || channels == 1, STATUS_INVALID_ARG, "Invalid channels count %u", channels);
 
     blockAlign = channels;
     bitrate = blockAlign * samplingRate / 8;
@@ -1715,11 +1659,8 @@ CleanUp:
  *
  * NOTE: The input has been validated.
  */
-STATUS mkvgenAdaptCodecPrivateData(PStreamMkvGenerator pMkvGenerator,
-                                   MKV_TRACK_INFO_TYPE trackType,
-                                   PCHAR codecId, UINT32 cpdSize,
-                                   PBYTE cpd, PUINT32 pCpdSize,
-                                   PBYTE* ppCpd, PTrackCustomData pData)
+STATUS mkvgenAdaptCodecPrivateData(PStreamMkvGenerator pMkvGenerator, MKV_TRACK_INFO_TYPE trackType, PCHAR codecId, UINT32 cpdSize, PBYTE cpd,
+                                   PUINT32 pCpdSize, PBYTE* ppCpd, PTrackCustomData pData)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -1735,15 +1676,9 @@ STATUS mkvgenAdaptCodecPrivateData(PStreamMkvGenerator pMkvGenerator,
     // Check if the CPD needs to be adapted
     if (trackType == MKV_TRACK_INFO_TYPE_VIDEO && pMkvGenerator->adaptCpdNals) {
         if ((pMkvGenerator->contentType & MKV_CONTENT_TYPE_H264) != MKV_CONTENT_TYPE_NONE) {
-            CHK_STATUS(adaptH264CpdNalsFromAnnexBToAvcc(cpd,
-                                                        cpdSize,
-                                                        NULL,
-                                                        &adaptedCodecPrivateDataSize));
+            CHK_STATUS(adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, NULL, &adaptedCodecPrivateDataSize));
         } else if ((pMkvGenerator->contentType & MKV_CONTENT_TYPE_H265) != MKV_CONTENT_TYPE_NONE) {
-            CHK_STATUS(adaptH265CpdNalsFromAnnexBToHvcc(cpd,
-                                                        cpdSize,
-                                                        NULL,
-                                                        &adaptedCodecPrivateDataSize));
+            CHK_STATUS(adaptH265CpdNalsFromAnnexBToHvcc(cpd, cpdSize, NULL, &adaptedCodecPrivateDataSize));
         }
     }
 
@@ -1753,15 +1688,9 @@ STATUS mkvgenAdaptCodecPrivateData(PStreamMkvGenerator pMkvGenerator,
 
     if (trackType == MKV_TRACK_INFO_TYPE_VIDEO && pMkvGenerator->adaptCpdNals) {
         if ((pMkvGenerator->contentType & MKV_CONTENT_TYPE_H264) != MKV_CONTENT_TYPE_NONE) {
-            CHK_STATUS(adaptH264CpdNalsFromAnnexBToAvcc(cpd,
-                                                        cpdSize,
-                                                        pCpd,
-                                                        &adaptedCodecPrivateDataSize));
+            CHK_STATUS(adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, pCpd, &adaptedCodecPrivateDataSize));
         } else if ((pMkvGenerator->contentType & MKV_CONTENT_TYPE_H265) != MKV_CONTENT_TYPE_NONE) {
-            CHK_STATUS(adaptH265CpdNalsFromAnnexBToHvcc(cpd,
-                                                        cpdSize,
-                                                        pCpd,
-                                                        &adaptedCodecPrivateDataSize));
+            CHK_STATUS(adaptH265CpdNalsFromAnnexBToHvcc(cpd, cpdSize, pCpd, &adaptedCodecPrivateDataSize));
         }
     } else {
         MEMCPY(pCpd, cpd, adaptedCodecPrivateDataSize);
@@ -1778,26 +1707,20 @@ STATUS mkvgenAdaptCodecPrivateData(PStreamMkvGenerator pMkvGenerator,
             if ((pMkvGenerator->contentType & MKV_CONTENT_TYPE_H264) != MKV_CONTENT_TYPE_NONE) {
                 // Important: The assumption here is that if this is not in AvCC format and it's in Annex-B or RAW then
                 // the first NALu is the SPS. We will not skip over possible SEI or AUD NALus
-                retStatus = getVideoWidthAndHeightFromH264Sps(pCpd,
-                                                              adaptedCodecPrivateDataSize,
-                                                              &pData->trackVideoConfig.videoWidth,
+                retStatus = getVideoWidthAndHeightFromH264Sps(pCpd, adaptedCodecPrivateDataSize, &pData->trackVideoConfig.videoWidth,
                                                               &pData->trackVideoConfig.videoHeight);
 
             } else if ((pMkvGenerator->contentType & MKV_CONTENT_TYPE_H265) != MKV_CONTENT_TYPE_NONE) {
                 // Important: The assumption here is that if this is not in HvCC format and it's in Annex-B or RAW then
                 // the first NALu is the SPS. We will not skip over possible SEI or AUD NALus
-                retStatus = getVideoWidthAndHeightFromH265Sps(pCpd,
-                                                              adaptedCodecPrivateDataSize,
-                                                              &pData->trackVideoConfig.videoWidth,
+                retStatus = getVideoWidthAndHeightFromH265Sps(pCpd, adaptedCodecPrivateDataSize, &pData->trackVideoConfig.videoWidth,
                                                               &pData->trackVideoConfig.videoHeight);
 
             } else if (((pMkvGenerator->contentType & MKV_CONTENT_TYPE_X_MKV_VIDEO) != MKV_CONTENT_TYPE_NONE) &&
                        (0 == STRCMP(codecId, MKV_FOURCC_CODEC_ID))) {
                 // For M-JPG we have content type as video/x-matroska and the codec
                 // type set as V_MS/VFW/FOURCC
-                retStatus = getVideoWidthAndHeightFromBih(pCpd,
-                                                          adaptedCodecPrivateDataSize,
-                                                          &pData->trackVideoConfig.videoWidth,
+                retStatus = getVideoWidthAndHeightFromBih(pCpd, adaptedCodecPrivateDataSize, &pData->trackVideoConfig.videoWidth,
                                                           &pData->trackVideoConfig.videoHeight);
             }
 
@@ -1815,16 +1738,11 @@ STATUS mkvgenAdaptCodecPrivateData(PStreamMkvGenerator pMkvGenerator,
             MEMSET(&pData->trackAudioConfig, 0x00, SIZEOF(TrackCustomData));
 
             if ((pMkvGenerator->contentType & MKV_CONTENT_TYPE_AAC) != MKV_CONTENT_TYPE_NONE) {
-                retStatus = getSamplingFreqAndChannelFromAacCpd(pCpd,
-                                                                adaptedCodecPrivateDataSize,
-                                                                &pData->trackAudioConfig.samplingFrequency,
+                retStatus = getSamplingFreqAndChannelFromAacCpd(pCpd, adaptedCodecPrivateDataSize, &pData->trackAudioConfig.samplingFrequency,
                                                                 &pData->trackAudioConfig.channelConfig);
             } else if ((pMkvGenerator->contentType & (MKV_CONTENT_TYPE_ALAW | MKV_CONTENT_TYPE_MULAW)) != MKV_CONTENT_TYPE_NONE) {
-                retStatus = getAudioConfigFromAmsAcmCpd(pCpd,
-                                                        adaptedCodecPrivateDataSize,
-                                                        &pData->trackAudioConfig.samplingFrequency,
-                                                        &pData->trackAudioConfig.channelConfig,
-                                                        &pData->trackAudioConfig.bitDepth);
+                retStatus = getAudioConfigFromAmsAcmCpd(pCpd, adaptedCodecPrivateDataSize, &pData->trackAudioConfig.samplingFrequency,
+                                                        &pData->trackAudioConfig.channelConfig, &pData->trackAudioConfig.bitDepth);
             }
 
             if (STATUS_FAILED(retStatus)) {
@@ -1901,21 +1819,21 @@ STATUS mkvgenExtractCpdFromAnnexBFrame(PStreamMkvGenerator pStreamMkvGenerator, 
     // The CPD adapter and/or height/width extracting will need to handle the rest
     pCurPtr = (PUINT32) pCpd;
 
-    while (iterate && (PBYTE) (pCurPtr + 1) < pCpd + cpdSize) {
+    while (iterate && (PBYTE)(pCurPtr + 1) < pCpd + cpdSize) {
         runLen = GET_UNALIGNED_BIG_ENDIAN(pCurPtr);
-        naluHeader = *(PBYTE) (pCurPtr + 1);
+        naluHeader = *(PBYTE)(pCurPtr + 1);
 
         // Check for the H264 format IDR slice NAL type if h264 or IDR_W_RADL_NALU_TYPE if h265
-        if (((pStreamMkvGenerator->contentType & MKV_CONTENT_TYPE_H264) != MKV_CONTENT_TYPE_NONE &&
-            (naluHeader & 0x80) == 0 && (naluHeader & 0x60) != 0 && (naluHeader & 0x1f) == IDR_NALU_TYPE) ||
+        if (((pStreamMkvGenerator->contentType & MKV_CONTENT_TYPE_H264) != MKV_CONTENT_TYPE_NONE && (naluHeader & 0x80) == 0 &&
+             (naluHeader & 0x60) != 0 && (naluHeader & 0x1f) == IDR_NALU_TYPE) ||
             ((pStreamMkvGenerator->contentType & MKV_CONTENT_TYPE_H265) != MKV_CONTENT_TYPE_NONE &&
-                     ((naluHeader >> 1) == IDR_W_RADL_NALU_TYPE || (naluHeader >> 1) == IDR_N_LP_NALU_TYPE))) {
-            parsedSize = (UINT32) ((PBYTE) pCurPtr - pCpd);
+             ((naluHeader >> 1) == IDR_W_RADL_NALU_TYPE || (naluHeader >> 1) == IDR_N_LP_NALU_TYPE))) {
+            parsedSize = (UINT32)((PBYTE) pCurPtr - pCpd);
             iterate = FALSE;
         }
 
         // Advance the current ptr taking into account the 4 byte length and the size of the run
-        pCurPtr = (PUINT32) ((PBYTE) (pCurPtr + 1) + runLen);
+        pCurPtr = (PUINT32)((PBYTE)(pCurPtr + 1) + runLen);
     }
 
     // Ensure that we extracted CPD

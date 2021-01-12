@@ -6,15 +6,15 @@
 #include "Include_i.h"
 
 #ifdef HEAP_DEBUG
-    struct AIV_ALLOCATION_HEADER gAivHeader = {{0, AIV_ALLOCATION_TYPE, ALLOCATION_FLAGS_FREE, ALLOCATION_HEADER_MAGIC}, 0, NULL, NULL};
-    ALLOCATION_FOOTER gAivFooter = {0, ALLOCATION_FOOTER_MAGIC};
+struct AIV_ALLOCATION_HEADER gAivHeader = {{0, AIV_ALLOCATION_TYPE, ALLOCATION_FLAGS_FREE, ALLOCATION_HEADER_MAGIC}, 0, NULL, NULL};
+ALLOCATION_FOOTER gAivFooter = {0, ALLOCATION_FOOTER_MAGIC};
 #else
-    struct AIV_ALLOCATION_HEADER gAivHeader = {{0, AIV_ALLOCATION_TYPE, ALLOCATION_FLAGS_FREE}, 0, NULL, NULL};
-    ALLOCATION_FOOTER gAivFooter = {0};
+struct AIV_ALLOCATION_HEADER gAivHeader = {{0, AIV_ALLOCATION_TYPE, ALLOCATION_FLAGS_FREE}, 0, NULL, NULL};
+ALLOCATION_FOOTER gAivFooter = {0};
 #endif
 
-#define AIV_ALLOCATION_HEADER_SIZE      SIZEOF(gAivHeader)
-#define AIV_ALLOCATION_FOOTER_SIZE      SIZEOF(gAivFooter)
+#define AIV_ALLOCATION_HEADER_SIZE SIZEOF(gAivHeader)
+#define AIV_ALLOCATION_FOOTER_SIZE SIZEOF(gAivFooter)
 
 /**
  * Minimal free allocation size - if we end up with a free block of lesser size we will coalesce this to the allocated block
@@ -47,8 +47,8 @@ DEFINE_HEAP_CHK(aivHeapDebugCheckAllocator)
         }
 
         if (pBlock->allocSize > GET_AIV_ALLOCATION_SIZE(pBlock)) {
-            DLOGE("Block %p has a requested size of %" PRIu64 " which is greater than the entire allocation size %" PRIu64,
-                pBlock, pBlock->allocSize, GET_AIV_ALLOCATION_SIZE(pBlock));
+            DLOGE("Block %p has a requested size of %" PRIu64 " which is greater than the entire allocation size %" PRIu64, pBlock, pBlock->allocSize,
+                  GET_AIV_ALLOCATION_SIZE(pBlock));
             retStatus = STATUS_HEAP_CORRUPTED;
         }
 
@@ -64,7 +64,7 @@ DEFINE_HEAP_CHK(aivHeapDebugCheckAllocator)
 
 #ifdef HEAP_DEBUG
         // Check the allocation 'guard band' in debug mode
-        if (0 != MEMCMP(((PALLOCATION_HEADER)pBlock)->magic, ALLOCATION_HEADER_MAGIC, SIZEOF(ALLOCATION_HEADER_MAGIC))) {
+        if (0 != MEMCMP(((PALLOCATION_HEADER) pBlock)->magic, ALLOCATION_HEADER_MAGIC, SIZEOF(ALLOCATION_HEADER_MAGIC))) {
             DLOGE("Invalid header for allocation %p", pBlock);
             retStatus = STATUS_HEAP_CORRUPTED;
         }
@@ -102,7 +102,7 @@ DEFINE_HEAP_CHK(aivHeapDebugCheckAllocator)
         }
 #ifdef HEAP_DEBUG
         // Check the allocation 'guard band' in debug mode
-        if (0 != MEMCMP(((PALLOCATION_HEADER)pBlock)->magic, ALLOCATION_HEADER_MAGIC, SIZEOF(ALLOCATION_HEADER_MAGIC))) {
+        if (0 != MEMCMP(((PALLOCATION_HEADER) pBlock)->magic, ALLOCATION_HEADER_MAGIC, SIZEOF(ALLOCATION_HEADER_MAGIC))) {
             DLOGE("Invalid header for allocation %p", pBlock);
             retStatus = STATUS_HEAP_CORRUPTED;
         }
@@ -183,10 +183,7 @@ DEFINE_INIT_HEAP(aivHeapInit)
 
     // Allocate the entire heap backed by the process default heap.
     pAivHeap->pAllocation = MEMALLOC((SIZE_T) heapLimit);
-    CHK_ERR(pAivHeap->pAllocation != NULL,
-        STATUS_NOT_ENOUGH_MEMORY,
-        "Failed to allocate heap with limit size %" PRIu64,
-        heapLimit);
+    CHK_ERR(pAivHeap->pAllocation != NULL, STATUS_NOT_ENOUGH_MEMORY, "Failed to allocate heap with limit size %" PRIu64, heapLimit);
 
 #ifdef HEAP_DEBUG
     // Null the memory in debug mode
@@ -195,7 +192,7 @@ DEFINE_INIT_HEAP(aivHeapInit)
 
     // Initialize the allocation as a single free block
     MEMCPY(pAivHeap->pAllocation, &gAivHeader, AIV_ALLOCATION_HEADER_SIZE);
-    MEMCPY((PBYTE)pAivHeap->pAllocation + pHeap->heapLimit - AIV_ALLOCATION_FOOTER_SIZE, &gAivFooter, AIV_ALLOCATION_FOOTER_SIZE);
+    MEMCPY((PBYTE) pAivHeap->pAllocation + pHeap->heapLimit - AIV_ALLOCATION_FOOTER_SIZE, &gAivFooter, AIV_ALLOCATION_FOOTER_SIZE);
 
     // Set the sizes. The size will only contain the raw size with no service field.
     SET_AIV_ALLOCATION_SIZE(pAivHeap->pAllocation, pHeap->heapLimit - AIV_ALLOCATION_HEADER_SIZE - AIV_ALLOCATION_FOOTER_SIZE);
@@ -231,7 +228,7 @@ DEFINE_RELEASE_HEAP(aivHeapRelease)
     PAivHeap pAivHeap = (PAivHeap) pHeap;
 
     // The call should be idempotent
-    CHK (pHeap != NULL, STATUS_SUCCESS);
+    CHK(pHeap != NULL, STATUS_SUCCESS);
 
     // Regardless of the status (heap might be corrupted) we still want to free the memory
     retStatus = commonHeapRelease(pHeap);
@@ -316,7 +313,7 @@ DEFINE_HEAP_FREE(aivHeapFree)
     CHK_AIV_ALLOCATION(pAivHeap, pAllocation);
 
     // Perform the de-allocation
-    pAlloc = (PAIV_ALLOCATION_HEADER)pAllocation - 1;
+    pAlloc = (PAIV_ALLOCATION_HEADER) pAllocation - 1;
 
     CHK_ERR(pAlloc->header.flags == ALLOCATION_FLAGS_ALLOC && pAlloc->allocSize != 0, STATUS_INVALID_HANDLE_ERROR,
             "Invalid block of memory passed to free.");
@@ -357,7 +354,7 @@ DEFINE_HEAP_GET_ALLOC_SIZE(aivHeapGetAllocSize)
     // Call the common heap function
     CHK_STATUS(commonHeapGetAllocSize(pHeap, handle, pAllocSize));
 
-    pHeader = (PAIV_ALLOCATION_HEADER)pAllocation - 1;
+    pHeader = (PAIV_ALLOCATION_HEADER) pAllocation - 1;
 
     // Check for the validity of the allocation
     CHK_ERR(pHeader->header.flags == ALLOCATION_FLAGS_ALLOC && pHeader->allocSize != 0, STATUS_INVALID_HANDLE_ERROR,
@@ -393,7 +390,7 @@ DEFINE_HEAP_MAP(aivHeapMap)
     CHK_STATUS(commonHeapMap(pHeap, handle, ppAllocation, pSize));
 
     *ppAllocation = pAllocation;
-    pHeader = (PAIV_ALLOCATION_HEADER)pAllocation - 1;
+    pHeader = (PAIV_ALLOCATION_HEADER) pAllocation - 1;
 
     // Check for the validity of the allocation
     CHK_ERR(pHeader->header.flags == ALLOCATION_FLAGS_ALLOC && pHeader->allocSize != 0, STATUS_INVALID_HANDLE_ERROR,
@@ -447,7 +444,7 @@ DEFINE_ALLOC_SIZE(aivGetAllocationSize)
 
 #ifdef HEAP_DEBUG
     // Check the allocation 'guard band' in debug mode
-    if (0 != MEMCMP(((PALLOCATION_HEADER)pHeader)->magic, ALLOCATION_HEADER_MAGIC, SIZEOF(ALLOCATION_HEADER_MAGIC))) {
+    if (0 != MEMCMP(((PALLOCATION_HEADER) pHeader)->magic, ALLOCATION_HEADER_MAGIC, SIZEOF(ALLOCATION_HEADER_MAGIC))) {
         DLOGE("Invalid header for allocation %p", pAllocation);
         return INVALID_ALLOCATION_VALUE;
     }
@@ -459,14 +456,15 @@ DEFINE_ALLOC_SIZE(aivGetAllocationSize)
     }
 
     // Check the type
-    if (AIV_ALLOCATION_TYPE != ((PALLOCATION_HEADER)pHeader)->type) {
-        DLOGE("Invalid allocation type 0x%08x", ((PALLOCATION_HEADER)pHeader)->type);
+    if (AIV_ALLOCATION_TYPE != ((PALLOCATION_HEADER) pHeader)->type) {
+        DLOGE("Invalid allocation type 0x%08x", ((PALLOCATION_HEADER) pHeader)->type);
         return INVALID_ALLOCATION_VALUE;
     }
 
     // Check the allocation size against the overall allocation for the block
     if (pHeader->allocSize > GET_AIV_ALLOCATION_SIZE(pHeader)) {
-        DLOGE("Block %p has a requested size of %u which is greater than the allocation size %u", pHeader, pHeader->allocSize, GET_AIV_ALLOCATION_SIZE(pHeader));
+        DLOGE("Block %p has a requested size of %u which is greater than the allocation size %u", pHeader, pHeader->allocSize,
+              GET_AIV_ALLOCATION_SIZE(pHeader));
         return INVALID_ALLOCATION_VALUE;
     }
 #endif
@@ -477,7 +475,8 @@ DEFINE_ALLOC_SIZE(aivGetAllocationSize)
 /**
  * Sets the allocation size
  */
-DEFINE_HEAP_SET_ALLOC_SIZE(aivHeapSetAllocSize) {
+DEFINE_HEAP_SET_ALLOC_SIZE(aivHeapSetAllocSize)
+{
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PAIV_ALLOCATION_HEADER pExistingHeader, pCheckFree;
@@ -504,8 +503,7 @@ DEFINE_HEAP_SET_ALLOC_SIZE(aivHeapSetAllocSize) {
     // Check if we are trying to allocate a slightly larger block and it fits in the existing allocation
     // or if we are trying to allocate a slightly smaller block size and we will try to fit into existing allocation
     blockDiffSize = GET_AIV_ALLOCATION_SIZE(pExistingHeader) - pExistingHeader->allocSize;
-    if ((newSize > size && diffSize <= blockDiffSize) ||
-        (newSize < size && (blockDiffSize + diffSize <= MIN_FREE_BLOCK_SIZE))) {
+    if ((newSize > size && diffSize <= blockDiffSize) || (newSize < size && (blockDiffSize + diffSize <= MIN_FREE_BLOCK_SIZE))) {
         // No need to set the allocation handle.
         pExistingHeader->allocSize = newSize;
 
@@ -527,12 +525,8 @@ DEFINE_HEAP_SET_ALLOC_SIZE(aivHeapSetAllocSize) {
 
     // Get the right block and see if we are within the range and if it's free
     pCheckFree = getRightBlock(pAivHeap, pExistingHeader);
-    if (pCheckFree != NULL &&
-        pCheckFree->header.flags == ALLOCATION_FLAGS_FREE &&
-        (GET_AIV_ALLOCATION_SIZE(pCheckFree) +
-         AIV_ALLOCATION_FOOTER_SIZE +
-         AIV_ALLOCATION_HEADER_SIZE +
-         blockDiffSize >= diffSize)) {
+    if (pCheckFree != NULL && pCheckFree->header.flags == ALLOCATION_FLAGS_FREE &&
+        (GET_AIV_ALLOCATION_SIZE(pCheckFree) + AIV_ALLOCATION_FOOTER_SIZE + AIV_ALLOCATION_HEADER_SIZE + blockDiffSize >= diffSize)) {
         // Append the part of the free memory to the right
         coalesceFreeToAllocatedBlock(pAivHeap, pExistingHeader, pCheckFree, diffSize);
 
@@ -549,8 +543,7 @@ DEFINE_HEAP_SET_ALLOC_SIZE(aivHeapSetAllocSize) {
     // 6) Unmapping the new allocation
     // 7) Free-ing the old allocation
 
-    DLOGS("Sets new allocation size %\" PRIu64 \" for handle 0x%016"
-                  PRIx64, newSize, existingAllocationHandle);
+    DLOGS("Sets new allocation size %\" PRIu64 \" for handle 0x%016" PRIx64, newSize, existingAllocationHandle);
 
     CHK_STATUS(aivHeapAlloc(pHeap, newSize, &newAllocationHandle));
     CHK(IS_VALID_ALLOCATION_HANDLE(newAllocationHandle), STATUS_NOT_ENOUGH_MEMORY);
@@ -635,11 +628,11 @@ VOID splitFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT64 siz
 #endif
 
         // we also need to fix-up the heap size due to larger allocation
-        ((PHeap)pAivHeap)->heapSize += GET_AIV_ALLOCATION_SIZE(pBlock) - alignedSize;
+        ((PHeap) pAivHeap)->heapSize += GET_AIV_ALLOCATION_SIZE(pBlock) - alignedSize;
     } else {
         // split the block
         // Prepare the new free block
-        pNewFree = (PAIV_ALLOCATION_HEADER) ((PBYTE) (pBlock + 1) + alignedSize + AIV_ALLOCATION_FOOTER_SIZE);
+        pNewFree = (PAIV_ALLOCATION_HEADER)((PBYTE)(pBlock + 1) + alignedSize + AIV_ALLOCATION_FOOTER_SIZE);
 
         // Set the header
         MEMCPY(pNewFree, &gAivHeader, AIV_ALLOCATION_HEADER_SIZE);
@@ -702,11 +695,10 @@ VOID splitAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT6
     PAIV_ALLOCATION_HEADER pNewFree = NULL;
     UINT64 alignedSize = HEAP_PACKED_SIZE(size);
 
-    CHECK_EXT(GET_AIV_ALLOCATION_SIZE(pBlock) >= size + MIN_FREE_BLOCK_SIZE,
-              "Invalid block size to split.");
+    CHECK_EXT(GET_AIV_ALLOCATION_SIZE(pBlock) >= size + MIN_FREE_BLOCK_SIZE, "Invalid block size to split.");
 
     // Prepare the new free block
-    pNewFree = (PAIV_ALLOCATION_HEADER) ((PBYTE) (pBlock + 1) + alignedSize + AIV_ALLOCATION_FOOTER_SIZE);
+    pNewFree = (PAIV_ALLOCATION_HEADER)((PBYTE)(pBlock + 1) + alignedSize + AIV_ALLOCATION_FOOTER_SIZE);
 
     // Set the header
     MEMCPY(pNewFree, &gAivHeader, AIV_ALLOCATION_HEADER_SIZE);
@@ -816,7 +808,7 @@ VOID coalesceFreeToAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pAll
         pNewFree->header.flags = ALLOCATION_FLAGS_FREE;
 
         // set the new footer for the allocated
-        MEMCPY((PBYTE)pNewFree - AIV_ALLOCATION_FOOTER_SIZE, &gAivFooter, AIV_ALLOCATION_FOOTER_SIZE);
+        MEMCPY((PBYTE) pNewFree - AIV_ALLOCATION_FOOTER_SIZE, &gAivFooter, AIV_ALLOCATION_FOOTER_SIZE);
 
         // Set the alloc sizes
         pAlloc->allocSize += diffSize;
@@ -835,10 +827,8 @@ VOID coalesceFreeToAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pAll
  */
 VOID addAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock)
 {
-    CHECK(pAivHeap != NULL &&
-                  pBlock != NULL && ((PALLOCATION_HEADER)pBlock)->size > 0 &&
-                  pBlock->pNext == NULL && pBlock->pPrev == NULL &&
-                  pBlock->header.flags == ALLOCATION_FLAGS_NONE);
+    CHECK(pAivHeap != NULL && pBlock != NULL && ((PALLOCATION_HEADER) pBlock)->size > 0 && pBlock->pNext == NULL && pBlock->pPrev == NULL &&
+          pBlock->header.flags == ALLOCATION_FLAGS_NONE);
 
     // Set as allocated
     pBlock->header.flags = ALLOCATION_FLAGS_ALLOC;
@@ -894,9 +884,7 @@ VOID removeChainedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock)
  */
 VOID addFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock)
 {
-    CHECK(pAivHeap != NULL &&
-          pBlock != NULL && GET_AIV_ALLOCATION_SIZE(pBlock) > 0 &&
-          pBlock->pNext == NULL && pBlock->pPrev == NULL &&
+    CHECK(pAivHeap != NULL && pBlock != NULL && GET_AIV_ALLOCATION_SIZE(pBlock) > 0 && pBlock->pNext == NULL && pBlock->pPrev == NULL &&
           pBlock->header.flags == ALLOCATION_FLAGS_NONE);
 
     // Find the spot and add the block first
@@ -960,9 +948,9 @@ VOID addFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock)
 BOOL checkOverlap(PAIV_ALLOCATION_HEADER pBlock1, PAIV_ALLOCATION_HEADER pBlock2)
 {
     if (pBlock1 < pBlock2) {
-        return (PBYTE)(pBlock1 + 1) + GET_AIV_ALLOCATION_SIZE(pBlock1) + AIV_ALLOCATION_FOOTER_SIZE > (PBYTE)pBlock2;
+        return (PBYTE)(pBlock1 + 1) + GET_AIV_ALLOCATION_SIZE(pBlock1) + AIV_ALLOCATION_FOOTER_SIZE > (PBYTE) pBlock2;
     } else {
-        return (PBYTE)(pBlock2 + 1) + GET_AIV_ALLOCATION_SIZE(pBlock2) + AIV_ALLOCATION_FOOTER_SIZE > (PBYTE)pBlock1;
+        return (PBYTE)(pBlock2 + 1) + GET_AIV_ALLOCATION_SIZE(pBlock2) + AIV_ALLOCATION_FOOTER_SIZE > (PBYTE) pBlock1;
     }
 }
 
@@ -982,7 +970,7 @@ PAIV_ALLOCATION_HEADER getLeftBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pB
 
     UINT64 blockSize = pFooter->size;
 
-    PAIV_ALLOCATION_HEADER pHeader = (PAIV_ALLOCATION_HEADER) ((PBYTE) pFooter - blockSize - AIV_ALLOCATION_HEADER_SIZE);
+    PAIV_ALLOCATION_HEADER pHeader = (PAIV_ALLOCATION_HEADER)((PBYTE) pFooter - blockSize - AIV_ALLOCATION_HEADER_SIZE);
 
     CHECK_EXT((PBYTE) pHeader >= (PBYTE) pAivHeap->pAllocation, "Heap corrupted or invalid allocation");
 
@@ -996,7 +984,7 @@ PAIV_ALLOCATION_HEADER getRightBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER p
 {
     // Assuming all the parameters have been sanitized as this is an internal functionality
     UINT64 blockSize = GET_AIV_ALLOCATION_SIZE(pBlock);
-    PAIV_ALLOCATION_HEADER pHeader = (PAIV_ALLOCATION_HEADER) ((PBYTE) (pBlock + 1) + blockSize + AIV_ALLOCATION_FOOTER_SIZE);
+    PAIV_ALLOCATION_HEADER pHeader = (PAIV_ALLOCATION_HEADER)((PBYTE)(pBlock + 1) + blockSize + AIV_ALLOCATION_FOOTER_SIZE);
     PBYTE pHeapLimit = (PBYTE) pAivHeap->pAllocation + ((PHeap) pAivHeap)->heapLimit;
 
     // Check for the boundary

@@ -6,7 +6,7 @@ Main internal include file
 
 #pragma once
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -15,7 +15,7 @@ extern "C" {
 ////////////////////////////////////////////////////
 #include "com/amazonaws/kinesis/video/client/Include.h"
 
-#define MAX_PIC_REENTRANCY_COUNT                    (1024 * 1024)
+#define MAX_PIC_REENTRANCY_COUNT (1024 * 1024)
 
 /**
  * Forward declarations
@@ -103,19 +103,19 @@ typedef STATUS (*KinesisVideoClientCallbackHookFunc)(UINT64);
 /**
  * Client structure current version
  */
-#define KINESIS_VIDEO_CLIENT_CURRENT_VERSION                   0
+#define KINESIS_VIDEO_CLIENT_CURRENT_VERSION 0
 
 /**
  * Kinesis Video client states definitions
  */
-#define CLIENT_STATE_NONE                               ((UINT64) 0)
-#define CLIENT_STATE_NEW                                ((UINT64) (1 << 0))
-#define CLIENT_STATE_AUTH                               ((UINT64) (1 << 1))
-#define CLIENT_STATE_PROVISION                          ((UINT64) (1 << 2))
-#define CLIENT_STATE_GET_TOKEN                          ((UINT64) (1 << 3))
-#define CLIENT_STATE_CREATE                             ((UINT64) (1 << 4))
-#define CLIENT_STATE_TAG_CLIENT                         ((UINT64) (1 << 5))
-#define CLIENT_STATE_READY                              ((UINT64) (1 << 6))
+#define CLIENT_STATE_NONE       ((UINT64) 0)
+#define CLIENT_STATE_NEW        ((UINT64)(1 << 0))
+#define CLIENT_STATE_AUTH       ((UINT64)(1 << 1))
+#define CLIENT_STATE_PROVISION  ((UINT64)(1 << 2))
+#define CLIENT_STATE_GET_TOKEN  ((UINT64)(1 << 3))
+#define CLIENT_STATE_CREATE     ((UINT64)(1 << 4))
+#define CLIENT_STATE_TAG_CLIENT ((UINT64)(1 << 5))
+#define CLIENT_STATE_READY      ((UINT64)(1 << 6))
 
 /**
  * Object identifier enum - these will serve as sentinel values to identify
@@ -133,119 +133,107 @@ typedef STATUS (*KinesisVideoClientCallbackHookFunc)(UINT64);
 /**
  * Macros to convert to and from handle
  */
-#define TO_CLIENT_HANDLE(p) ((CLIENT_HANDLE) (p))
-#define FROM_CLIENT_HANDLE(h) (IS_VALID_CLIENT_HANDLE(h) ? (PKinesisVideoClient) (h) : NULL)
+#define TO_CLIENT_HANDLE(p)   ((CLIENT_HANDLE)(p))
+#define FROM_CLIENT_HANDLE(h) (IS_VALID_CLIENT_HANDLE(h) ? (PKinesisVideoClient)(h) : NULL)
 
-#define TO_STREAM_HANDLE(p) (toStreamHandle(p))
+#define TO_STREAM_HANDLE(p)   (toStreamHandle(p))
 #define FROM_STREAM_HANDLE(h) (fromStreamHandle(h))
 
-#define TO_CUSTOM_DATA(p) ((UINT64) (p))
-#define STREAM_FROM_CUSTOM_DATA(h) ((PKinesisVideoStream) (h))
-#define CLIENT_FROM_CUSTOM_DATA(h) ((PKinesisVideoClient) (h))
+#define TO_CUSTOM_DATA(p)          ((UINT64)(p))
+#define STREAM_FROM_CUSTOM_DATA(h) ((PKinesisVideoStream)(h))
+#define CLIENT_FROM_CUSTOM_DATA(h) ((PKinesisVideoClient)(h))
 
-#define KINESIS_VIDEO_OBJECT_IDENTIFIER_FROM_CUSTOM_DATA(h) ((UINT32) *(PUINT32)(h))
+#define KINESIS_VIDEO_OBJECT_IDENTIFIER_FROM_CUSTOM_DATA(h) ((UINT32) * (PUINT32)(h))
 
 /**
  * Default heap flags
  */
-#define MEMORY_BASED_HEAP_FLAGS     FLAGS_USE_AIV_HEAP
-#define FILE_BASED_HEAP_FLAGS       (FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_FILE_HEAP)
+#define MEMORY_BASED_HEAP_FLAGS FLAGS_USE_AIV_HEAP
+#define FILE_BASED_HEAP_FLAGS   (FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_FILE_HEAP)
 
 /**
  * Checks whether the dropped connection can be due to host issues
  */
-#define CONNECTION_DROPPED_HOST_ALIVE(r)        ((r) == SERVICE_CALL_RESULT_NOT_SET || \
-                                                (r) == SERVICE_CALL_RESULT_OK || \
-                                                (r) == SERVICE_CALL_CLIENT_LIMIT || \
-                                                (r) == SERVICE_CALL_DEVICE_LIMIT || \
-                                                (r) == SERVICE_CALL_STREAM_LIMIT || \
-                                                (r) == SERVICE_CALL_RESULT_STREAM_READ_ERROR || \
-                                                (r) == SERVICE_CALL_RESULT_CONNECTION_DURATION_REACHED || \
-                                                (r) == SERVICE_CALL_RESULT_STREAM_NOT_ACTIVE || \
-                                                (r) == SERVICE_CALL_RESULT_KMS_KEY_ACCESS_DENIED || \
-                                                (r) == SERVICE_CALL_RESULT_KMS_KEY_DISABLED || \
-                                                (r) == SERVICE_CALL_RESULT_KMS_KEY_VALIDATION_ERROR || \
-                                                (r) == SERVICE_CALL_RESULT_KMS_KEY_UNAVAILABLE || \
-                                                (r) == SERVICE_CALL_RESULT_KMS_KEY_INVALID_USAGE || \
-                                                (r) == SERVICE_CALL_RESULT_KMS_KEY_INVALID_STATE || \
-                                                (r) == SERVICE_CALL_RESULT_KMS_KEY_NOT_FOUND || \
-                                                (r) == SERVICE_CALL_RESULT_STREAM_DELETED || \
-                                                (r) == SERVICE_CALL_RESULT_ACK_INTERNAL_ERROR || \
-                                                (r) == SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR || \
-                                                (r) == SERVICE_CALL_NOT_AUTHORIZED)
+#define CONNECTION_DROPPED_HOST_ALIVE(r)                                                                                                             \
+    ((r) == SERVICE_CALL_RESULT_NOT_SET || (r) == SERVICE_CALL_RESULT_OK || (r) == SERVICE_CALL_CLIENT_LIMIT || (r) == SERVICE_CALL_DEVICE_LIMIT ||  \
+     (r) == SERVICE_CALL_STREAM_LIMIT || (r) == SERVICE_CALL_RESULT_STREAM_READ_ERROR || (r) == SERVICE_CALL_RESULT_CONNECTION_DURATION_REACHED ||   \
+     (r) == SERVICE_CALL_RESULT_STREAM_NOT_ACTIVE || (r) == SERVICE_CALL_RESULT_KMS_KEY_ACCESS_DENIED ||                                             \
+     (r) == SERVICE_CALL_RESULT_KMS_KEY_DISABLED || (r) == SERVICE_CALL_RESULT_KMS_KEY_VALIDATION_ERROR ||                                           \
+     (r) == SERVICE_CALL_RESULT_KMS_KEY_UNAVAILABLE || (r) == SERVICE_CALL_RESULT_KMS_KEY_INVALID_USAGE ||                                           \
+     (r) == SERVICE_CALL_RESULT_KMS_KEY_INVALID_STATE || (r) == SERVICE_CALL_RESULT_KMS_KEY_NOT_FOUND ||                                             \
+     (r) == SERVICE_CALL_RESULT_STREAM_DELETED || (r) == SERVICE_CALL_RESULT_ACK_INTERNAL_ERROR ||                                                   \
+     (r) == SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR || (r) == SERVICE_CALL_NOT_AUTHORIZED)
 
 /**
  * Returns whether the service call result is a timeout
  */
-#define SERVICE_CALL_RESULT_IS_A_TIMEOUT(r)     ((r) == SERVICE_CALL_REQUEST_TIMEOUT || \
-                                                (r) == SERVICE_CALL_GATEWAY_TIMEOUT || \
-                                                (r) == SERVICE_CALL_NETWORK_READ_TIMEOUT || \
-                                                (r) == SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT)
+#define SERVICE_CALL_RESULT_IS_A_TIMEOUT(r)                                                                                                          \
+    ((r) == SERVICE_CALL_REQUEST_TIMEOUT || (r) == SERVICE_CALL_GATEWAY_TIMEOUT || (r) == SERVICE_CALL_NETWORK_READ_TIMEOUT ||                       \
+     (r) == SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT)
 
 /**
  * The Realtime put media API name for GetDataEndpoint API call
  */
-#define GET_DATA_ENDPOINT_REAL_TIME_PUT_API_NAME            "PUT_MEDIA"
+#define GET_DATA_ENDPOINT_REAL_TIME_PUT_API_NAME "PUT_MEDIA"
 
 /**
  * Measuring the transfer rate after this time elapses to avoid precision issues with burst reads into the
  * networking clients transfer buffer.
  */
-#define TRANSFER_RATE_MEASURING_INTERVAL_EPSILON               (DOUBLE) 0.2
+#define TRANSFER_RATE_MEASURING_INTERVAL_EPSILON (DOUBLE) 0.2
 
 /**
  * Multiplier factor used to compensate for the fragmentation
  */
-#define FRAME_ALLOC_FRAGMENTATION_FACTOR                       (DOUBLE) 1.8
+#define FRAME_ALLOC_FRAGMENTATION_FACTOR (DOUBLE) 1.8
 
 /**
  * Definition that controls whether we enabled the persist ACK awaiting for the last cluster or not.
  * This needs to be changed to TRUE when the backend processing is enabled or the value should be
  * removed entirely from the WAIT_FOR_PERSISTED_ACK macro.
  */
-#define AWAIT_FOR_PERSISTED_ACK                 TRUE
+#define AWAIT_FOR_PERSISTED_ACK TRUE
 
 /**
  * Macro that checks whether to wait for the persistent ACK or not
  */
-#define WAIT_FOR_PERSISTED_ACK(x)               (AWAIT_FOR_PERSISTED_ACK && \
-                                                    (x)->streamInfo.streamCaps.fragmentAcks && \
-                                                    (x)->streamInfo.retention != RETENTION_PERIOD_SENTINEL)
+#define WAIT_FOR_PERSISTED_ACK(x)                                                                                                                    \
+    (AWAIT_FOR_PERSISTED_ACK && (x)->streamInfo.streamCaps.fragmentAcks && (x)->streamInfo.retention != RETENTION_PERIOD_SENTINEL)
 
 /**
  * Controls whether we enable auth info expiration randomization
  */
-#define ENABLE_AUTH_INFO_EXPIRATION_RANDOMIZATION       TRUE
+#define ENABLE_AUTH_INFO_EXPIRATION_RANDOMIZATION TRUE
 
 /**
  * The threshold beyond which we won't do any auth info expiration randomization
  */
-#define AUTH_INFO_EXPIRATION_RANDOMIZATION_DURATION_THRESHOLD       (5 * HUNDREDS_OF_NANOS_IN_A_MINUTE)
+#define AUTH_INFO_EXPIRATION_RANDOMIZATION_DURATION_THRESHOLD (5 * HUNDREDS_OF_NANOS_IN_A_MINUTE)
 
 /**
  * Max randomization value to be added
  */
-#define MAX_AUTH_INFO_EXPIRATION_RANDOMIZATION                      (3 * HUNDREDS_OF_NANOS_IN_A_MINUTE)
+#define MAX_AUTH_INFO_EXPIRATION_RANDOMIZATION (3 * HUNDREDS_OF_NANOS_IN_A_MINUTE)
 
 /**
  * Ratio of the expiration to use for jitter
  */
-#define AUTH_INFO_EXPIRATION_JITTER_RATIO                           0.1L
+#define AUTH_INFO_EXPIRATION_JITTER_RATIO 0.1L
 
 /**
  * How often the callback is invoked to check all video streams for past max timeout
  */
-#define INTERMITTENT_PRODUCER_PERIOD_DEFAULT                        (5000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
+#define INTERMITTENT_PRODUCER_PERIOD_DEFAULT (5000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
 
 /**
  * Initial time to delay before firing first callback for automatic intermittent producer
  */
-#define INTERMITTENT_PRODUCER_TIMER_START_DELAY                     (3 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+#define INTERMITTENT_PRODUCER_TIMER_START_DELAY (3 * HUNDREDS_OF_NANOS_IN_A_SECOND)
 
 /**
  * Time after which if no frames have been received we submit EoFR to close out the session
  */
-#define INTERMITTENT_PRODUCER_MAX_TIMEOUT                           (20LL * HUNDREDS_OF_NANOS_IN_A_SECOND)
+#define INTERMITTENT_PRODUCER_MAX_TIMEOUT (20LL * HUNDREDS_OF_NANOS_IN_A_SECOND)
 
 /**
  * Kinesis Video client internal structure
@@ -477,7 +465,7 @@ STATUS executeReadyClientState(UINT64, UINT64);
 
 STATUS checkIntermittentProducerCallback(UINT32, UINT64, UINT64);
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif
-#endif  /* __KINESIS_VIDEO_CLIENT_INCLUDE_I__ */
+#endif /* __KINESIS_VIDEO_CLIENT_INCLUDE_I__ */

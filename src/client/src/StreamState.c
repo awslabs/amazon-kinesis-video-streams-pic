@@ -9,16 +9,29 @@
  * Static definitions of the states
  */
 StateMachineState STREAM_STATE_MACHINE_STATES[] = {
-        {STREAM_STATE_NEW, STREAM_STATE_NONE | STREAM_STATE_NEW | STREAM_STATE_STOPPED, fromNewStreamState, executeNewStreamState, INFINITE_RETRY_COUNT_SENTINEL, STATUS_INVALID_STREAM_READY_STATE},
-        {STREAM_STATE_DESCRIBE, STREAM_STATE_NEW | STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE, fromDescribeStreamState, executeDescribeStreamState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_DESCRIBE_STREAM_CALL_FAILED},
-        {STREAM_STATE_CREATE, STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE, fromCreateStreamState, executeCreateStreamState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_CREATE_STREAM_CALL_FAILED},
-        {STREAM_STATE_TAG_STREAM, STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE | STREAM_STATE_TAG_STREAM, fromTagStreamState, executeTagStreamState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_TAG_STREAM_CALL_FAILED},
-        {STREAM_STATE_GET_ENDPOINT, STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE | STREAM_STATE_GET_ENDPOINT | STREAM_STATE_TAG_STREAM, fromGetEndpointStreamState, executeGetEndpointStreamState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_GET_STREAMING_ENDPOINT_CALL_FAILED},
-        {STREAM_STATE_GET_TOKEN, STREAM_STATE_STOPPED | STREAM_STATE_GET_ENDPOINT | STREAM_STATE_GET_TOKEN, fromGetTokenStreamState, executeGetTokenStreamState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_GET_STREAMING_TOKEN_CALL_FAILED},
-        {STREAM_STATE_READY, STREAM_STATE_STOPPED | STREAM_STATE_GET_TOKEN | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING, fromReadyStreamState, executeReadyStreamState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_STREAM_READY_CALLBACK_FAILED},
-        {STREAM_STATE_PUT_STREAM, STREAM_STATE_STOPPED | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM, fromPutStreamState, executePutStreamState, INFINITE_RETRY_COUNT_SENTINEL, STATUS_PUT_STREAM_CALL_FAILED},
-        {STREAM_STATE_STREAMING, STREAM_STATE_STOPPED | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING, fromStreamingStreamState, executeStreamingStreamState, INFINITE_RETRY_COUNT_SENTINEL, STATUS_PUT_STREAM_CALL_FAILED},
-        {STREAM_STATE_STOPPED, STREAM_STATE_STOPPED | STREAM_STATE_CREATE | STREAM_STATE_DESCRIBE | STREAM_STATE_TAG_STREAM | STREAM_STATE_GET_ENDPOINT | STREAM_STATE_GET_TOKEN | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING, fromStoppedStreamState, executeStoppedStreamState, INFINITE_RETRY_COUNT_SENTINEL, STATUS_PUT_STREAM_CALL_FAILED},
+    {STREAM_STATE_NEW, STREAM_STATE_NONE | STREAM_STATE_NEW | STREAM_STATE_STOPPED, fromNewStreamState, executeNewStreamState,
+     INFINITE_RETRY_COUNT_SENTINEL, STATUS_INVALID_STREAM_READY_STATE},
+    {STREAM_STATE_DESCRIBE, STREAM_STATE_NEW | STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE, fromDescribeStreamState, executeDescribeStreamState,
+     SERVICE_CALL_MAX_RETRY_COUNT, STATUS_DESCRIBE_STREAM_CALL_FAILED},
+    {STREAM_STATE_CREATE, STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE, fromCreateStreamState, executeCreateStreamState,
+     SERVICE_CALL_MAX_RETRY_COUNT, STATUS_CREATE_STREAM_CALL_FAILED},
+    {STREAM_STATE_TAG_STREAM, STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE | STREAM_STATE_TAG_STREAM, fromTagStreamState,
+     executeTagStreamState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_TAG_STREAM_CALL_FAILED},
+    {STREAM_STATE_GET_ENDPOINT,
+     STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE | STREAM_STATE_GET_ENDPOINT | STREAM_STATE_TAG_STREAM,
+     fromGetEndpointStreamState, executeGetEndpointStreamState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_GET_STREAMING_ENDPOINT_CALL_FAILED},
+    {STREAM_STATE_GET_TOKEN, STREAM_STATE_STOPPED | STREAM_STATE_GET_ENDPOINT | STREAM_STATE_GET_TOKEN, fromGetTokenStreamState,
+     executeGetTokenStreamState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_GET_STREAMING_TOKEN_CALL_FAILED},
+    {STREAM_STATE_READY, STREAM_STATE_STOPPED | STREAM_STATE_GET_TOKEN | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING,
+     fromReadyStreamState, executeReadyStreamState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_STREAM_READY_CALLBACK_FAILED},
+    {STREAM_STATE_PUT_STREAM, STREAM_STATE_STOPPED | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM, fromPutStreamState, executePutStreamState,
+     INFINITE_RETRY_COUNT_SENTINEL, STATUS_PUT_STREAM_CALL_FAILED},
+    {STREAM_STATE_STREAMING, STREAM_STATE_STOPPED | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING, fromStreamingStreamState,
+     executeStreamingStreamState, INFINITE_RETRY_COUNT_SENTINEL, STATUS_PUT_STREAM_CALL_FAILED},
+    {STREAM_STATE_STOPPED,
+     STREAM_STATE_STOPPED | STREAM_STATE_CREATE | STREAM_STATE_DESCRIBE | STREAM_STATE_TAG_STREAM | STREAM_STATE_GET_ENDPOINT |
+         STREAM_STATE_GET_TOKEN | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING,
+     fromStoppedStreamState, executeStoppedStreamState, INFINITE_RETRY_COUNT_SENTINEL, STATUS_PUT_STREAM_CALL_FAILED},
 };
 
 UINT32 STREAM_STATE_MACHINE_STATE_COUNT = SIZEOF(STREAM_STATE_MACHINE_STATES) / SIZEOF(StateMachineState);
@@ -92,9 +105,8 @@ STATUS executeDescribeStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.result = SERVICE_CALL_RESULT_NOT_SET;
 
     // Call the describe
-    CHK_STATUS(pKinesisVideoClient->clientCallbacks.describeStreamFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                               pKinesisVideoStream->streamInfo.name,
-                                                               &pKinesisVideoStream->base.serviceCallContext));
+    CHK_STATUS(pKinesisVideoClient->clientCallbacks.describeStreamFn(
+        pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->streamInfo.name, &pKinesisVideoStream->base.serviceCallContext));
 
 CleanUp:
 
@@ -252,7 +264,8 @@ CleanUp:
     return retStatus;
 }
 
-STATUS fromPutStreamState(UINT64 customData, PUINT64 pState) {
+STATUS fromPutStreamState(UINT64 customData, PUINT64 pState)
+{
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -284,12 +297,10 @@ STATUS fromPutStreamState(UINT64 customData, PUINT64 pState) {
                     // If there is still any active upload handles, then when they reach end-of-stream they will probe the
                     // next ready handle, so there is no need to do data available call in this case.
                     pOngoingUploadHandle = getStreamUploadInfoWithState(pKinesisVideoStream,
-                                                                        UPLOAD_HANDLE_STATE_STREAMING |
-                                                                        UPLOAD_HANDLE_STATE_AWAITING_ACK |
-                                                                        UPLOAD_HANDLE_STATE_TERMINATING |
-                                                                        UPLOAD_HANDLE_STATE_ACK_RECEIVED);
+                                                                        UPLOAD_HANDLE_STATE_STREAMING | UPLOAD_HANDLE_STATE_AWAITING_ACK |
+                                                                            UPLOAD_HANDLE_STATE_TERMINATING | UPLOAD_HANDLE_STATE_ACK_RECEIVED);
 
-                    if (pOngoingUploadHandle == NULL){
+                    if (pOngoingUploadHandle == NULL) {
                         // ping the first ready upload handle. (There can be more than one ready upload handle due to
                         // token rotation)
                         pUploadHandleInfo = getStreamUploadInfoWithState(pKinesisVideoStream, UPLOAD_HANDLE_STATE_READY);
@@ -299,12 +310,8 @@ STATUS fromPutStreamState(UINT64 customData, PUINT64 pState) {
 
                         // Call the notification callback
                         CHK_STATUS(pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.streamDataAvailableFn(
-                                pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.customData,
-                                TO_STREAM_HANDLE(pKinesisVideoStream),
-                                pKinesisVideoStream->streamInfo.name,
-                                pUploadHandleInfo->handle,
-                                duration,
-                                viewByteSize));
+                            pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.customData, TO_STREAM_HANDLE(pKinesisVideoStream),
+                            pKinesisVideoStream->streamInfo.name, pUploadHandleInfo->handle, duration, viewByteSize));
                     }
                 }
 
@@ -376,7 +383,7 @@ STATUS fromStoppedStreamState(UINT64 customData, PUINT64 pState)
     retStatus = serviceCallResultCheck(pKinesisVideoStream->base.result);
 
     // Terminate in case of no-recovery
-    CHK (pKinesisVideoStream->streamInfo.streamCaps.recoverOnError, retStatus);
+    CHK(pKinesisVideoStream->streamInfo.streamCaps.recoverOnError, retStatus);
 
     // Check the result
     switch (retStatus) {
@@ -489,9 +496,7 @@ STATUS executeGetEndpointStreamState(UINT64 customData, UINT64 time)
 
     // Call API
     CHK_STATUS(pKinesisVideoClient->clientCallbacks.getStreamingEndpointFn(
-        pKinesisVideoClient->clientCallbacks.customData,
-        pKinesisVideoStream->streamInfo.name,
-        (PCHAR) GET_DATA_ENDPOINT_REAL_TIME_PUT_API_NAME,
+        pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->streamInfo.name, (PCHAR) GET_DATA_ENDPOINT_REAL_TIME_PUT_API_NAME,
         &pKinesisVideoStream->base.serviceCallContext));
 
 CleanUp:
@@ -524,11 +529,9 @@ STATUS executeGetTokenStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.result = SERVICE_CALL_RESULT_NOT_SET;
 
     // Call API
-    CHK_STATUS(pKinesisVideoClient->clientCallbacks.getStreamingTokenFn(
-        pKinesisVideoClient->clientCallbacks.customData,
-        pKinesisVideoStream->streamInfo.name,
-        STREAM_ACCESS_MODE_READ,
-        &pKinesisVideoStream->base.serviceCallContext));
+    CHK_STATUS(pKinesisVideoClient->clientCallbacks.getStreamingTokenFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                                        pKinesisVideoStream->streamInfo.name, STREAM_ACCESS_MODE_READ,
+                                                                        &pKinesisVideoStream->base.serviceCallContext));
 
 CleanUp:
 
@@ -561,12 +564,8 @@ STATUS executeCreateStreamState(UINT64 customData, UINT64 time)
 
     // Call API
     CHK_STATUS(pKinesisVideoClient->clientCallbacks.createStreamFn(
-        pKinesisVideoClient->clientCallbacks.customData,
-        pKinesisVideoClient->deviceInfo.name,
-        pKinesisVideoStream->streamInfo.name,
-        pKinesisVideoStream->streamInfo.streamCaps.contentType,
-        pKinesisVideoStream->streamInfo.kmsKeyId,
-        pKinesisVideoStream->streamInfo.retention,
+        pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->deviceInfo.name, pKinesisVideoStream->streamInfo.name,
+        pKinesisVideoStream->streamInfo.streamCaps.contentType, pKinesisVideoStream->streamInfo.kmsKeyId, pKinesisVideoStream->streamInfo.retention,
         &pKinesisVideoStream->base.serviceCallContext));
 
 CleanUp:
@@ -600,12 +599,9 @@ STATUS executeTagStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.result = SERVICE_CALL_RESULT_NOT_SET;
 
     // Call API
-    CHK_STATUS(pKinesisVideoClient->clientCallbacks.tagResourceFn(
-        pKinesisVideoClient->clientCallbacks.customData,
-        pKinesisVideoStream->base.arn,
-        pKinesisVideoStream->streamInfo.tagCount,
-        pKinesisVideoStream->streamInfo.tags,
-        &pKinesisVideoStream->base.serviceCallContext));
+    CHK_STATUS(pKinesisVideoClient->clientCallbacks.tagResourceFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.arn,
+                                                                  pKinesisVideoStream->streamInfo.tagCount, pKinesisVideoStream->streamInfo.tags,
+                                                                  &pKinesisVideoStream->base.serviceCallContext));
 
 CleanUp:
 
@@ -629,22 +625,18 @@ STATUS executeReadyStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->streamReady = TRUE;
 
     // Pulse the ready condition variable
-    CHK_STATUS(pKinesisVideoClient->clientCallbacks.broadcastConditionVariableFn(
-            pKinesisVideoClient->clientCallbacks.customData,
-            pKinesisVideoStream->base.ready));
+    CHK_STATUS(pKinesisVideoClient->clientCallbacks.broadcastConditionVariableFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                                                 pKinesisVideoStream->base.ready));
 
     // Call the ready callback
-    CHK_STATUS(pKinesisVideoClient->clientCallbacks.streamReadyFn(
-        pKinesisVideoClient->clientCallbacks.customData,
-        TO_STREAM_HANDLE(pKinesisVideoStream)));
+    CHK_STATUS(
+        pKinesisVideoClient->clientCallbacks.streamReadyFn(pKinesisVideoClient->clientCallbacks.customData, TO_STREAM_HANDLE(pKinesisVideoStream)));
 
     // Get the duration and the size. If there is stuff to send then also trigger PutStream
     CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
 
     // Check if we need to also call put stream API
-    if (pKinesisVideoStream->streamState == STREAM_STATE_READY ||
-        pKinesisVideoStream->streamState == STREAM_STATE_STOPPED ||
-        viewByteSize != 0) {
+    if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0) {
         // Step the state machine to automatically invoke the PutStream API
         CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
     }
@@ -683,14 +675,10 @@ STATUS executePutStreamState(UINT64 customData, UINT64 time)
 
         // Call API
         CHK_STATUS(pKinesisVideoClient->clientCallbacks.putStreamFn(
-            pKinesisVideoClient->clientCallbacks.customData,
-            pKinesisVideoStream->streamInfo.name,
-            (PCHAR) MKV_CONTAINER_TYPE_STRING,
+            pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->streamInfo.name, (PCHAR) MKV_CONTAINER_TYPE_STRING,
             pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData),
-            pKinesisVideoStream->streamInfo.streamCaps.absoluteFragmentTimes,
-            pKinesisVideoStream->streamInfo.streamCaps.fragmentAcks,
-            pKinesisVideoStream->streamingEndpoint,
-            &pKinesisVideoStream->base.serviceCallContext));
+            pKinesisVideoStream->streamInfo.streamCaps.absoluteFragmentTimes, pKinesisVideoStream->streamInfo.streamCaps.fragmentAcks,
+            pKinesisVideoStream->streamingEndpoint, &pKinesisVideoStream->base.serviceCallContext));
 
         pKinesisVideoStream->streamState = STREAM_STATE_PUT_STREAM;
     }

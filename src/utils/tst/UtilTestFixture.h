@@ -11,19 +11,19 @@ extern MUTEX gUtilityMemMutex;
 
 INLINE PVOID instrumentedUtilMemAlloc(SIZE_T size)
 {
-    DLOGS("Test malloc %llu bytes", (UINT64)size);
+    DLOGS("Test malloc %llu bytes", (UINT64) size);
     MUTEX_LOCK(gUtilityMemMutex);
     gTotalUtilsMemoryUsage += size;
     MUTEX_UNLOCK(gUtilityMemMutex);
-    PBYTE pAlloc = (PBYTE)malloc(size + SIZEOF(SIZE_T));
-    *(PSIZE_T)pAlloc = size;
+    PBYTE pAlloc = (PBYTE) malloc(size + SIZEOF(SIZE_T));
+    *(PSIZE_T) pAlloc = size;
 
     return pAlloc + SIZEOF(SIZE_T);
 }
 
 INLINE PVOID instrumentedUtilMemAlignAlloc(SIZE_T size, SIZE_T alignment)
 {
-    DLOGS("Test align malloc %llu bytes", (UINT64)size);
+    DLOGS("Test align malloc %llu bytes", (UINT64) size);
     // Just do malloc
     UNUSED_PARAM(alignment);
     return instrumentedUtilMemAlloc(size);
@@ -32,23 +32,23 @@ INLINE PVOID instrumentedUtilMemAlignAlloc(SIZE_T size, SIZE_T alignment)
 INLINE PVOID instrumentedUtilMemCalloc(SIZE_T num, SIZE_T size)
 {
     SIZE_T overallSize = num * size;
-    DLOGS("Test calloc %llu bytes", (UINT64)overallSize);
+    DLOGS("Test calloc %llu bytes", (UINT64) overallSize);
 
     MUTEX_LOCK(gUtilityMemMutex);
     gTotalUtilsMemoryUsage += overallSize;
     MUTEX_UNLOCK(gUtilityMemMutex);
 
-    PBYTE pAlloc = (PBYTE)calloc(1, overallSize + SIZEOF(SIZE_T));
-    *(PSIZE_T)pAlloc = overallSize;
+    PBYTE pAlloc = (PBYTE) calloc(1, overallSize + SIZEOF(SIZE_T));
+    *(PSIZE_T) pAlloc = overallSize;
 
     return pAlloc + SIZEOF(SIZE_T);
 }
 
 INLINE VOID instrumentedUtilMemFree(PVOID ptr)
 {
-    PBYTE pAlloc = (PBYTE)ptr - SIZEOF(SIZE_T);
-    SIZE_T size = *(PSIZE_T)pAlloc;
-    DLOGS("Test free %llu bytes", (UINT64)size);
+    PBYTE pAlloc = (PBYTE) ptr - SIZEOF(SIZE_T);
+    SIZE_T size = *(PSIZE_T) pAlloc;
+    DLOGS("Test free %llu bytes", (UINT64) size);
 
     MUTEX_LOCK(gUtilityMemMutex);
     gTotalUtilsMemoryUsage -= size;
@@ -66,7 +66,7 @@ extern memCalloc globalMemCalloc;
 extern memFree globalMemFree;
 
 class UtilTestBase : public ::testing::Test {
-public:
+  public:
     UtilTestBase(BOOL setAllocators = TRUE)
     {
         // Store the function pointers
@@ -106,7 +106,7 @@ public:
     virtual void TearDown()
     {
         DLOGI("\nTearing down test: %s\n", GetTestName());
-        
+
         // Validate the allocations cleanup
         DLOGI("Final remaining allocation size is %llu\n", gTotalUtilsMemoryUsage);
 
@@ -123,11 +123,10 @@ public:
 
     PCHAR GetTestName()
     {
-        return (PCHAR) ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name();
+        return (PCHAR)::testing::UnitTest::GetInstance()->current_test_info()->test_case_name();
     };
 
-protected:
-
+  protected:
     // Stored function pointers to reset on exit
     memAlloc storedMemAlloc;
     memAlignAlloc storedMemAlignAlloc;

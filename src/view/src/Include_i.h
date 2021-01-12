@@ -6,7 +6,7 @@ Main internal include file
 
 #pragma once
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -72,7 +72,7 @@ typedef struct {
 ////////////////////////////////////////////////////
 PViewItem findViewItemWithTimestamp(PRollingContentView, PViewItem, PViewItem, UINT64, BOOL);
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif
-#endif  /* __CONTENT_VIEW_INCLUDE_I__ */
+#endif /* __CONTENT_VIEW_INCLUDE_I__ */

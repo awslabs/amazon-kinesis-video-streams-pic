@@ -50,9 +50,7 @@ STATUS heapInitialize(UINT64 heapLimit, UINT32 spillRatio, UINT32 behaviorFlags,
     CHK(spillRatio <= 100, STATUS_INVALID_ARG);
 
     // Flags should have either system or AIV heap specified but not both at the same time
-    CHK(heapTypeFlags != HEAP_FLAGS_NONE &&
-                heapTypeFlags != (FLAGS_USE_AIV_HEAP | FLAGS_USE_SYSTEM_HEAP),
-        STATUS_HEAP_FLAGS_ERROR);
+    CHK(heapTypeFlags != HEAP_FLAGS_NONE && heapTypeFlags != (FLAGS_USE_AIV_HEAP | FLAGS_USE_SYSTEM_HEAP), STATUS_HEAP_FLAGS_ERROR);
 
     DLOGI("Initializing native heap with limit size %" PRIu64 ", spill ratio %u%% and flags 0x%08x", heapLimit, spillRatio, behaviorFlags);
 
@@ -88,7 +86,7 @@ STATUS heapInitialize(UINT64 heapLimit, UINT32 spillRatio, UINT32 behaviorFlags,
     CHK(pHeap != NULL, STATUS_INTERNAL_ERROR);
 
     // Initialize the heap
-    CHK_STATUS(((PBaseHeap)pHeap)->heapInitializeFn(pHeap, heapLimit));
+    CHK_STATUS(((PBaseHeap) pHeap)->heapInitializeFn(pHeap, heapLimit));
 
     DLOGI("Heap is initialized OK");
 

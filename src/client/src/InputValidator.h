@@ -1,6 +1,6 @@
 /*******************************************
-* Input validator include file
-*******************************************/
+ * Input validator include file
+ *******************************************/
 #ifndef __INPUT_VALIDATOR_H__
 #define __INPUT_VALIDATOR_H__
 
