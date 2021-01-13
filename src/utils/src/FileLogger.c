@@ -20,14 +20,16 @@ STATUS flushLogToFile()
 
     if (gFileLogger->currentFileIndex >= gFileLogger->maxFileCount) {
         fileIndexToRemove = gFileLogger->currentFileIndex - gFileLogger->maxFileCount;
-        filePathLen = SNPRINTF(filePath, ARRAY_SIZE(filePath), "%s%s%s.%" PRIu64, gFileLogger->logFileDir, FPATHSEPARATOR_STR, FILE_LOGGER_LOG_FILE_NAME, fileIndexToRemove);
+        filePathLen = SNPRINTF(filePath, ARRAY_SIZE(filePath), "%s%s%s.%" PRIu64, gFileLogger->logFileDir, FPATHSEPARATOR_STR,
+                               FILE_LOGGER_LOG_FILE_NAME, fileIndexToRemove);
         CHK(filePathLen <= MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
         if (0 != FREMOVE(filePath)) {
             PRINTF("failed to remove file %s\n", filePath);
         }
     }
 
-    filePathLen = SNPRINTF(filePath, ARRAY_SIZE(filePath), "%s%s%s.%" PRIu64, gFileLogger->logFileDir, FPATHSEPARATOR_STR, FILE_LOGGER_LOG_FILE_NAME, gFileLogger->currentFileIndex);
+    filePathLen = SNPRINTF(filePath, ARRAY_SIZE(filePath), "%s%s%s.%" PRIu64, gFileLogger->logFileDir, FPATHSEPARATOR_STR, FILE_LOGGER_LOG_FILE_NAME,
+                           gFileLogger->currentFileIndex);
     CHK(filePathLen <= MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
 
     // we need to set null terminator properly because flush is triggered after a vsnprintf.
@@ -76,13 +78,12 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
 
 #if defined _WIN32 || defined _WIN64
 
-            // On mingw, vsnprintf has a bug where if the string length is greater than the buffer
+        // On mingw, vsnprintf has a bug where if the string length is greater than the buffer
         // size it would just return -1.
 
         va_start(valist, fmt);
         // _vscprintf give the resulting string length
-        offset = _vscprintf(logFmtString,
-                            valist);
+        offset = _vscprintf(logFmtString, valist);
         va_end(valist);
 
         if (gFileLogger->currentOffset + offset >= gFileLogger->stringBufferLen) {
@@ -95,10 +96,8 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
         // even if flushLogToFile failed, currentOffset will still be reset to 0
         // _vsnprintf truncates the string if it is larger than buffer
         va_start(valist, fmt);
-        offset = _vsnprintf(gFileLogger->stringBuffer + gFileLogger->currentOffset,
-                            gFileLogger->stringBufferLen - gFileLogger->currentOffset,
-                            logFmtString,
-                            valist);
+        offset = _vsnprintf(gFileLogger->stringBuffer + gFileLogger->currentOffset, gFileLogger->stringBufferLen - gFileLogger->currentOffset,
+                            logFmtString, valist);
         va_end(valist);
 
         // truncation happened
@@ -112,10 +111,8 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
         }
 #else
         va_start(valist, fmt);
-        offset = vsnprintf(gFileLogger->stringBuffer + gFileLogger->currentOffset,
-                           gFileLogger->stringBufferLen - gFileLogger->currentOffset,
-                           logFmtString,
-                           valist);
+        offset = vsnprintf(gFileLogger->stringBuffer + gFileLogger->currentOffset, gFileLogger->stringBufferLen - gFileLogger->currentOffset,
+                           logFmtString, valist);
         va_end(valist);
 
         // If vsnprintf fills the stringBuffer then flush first and then vsnprintf again into the stringBuffer.
@@ -128,10 +125,8 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
 
             // even if flushLogToFile failed, currentOffset will still be reset to 0
             va_start(valist, fmt);
-            offset = vsnprintf(gFileLogger->stringBuffer + gFileLogger->currentOffset,
-                               gFileLogger->stringBufferLen - gFileLogger->currentOffset,
-                               logFmtString,
-                               valist);
+            offset = vsnprintf(gFileLogger->stringBuffer + gFileLogger->currentOffset, gFileLogger->stringBufferLen - gFileLogger->currentOffset,
+                               logFmtString, valist);
             va_end(valist);
 
             // if buffer is not big enough, vsnprintf returns number of characters (excluding the terminating null byte)
@@ -156,14 +151,14 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
     }
 }
 
-STATUS createFileLogger(UINT64 maxStringBufferLen, UINT64 maxLogFileCount, PCHAR logFileDir, BOOL printLog, BOOL setGlobalLogFn, logPrintFunc *pFilePrintFn)
+STATUS createFileLogger(UINT64 maxStringBufferLen, UINT64 maxLogFileCount, PCHAR logFileDir, BOOL printLog, BOOL setGlobalLogFn,
+                        logPrintFunc* pFilePrintFn)
 {
     STATUS retStatus = STATUS_SUCCESS;
     CHK(gFileLogger == NULL, retStatus); // dont allocate again if already allocated
-    CHK(maxStringBufferLen <= MAX_FILE_LOGGER_STRING_BUFFER_SIZE &&
-        maxStringBufferLen >= MIN_FILE_LOGGER_STRING_BUFFER_SIZE &&
-        maxLogFileCount <= MAX_FILE_LOGGER_LOG_FILE_COUNT &&
-        maxLogFileCount > 0, STATUS_INVALID_ARG);
+    CHK(maxStringBufferLen <= MAX_FILE_LOGGER_STRING_BUFFER_SIZE && maxStringBufferLen >= MIN_FILE_LOGGER_STRING_BUFFER_SIZE &&
+            maxLogFileCount <= MAX_FILE_LOGGER_LOG_FILE_COUNT && maxLogFileCount > 0,
+        STATUS_INVALID_ARG);
     CHK(STRNLEN(logFileDir, MAX_PATH_LEN + 1) <= MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
     BOOL fileFound = FALSE;
     CHAR fileIndexBuffer[KVS_COMMON_FILE_INDEX_BUFFER_SIZE];
@@ -173,7 +168,7 @@ STATUS createFileLogger(UINT64 maxStringBufferLen, UINT64 maxLogFileCount, PCHAR
     gFileLogger = (PFileLogger) MEMALLOC(SIZEOF(FileLogger) + maxStringBufferLen * SIZEOF(CHAR));
     MEMSET(gFileLogger, 0x00, SIZEOF(FileLogger));
     // point stringBuffer to the right place
-    gFileLogger->stringBuffer = (PCHAR) (gFileLogger + 1);
+    gFileLogger->stringBuffer = (PCHAR)(gFileLogger + 1);
     gFileLogger->stringBufferLen = maxStringBufferLen;
     gFileLogger->lock = MUTEX_CREATE(FALSE);
     gFileLogger->currentOffset = 0;
@@ -184,8 +179,9 @@ STATUS createFileLogger(UINT64 maxStringBufferLen, UINT64 maxLogFileCount, PCHAR
     STRNCPY(gFileLogger->logFileDir, logFileDir, MAX_PATH_LEN);
     gFileLogger->logFileDir[MAX_PATH_LEN] = '\0';
 
-    charWritten = SNPRINTF(gFileLogger->indexFilePath, MAX_PATH_LEN + 1, "%s%s%s", gFileLogger->logFileDir, FPATHSEPARATOR_STR, FILE_LOGGER_LAST_INDEX_FILE_NAME);
-    CHK(charWritten <=  MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
+    charWritten = SNPRINTF(gFileLogger->indexFilePath, MAX_PATH_LEN + 1, "%s%s%s", gFileLogger->logFileDir, FPATHSEPARATOR_STR,
+                           FILE_LOGGER_LAST_INDEX_FILE_NAME);
+    CHK(charWritten <= MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
     gFileLogger->indexFilePath[charWritten] = '\0';
 
     CHK_STATUS(fileExists(gFileLogger->indexFilePath, &fileFound));

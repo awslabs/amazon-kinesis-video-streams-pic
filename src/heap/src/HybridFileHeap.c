@@ -6,16 +6,16 @@
 #include "Include_i.h"
 
 #ifdef HEAP_DEBUG
-    ALLOCATION_HEADER gFileHeader = {0, FILE_ALLOCATION_TYPE, 0, ALLOCATION_HEADER_MAGIC};
+ALLOCATION_HEADER gFileHeader = {0, FILE_ALLOCATION_TYPE, 0, ALLOCATION_HEADER_MAGIC};
 #else
-    ALLOCATION_HEADER gFileHeader = {0, FILE_ALLOCATION_TYPE, 0};
-#define FILE_ALLOCATION_FOOTER_SIZE      0
+ALLOCATION_HEADER gFileHeader = {0, FILE_ALLOCATION_TYPE, 0};
+#define FILE_ALLOCATION_FOOTER_SIZE 0
 #endif
 
 // No footer for the file allocations
 ALLOCATION_FOOTER gFileFooter = {0};
 
-#define FILE_ALLOCATION_HEADER_SIZE      SIZEOF(gFileHeader)
+#define FILE_ALLOCATION_HEADER_SIZE SIZEOF(gFileHeader)
 
 STATUS hybridFileCreateHeap(PHeap pHeap, UINT32 spillRatio, PCHAR pRootDirectory, PHybridFileHeap* ppHybridHeap)
 {
@@ -34,7 +34,7 @@ STATUS hybridFileCreateHeap(PHeap pHeap, UINT32 spillRatio, PCHAR pRootDirectory
 
     // Set the values
     pHybridHeap->pMemHeap = (PBaseHeap) pHeap;
-    pHybridHeap->spillRatio = (DOUBLE)spillRatio / 100;
+    pHybridHeap->spillRatio = (DOUBLE) spillRatio / 100;
 
     // IMPORTANT: We should start from a non-zero handle num to avoid a collision with the invalid handle value
     pHybridHeap->handleNum = FILE_HEAP_STARTING_FILE_INDEX;
@@ -119,20 +119,15 @@ DEFINE_INIT_HEAP(hybridFileHeapInit)
     CHK_STATUS(commonHeapInit(pHeap, heapLimit));
 
     // Calculate the in-memory and file based heap sizes
-    memHeapLimit = (UINT64) (heapLimit * pHybridHeap->spillRatio);
+    memHeapLimit = (UINT64)(heapLimit * pHybridHeap->spillRatio);
     fileHeapLimit = heapLimit - memHeapLimit;
 
-    CHK_ERR(fileHeapLimit < MAX_LARGE_HEAP_SIZE,
-            STATUS_NOT_ENOUGH_MEMORY,
-            "Can't reserve File heap with size %" PRIu64 ". Max allowed is %" PRIu64 " bytes",
-            fileHeapLimit,
-            MAX_LARGE_HEAP_SIZE);
+    CHK_ERR(fileHeapLimit < MAX_LARGE_HEAP_SIZE, STATUS_NOT_ENOUGH_MEMORY,
+            "Can't reserve File heap with size %" PRIu64 ". Max allowed is %" PRIu64 " bytes", fileHeapLimit, MAX_LARGE_HEAP_SIZE);
 
     // Initialize the encapsulated heap
-    CHK_STATUS_ERR(pHybridHeap->pMemHeap->heapInitializeFn((PHeap) pHybridHeap->pMemHeap, memHeapLimit),
-                   STATUS_HEAP_DIRECT_MEM_INIT,
-                   "Failed to initialize the in-memory heap with limit size %" PRIu64,
-                   memHeapLimit);
+    CHK_STATUS_ERR(pHybridHeap->pMemHeap->heapInitializeFn((PHeap) pHybridHeap->pMemHeap, memHeapLimit), STATUS_HEAP_DIRECT_MEM_INIT,
+                   "Failed to initialize the in-memory heap with limit size %" PRIu64, memHeapLimit);
 
     // Initialize the file hybrid heap
 
@@ -154,7 +149,7 @@ DEFINE_RELEASE_HEAP(hybridFileHeapRelease)
     PHybridFileHeap pHybridHeap = (PHybridFileHeap) pHeap;
 
     // The call should be idempotent
-    CHK (pHeap != NULL, STATUS_SUCCESS);
+    CHK(pHeap != NULL, STATUS_SUCCESS);
 
     // Regardless of the status (heap might be corrupted) we still want to free the memory
     retStatus = commonHeapRelease(pHeap);
@@ -372,8 +367,7 @@ DEFINE_HEAP_SET_ALLOC_SIZE(hybridFileHeapSetAllocSize)
 
     // Perform in-place file size change
     fileHandle = TO_FILE_HANDLE(handle);
-    DLOGS("Sets new allocation size %\" PRIu64 \" for handle 0x%016"
-                  PRIx64, newSize, handle);
+    DLOGS("Sets new allocation size %\" PRIu64 \" for handle 0x%016" PRIx64, newSize, handle);
 
     SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
 
@@ -436,7 +430,8 @@ DEFINE_HEAP_MAP(hybridFileHeapMap)
     CHK(NULL != (pAllocation = (PALLOCATION_HEADER) MEMALLOC(fileLength)), STATUS_NOT_ENOUGH_MEMORY);
 
     CHK_STATUS(readFile(filePath, TRUE, (PBYTE) pAllocation, &fileLength));
-    CHK(pAllocation->type == FILE_ALLOCATION_TYPE && pAllocation->size == fileLength - FILE_ALLOCATION_HEADER_SIZE, STATUS_HEAP_FILE_HEAP_FILE_CORRUPT);
+    CHK(pAllocation->type == FILE_ALLOCATION_TYPE && pAllocation->size == fileLength - FILE_ALLOCATION_HEADER_SIZE,
+        STATUS_HEAP_FILE_HEAP_FILE_CORRUPT);
 
     // Set the values and return
     *ppAllocation = pAllocation + 1;
@@ -460,7 +455,7 @@ DEFINE_HEAP_UNMAP(hybridFileHeapUnmap)
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PHybridFileHeap pHybridHeap = (PHybridFileHeap) pHeap;
-    PALLOCATION_HEADER pHeader = (PALLOCATION_HEADER)pAllocation - 1;
+    PALLOCATION_HEADER pHeader = (PALLOCATION_HEADER) pAllocation - 1;
     CHAR filePath[MAX_PATH_LEN + 1];
 
     // Call the base class to ensure the params are ok
@@ -573,7 +568,8 @@ STATUS removeHeapFile(UINT64 callerData, DIR_ENTRY_TYPES entryType, PCHAR path, 
     // Check if the file ends with the extension for the hybrid file heap
     strLen = STRLEN(name);
     CHK(strLen >= ARRAY_SIZE(FILE_HEAP_FILE_EXTENSION) &&
-        (0 == STRNCMP(FILE_HEAP_FILE_EXTENSION, name + strLen - ARRAY_SIZE(FILE_HEAP_FILE_EXTENSION) + 1, ARRAY_SIZE(FILE_HEAP_FILE_EXTENSION))), retStatus);
+            (0 == STRNCMP(FILE_HEAP_FILE_EXTENSION, name + strLen - ARRAY_SIZE(FILE_HEAP_FILE_EXTENSION) + 1, ARRAY_SIZE(FILE_HEAP_FILE_EXTENSION))),
+        retStatus);
 
     DLOGS("Removing heap file %s", path);
     retCode = FREMOVE(path);

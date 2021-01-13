@@ -17,8 +17,8 @@ extern "C" {
 
 // Ensure it's more than the actual header and footer size
 // IMPORTANT!!! This must be a multiple of 8 for alignment
-#define ALLOCATION_HEADER_MAGIC_SIZE        32
-#define ALLOCATION_FOOTER_MAGIC_SIZE        32
+#define ALLOCATION_HEADER_MAGIC_SIZE 32
+#define ALLOCATION_FOOTER_MAGIC_SIZE 32
 
 /**
  * The internal base structure representing the allocation header for
@@ -26,8 +26,7 @@ extern "C" {
  *
  * IMPORTANT!!! Ensure this structure is tightly packed without tight packing directives
  */
-typedef struct
-{
+typedef struct {
     // The aligned allocation size without the service structures - aka header and footer included
     UINT64 size;
 
@@ -46,8 +45,7 @@ typedef struct
 #endif
 } ALLOCATION_HEADER, *PALLOCATION_HEADER;
 
-typedef struct
-{
+typedef struct {
     // The size of the allocation without the service structure - header and footer. This is the same
     // as the size in the header structure needed for a back reference to the beginning of the allocation.
     UINT64 size;

@@ -127,7 +127,6 @@ STATUS contentViewTimestampInRange(PContentView pContentView, UINT64 timestamp, 
         inRange = (timestamp >= pOldest->timestamp && timestamp <= pNewest->timestamp + pNewest->duration);
     }
 
-
 CleanUp:
 
     if (pInRange != NULL) {
@@ -206,17 +205,14 @@ STATUS contentViewGetItemWithTimestamp(PContentView pContentView, UINT64 timesta
     CHK(exists, STATUS_CONTENT_VIEW_INVALID_TIMESTAMP);
 
     // Find the item using a binary search method as the items are timestamp ordered.
-    *ppItem = findViewItemWithTimestamp(pRollingView,
-                                        GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail),
-                                        GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->head - 1),
-                                        timestamp, checkAckTimeStamp);
+    *ppItem = findViewItemWithTimestamp(pRollingView, GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail),
+                                        GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->head - 1), timestamp, checkAckTimeStamp);
 
 CleanUp:
 
     LEAVES();
     return retStatus;
 }
-
 
 /**
  * Gets the current item index
@@ -439,7 +435,8 @@ CleanUp:
  * IMPORTANT: This function will evict the tail and call the remove callback (if specified)
  * based on temporal and size buffer pressure. It will not de-allocate the actual allocation.
  */
-STATUS contentViewAddItem(PContentView pContentView, UINT64 timestamp, UINT64 ackTimeStamp, UINT64 duration, ALLOCATION_HANDLE allocHandle, UINT32 offset, UINT32 length, UINT32 flags)
+STATUS contentViewAddItem(PContentView pContentView, UINT64 timestamp, UINT64 ackTimeStamp, UINT64 duration, ALLOCATION_HANDLE allocHandle,
+                          UINT32 offset, UINT32 length, UINT32 flags)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -836,8 +833,7 @@ CleanUp:
 /**
  * Finds an element with a timestamp using binary search method.
  */
-PViewItem findViewItemWithTimestamp(PRollingContentView pView, PViewItem pOldest, PViewItem pNewest, UINT64 timestamp,
-                                    BOOL checkAckTimeStamp)
+PViewItem findViewItemWithTimestamp(PRollingContentView pView, PViewItem pOldest, PViewItem pNewest, UINT64 timestamp, BOOL checkAckTimeStamp)
 {
     PViewItem pCurItem = pOldest;
     UINT64 curIndex = 0, oldestIndex = pOldest->index, newestIndex = pNewest->index, curItemTimestamp;

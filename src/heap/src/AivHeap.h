@@ -9,24 +9,23 @@
 extern "C" {
 #endif
 
-#define ALLOCATION_FLAGS_NONE           0x0000
-#define ALLOCATION_FLAGS_ALLOC          0x0001
-#define ALLOCATION_FLAGS_FREE           0x0002
+#define ALLOCATION_FLAGS_NONE  0x0000
+#define ALLOCATION_FLAGS_ALLOC 0x0001
+#define ALLOCATION_FLAGS_FREE  0x0002
 
-#define AIV_ALLOCATION_TYPE             2
+#define AIV_ALLOCATION_TYPE 2
 
 /**
  * Minimum free block size in bytes
  */
-#define MIN_FREE_ALLOCATION_SIZE        16
+#define MIN_FREE_ALLOCATION_SIZE 16
 
 /**
  * Allocation header for low fragmentation heap implementation.
  *
  * IMPORTANT!!! Make sure the structure is tightly packed without the tight packing directives
  */
-typedef struct AIV_ALLOCATION_HEADER
-{
+typedef struct AIV_ALLOCATION_HEADER {
     // Base structure
     ALLOCATION_HEADER header;
 
@@ -36,18 +35,17 @@ typedef struct AIV_ALLOCATION_HEADER
     // Chaining left and right
     struct AIV_ALLOCATION_HEADER* pNext;
     struct AIV_ALLOCATION_HEADER* pPrev;
-} *PAIV_ALLOCATION_HEADER;
+} * PAIV_ALLOCATION_HEADER;
 
 // Macros to convert to and from handle
-#define AIV_HANDLE_SHIFT_BITS           2
-#define TO_AIV_HANDLE(pAiv, p) (ALLOCATION_HANDLE)((UINT64)(((PBYTE)(p) - (PBYTE)((pAiv)->pAllocation))) << AIV_HANDLE_SHIFT_BITS)
+#define AIV_HANDLE_SHIFT_BITS    2
+#define TO_AIV_HANDLE(pAiv, p)   (ALLOCATION_HANDLE)((UINT64)(((PBYTE)(p) - (PBYTE)((pAiv)->pAllocation))) << AIV_HANDLE_SHIFT_BITS)
 #define FROM_AIV_HANDLE(pAiv, h) ((PVOID)((PBYTE)((pAiv)->pAllocation) + ((UINT64)(h) >> AIV_HANDLE_SHIFT_BITS)))
 
 /**
  * AIV heap struct
  */
-typedef struct
-{
+typedef struct {
     /**
      * Base Heap struct encapsulation
      */
@@ -68,25 +66,23 @@ typedef struct
 /**
  * Validates the allocation by checking the range for now
  */
-#define CHK_AIV_ALLOCATION(pAiv, pAlloc) \
-    do { \
-        CHK_ERR((PBYTE) (pAlloc) != NULL && \
-            (PBYTE) (pAlloc) >= ((PBYTE)((PAivHeap)(pAiv))->pAllocation) && \
-            (PBYTE) (pAlloc) < ((PBYTE)((PAivHeap)(pAiv))->pAllocation) + ((PHeap)(pAiv))->heapLimit, \
-                STATUS_INVALID_HANDLE_ERROR, \
-                "Invalid handle value."); \
+#define CHK_AIV_ALLOCATION(pAiv, pAlloc)                                                                                                             \
+    do {                                                                                                                                             \
+        CHK_ERR((PBYTE)(pAlloc) != NULL && (PBYTE)(pAlloc) >= ((PBYTE)((PAivHeap)(pAiv))->pAllocation) &&                                            \
+                    (PBYTE)(pAlloc) < ((PBYTE)((PAivHeap)(pAiv))->pAllocation) + ((PHeap)(pAiv))->heapLimit,                                         \
+                STATUS_INVALID_HANDLE_ERROR, "Invalid handle value.");                                                                               \
     } while (FALSE)
 
 #ifdef ALIGNED_MEMORY_MODEL
-        #define HEAP_PACKED_SIZE(size)      ROUND_UP((size), 8)
+#define HEAP_PACKED_SIZE(size) ROUND_UP((size), 8)
 #else
-        #define HEAP_PACKED_SIZE(size)      (size)
+#define HEAP_PACKED_SIZE(size) (size)
 #endif
 
 /**
  * Gets the allocation header
  */
-#define GET_AIV_ALLOCATION_HEADER(p) ((PAIV_ALLOCATION_HEADER)(p) - 1)
+#define GET_AIV_ALLOCATION_HEADER(p) ((PAIV_ALLOCATION_HEADER)(p) -1)
 
 /**
  * Retrieve the allocation size
@@ -106,7 +102,7 @@ typedef struct
 /**
  * Gets the allocation footer
  */
-#define GET_AIV_ALLOCATION_FOOTER(pAlloc) ((PALLOCATION_FOOTER) (GET_AIV_ALLOCATION(pAlloc) + GET_AIV_ALLOCATION_SIZE(pAlloc)))
+#define GET_AIV_ALLOCATION_FOOTER(pAlloc) ((PALLOCATION_FOOTER)(GET_AIV_ALLOCATION(pAlloc) + GET_AIV_ALLOCATION_SIZE(pAlloc)))
 
 /**
  * Gets the allocation footer size

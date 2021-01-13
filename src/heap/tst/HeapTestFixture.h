@@ -1,17 +1,17 @@
 #include "gtest/gtest.h"
 #include "src/heap/src/Include_i.h"
 
-#define NUM_ITERATIONS 100
-#define MOCK_LIB_HANDLE         0xfefefefe
+#define NUM_ITERATIONS  100
+#define MOCK_LIB_HANDLE 0xfefefefe
 
 class HeapTestBase : public ::testing::Test {
-public:
+  public:
     HeapTestBase()
     {
         SetUpInternal();
     };
 
-protected:
+  protected:
     static VOID SetUpInternal();
 
     virtual VOID SetUp();

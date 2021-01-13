@@ -1,107 +1,102 @@
-#define TEST_DEVICE_NAME                ((PCHAR) "Test device name")
-#define MAX_TEST_STREAM_COUNT           10
-#define TEST_DEVICE_STORAGE_SIZE        ((UINT64) 10 * 1024 * 1024)
+#define TEST_DEVICE_NAME         ((PCHAR) "Test device name")
+#define MAX_TEST_STREAM_COUNT    10
+#define TEST_DEVICE_STORAGE_SIZE ((UINT64) 10 * 1024 * 1024)
 
-#define TEST_CLIENT_MAGIC_NUMBER        0x12345678ULL
+#define TEST_CLIENT_MAGIC_NUMBER 0x12345678ULL
 
-#define TEST_CERTIFICATE_BITS           "Test certificate bits"
-#define TEST_TOKEN_BITS                 "Test token bits"
-#define TEST_DEVICE_FINGERPRINT         ((PCHAR) "Test device fingerprint")
+#define TEST_CERTIFICATE_BITS   "Test certificate bits"
+#define TEST_TOKEN_BITS         "Test token bits"
+#define TEST_DEVICE_FINGERPRINT ((PCHAR) "Test device fingerprint")
 
-#define TEST_STREAM_NAME                ((PCHAR) "Test stream name")
-#define TEST_CONTENT_TYPE               ((PCHAR) "TestContentType")
-#define TEST_CODEC_ID                   ((PCHAR) "TestCodec")
-#define TEST_TRACK_NAME                 ((PCHAR) "TestTrack")
-#define TEST_TRACKID                    1
-#define TEST_TRACK_INDEX                0
-#define TEST_INVALID_TRACK_ID           100
+#define TEST_STREAM_NAME      ((PCHAR) "Test stream name")
+#define TEST_CONTENT_TYPE     ((PCHAR) "TestContentType")
+#define TEST_CODEC_ID         ((PCHAR) "TestCodec")
+#define TEST_TRACK_NAME       ((PCHAR) "TestTrack")
+#define TEST_TRACKID          1
+#define TEST_TRACK_INDEX      0
+#define TEST_INVALID_TRACK_ID 100
 
-#define TEST_VIDEO_TRACK_ID             1
-#define TEST_AUDIO_TRACK_ID             2
+#define TEST_VIDEO_TRACK_ID 1
+#define TEST_AUDIO_TRACK_ID 2
 
-#define TEST_DEVICE_ARN                 ((PCHAR) "TestDeviceARN")
+#define TEST_DEVICE_ARN ((PCHAR) "TestDeviceARN")
 
-#define TEST_STREAM_ARN                 ((PCHAR) "TestStreamARN")
+#define TEST_STREAM_ARN ((PCHAR) "TestStreamARN")
 
-#define TEST_STREAMING_ENDPOINT         ((PCHAR) "http://test.com/test_endpoint")
+#define TEST_STREAMING_ENDPOINT ((PCHAR) "http://test.com/test_endpoint")
 
-#define TEST_UPDATE_VERSION             ((PCHAR) "TestUpdateVer")
+#define TEST_UPDATE_VERSION ((PCHAR) "TestUpdateVer")
 
-#define TEST_CLIENT_ID                  ((PCHAR) "Test Client Id")
+#define TEST_CLIENT_ID ((PCHAR) "Test Client Id")
 
-#define TEST_STREAMING_TOKEN            "TestStreamingToken"
+#define TEST_STREAMING_TOKEN "TestStreamingToken"
 
-#define TEST_UPLOAD_HANDLE              12345
+#define TEST_UPLOAD_HANDLE 12345
 
-#define TEST_BUFFER_DURATION            (40 * HUNDREDS_OF_NANOS_IN_A_SECOND)
-#define TEST_REPLAY_DURATION            (20 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+#define TEST_BUFFER_DURATION (40 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+#define TEST_REPLAY_DURATION (20 * HUNDREDS_OF_NANOS_IN_A_SECOND)
 
-#define TEST_FRAME_DURATION             (20 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
-#define TEST_LONG_FRAME_DURATION        (400 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
+#define TEST_FRAME_DURATION      (20 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
+#define TEST_LONG_FRAME_DURATION (400 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
 
-#define TEST_SLEEP_TIME                 (1000 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
-#define TEST_PRODUCER_SLEEP_TIME        (20 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
-#define TEST_CONSUMER_SLEEP_TIME        (50 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
+#define TEST_SLEEP_TIME          (1000 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
+#define TEST_PRODUCER_SLEEP_TIME (20 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
+#define TEST_CONSUMER_SLEEP_TIME (50 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND)
 
-#define TEST_AUTH_EXPIRATION            (UINT64)(-1LL)
-#define TEST_TRACK_COUNT                1
+#define TEST_AUTH_EXPIRATION (UINT64)(-1LL)
+#define TEST_TRACK_COUNT     1
 
-#define TEST_SEGMENT_UUID               ((PBYTE) "0123456789abcdef")
+#define TEST_SEGMENT_UUID ((PBYTE) "0123456789abcdef")
 
-#define TEST_DEFAULT_CREATE_CLIENT_TIMEOUT          CLIENT_READY_TIMEOUT_DURATION_IN_SECONDS * HUNDREDS_OF_NANOS_IN_A_SECOND;
-#define TEST_DEFAULT_CREATE_STREAM_TIMEOUT          STREAM_READY_TIMEOUT_DURATION_IN_SECONDS * HUNDREDS_OF_NANOS_IN_A_SECOND;
-#define TEST_DEFAULT_STOP_STREAM_TIMEOUT            STREAM_CLOSED_TIMEOUT_DURATION_IN_SECONDS * HUNDREDS_OF_NANOS_IN_A_SECOND;
-#define TEST_DEFAULT_BUFFER_AVAILABILITY_TIMEOUT    15 * HUNDREDS_OF_NANOS_IN_A_SECOND;
-#define TEST_STOP_STREAM_TIMEOUT_SHORT              3 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+#define TEST_DEFAULT_CREATE_CLIENT_TIMEOUT       CLIENT_READY_TIMEOUT_DURATION_IN_SECONDS* HUNDREDS_OF_NANOS_IN_A_SECOND;
+#define TEST_DEFAULT_CREATE_STREAM_TIMEOUT       STREAM_READY_TIMEOUT_DURATION_IN_SECONDS* HUNDREDS_OF_NANOS_IN_A_SECOND;
+#define TEST_DEFAULT_STOP_STREAM_TIMEOUT         STREAM_CLOSED_TIMEOUT_DURATION_IN_SECONDS* HUNDREDS_OF_NANOS_IN_A_SECOND;
+#define TEST_DEFAULT_BUFFER_AVAILABILITY_TIMEOUT 15 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+#define TEST_STOP_STREAM_TIMEOUT_SHORT           3 * HUNDREDS_OF_NANOS_IN_A_SECOND;
 
-#define TEST_TIME_INCREMENT             (100 * HUNDREDS_OF_NANOS_IN_A_MICROSECOND)
+#define TEST_TIME_INCREMENT (100 * HUNDREDS_OF_NANOS_IN_A_MICROSECOND)
 
-#define TEST_TIME_BEGIN                 (1549835353 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+#define TEST_TIME_BEGIN (1549835353 * HUNDREDS_OF_NANOS_IN_A_SECOND)
 
-#define TEST_AUDIO_CODEC_ID             "A_AAC"
-#define TEST_AUDIO_TRACK_NAME           "Audio"
-#define TEST_AUDIO_VIDEO_CONTENT_TYPE   "video/h264,audio/aac"
+#define TEST_AUDIO_CODEC_ID           "A_AAC"
+#define TEST_AUDIO_TRACK_NAME         "Audio"
+#define TEST_AUDIO_VIDEO_CONTENT_TYPE "video/h264,audio/aac"
 
 // Random const value to be returned
-#define TEST_CONST_RAND_FUNC_BYTE       42
+#define TEST_CONST_RAND_FUNC_BYTE 42
 
 // Offset of the MKV Segment Info UUID from the beginning of the header
-#define MKV_SEGMENT_UUID_OFFSET         54
+#define MKV_SEGMENT_UUID_OFFSET 54
 
 // Default producer configuration frame size
-#define TEST_DEFAULT_PRODUCER_CONFIG_FRAME_SIZE             50000
-#define TEST_DEFAULT_PRODUCER_CONFIG_FRAME_RATE             20
+#define TEST_DEFAULT_PRODUCER_CONFIG_FRAME_SIZE 50000
+#define TEST_DEFAULT_PRODUCER_CONFIG_FRAME_RATE 20
 
-#define PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE() \
-    if ((mStreamInfo.retention == 0 || !mStreamInfo.streamCaps.fragmentAcks) && \
-        mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE) { \
-        EXPECT_EQ(STATUS_OFFLINE_MODE_WITH_ZERO_RETENTION, createKinesisVideoStreamSync(mClientHandle, &mStreamInfo, &mStreamHandle)); \
-        return;\
+#define PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE()                                                                                                   \
+    if ((mStreamInfo.retention == 0 || !mStreamInfo.streamCaps.fragmentAcks) && mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE) {    \
+        EXPECT_EQ(STATUS_OFFLINE_MODE_WITH_ZERO_RETENTION, createKinesisVideoStreamSync(mClientHandle, &mStreamInfo, &mStreamHandle));               \
+        return;                                                                                                                                      \
     }
 
-#define PASS_TEST_FOR_OFFLINE_OR_ZERO_RETENTION() \
-    if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE || \
-        mStreamInfo.retention == 0 || \
-        !mStreamInfo.streamCaps.fragmentAcks) { \
-        return;\
+#define PASS_TEST_FOR_OFFLINE_OR_ZERO_RETENTION()                                                                                                    \
+    if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE || mStreamInfo.retention == 0 || !mStreamInfo.streamCaps.fragmentAcks) {      \
+        return;                                                                                                                                      \
     }
 
-#define PASS_TEST_FOR_OFFLINE_ZERO_REPLAY_DURATION() \
-    if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE || \
-        mStreamInfo.streamCaps.replayDuration == 0) { \
-        return;\
+#define PASS_TEST_FOR_OFFLINE_ZERO_REPLAY_DURATION()                                                                                                 \
+    if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE || mStreamInfo.streamCaps.replayDuration == 0) {                              \
+        return;                                                                                                                                      \
     }
 
-#define PASS_TEST_FOR_OFFLINE() \
-    if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE) { \
-        return;\
+#define PASS_TEST_FOR_OFFLINE()                                                                                                                      \
+    if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE) {                                                                            \
+        return;                                                                                                                                      \
     }
 
-#define PASS_TEST_FOR_REALTIME() \
-    if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_REALTIME) { \
-        return;\
+#define PASS_TEST_FOR_REALTIME()                                                                                                                     \
+    if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_REALTIME) {                                                                           \
+        return;                                                                                                                                      \
     }
-
 
 #include <string>
 #include <ostream>
@@ -130,19 +125,19 @@ extern UINT64 gTotalClientMemoryUsage;
 extern MUTEX gClientMemMutex;
 INLINE PVOID instrumentedClientMemAlloc(SIZE_T size)
 {
-    DLOGS("Test malloc %llu bytes", (UINT64)size);
+    DLOGS("Test malloc %llu bytes", (UINT64) size);
     MUTEX_LOCK(gClientMemMutex);
     gTotalClientMemoryUsage += size;
     MUTEX_UNLOCK(gClientMemMutex);
     PBYTE pAlloc = (PBYTE) malloc(size + SIZEOF(SIZE_T));
-    *(PSIZE_T)pAlloc = size;
+    *(PSIZE_T) pAlloc = size;
 
     return pAlloc + SIZEOF(SIZE_T);
 }
 
 INLINE PVOID instrumentedClientMemAlignAlloc(SIZE_T size, SIZE_T alignment)
 {
-    DLOGS("Test align malloc %llu bytes", (UINT64)size);
+    DLOGS("Test align malloc %llu bytes", (UINT64) size);
     // Just do malloc
     UNUSED_PARAM(alignment);
     return instrumentedClientMemAlloc(size);
@@ -151,13 +146,13 @@ INLINE PVOID instrumentedClientMemAlignAlloc(SIZE_T size, SIZE_T alignment)
 INLINE PVOID instrumentedClientMemCalloc(SIZE_T num, SIZE_T size)
 {
     SIZE_T overallSize = num * size;
-    DLOGS("Test calloc %llu bytes", (UINT64)overallSize);
+    DLOGS("Test calloc %llu bytes", (UINT64) overallSize);
     MUTEX_LOCK(gClientMemMutex);
     gTotalClientMemoryUsage += overallSize;
     MUTEX_UNLOCK(gClientMemMutex);
 
     PBYTE pAlloc = (PBYTE) calloc(1, overallSize + SIZEOF(SIZE_T));
-    *(PSIZE_T)pAlloc = overallSize;
+    *(PSIZE_T) pAlloc = overallSize;
 
     return pAlloc + SIZEOF(SIZE_T);
 }
@@ -166,7 +161,7 @@ INLINE VOID instrumentedClientMemFree(PVOID ptr)
 {
     PBYTE pAlloc = (PBYTE) ptr - SIZEOF(SIZE_T);
     SIZE_T size = *(PSIZE_T) pAlloc;
-    DLOGS("Test free %llu bytes", (UINT64)size);
+    DLOGS("Test free %llu bytes", (UINT64) size);
 
     MUTEX_LOCK(gClientMemMutex);
     gTotalClientMemoryUsage -= size;
@@ -184,17 +179,17 @@ extern memCalloc globalMemCalloc;
 extern memFree globalMemFree;
 
 typedef enum {
-    DISABLE_AUTO_SUBMIT             = 0,
-    STOP_AT_DESCRIBE_STREAM         = 1,
-    STOP_AT_CREATE_STREAM           = 2,
-    STOP_AT_TAG_RESOURCE            = 3,
-    STOP_AT_GET_STREAMING_ENDPOINT  = 4,
-    STOP_AT_GET_STREAMING_TOKEN     = 5,
-    STOP_AT_PUT_STREAM              = 6,
+    DISABLE_AUTO_SUBMIT = 0,
+    STOP_AT_DESCRIBE_STREAM = 1,
+    STOP_AT_CREATE_STREAM = 2,
+    STOP_AT_TAG_RESOURCE = 3,
+    STOP_AT_GET_STREAMING_ENDPOINT = 4,
+    STOP_AT_GET_STREAMING_TOKEN = 5,
+    STOP_AT_PUT_STREAM = 6,
 } AutoSubmitServiceCallResultMode;
 
 class ClientTestBase : public ::testing::Test {
-protected:
+  protected:
     // Lay out the atomics first
     volatile ATOMIC_BOOL mStreamReady;
     volatile ATOMIC_BOOL mStreamClosed;
@@ -251,7 +246,7 @@ protected:
 
     volatile SIZE_T mMagic;
 
-public:
+  public:
     ClientTestBase()
     {
         // Store the function pointers
@@ -321,7 +316,7 @@ public:
     volatile UINT32 mStreamCount;
     volatile SIZE_T mTimerCallbackFuncCount;
 
-protected:
+  protected:
     CLIENT_HANDLE mClientHandle;
     CLIENT_HANDLE mReturnedClientHandle;
     STREAM_HANDLE mStreamHandle;
@@ -374,13 +369,13 @@ protected:
 
     MUTEX mAtomicLock;
 
-    void initTestMembers() {
+    void initTestMembers()
+    {
         UINT32 logLevel = 0;
         auto logLevelStr = GETENV("AWS_KVS_LOG_LEVEL");
         if (logLevelStr != NULL) {
             assert(STRTOUI32(logLevelStr, NULL, 10, &logLevel) == STATUS_SUCCESS);
         }
-
 
         // Zero things out
         mClientHandle = INVALID_CLIENT_HANDLE_VALUE;
@@ -540,7 +535,8 @@ protected:
      * - 1mbps upload speed.
      * - 50 ms buffering ack, received ack and persisted ack delay.
      */
-    void initDefaultConsumer() {
+    void initDefaultConsumer()
+    {
         mMockConsumerConfig.mDataBufferSizeByte = 70000;
         mMockConsumerConfig.mUploadSpeedBytesPerSecond = 1000000;
         mMockConsumerConfig.mBufferingAckDelayMs = 50;
@@ -559,7 +555,8 @@ protected:
      * - no eofr
      * - sinlge track with track id 1
      */
-    void initDefaultProducer() {
+    void initDefaultProducer()
+    {
         mMockProducerConfig.mFps = TEST_DEFAULT_PRODUCER_CONFIG_FRAME_RATE;
         mMockProducerConfig.mKeyFrameInterval = TEST_DEFAULT_PRODUCER_CONFIG_FRAME_RATE;
         mMockProducerConfig.mFrameSizeByte = TEST_DEFAULT_PRODUCER_CONFIG_FRAME_SIZE;
@@ -568,7 +565,8 @@ protected:
         mMockProducerConfig.mFrameTrackId = TEST_TRACKID;
     }
 
-    void setupStreamDescription() {
+    void setupStreamDescription()
+    {
         mStreamDescription.version = STREAM_DESCRIPTION_CURRENT_VERSION;
         STRNCPY(mStreamDescription.deviceName, TEST_DEVICE_NAME, MAX_DEVICE_NAME_LEN);
         STRNCPY(mStreamDescription.streamName, TEST_STREAM_NAME, MAX_STREAM_NAME_LEN);
@@ -610,8 +608,7 @@ protected:
 
         // Satisfy the create device callback in assync mode
         if (!mClientSyncMode) {
-            EXPECT_EQ(STATUS_SUCCESS,
-                      createDeviceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_DEVICE_ARN));
+            EXPECT_EQ(STATUS_SUCCESS, createDeviceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_DEVICE_ARN));
         }
 
         // Ensure the OK is called
@@ -621,10 +618,11 @@ protected:
         return STATUS_SUCCESS;
     };
 
-    void consumeStream(UINT64 streamStopTimeout) {
+    void consumeStream(UINT64 streamStopTimeout)
+    {
         UINT64 stopStreamTime, currentTime;
         std::vector<UPLOAD_HANDLE> currentUploadHandles;
-        MockConsumer *mockConsumer;
+        MockConsumer* mockConsumer;
         BOOL gotStreamData, didSubmitAck;
 
         // The stream should stream out remaining buffer within streamStopTimeout.
@@ -649,7 +647,8 @@ protected:
         } while (currentTime < stopStreamTime && !currentUploadHandles.empty());
     }
 
-    void VerifyStopStreamSyncAndFree(BOOL timeout = FALSE) {
+    void VerifyStopStreamSyncAndFree(BOOL timeout = FALSE)
+    {
         TID thread;
         // this thread goes to block.
         EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&thread, stopStreamSyncRoutine, (PVOID) this));
@@ -669,12 +668,12 @@ protected:
 
         EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
     }
-    void VerifyGetStreamDataResult(STATUS getStreamDataStatus, BOOL gotStreamData, UPLOAD_HANDLE uploadHandle,
-                                   PUINT64 pCurrentTime, MockConsumer **ppMockConsumer)
+    void VerifyGetStreamDataResult(STATUS getStreamDataStatus, BOOL gotStreamData, UPLOAD_HANDLE uploadHandle, PUINT64 pCurrentTime,
+                                   MockConsumer** ppMockConsumer)
     {
         EXPECT_TRUE(getStreamDataStatus == STATUS_SUCCESS || getStreamDataStatus == STATUS_END_OF_STREAM ||
-                getStreamDataStatus == STATUS_AWAITING_PERSISTED_ACK || getStreamDataStatus == STATUS_NO_MORE_DATA_AVAILABLE ||
-                getStreamDataStatus == STATUS_UPLOAD_HANDLE_ABORTED);
+                    getStreamDataStatus == STATUS_AWAITING_PERSISTED_ACK || getStreamDataStatus == STATUS_NO_MORE_DATA_AVAILABLE ||
+                    getStreamDataStatus == STATUS_UPLOAD_HANDLE_ABORTED);
         // This is the signal for the consumer to terminate, thus taking it out of the active sessions.
         if (getStreamDataStatus == STATUS_END_OF_STREAM || getStreamDataStatus == STATUS_UPLOAD_HANDLE_ABORTED) {
             DLOGD("got end-of-stream for upload handle %llu", uploadHandle);
@@ -688,8 +687,9 @@ protected:
         }
     }
 
-    static PVOID stopStreamSyncRoutine(PVOID arg) {
-        ClientTestBase *pClient = (ClientTestBase*) arg;
+    static PVOID stopStreamSyncRoutine(PVOID arg)
+    {
+        ClientTestBase* pClient = (ClientTestBase*) arg;
         MUTEX_LOCK(pClient->mTestClientMutex);
         // need to release lock before calling stopKinesisVideoStreamSync or will deadlock
         STREAM_HANDLE streamHandle = pClient->mStreamHandle;
@@ -698,8 +698,9 @@ protected:
         return NULL;
     }
 
-    static PVOID defaultProducerRoutine(PVOID arg) {
-        ClientTestBase *pClient = (ClientTestBase*) arg;
+    static PVOID defaultProducerRoutine(PVOID arg)
+    {
+        ClientTestBase* pClient = (ClientTestBase*) arg;
         MockProducer producer = MockProducer(pClient->mMockProducerConfig, pClient->mStreamHandle);
         STATUS retStatus = STATUS_SUCCESS;
         UINT64 currentTime;
@@ -716,8 +717,9 @@ protected:
         return NULL;
     }
 
-    static PVOID CreateClientRoutineSync(PVOID arg) {
-        ClientTestBase *pClient = (ClientTestBase*) arg;
+    static PVOID CreateClientRoutineSync(PVOID arg)
+    {
+        ClientTestBase* pClient = (ClientTestBase*) arg;
         // Free the existing client
         if (IS_VALID_CLIENT_HANDLE(pClient->mClientHandle)) {
             EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&pClient->mClientHandle));
@@ -727,14 +729,16 @@ protected:
         return NULL;
     }
 
-    static PVOID CreateStreamSyncRoutine(PVOID arg) {
-        ClientTestBase *pClient = (ClientTestBase*) arg;
+    static PVOID CreateStreamSyncRoutine(PVOID arg)
+    {
+        ClientTestBase* pClient = (ClientTestBase*) arg;
         EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoStreamSync(pClient->mClientHandle, &pClient->mStreamInfo, &pClient->mStreamHandle));
 
         return NULL;
     }
 
-    void initScenarioTestMembers() {
+    void initScenarioTestMembers()
+    {
         // Assumes initTestMembers() has been called first
         // setup attributes
 
@@ -760,7 +764,7 @@ protected:
         // Free the existing client
         if (IS_VALID_CLIENT_HANDLE(mClientHandle)) {
             status = freeKinesisVideoClient(&mClientHandle);
-            ATOMIC_STORE(&mClientShutdownFuncCount,  0);
+            ATOMIC_STORE(&mClientShutdownFuncCount, 0);
             ATOMIC_STORE(&mStreamShutdownFuncCount, 0);
             ATOMIC_STORE_BOOL(&mClientShutdown, FALSE);
             ATOMIC_STORE_BOOL(&mStreamShutdown, FALSE);
@@ -841,7 +845,9 @@ protected:
         // Move to the next state
         // Reset the stream name
         mStreamName[0] = '\0';
-        EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN, SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
+        EXPECT_EQ(STATUS_SUCCESS,
+                  getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                               SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 
         // Ensure the callbacks have been called
         EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
@@ -856,7 +862,9 @@ protected:
         // Move to the next state
         // Reset the stream name
         mStreamName[0] = '\0';
-        EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN, SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
+        EXPECT_EQ(STATUS_SUCCESS,
+                  getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                               SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 
         return STATUS_SUCCESS;
     }
@@ -908,7 +916,8 @@ protected:
         ASSERT_EQ(STATUS_SUCCESS, CreateClient());
     };
 
-    virtual void SetUpWithoutClientCreation() {
+    virtual void SetUpWithoutClientCreation()
+    {
         UINT32 logLevel = 0;
         auto logLevelStr = GETENV("AWS_KVS_LOG_LEVEL");
         if (logLevelStr != NULL) {
@@ -948,7 +957,7 @@ protected:
 
     PCHAR GetTestName()
     {
-        return (PCHAR) ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name();
+        return (PCHAR)::testing::UnitTest::GetInstance()->current_test_info()->test_case_name();
     };
 
     UINT64 getTestTimeVal()
@@ -976,8 +985,7 @@ protected:
         MUTEX_UNLOCK(mAtomicLock);
     };
 
-protected:
-
+  protected:
     // Stored function pointers to reset on exit
     memAlloc storedMemAlloc;
     memAlignAlloc storedMemAlignAlloc;
@@ -1013,100 +1021,35 @@ protected:
     static BOOL tryLockMutexFunc(UINT64, MUTEX);
     static VOID freeMutexFunc(UINT64, MUTEX);
     static CVAR createConditionVariableFunc(UINT64);
-    static STATUS signalConditionVariableFunc(UINT64,
-                                              CVAR);
-    static STATUS broadcastConditionVariableFunc(UINT64,
-                                                 CVAR);
-    static STATUS waitConditionVariableFunc(UINT64,
-                                            CVAR,
-                                            MUTEX,
-                                            UINT64);
-    static VOID freeConditionVariableFunc(UINT64,
-                                          CVAR);
-    static STATUS createStreamFunc(UINT64,
-                                   PCHAR,
-                                   PCHAR,
-                                   PCHAR,
-                                   PCHAR,
-                                   UINT64,
-                                   PServiceCallContext);
-    static STATUS describeStreamFunc(UINT64,
-                                     PCHAR,
-                                     PServiceCallContext);
-    static STATUS describeStreamMultiStreamFunc(UINT64,
-                                     PCHAR,
-                                     PServiceCallContext);
-    static STATUS getStreamingEndpointFunc(UINT64,
-                                           PCHAR,
-                                           PCHAR,
-                                           PServiceCallContext);
-    static STATUS getStreamingEndpointMultiStreamFunc(UINT64,
-                                           PCHAR,
-                                           PCHAR,
-                                           PServiceCallContext);
-    static STATUS getStreamingTokenFunc(UINT64,
-                                        PCHAR,
-                                        STREAM_ACCESS_MODE,
-                                        PServiceCallContext);
-    static STATUS getStreamingTokenMultiStreamFunc(UINT64,
-                                        PCHAR,
-                                        STREAM_ACCESS_MODE,
-                                        PServiceCallContext);
+    static STATUS signalConditionVariableFunc(UINT64, CVAR);
+    static STATUS broadcastConditionVariableFunc(UINT64, CVAR);
+    static STATUS waitConditionVariableFunc(UINT64, CVAR, MUTEX, UINT64);
+    static VOID freeConditionVariableFunc(UINT64, CVAR);
+    static STATUS createStreamFunc(UINT64, PCHAR, PCHAR, PCHAR, PCHAR, UINT64, PServiceCallContext);
+    static STATUS describeStreamFunc(UINT64, PCHAR, PServiceCallContext);
+    static STATUS describeStreamMultiStreamFunc(UINT64, PCHAR, PServiceCallContext);
+    static STATUS getStreamingEndpointFunc(UINT64, PCHAR, PCHAR, PServiceCallContext);
+    static STATUS getStreamingEndpointMultiStreamFunc(UINT64, PCHAR, PCHAR, PServiceCallContext);
+    static STATUS getStreamingTokenFunc(UINT64, PCHAR, STREAM_ACCESS_MODE, PServiceCallContext);
+    static STATUS getStreamingTokenMultiStreamFunc(UINT64, PCHAR, STREAM_ACCESS_MODE, PServiceCallContext);
 
-    static STATUS putStreamFunc(UINT64,
-                                PCHAR,
-                                PCHAR,
-                                UINT64,
-                                BOOL,
-                                BOOL,
-                                PCHAR,
-                                PServiceCallContext);
-    static STATUS putStreamMultiStreamFunc(UINT64,
-                                PCHAR,
-                                PCHAR,
-                                UINT64,
-                                BOOL,
-                                BOOL,
-                                PCHAR,
-                                PServiceCallContext);
-    static STATUS tagResourceFunc(UINT64,
-                                  PCHAR,
-                                  UINT32,
-                                  PTag,
-                                  PServiceCallContext);
+    static STATUS putStreamFunc(UINT64, PCHAR, PCHAR, UINT64, BOOL, BOOL, PCHAR, PServiceCallContext);
+    static STATUS putStreamMultiStreamFunc(UINT64, PCHAR, PCHAR, UINT64, BOOL, BOOL, PCHAR, PServiceCallContext);
+    static STATUS tagResourceFunc(UINT64, PCHAR, UINT32, PTag, PServiceCallContext);
 
-    static STATUS createDeviceFunc(UINT64,
-                                   PCHAR,
-                                   PServiceCallContext);
+    static STATUS createDeviceFunc(UINT64, PCHAR, PServiceCallContext);
 
-    static STATUS deviceCertToTokenFunc(UINT64,
-                                        PCHAR,
-                                        PServiceCallContext);
+    static STATUS deviceCertToTokenFunc(UINT64, PCHAR, PServiceCallContext);
 
-    static STATUS clientReadyFunc(UINT64,
-                                  CLIENT_HANDLE);
+    static STATUS clientReadyFunc(UINT64, CLIENT_HANDLE);
 
-    static STATUS streamDataAvailableFunc(UINT64,
-                                          STREAM_HANDLE,
-                                          PCHAR,
-                                          UINT64,
-                                          UINT64,
-                                          UINT64);
+    static STATUS streamDataAvailableFunc(UINT64, STREAM_HANDLE, PCHAR, UINT64, UINT64, UINT64);
 
-    static STATUS streamErrorReportFunc(UINT64,
-                                        STREAM_HANDLE,
-                                        UPLOAD_HANDLE,
-                                        UINT64,
-                                        STATUS);
+    static STATUS streamErrorReportFunc(UINT64, STREAM_HANDLE, UPLOAD_HANDLE, UINT64, STATUS);
 
-    static STATUS streamConnectionStaleFunc(UINT64,
-                                            STREAM_HANDLE,
-                                            UINT64);
+    static STATUS streamConnectionStaleFunc(UINT64, STREAM_HANDLE, UINT64);
 
-    static STATUS fragmentAckReceivedFunc(UINT64,
-                                          STREAM_HANDLE,
-                                          UPLOAD_HANDLE,
-                                          PFragmentAck);
+    static STATUS fragmentAckReceivedFunc(UINT64, STREAM_HANDLE, UPLOAD_HANDLE, PFragmentAck);
 
     static STATUS clientShutdownFunc(UINT64, CLIENT_HANDLE);
     static STATUS streamShutdownFunc(UINT64, STREAM_HANDLE, BOOL);

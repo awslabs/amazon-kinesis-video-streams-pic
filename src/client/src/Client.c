@@ -20,7 +20,6 @@ extern UINT32 CLIENT_STATE_MACHINE_STATE_COUNT;
  */
 PKinesisVideoClient gKinesisVideoClient = NULL;
 
-
 /**
  *
  * @param timerId - timerId for timer
@@ -41,47 +40,39 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
     CHK(pKinesisVideoClient, STATUS_NULL_ARG);
 
     // These values are set in another thread (so we need a lock)
-    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                     pKinesisVideoClient->base.lock);
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     // call pre hook function, useful for testing
     if (pKinesisVideoClient->timerCallbackPreHookFunc != NULL) {
         retStatus = pKinesisVideoClient->timerCallbackPreHookFunc(pKinesisVideoClient->hookCustomData);
     }
-    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                     pKinesisVideoClient->base.lock);
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
 
     if (STATUS_SUCCEEDED(retStatus)) {
         // Lock the client streams list lock
-        pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                         pKinesisVideoClient->base.streamListLock);
+        pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
 
         currentTime = GETTIME();
         for (i = 0; i < pKinesisVideoClient->deviceInfo.streamCount; i++) {
             if (NULL != pKinesisVideoClient->streams[i]) {
                 pCurrStream = pKinesisVideoClient->streams[i];
                 // Lock the Stream
-                pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                                 pCurrStream->base.lock);
+                pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pCurrStream->base.lock);
                 // Check if last PutFrame is older than max timeout, if so, send EoFR, if not, do nothing
                 // Ignoring currentTime it COULD be smaller than pCurrStream->lastPutFrametimestamp
                 // Due to this method entering but waiting on stream lock from putFrame call
-                if (IS_VALID_TIMESTAMP(pCurrStream->lastPutFrameTimestamp) &&
-                    currentTime > pCurrStream->lastPutFrameTimestamp
-                    && (currentTime - pCurrStream->lastPutFrameTimestamp) > INTERMITTENT_PRODUCER_MAX_TIMEOUT) {
+                if (IS_VALID_TIMESTAMP(pCurrStream->lastPutFrameTimestamp) && currentTime > pCurrStream->lastPutFrameTimestamp &&
+                    (currentTime - pCurrStream->lastPutFrameTimestamp) > INTERMITTENT_PRODUCER_MAX_TIMEOUT) {
                     if (!STATUS_SUCCEEDED(retStatus = putKinesisVideoFrame(TO_STREAM_HANDLE(pCurrStream), &eofr))) {
-                        DLOGW("Failed to submit auto eofr with 0x%08x, for stream name: %s", retStatus,
-                              pCurrStream->streamInfo.name);
+                        DLOGW("Failed to submit auto eofr with 0x%08x, for stream name: %s", retStatus, pCurrStream->streamInfo.name);
                     }
                 }
 
                 // Unlock the Stream
-                pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                                   pCurrStream->base.lock);
+                pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pCurrStream->base.lock);
             }
         }
 
-        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                           pKinesisVideoClient->base.streamListLock);
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
     }
 
 CleanUp:
@@ -94,8 +85,7 @@ CleanUp:
 /**
  * Creates a client
  */
-STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClientCallbacks,
-                                PCLIENT_HANDLE pClientHandle)
+STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClientCallbacks, PCLIENT_HANDLE pClientHandle)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -151,7 +141,7 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     pKinesisVideoClient->clientReady = FALSE;
 
     // Set the streams pointer right after the struct
-    pKinesisVideoClient->streams = (PKinesisVideoStream*)(pKinesisVideoClient + 1);
+    pKinesisVideoClient->streams = (PKinesisVideoStream*) (pKinesisVideoClient + 1);
 
     // Copy the structures in their entirety
     MEMCPY(&pKinesisVideoClient->clientCallbacks, pClientCallbacks, SIZEOF(ClientCallbacks));
@@ -164,9 +154,7 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
 
     // Fix-up the name of the device if not specified
     if (pKinesisVideoClient->deviceInfo.name[0] == '\0') {
-        createRandomName(pKinesisVideoClient->deviceInfo.name,
-                         DEFAULT_DEVICE_NAME_LEN,
-                         pKinesisVideoClient->clientCallbacks.getRandomNumberFn,
+        createRandomName(pKinesisVideoClient->deviceInfo.name, DEFAULT_DEVICE_NAME_LEN, pKinesisVideoClient->clientCallbacks.getRandomNumberFn,
                          pKinesisVideoClient->clientCallbacks.customData);
     }
 
@@ -175,18 +163,17 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
 
 #ifndef ALIGNED_MEMORY_MODEL
     // In case of in-content-store memory allocation, we need to ensure the heap is aligned
-    CHK(pKinesisVideoClient->deviceInfo.storageInfo.storageType != DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC, STATUS_NON_ALIGNED_HEAP_WITH_IN_CONTENT_STORE_ALLOCATORS);
+    CHK(pKinesisVideoClient->deviceInfo.storageInfo.storageType != DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC,
+        STATUS_NON_ALIGNED_HEAP_WITH_IN_CONTENT_STORE_ALLOCATORS);
 #endif
 
     // Create the storage
     heapFlags = pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_IN_MEM ||
-                pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC ?
-                MEMORY_BASED_HEAP_FLAGS : FILE_BASED_HEAP_FLAGS;
-    CHK_STATUS(heapInitialize(pKinesisVideoClient->deviceInfo.storageInfo.storageSize,
-                              pKinesisVideoClient->deviceInfo.storageInfo.spillRatio,
-                              heapFlags,
-                              pKinesisVideoClient->deviceInfo.storageInfo.rootDirectory,
-                              &pKinesisVideoClient->pHeap));
+            pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC
+        ? MEMORY_BASED_HEAP_FLAGS
+        : FILE_BASED_HEAP_FLAGS;
+    CHK_STATUS(heapInitialize(pKinesisVideoClient->deviceInfo.storageInfo.storageSize, pKinesisVideoClient->deviceInfo.storageInfo.spillRatio,
+                              heapFlags, pKinesisVideoClient->deviceInfo.storageInfo.rootDirectory, &pKinesisVideoClient->pHeap));
 
     // Using content store allocator if needed
     // IMPORTANT! This will not be multi-client-safe
@@ -195,48 +182,40 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     }
 
     // Initialize the the ready state condition variable
-    pKinesisVideoClient->base.ready = pKinesisVideoClient->clientCallbacks.createConditionVariableFn(
-            pKinesisVideoClient->clientCallbacks.customData);
+    pKinesisVideoClient->base.ready = pKinesisVideoClient->clientCallbacks.createConditionVariableFn(pKinesisVideoClient->clientCallbacks.customData);
 
     CHK(IS_VALID_CVAR_VALUE(pKinesisVideoClient->base.ready), STATUS_NOT_ENOUGH_MEMORY);
 
     // Set the tags pointer to point after the array of streams
-    pKinesisVideoClient->deviceInfo.tags = (PTag)((PKinesisVideoStream*)(pKinesisVideoClient + 1) + pDeviceInfo->streamCount);
+    pKinesisVideoClient->deviceInfo.tags = (PTag)((PKinesisVideoStream*) (pKinesisVideoClient + 1) + pDeviceInfo->streamCount);
 
     // Package the tags after the structure
     CHK_STATUS(packageTags(pDeviceInfo->tagCount, pDeviceInfo->tags, tagsSize, pKinesisVideoClient->deviceInfo.tags, NULL));
     pKinesisVideoClient->deviceInfo.tagCount = pDeviceInfo->tagCount;
 
     // Create the client lock
-    pKinesisVideoClient->base.lock = pKinesisVideoClient->clientCallbacks.createMutexFn(
-            pKinesisVideoClient->clientCallbacks.customData,
-            TRUE);
+    pKinesisVideoClient->base.lock = pKinesisVideoClient->clientCallbacks.createMutexFn(pKinesisVideoClient->clientCallbacks.customData, TRUE);
 
     // Create lock for streams list
-    pKinesisVideoClient->base.streamListLock = pKinesisVideoClient->clientCallbacks.createMutexFn(
-            pKinesisVideoClient->clientCallbacks.customData,
-            TRUE);
+    pKinesisVideoClient->base.streamListLock =
+        pKinesisVideoClient->clientCallbacks.createMutexFn(pKinesisVideoClient->clientCallbacks.customData, TRUE);
 
     // Create the state machine and step it
-    CHK_STATUS(createStateMachine(CLIENT_STATE_MACHINE_STATES,
-                                  CLIENT_STATE_MACHINE_STATE_COUNT,
-                                  TO_CUSTOM_DATA(pKinesisVideoClient),
-                                  pKinesisVideoClient->clientCallbacks.getCurrentTimeFn,
-                                  pKinesisVideoClient->clientCallbacks.customData,
+    CHK_STATUS(createStateMachine(CLIENT_STATE_MACHINE_STATES, CLIENT_STATE_MACHINE_STATE_COUNT, TO_CUSTOM_DATA(pKinesisVideoClient),
+                                  pKinesisVideoClient->clientCallbacks.getCurrentTimeFn, pKinesisVideoClient->clientCallbacks.customData,
                                   &pStateMachine));
 
     pKinesisVideoClient->base.pStateMachine = pStateMachine;
 
-    if(pKinesisVideoClient->deviceInfo.clientInfo.automaticStreamingFlags == AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER) {
+    if (pKinesisVideoClient->deviceInfo.clientInfo.automaticStreamingFlags == AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER) {
         if (!IS_VALID_TIMER_QUEUE_HANDLE(pKinesisVideoClient->timerQueueHandle)) {
             // Create timer queue
             CHK_STATUS(timerQueueCreate(&pKinesisVideoClient->timerQueueHandle));
             // Store callback in client so we can override in tests
             pKinesisVideoClient->timerCallbackFunc = checkIntermittentProducerCallback;
             CHK_STATUS(timerQueueAddTimer(pKinesisVideoClient->timerQueueHandle, INTERMITTENT_PRODUCER_TIMER_START_DELAY,
-                                          pKinesisVideoClient->deviceInfo.clientInfo.reservedCallbackPeriod,
-                                          pKinesisVideoClient->timerCallbackFunc, (UINT64) pKinesisVideoClient,
-                                          &pKinesisVideoClient->timerId));
+                                          pKinesisVideoClient->deviceInfo.clientInfo.reservedCallbackPeriod, pKinesisVideoClient->timerCallbackFunc,
+                                          (UINT64) pKinesisVideoClient, &pKinesisVideoClient->timerId));
         }
     }
 
@@ -274,9 +253,7 @@ CleanUp:
 /**
  * Creates a client
  */
-STATUS createKinesisVideoClientSync(PDeviceInfo pDeviceInfo,
-                                    PClientCallbacks pClientCallbacks,
-                                    PCLIENT_HANDLE pClientHandle)
+STATUS createKinesisVideoClientSync(PDeviceInfo pDeviceInfo, PClientCallbacks pClientCallbacks, PCLIENT_HANDLE pClientHandle)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -293,8 +270,7 @@ STATUS createKinesisVideoClientSync(PDeviceInfo pDeviceInfo,
     DLOGV("Awaiting for the Kinesis Video Client to become ready...");
 
     // Lock the client
-    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                     pKinesisVideoClient->base.lock);
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     clientLocked = TRUE;
 
     do {
@@ -306,11 +282,9 @@ STATUS createKinesisVideoClientSync(PDeviceInfo pDeviceInfo,
         // Blocking path
         // Wait may return without any data available due to a spurious wake up.
         // See: https://en.wikipedia.org/wiki/Spurious_wakeup
-        CHK_STATUS(pKinesisVideoClient->clientCallbacks.waitConditionVariableFn(
-                pKinesisVideoClient->clientCallbacks.customData,
-                pKinesisVideoClient->base.ready,
-                pKinesisVideoClient->base.lock,
-                pKinesisVideoClient->deviceInfo.clientInfo.createClientTimeout));
+        CHK_STATUS(pKinesisVideoClient->clientCallbacks.waitConditionVariableFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                                                pKinesisVideoClient->base.ready, pKinesisVideoClient->base.lock,
+                                                                                pKinesisVideoClient->deviceInfo.clientInfo.createClientTimeout));
 
     } while (TRUE);
 
@@ -324,8 +298,7 @@ CleanUp:
 
     // Unlock the client
     if (clientLocked) {
-        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                           pKinesisVideoClient->base.lock);
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     }
 
     // Free the client on error
@@ -411,7 +384,7 @@ STATUS getKinesisVideoMetrics(CLIENT_HANDLE clientHandle, PClientMetrics pKinesi
         if (NULL != pKinesisVideoClient->streams[i]) {
             CHK_STATUS(contentViewGetAllocationSize(pKinesisVideoClient->streams[i]->pView, &viewAllocationSize));
             pKinesisVideoMetrics->totalContentViewsSize += viewAllocationSize;
-            pKinesisVideoMetrics->totalFrameRate += (UINT64)pKinesisVideoClient->streams[i]->diagnostics.currentFrameRate;
+            pKinesisVideoMetrics->totalFrameRate += (UINT64) pKinesisVideoClient->streams[i]->diagnostics.currentFrameRate;
             pKinesisVideoMetrics->totalTransferRate += pKinesisVideoClient->streams[i]->diagnostics.currentTransferRate;
         }
     }
@@ -426,7 +399,7 @@ CleanUp:
         semaphoreRelease(pKinesisVideoClient->base.shutdownSemaphore);
     }
 
-    if(locked) {
+    if (locked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
     }
 
@@ -495,8 +468,7 @@ STATUS stopKinesisVideoStreams(CLIENT_HANDLE clientHandle)
     releaseClientSemaphore = TRUE;
 
     // Must lock streams list lock due to iteration
-    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                     pKinesisVideoClient->base.streamListLock);
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
     streamsListLock = TRUE;
 
     // Iterate over the streams and stop them
@@ -508,10 +480,8 @@ STATUS stopKinesisVideoStreams(CLIENT_HANDLE clientHandle)
     }
 
     // unlock streams list lock after iteration
-    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                       pKinesisVideoClient->base.streamListLock);
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
     streamsListLock = FALSE;
-
 
 CleanUp:
 
@@ -520,8 +490,7 @@ CleanUp:
     }
 
     if (streamsListLock) {
-        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                           pKinesisVideoClient->base.streamListLock);
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
     }
 
     CHK_LOG_ERR(retStatus);
@@ -590,19 +559,18 @@ STATUS stopKinesisVideoStreamSync(STREAM_HANDLE streamHandle)
 
     // lock streams list lock
     pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.customData,
-                                                                            pKinesisVideoStream->pKinesisVideoClient->base.streamListLock);
+                                                                          pKinesisVideoStream->pKinesisVideoClient->base.streamListLock);
     streamsListLock = TRUE;
 
     CHK_STATUS(stopStreamSync(pKinesisVideoStream));
 
     pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.customData,
-                                                                                pKinesisVideoStream->pKinesisVideoClient->base.streamListLock);
+                                                                            pKinesisVideoStream->pKinesisVideoClient->base.streamListLock);
     streamsListLock = FALSE;
 
 CleanUp:
 
-
-    if(streamsListLock) {
+    if (streamsListLock) {
         pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.customData,
                                                                                 pKinesisVideoStream->pKinesisVideoClient->base.streamListLock);
     }
@@ -684,8 +652,7 @@ STATUS createKinesisVideoStreamSync(CLIENT_HANDLE clientHandle, PStreamInfo pStr
     DLOGV("Awaiting for the stream to become ready...");
 
     // Lock the stream
-    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                     pKinesisVideoStream->base.lock);
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     streamLocked = TRUE;
 
     do {
@@ -702,11 +669,9 @@ STATUS createKinesisVideoStreamSync(CLIENT_HANDLE clientHandle, PStreamInfo pStr
         // Blocking path
         // Wait may return without any data available due to a spurious wake up.
         // See: https://en.wikipedia.org/wiki/Spurious_wakeup
-        CHK_STATUS(pKinesisVideoClient->clientCallbacks.waitConditionVariableFn(
-                pKinesisVideoClient->clientCallbacks.customData,
-                pKinesisVideoStream->base.ready,
-                pKinesisVideoStream->base.lock,
-                pKinesisVideoClient->deviceInfo.clientInfo.createStreamTimeout));
+        CHK_STATUS(pKinesisVideoClient->clientCallbacks.waitConditionVariableFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                                                pKinesisVideoStream->base.ready, pKinesisVideoStream->base.lock,
+                                                                                pKinesisVideoClient->deviceInfo.clientInfo.createStreamTimeout));
 
     } while (TRUE);
 
@@ -718,8 +683,7 @@ CleanUp:
 
     // release stream lock
     if (streamLocked) {
-        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                           pKinesisVideoStream->base.lock);
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     }
 
     if (releaseStreamSemaphore) {
@@ -763,15 +727,13 @@ STATUS freeKinesisVideoStream(PSTREAM_HANDLE pStreamHandle)
     releaseClientSemaphore = TRUE;
 
     // lock stream list lock before freeing stream
-    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                     pKinesisVideoClient->base.streamListLock);
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
     locked = TRUE;
 
     CHK_STATUS(freeStream(pKinesisVideoStream));
 
     // unlock stream list lock before freeing stream
-    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                     pKinesisVideoClient->base.streamListLock);
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
     locked = FALSE;
 
     // Set the stream to invalid
@@ -783,9 +745,8 @@ CleanUp:
         semaphoreRelease(pKinesisVideoClient->base.shutdownSemaphore);
     }
 
-    if(locked) {
-        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                           pKinesisVideoClient->base.streamListLock);
+    if (locked) {
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
     }
 
     CHK_LOG_ERR(retStatus);
@@ -814,13 +775,7 @@ STATUS putKinesisVideoFrame(STREAM_HANDLE streamHandle, PFrame pFrame)
     releaseStreamSemaphore = TRUE;
 
     DLOGV("debug frame info pts: %" PRIu64 ", dts: %" PRIu64 ", duration: %" PRIu64 ", size: %u, trackId: %" PRIu64 ", isKey %d",
-          pFrame->presentationTs,
-          pFrame->decodingTs,
-          pFrame->duration,
-          pFrame->size,
-          pFrame->trackId,
-          CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)
-    );
+          pFrame->presentationTs, pFrame->decodingTs, pFrame->duration, pFrame->size, pFrame->trackId, CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags));
 
     // Process and store the result
     CHK_STATUS(frameOrderCoordinatorPutFrame(pKinesisVideoStream, pFrame));
@@ -829,7 +784,7 @@ CleanUp:
 
     if (STATUS_FAILED(retStatus) && pFrame != NULL) {
         DLOGW("Failed to submit frame to Kinesis Video client. "
-                      "status: 0x%08x decoding timestamp: %" PRIu64 " presentation timestamp: %" PRIu64,
+              "status: 0x%08x decoding timestamp: %" PRIu64 " presentation timestamp: %" PRIu64,
               retStatus, pFrame->decodingTs, pFrame->presentationTs);
     } else {
         /* In case pFrame is NULL and something failed */
@@ -890,8 +845,7 @@ CleanUp:
  *
  * NOTE: Currently, the format change should happen while it's not streaming.
  */
-STATUS kinesisVideoStreamFormatChanged(STREAM_HANDLE streamHandle, UINT32 codecPrivateDataSize,
-                                                  PBYTE codecPrivateData, UINT64 trackId)
+STATUS kinesisVideoStreamFormatChanged(STREAM_HANDLE streamHandle, UINT32 codecPrivateDataSize, PBYTE codecPrivateData, UINT64 trackId)
 {
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
@@ -924,15 +878,13 @@ CleanUp:
     CHK_LOG_ERR(retStatus);
     LEAVES();
     return retStatus;
-
 }
 
 /**
  * Fills in the buffer for a given stream
  * @return Status of the operation
  */
-STATUS getKinesisVideoStreamData(STREAM_HANDLE streamHandle, UPLOAD_HANDLE uploadHandle, PBYTE pBuffer,
-                                 UINT32 bufferSize, PUINT32 pFilledSize)
+STATUS getKinesisVideoStreamData(STREAM_HANDLE streamHandle, UPLOAD_HANDLE uploadHandle, PBYTE pBuffer, UINT32 bufferSize, PUINT32 pFilledSize)
 {
     STATUS retStatus = STATUS_SUCCESS;
     BOOL releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
@@ -961,11 +913,8 @@ CleanUp:
         semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
     }
 
-    if (retStatus != STATUS_SUCCESS &&
-        retStatus != STATUS_AWAITING_PERSISTED_ACK &&
-        retStatus != STATUS_END_OF_STREAM &&
-        retStatus != STATUS_UPLOAD_HANDLE_ABORTED &&
-        retStatus != STATUS_NO_MORE_DATA_AVAILABLE) {
+    if (retStatus != STATUS_SUCCESS && retStatus != STATUS_AWAITING_PERSISTED_ACK && retStatus != STATUS_END_OF_STREAM &&
+        retStatus != STATUS_UPLOAD_HANDLE_ABORTED && retStatus != STATUS_NO_MORE_DATA_AVAILABLE) {
         CHK_LOG_ERR(retStatus);
     }
 
@@ -1273,7 +1222,7 @@ STATUS tagResourceResultEvent(UINT64 customData, SERVICE_CALL_RESULT callResult)
 
     DLOGI("Tag resource result event.");
 
-    CHK(IS_VALID_HANDLE((HANDLE)customData), STATUS_NULL_ARG);
+    CHK(IS_VALID_HANDLE((HANDLE) customData), STATUS_NULL_ARG);
 
     objectIdentifier = KINESIS_VIDEO_OBJECT_IDENTIFIER_FROM_CUSTOM_DATA(customData);
 
@@ -1441,10 +1390,7 @@ CleanUp:
  */
 STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, STATUS failStatus)
 {
-    STATUS retStatus = STATUS_SUCCESS,
-            freeStreamStatus = STATUS_SUCCESS,
-            freeStateMachineStatus = STATUS_SUCCESS,
-            freeHeapStatus = STATUS_SUCCESS;
+    STATUS retStatus = STATUS_SUCCESS, freeStreamStatus = STATUS_SUCCESS, freeStateMachineStatus = STATUS_SUCCESS, freeHeapStatus = STATUS_SUCCESS;
     UINT32 i = 0;
     BOOL locked = FALSE;
 
@@ -1455,8 +1401,7 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
 
     // Lock the streamListLock for iteration
     if (IS_VALID_MUTEX_VALUE(pKinesisVideoClient->base.streamListLock)) {
-        pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                         pKinesisVideoClient->base.streamListLock);
+        pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
         locked = TRUE;
     }
 
@@ -1470,11 +1415,9 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
 
     // unlock the streamListLock after iteration
     if (locked) {
-        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                         pKinesisVideoClient->base.streamListLock);
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
         locked = FALSE;
     }
-
 
     // Shutdown client
     pKinesisVideoClient->clientCallbacks.clientShutdownFn(pKinesisVideoClient->clientCallbacks.customData, TO_CLIENT_HANDLE(pKinesisVideoClient));
@@ -1492,8 +1435,7 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
 
     // Lock the streamListLock for iteration
     if (IS_VALID_MUTEX_VALUE(pKinesisVideoClient->base.streamListLock)) {
-        pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                         pKinesisVideoClient->base.streamListLock);
+        pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
         locked = TRUE;
     }
 
@@ -1508,10 +1450,8 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
 
     // unlock and free the streamListLock
     if (locked) {
-        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                         pKinesisVideoClient->base.streamListLock);
-        pKinesisVideoClient->clientCallbacks.freeMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                           pKinesisVideoClient->base.streamListLock);
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
+        pKinesisVideoClient->clientCallbacks.freeMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
         locked = FALSE;
     }
 
@@ -1531,8 +1471,7 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
     }
 
     if (IS_VALID_MUTEX_VALUE(pKinesisVideoClient->base.lock)) {
-        pKinesisVideoClient->clientCallbacks.freeMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                         pKinesisVideoClient->base.lock);
+        pKinesisVideoClient->clientCallbacks.freeMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     }
 
     if (IS_VALID_SEMAPHORE_HANDLE(pKinesisVideoClient->base.shutdownSemaphore)) {
@@ -1544,8 +1483,7 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
     }
 
     // Reset the stored allocators if replaced
-    if (STATUS_SUCCEEDED(failStatus) &&
-        pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC) {
+    if (STATUS_SUCCEEDED(failStatus) && pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC) {
         globalMemAlloc = pKinesisVideoClient->storedMemAlloc;
         globalMemAlignAlloc = pKinesisVideoClient->storedMemAlignAlloc;
         globalMemCalloc = pKinesisVideoClient->storedMemCalloc;
@@ -1583,7 +1521,8 @@ VOID viewItemRemoved(PContentView pContentView, UINT64 customData, PViewItem pVi
     BOOL streamLocked = FALSE;
 
     // Validate the input just in case
-    CHK(pContentView != NULL && pViewItem != NULL && pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+    CHK(pContentView != NULL && pViewItem != NULL && pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL,
+        STATUS_NULL_ARG);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     // Lock the stream
@@ -1601,9 +1540,7 @@ VOID viewItemRemoved(PContentView pContentView, UINT64 customData, PViewItem pVi
                 // The callback is optional so check if specified first
                 if (pKinesisVideoClient->clientCallbacks.droppedFrameReportFn != NULL) {
                     CHK_STATUS(pKinesisVideoClient->clientCallbacks.droppedFrameReportFn(
-                                       pKinesisVideoClient->clientCallbacks.customData,
-                                       TO_STREAM_HANDLE(pKinesisVideoStream),
-                                       pViewItem->timestamp));
+                        pKinesisVideoClient->clientCallbacks.customData, TO_STREAM_HANDLE(pKinesisVideoStream), pViewItem->timestamp));
                 }
 
                 break;
@@ -1614,9 +1551,7 @@ VOID viewItemRemoved(PContentView pContentView, UINT64 customData, PViewItem pVi
                 // The callback is optional so check if specified first
                 if (pKinesisVideoClient->clientCallbacks.droppedFragmentReportFn != NULL) {
                     CHK_STATUS(pKinesisVideoClient->clientCallbacks.droppedFragmentReportFn(
-                                       pKinesisVideoClient->clientCallbacks.customData,
-                                       TO_STREAM_HANDLE(pKinesisVideoStream),
-                                       pViewItem->timestamp));
+                        pKinesisVideoClient->clientCallbacks.customData, TO_STREAM_HANDLE(pKinesisVideoStream), pViewItem->timestamp));
                 }
 
                 break;
@@ -1629,8 +1564,7 @@ VOID viewItemRemoved(PContentView pContentView, UINT64 customData, PViewItem pVi
 
 CleanUp:
 
-    if (pKinesisVideoClient != NULL)
-    {
+    if (pKinesisVideoClient != NULL) {
         // Lock the client
         pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
         // Remove the item from the storage
@@ -1661,7 +1595,7 @@ VOID createRandomName(PCHAR pName, UINT32 maxChars, GetRandomNumberFunc randFn, 
 
     for (i = 0; i < maxChars; i++) {
         // Generate an alpha char
-        curChar = (CHAR) (randFn(customData) % (10 + 26));
+        curChar = (CHAR)(randFn(customData) % (10 + 26));
         if (curChar <= 9) {
             // Assign num
             curChar += '0';
