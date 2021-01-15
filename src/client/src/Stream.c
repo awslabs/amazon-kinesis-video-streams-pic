@@ -611,9 +611,16 @@ STATUS shutdownStream(PKinesisVideoStream pKinesisVideoStream, BOOL resetStream)
 
     PKinesisVideoClient pKinesisVideoClient = NULL;
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
-    CHK(!pKinesisVideoStream->base.shutdown, retStatus);
 
-    pKinesisVideoStream->base.shutdown = TRUE;
+    // We will let the reset go through as we have a situation when the reset called from
+    // the callback handler will set the flag that the shutdown is in progress
+    // while on a separate thread a stream freeing could skip the main sequence
+    // based on the flag that was just set by the reset
+    if (!resetStream) {
+        CHK(!pKinesisVideoStream->base.shutdown, retStatus);
+        pKinesisVideoStream->base.shutdown = TRUE;
+    }
+
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
     CHK_STATUS(pKinesisVideoClient->clientCallbacks.streamShutdownFn(pKinesisVideoClient->clientCallbacks.customData,
                                                                      TO_STREAM_HANDLE(pKinesisVideoStream), resetStream));
