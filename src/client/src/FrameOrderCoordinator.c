@@ -96,8 +96,8 @@ STATUS audioVideoFrameTimestampComparator(PFrameOrderTrackData pFrameOrderTrackD
 {
     PStreamInfo pStreamInfo = (PStreamInfo) customData;
     UINT64 mkvTimestamp1, mkvTimestamp2, item;
-    BOOL firstFrameFirst = FALSE;
-    PFrame pFirst = NULL, pSecond = NULL, pSwap = NULL;
+    BOOL firstFrameFirst;
+    PFrame pFirst, pSecond, pSwap;
     STATUS retStatus = STATUS_SUCCESS;
 
     CHK(pFirstFrameFirst != NULL && pFrameOrderTrackData1 != NULL && pFrameOrderTrackData2 != NULL, STATUS_NULL_ARG);
@@ -130,12 +130,12 @@ STATUS audioVideoFrameTimestampComparator(PFrameOrderTrackData pFrameOrderTrackD
     // if two frames from different tracks have same mkv timestamps, and the latter frame has a KEY_FRAME_FLAG set,
     // then move KEY_FRAME_FLAG to the earlier frame. Because we cant have frame before key frame that has the same
     // mkv timestamp as the key frame.
-    if (mkvTimestamp1 == mkvTimestamp2 && pFrameOrderTrackData1->pTrackInfo->trackType != pFrameOrderTrackData2->pTrackInfo->trackType) {
-        if (!firstFrameFirst) {
-            pSwap = pFirst;
-            pFirst = pSecond;
-            pSecond = pSwap;
-        }
+    if (mkvTimestamp1 == mkvTimestamp2 &&
+        pFrameOrderTrackData1->pTrackInfo->trackType != pFrameOrderTrackData2->pTrackInfo->trackType &&
+        (pSecond->flags & FRAME_FLAG_KEY_FRAME) != FRAME_FLAG_NONE) {
+        pSwap = pFirst;
+        pFirst = pSecond;
+        pSecond = pSwap;
 
         // add 1 unit of mkvTimecodeScale to the latter frame if it has key frame flag so that backend dont complain
         // about fragment overlap. No need to change dts as it determines frame order and mkv contains pts only.
