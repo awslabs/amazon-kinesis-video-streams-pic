@@ -695,7 +695,7 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                     // Need to indicate to the getStreamData to not rollback.
                     pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_NOT_IN_USE;
                 } else {
-                    pActiveUploadHandleInfo = getStreamUploadInfo(pKinesisVideoStream, UPLOAD_HANDLE_STATE_ACTIVE);
+                    pActiveUploadHandleInfo = getStreamUploadInfoWithState(pKinesisVideoStream, UPLOAD_HANDLE_STATE_ACTIVE);
 
                     if (pActiveUploadHandleInfo != NULL) {
                         // If the errored handle is the only handle, then rollback,
@@ -728,7 +728,7 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                 }
 
                 // signal the next active session that it can start getting stream data.
-                pActiveUploadHandleInfo = getStreamUploadInfo(pKinesisVideoStream, UPLOAD_HANDLE_STATE_ACTIVE);
+                pActiveUploadHandleInfo = getStreamUploadInfoWithState(pKinesisVideoStream, UPLOAD_HANDLE_STATE_ACTIVE);
 
                 if (pActiveUploadHandleInfo != NULL) {
                     // dont spawn new session since we already have a active one
