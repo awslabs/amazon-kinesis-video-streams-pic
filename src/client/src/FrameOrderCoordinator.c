@@ -132,9 +132,7 @@ STATUS audioVideoFrameTimestampComparator(PFrameOrderTrackData pFrameOrderTrackD
     // mkv timestamp as the key frame.
     // In case of the same MKV timestamps with the same track we won't do any auto-adjustment
     // and will let the call fail later with the same timestamps in the main PutFrame API call
-    if (mkvTimestamp1 == mkvTimestamp2 &&
-        pFrameOrderTrackData1->pTrackInfo->trackType != pFrameOrderTrackData2->pTrackInfo->trackType) {
-
+    if (mkvTimestamp1 == mkvTimestamp2 && pFrameOrderTrackData1->pTrackInfo->trackType != pFrameOrderTrackData2->pTrackInfo->trackType) {
         // If the first frame does not have key frame flag but the second does the we swap
         if (!CHECK_FRAME_FLAG_KEY_FRAME(pFirst->flags) && CHECK_FRAME_FLAG_KEY_FRAME(pSecond->flags)) {
             pSwap = pFirst;

@@ -1787,7 +1787,7 @@ STATUS setNalAdaptationFlags(PKinesisVideoStream pKinesisVideoStream, UINT32 nal
     // Ensure we are not in a streaming state
     CHK_STATUS(acceptStateMachineState(pKinesisVideoStream->base.pStateMachine,
                                        STREAM_STATE_READY | STREAM_STATE_NEW | STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE |
-                                       STREAM_STATE_GET_ENDPOINT | STREAM_STATE_GET_TOKEN | STREAM_STATE_STOPPED));
+                                           STREAM_STATE_GET_ENDPOINT | STREAM_STATE_GET_TOKEN | STREAM_STATE_STOPPED));
 
     // Free and re-create the packager
     CHK_STATUS(freeMkvGenerator(pKinesisVideoStream->pMkvGenerator));
