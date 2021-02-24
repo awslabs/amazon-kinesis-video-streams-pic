@@ -2181,7 +2181,7 @@ PUBLIC_API STATUS kinesisVideoStreamFormatChanged(STREAM_HANDLE, UINT32, PBYTE, 
  *
  * @return Status of the function call.
  */
-PUBLIC_API STATUS kinesisVideoStreamSetNalAdaptionFlags(STREAM_HANDLE, UINT32);
+PUBLIC_API STATUS kinesisVideoStreamSetNalAdaptationFlags(STREAM_HANDLE, UINT32);
 
 /**
  * Streaming has been terminated unexpectedly

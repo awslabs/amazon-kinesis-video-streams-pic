@@ -885,7 +885,7 @@ CleanUp:
  *
  * NOTE: The operation is permitted in non-streaming states
  */
-STATUS kinesisVideoStreamSetNalAdaptionFlags(STREAM_HANDLE streamHandle, UINT32 nalAdaptationFlags)
+STATUS kinesisVideoStreamSetNalAdaptationFlags(STREAM_HANDLE streamHandle, UINT32 nalAdaptationFlags)
 {
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
@@ -903,7 +903,7 @@ STATUS kinesisVideoStreamSetNalAdaptionFlags(STREAM_HANDLE streamHandle, UINT32 
     releaseStreamSemaphore = TRUE;
 
     // Process and store the result
-    CHK_STATUS(setNalAdaptionFlags(pKinesisVideoStream, nalAdaptationFlags));
+    CHK_STATUS(setNalAdaptationFlags(pKinesisVideoStream, nalAdaptationFlags));
 
 CleanUp:
 

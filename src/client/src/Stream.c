@@ -1770,7 +1770,7 @@ CleanUp:
 /**
  * Sets NALu adaptation flags.
  */
-STATUS setNalAdaptionFlags(PKinesisVideoStream pKinesisVideoStream, UINT32 nalAdaptationFlags)
+STATUS setNalAdaptationFlags(PKinesisVideoStream pKinesisVideoStream, UINT32 nalAdaptationFlags)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;

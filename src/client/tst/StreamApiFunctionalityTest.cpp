@@ -146,7 +146,7 @@ TEST_F(StreamApiFunctionalityTest, setNalAdaptionFlags_stateCheck)
     EXPECT_EQ(MKV_NALS_ADAPT_NONE, ((PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator)->nalsAdaptation);
 
     // Ensure we can successfully set the NAL adaption flags
-    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptionFlags(mStreamHandle, nalFlags));
+    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptationFlags(mStreamHandle, nalFlags));
 
     EXPECT_EQ(nalFlags, pKinesisVideoStream->streamInfo.streamCaps.nalAdaptationFlags);
     EXPECT_EQ(MKV_NALS_ADAPT_ANNEXB, ((PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator)->nalsAdaptation);
@@ -164,21 +164,21 @@ TEST_F(StreamApiFunctionalityTest, setNalAdaptionFlags_stateCheck)
 
     // Ensure we can successfully reset the NALs again before the first frame
     nalFlags = NAL_ADAPTATION_ANNEXB_NALS;
-    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptionFlags(mStreamHandle, nalFlags));
+    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptationFlags(mStreamHandle, nalFlags));
     EXPECT_EQ(nalFlags, pKinesisVideoStream->streamInfo.streamCaps.nalAdaptationFlags);
     EXPECT_EQ(MKV_NALS_ADAPT_ANNEXB, ((PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator)->nalsAdaptation);
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
 
     // Ensure we can successfully set nal flags
     nalFlags = NAL_ADAPTATION_AVCC_NALS;
-    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptionFlags(mStreamHandle, nalFlags));
+    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptationFlags(mStreamHandle, nalFlags));
     EXPECT_EQ(nalFlags, pKinesisVideoStream->streamInfo.streamCaps.nalAdaptationFlags);
     EXPECT_EQ(MKV_NALS_ADAPT_AVCC, ((PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator)->nalsAdaptation);
     EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN, SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 
     // Ensure we can successfully set the nal flags
     nalFlags = NAL_ADAPTATION_ANNEXB_CPD_NALS;
-    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptionFlags(mStreamHandle, nalFlags));
+    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptationFlags(mStreamHandle, nalFlags));
     EXPECT_EQ(nalFlags, pKinesisVideoStream->streamInfo.streamCaps.nalAdaptationFlags);
     EXPECT_EQ(MKV_NALS_ADAPT_NONE, ((PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator)->nalsAdaptation);
 
@@ -201,7 +201,7 @@ TEST_F(StreamApiFunctionalityTest, setNalAdaptionFlags_stateCheck)
         }
 
         // Setting NAL flags should fail
-        EXPECT_NE(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptionFlags(mStreamHandle, nalFlags));
+        EXPECT_NE(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptationFlags(mStreamHandle, nalFlags));
     }
 }
 

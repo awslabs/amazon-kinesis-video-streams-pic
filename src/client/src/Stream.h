@@ -550,7 +550,7 @@ STATUS streamFormatChanged(PKinesisVideoStream, UINT32, PBYTE, UINT64);
  *
  * @return Status of the function call.
  */
-STATUS setNalAdaptionFlags(PKinesisVideoStream, UINT32);
+STATUS setNalAdaptationFlags(PKinesisVideoStream, UINT32);
 
 /**
  * Extracts and returns the stream metrics.

@@ -564,7 +564,7 @@ TEST_F(StreamApiTest, kinesisVideoStreamSetNalAdaptionFlags_Negative)
     // Create a stream
     CreateStream();
 
-    EXPECT_NE(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptionFlags(streamHandle, nalFlags));
+    EXPECT_NE(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptationFlags(streamHandle, nalFlags));
 }
 
 PVOID streamStopNotifier(PVOID arg)
