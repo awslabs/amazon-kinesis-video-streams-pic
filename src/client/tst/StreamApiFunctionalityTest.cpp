@@ -128,6 +128,83 @@ TEST_F(StreamApiFunctionalityTest, streamFormatChange_stateCheck)
     }
 }
 
+TEST_F(StreamApiFunctionalityTest, setNalAdaptionFlags_stateCheck)
+{
+    UINT32 i;
+    BYTE tempBuffer[10000];
+    UINT64 timestamp;
+    Frame frame;
+    UINT32 nalFlags = NAL_ADAPTATION_ANNEXB_NALS | NAL_ADAPTATION_ANNEXB_CPD_NALS;
+    PKinesisVideoStream pKinesisVideoStream;
+    PStreamMkvGenerator pStreamMkvGenerator;
+
+    // The default would be flags NONE
+    CreateStream();
+    pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+
+    EXPECT_EQ(NAL_ADAPTATION_FLAG_NONE, pKinesisVideoStream->streamInfo.streamCaps.nalAdaptationFlags);
+    EXPECT_EQ(MKV_NALS_ADAPT_NONE, ((PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator)->nalsAdaptation);
+
+    // Ensure we can successfully set the NAL adaption flags
+    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptionFlags(mStreamHandle, nalFlags));
+
+    EXPECT_EQ(nalFlags, pKinesisVideoStream->streamInfo.streamCaps.nalAdaptationFlags);
+    EXPECT_EQ(MKV_NALS_ADAPT_ANNEXB, ((PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator)->nalsAdaptation);
+
+    // Move to ready state
+    mStreamDescription.version = STREAM_DESCRIPTION_CURRENT_VERSION;
+    STRCPY(mStreamDescription.deviceName, TEST_DEVICE_NAME);
+    STRCPY(mStreamDescription.streamName, TEST_STREAM_NAME);
+    STRCPY(mStreamDescription.contentType, TEST_CONTENT_TYPE);
+    STRCPY(mStreamDescription.streamArn, TEST_STREAM_ARN);
+    STRCPY(mStreamDescription.updateVersion, TEST_UPDATE_VERSION);
+    mStreamDescription.streamStatus = STREAM_STATUS_ACTIVE;
+    mStreamDescription.creationTime = GETTIME();
+    EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, &mStreamDescription));
+
+    // Ensure we can successfully reset the NALs again before the first frame
+    nalFlags = NAL_ADAPTATION_ANNEXB_NALS;
+    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptionFlags(mStreamHandle, nalFlags));
+    EXPECT_EQ(nalFlags, pKinesisVideoStream->streamInfo.streamCaps.nalAdaptationFlags);
+    EXPECT_EQ(MKV_NALS_ADAPT_ANNEXB, ((PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator)->nalsAdaptation);
+    EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
+
+    // Ensure we can successfully set nal flags
+    nalFlags = NAL_ADAPTATION_AVCC_NALS;
+    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptionFlags(mStreamHandle, nalFlags));
+    EXPECT_EQ(nalFlags, pKinesisVideoStream->streamInfo.streamCaps.nalAdaptationFlags);
+    EXPECT_EQ(MKV_NALS_ADAPT_AVCC, ((PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator)->nalsAdaptation);
+    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN, SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
+
+    // Ensure we can successfully set the nal flags
+    nalFlags = NAL_ADAPTATION_ANNEXB_CPD_NALS;
+    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptionFlags(mStreamHandle, nalFlags));
+    EXPECT_EQ(nalFlags, pKinesisVideoStream->streamInfo.streamCaps.nalAdaptationFlags);
+    EXPECT_EQ(MKV_NALS_ADAPT_NONE, ((PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator)->nalsAdaptation);
+
+    for (i = 0, timestamp = 0; i < 20; timestamp += TEST_FRAME_DURATION, i++) {
+        frame.index = i;
+        frame.decodingTs = timestamp;
+        frame.presentationTs = timestamp;
+        frame.duration = TEST_FRAME_DURATION;
+        frame.size = SIZEOF(tempBuffer);
+        frame.frameData = tempBuffer;
+        frame.trackId = TEST_TRACKID;
+
+        // Key frame every 4th
+        frame.flags = i % 4 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
+        EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
+
+        // Return a put stream result on 5th
+        if (i == 5) {
+            EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
+        }
+
+        // Setting NAL flags should fail
+        EXPECT_NE(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptionFlags(mStreamHandle, nalFlags));
+    }
+}
+
 TEST_F(StreamApiFunctionalityTest, putFrame_BasicPutTestItemLimit)
 {
     UINT32 i, maxIteration;

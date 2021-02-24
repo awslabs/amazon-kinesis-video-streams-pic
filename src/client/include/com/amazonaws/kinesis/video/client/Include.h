@@ -2156,7 +2156,7 @@ PUBLIC_API STATUS tagResourceResultEvent(UINT64, SERVICE_CALL_RESULT);
  * Updates the codec private data associated with the stream.
  *
  * NOTE: Many encoders provide CPD after they have been initialized.
- * This update should happen in states other than STREAMING state.
+ * IMPORTANT: This update should happen in states other than STREAMING state.
  *
  * @param 1 STREAM_HANDLE - the stream handle.
  * @param 2 UINT32 - Codec Private Data size
@@ -2166,6 +2166,22 @@ PUBLIC_API STATUS tagResourceResultEvent(UINT64, SERVICE_CALL_RESULT);
  * @return Status of the function call.
  */
 PUBLIC_API STATUS kinesisVideoStreamFormatChanged(STREAM_HANDLE, UINT32, PBYTE, UINT64);
+
+/**
+ * Updates/sets NALu adaptation flags
+ *
+ * NOTE: In some scenarios, the upstream media source format is now known until the
+ * CPD is retrieved and first frame bits can be examined. In order to avoid creation
+ * of the stream on the media thread when first frame arrives we need to have a
+ * capability of re-setting the NALu adaptation flags before streaming.
+ * IMPORTANT: This update should happen in states other than STREAMING state.
+ *
+ * @param 1 STREAM_HANDLE - the stream handle.
+ * @param 2 UINT32 - New NALu adaptation flags
+ *
+ * @return Status of the function call.
+ */
+PUBLIC_API STATUS kinesisVideoStreamSetNalAdaptionFlags(STREAM_HANDLE, UINT32);
 
 /**
  * Streaming has been terminated unexpectedly

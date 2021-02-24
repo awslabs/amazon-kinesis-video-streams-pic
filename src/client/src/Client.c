@@ -881,6 +881,46 @@ CleanUp:
 }
 
 /**
+ * Update NALu adaptation flags
+ *
+ * NOTE: The operation is permitted in non-streaming states
+ */
+STATUS kinesisVideoStreamSetNalAdaptionFlags(STREAM_HANDLE streamHandle, UINT32 nalAdaptationFlags)
+{
+    STATUS retStatus = STATUS_SUCCESS;
+    PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
+    BOOL releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
+
+    DLOGI("Set NALu adaptation flags.");
+
+    CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+
+    // Shutdown sequencer
+    CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore, INFINITE_TIME_VALUE));
+    releaseClientSemaphore = TRUE;
+
+    CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->base.shutdownSemaphore, INFINITE_TIME_VALUE));
+    releaseStreamSemaphore = TRUE;
+
+    // Process and store the result
+    CHK_STATUS(setNalAdaptionFlags(pKinesisVideoStream, nalAdaptationFlags));
+
+CleanUp:
+
+    if (releaseStreamSemaphore) {
+        semaphoreRelease(pKinesisVideoStream->base.shutdownSemaphore);
+    }
+
+    if (releaseClientSemaphore) {
+        semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
+    }
+
+    CHK_LOG_ERR(retStatus);
+    LEAVES();
+    return retStatus;
+}
+
+/**
  * Fills in the buffer for a given stream
  * @return Status of the operation
  */

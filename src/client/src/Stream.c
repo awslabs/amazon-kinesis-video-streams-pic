@@ -1768,6 +1768,49 @@ CleanUp:
 }
 
 /**
+ * Sets NALu adaptation flags.
+ */
+STATUS setNalAdaptionFlags(PKinesisVideoStream pKinesisVideoStream, UINT32 nalAdaptationFlags)
+{
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    PKinesisVideoClient pKinesisVideoClient = NULL;
+    BOOL streamLocked = FALSE;
+
+    CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+    pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+
+    // Lock the stream
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+    streamLocked = TRUE;
+
+    // Ensure we are not in a streaming state
+    CHK_STATUS(acceptStateMachineState(pKinesisVideoStream->base.pStateMachine,
+                                       STREAM_STATE_READY | STREAM_STATE_NEW | STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE |
+                                       STREAM_STATE_GET_ENDPOINT | STREAM_STATE_GET_TOKEN | STREAM_STATE_STOPPED));
+
+    // Free and re-create the packager
+    CHK_STATUS(freeMkvGenerator(pKinesisVideoStream->pMkvGenerator));
+
+    // Reset the flags and re-create the packager
+    pKinesisVideoStream->streamInfo.streamCaps.nalAdaptationFlags = nalAdaptationFlags;
+    CHK_STATUS(createPackager(pKinesisVideoStream, &pKinesisVideoStream->pMkvGenerator));
+
+    // Unlock the stream (even though it will be unlocked in the cleanup)
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+    streamLocked = FALSE;
+
+CleanUp:
+
+    if (streamLocked) {
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+    }
+
+    LEAVES();
+    return retStatus;
+}
+
+/**
  * Puts a metadata into the stream
  */
 STATUS putFragmentMetadata(PKinesisVideoStream pKinesisVideoStream, PCHAR name, PCHAR value, BOOL persistent)
