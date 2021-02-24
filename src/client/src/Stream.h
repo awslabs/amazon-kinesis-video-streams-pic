@@ -531,7 +531,7 @@ STATUS putFrame(PKinesisVideoStream, PFrame);
 STATUS putFragmentMetadata(PKinesisVideoStream, PCHAR, PCHAR, BOOL);
 
 /**
- * Puts the frame into the stream. The stream will be started if it hasn't been yet.
+ * Sets a new CPD for the given track. The API should be called before the first frame is produced.
  *
  * @param 1 PKinesisVideoStream - Kinesis Video stream object.
  * @param 2 UINT32 - Codec private data size.
@@ -541,6 +541,16 @@ STATUS putFragmentMetadata(PKinesisVideoStream, PCHAR, PCHAR, BOOL);
  * @return Status of the function call.
  */
 STATUS streamFormatChanged(PKinesisVideoStream, UINT32, PBYTE, UINT64);
+
+/**
+ * Sets NALu adaptation flags. The API should be called before the first frame is produced.
+ *
+ * @param 1 PKinesisVideoStream - Kinesis Video stream object.
+ * @param 2 UINT32 - Nal adaptation flags.
+ *
+ * @return Status of the function call.
+ */
+STATUS setNalAdaptationFlags(PKinesisVideoStream, UINT32);
 
 /**
  * Extracts and returns the stream metrics.
