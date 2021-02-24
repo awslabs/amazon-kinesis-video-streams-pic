@@ -85,6 +85,18 @@ extern "C" {
     ((s) == STATUS_SUCCESS || (s) == STATUS_NO_MORE_DATA_AVAILABLE || (s) == STATUS_AWAITING_PERSISTED_ACK || (s) == STATUS_END_OF_STREAM)
 
 /**
+ * When using hybrid file backed heap for the content store and the specified
+ * content view buffer duration is greater than a predetermined duration and
+ * the content store size is greater than a predetermined size
+ * we will automatically use fragment aggregation mode.
+ * NOTE: fragment aggregation happens only in non-offline mode.
+ */
+#define FRAGMENT_ACCUMULATOR_MODE(s) (((PKinesisVideoStream) s)->pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_HYBRID_FILE && \
+    ((PKinesisVideoStream) s)->pKinesisVideoClient->deviceInfo.storageInfo.storageSize > MIN_STORAGE_SIZE_FOR_FRAGMENT_ACCUMULATOR &&                          \
+    !IS_OFFLINE_STREAMING_MODE(((PKinesisVideoStream) s)->streamInfo.streamCaps.streamingType) &&                                                              \
+    ((PKinesisVideoStream) s)->streamInfo.streamCaps.bufferDuration > MIN_CONTENT_DURATION_FOR_FRAGMENT_ACCUMULATOR)                                           \
+
+/**
  * Kinesis Video stream diagnostics information accumulator
  */
 typedef struct __KinesisVideoStreamDiagnostics KinesisVideoStreamDiagnostics;
@@ -283,6 +295,20 @@ typedef enum {
 #define IS_UPLOAD_HANDLE_READY_TO_TRIM(p) (IS_UPLOAD_HANDLE_IN_STATE(p, UPLOAD_HANDLE_STATE_READY_TO_TRIM))
 
 /**
+ * Fragment aggregation mode
+ */
+typedef enum {
+    // No aggregation
+    FRAGMENT_AGGREGATION_MODE_NONE,
+
+    // Start of the aggregation
+    FRAGMENT_AGGREGATION_MODE_START,
+
+    // Ongoing aggregation
+    FRAGMENT_AGGREGATION_MODE_ONGOING,
+} FRAGMENT_AGGREGATION_MODE, *PFRAGMENT_AGGREGATION_MODE;
+
+/**
  * Upload handle information struct
  */
 typedef struct __UploadHandleInfo UploadHandleInfo;
@@ -306,6 +332,31 @@ struct __UploadHandleInfo {
     UPLOAD_HANDLE_STATE state;
 };
 typedef struct __UploadHandleInfo* PUploadHandleInfo;
+
+/**
+ * Fragment aggregator tracker
+ */
+typedef struct __FragmentAggregator FragmentAggregator;
+struct __FragmentAggregator {
+    // Whether to aggregate the fragments
+    BOOL aggregateFragment;
+
+    // Allocation handle that's accumulating the fragment
+    ALLOCATION_HANDLE allocationHandle;
+
+    // Pointer to the mapped allocation region
+    PBYTE pAllocation;
+
+    // View item to hold the current aggregator
+    PViewItem pViewItem;
+
+    // Current size of the data
+    UINT32 currentSize;
+
+    // Allocation size
+    UINT32 allocationSize;
+};
+typedef struct __FragmentAggregator* PFragmentAggregator;
 
 /**
  * Kinesis Video stream internal structure
@@ -418,6 +469,9 @@ struct __KinesisVideoStream {
 
     // Last PutFrame timestamp
     UINT64 lastPutFrameTimestamp;
+
+    // Fragment aggregator
+    struct __FragmentAggregator fragmentAggregator;
 };
 
 /**
@@ -649,15 +703,16 @@ STATUS getAvailableViewSize(PKinesisVideoStream, PUINT64, PUINT64);
  * @param 1 - IN - KVS stream object
  * @param 2 - IN - Size of the overall packaged allocation
  * @param 3 - OUT - Allocation handle if successfully allocated
+ * @param 3 - OUT - Fragment aggregation mode
  * @return Status code of the operation
  */
-STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allocationSize, PALLOCATION_HANDLE pAllocationHandle);
+STATUS handleAvailability(PKinesisVideoStream, UINT32, PALLOCATION_HANDLE, PFRAGMENT_AGGREGATION_MODE);
 
 /**
  * Checks whether space is available in the content store and
  * if there is enough duration available in the content view
  */
-STATUS checkForAvailability(PKinesisVideoStream, UINT32, PALLOCATION_HANDLE);
+STATUS checkForAvailability(PKinesisVideoStream, UINT32, PALLOCATION_HANDLE, PFRAGMENT_AGGREGATION_MODE);
 
 /**
  * Packages the stream metadata.

@@ -188,6 +188,13 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     }
     pKinesisVideoStream->streamInfo.streamCaps.replayDuration = MIN(pStreamInfo->streamCaps.bufferDuration, pStreamInfo->streamCaps.replayDuration);
 
+    // Initialize the fragment aggregator after the fix-up of the buffer duration
+    pKinesisVideoStream->fragmentAggregator.allocationHandle = INVALID_ALLOCATION_HANDLE_VALUE;
+    pKinesisVideoStream->fragmentAggregator.pAllocation = NULL;
+    pKinesisVideoStream->fragmentAggregator.currentSize = 0;
+    pKinesisVideoStream->fragmentAggregator.allocationSize = 0;
+    pKinesisVideoStream->fragmentAggregator.aggregateFragment = FRAGMENT_ACCUMULATOR_MODE(pKinesisVideoStream);
+
     // Set the tags pointer to point after the KinesisVideoStream struct
     pKinesisVideoStream->streamInfo.tags = (PTag)((PBYTE)(pKinesisVideoStream + 1));
 
@@ -736,6 +743,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     PUploadHandleInfo pUploadHandleInfo;
     UINT64 windowDuration, currentDuration;
     PTrackInfo pTrackInfo = NULL;
+    FRAGMENT_AGGREGATION_MODE aggregationMode;
 
     CHK(pKinesisVideoStream != NULL && pFrame != NULL, STATUS_NULL_ARG);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
@@ -843,10 +851,13 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // Overall frame allocation size
     overallSize = packagedSize + packagedMetadataSize;
 
+    // A quick check for max fragment size for the frame itself
+    CHK(overallSize < MAX_FRAGMENT_SIZE, STATUS_MAX_FRAGMENT_SIZE_REACHED);
+
     pKinesisVideoStream->maxFrameSizeSeen = MAX(pKinesisVideoStream->maxFrameSizeSeen, overallSize);
 
     // Might need to block on the availability in the OFFLINE mode
-    CHK_STATUS(handleAvailability(pKinesisVideoStream, overallSize, &allocHandle));
+    CHK_STATUS(handleAvailability(pKinesisVideoStream, overallSize, &allocHandle, &aggregationMode));
 
     // Lock the client
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
@@ -953,6 +964,12 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             break;
         case MKV_STATE_START_BLOCK:
             break;
+
+        default:
+            // Some static code analysis tools trigger the absence of the default clause
+            // which in this case is not an issue due to the enum type. Adding for forward
+            // compatibility in case if a new state is added
+            CHK(FALSE, STATUS_INTERNAL_ERROR);
     }
 
     if (CHECK_ITEM_FRAGMENT_START(itemFlags) && pKinesisVideoClient->deviceInfo.clientInfo.logMetric) {
@@ -1624,7 +1641,7 @@ CleanUp:
  * The caller thread will be blocked in the OFFLINE mode.
  * The operation will return interrupted error in case the stream is terminated.
  */
-STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allocationSize, PALLOCATION_HANDLE pAllocationHandle)
+STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allocationSize, PALLOCATION_HANDLE pAllocationHandle, PFRAGMENT_AGGREGATION_MODE pAggregationMode)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -1632,7 +1649,7 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
 
     while (TRUE) {
         // Check if we have enough space to proceed - the stream should be locked
-        CHK_STATUS(checkForAvailability(pKinesisVideoStream, allocationSize, pAllocationHandle));
+        CHK_STATUS(checkForAvailability(pKinesisVideoStream, allocationSize, pAllocationHandle, pAggregationMode));
 
         // Early return if available
         CHK(!IS_VALID_ALLOCATION_HANDLE(*pAllocationHandle), STATUS_SUCCESS);
@@ -1670,13 +1687,13 @@ CleanUp:
  *
  * All the parameters are assumed to have been sanitized.
  */
-STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allocationSize, PALLOCATION_HANDLE pAllocationHandle)
+STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allocationSize, PALLOCATION_HANDLE pAllocationHandle, PFRAGMENT_AGGREGATION_MODE pAggregationMode)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
     BOOL clientLocked = FALSE, availability = FALSE;
-    UINT64 heapSize, availableHeapSize;
+    UINT64 heapSize, availableHeapSize, duration;
 
     // Set to invalid whether we failed to allocate or we don't have content view availability
     *pAllocationHandle = INVALID_ALLOCATION_HANDLE_VALUE;
@@ -1709,6 +1726,18 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
 
     // Early return if storage space is unavailable.
     CHK(availableHeapSize >= allocationSize, STATUS_SUCCESS);
+
+    // Check for aggregation
+    if (pKinesisVideoStream->fragmentAggregator.aggregateFragment) {
+        *pAggregationMode = TRUE;
+
+        // Get the availability
+        CHK_STATUS(contentViewGetWindowDuration(pKinesisVideoStream->pView, &duration, NULL));
+
+        // If it's greater than some
+    }
+
+    *pAggregationMode = FALSE;
 
     // Get the heap size. Do not need to check status. If heapAlloc failed then pAllocationHandle would remain invalid.
     retStatus = heapAlloc(pKinesisVideoClient->pHeap, allocationSize, pAllocationHandle);
