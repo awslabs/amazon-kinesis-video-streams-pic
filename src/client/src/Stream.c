@@ -139,6 +139,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
 
     // Set the initial diagnostics information from the defaults
     pKinesisVideoStream->diagnostics.currentFrameRate = pStreamInfo->streamCaps.frameRate;
+    pKinesisVideoStream->diagnostics.elementaryFrameRate = pStreamInfo->streamCaps.frameRate;
     pKinesisVideoStream->diagnostics.currentTransferRate = pStreamInfo->streamCaps.avgBandwidthBps;
     pKinesisVideoStream->diagnostics.accumulatedByteCount = 0;
     pKinesisVideoStream->diagnostics.lastFrameRateTimestamp = pKinesisVideoStream->diagnostics.lastTransferRateTimestamp = 0;
@@ -731,7 +732,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     EncodedFrameInfo encodedFrameInfo;
     MKV_STREAM_STATE generatorState = MKV_STATE_START_BLOCK;
     UINT64 currentTime = INVALID_TIMESTAMP_VALUE;
-    DOUBLE frameRate, deltaInSeconds;
+    DOUBLE frameRate, deltaInSeconds, elementaryFrameRate;
     PViewItem pViewItem = NULL;
     PUploadHandleInfo pUploadHandleInfo;
     UINT64 windowDuration, currentDuration;
@@ -1045,7 +1046,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         currentTime = IS_VALID_TIMESTAMP(currentTime)
             ? currentTime
             : pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
-        if (!CHECK_ITEM_STREAM_START(itemFlags)) {
+        if (!CHECK_ITEM_STREAM_START(itemFlags) && pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO) {
             // Calculate the delta time in seconds
             deltaInSeconds = (DOUBLE)(currentTime - pKinesisVideoStream->diagnostics.lastFrameRateTimestamp) / HUNDREDS_OF_NANOS_IN_A_SECOND;
 
@@ -1057,6 +1058,9 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
                     EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.currentFrameRate, frameRate);
             }
             DLOGD("Frame PTS for %d: %llu, prev PTS: %llu", pFrame->index, pFrame->presentationTs, pKinesisVideoStream->diagnostics.lastFrameRatePts);
+            elementaryFrameRate = (DOUBLE)HUNDREDS_OF_NANOS_IN_A_SECOND / ((DOUBLE)(pFrame->presentationTs - pKinesisVideoStream->diagnostics.lastFrameRatePts));
+            pKinesisVideoStream->diagnostics.elementaryFrameRate = elementaryFrameRate;
+            DLOGD("Elementary frame rate: %lf, %lf, %llu", elementaryFrameRate, pKinesisVideoStream->diagnostics.currentFrameRate, (pFrame->presentationTs - pKinesisVideoStream->diagnostics.lastFrameRatePts));
             pKinesisVideoStream->diagnostics.lastFrameRatePts = pFrame->presentationTs;
         }
 
@@ -3220,6 +3224,7 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
 
     // Set the initial diagnostics information from the defaults
     pKinesisVideoStream->diagnostics.currentFrameRate = pKinesisVideoStream->streamInfo.streamCaps.frameRate;
+    pKinesisVideoStream->diagnostics.elementaryFrameRate = pKinesisVideoStream->streamInfo.streamCaps.frameRate;
     pKinesisVideoStream->diagnostics.currentTransferRate = pKinesisVideoStream->streamInfo.streamCaps.avgBandwidthBps;
     pKinesisVideoStream->diagnostics.accumulatedByteCount = 0;
     pKinesisVideoStream->diagnostics.lastFrameRateTimestamp = pKinesisVideoStream->diagnostics.lastTransferRateTimestamp = 0;
