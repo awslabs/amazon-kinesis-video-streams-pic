@@ -1152,8 +1152,13 @@ struct __ClientMetrics {
     // Content view allocation size
     UINT64 totalContentViewsSize;
 
-    // Overall frame rate across the streams
+    // Overall frame rate across the streams: This is an indication of the rate at which frames are produced
+    // This is calculated using the clock value
     UINT64 totalFrameRate;
+
+    // Elementary stream frame rate in realtime/offline mode: This indicates the elementary stream frame rate
+    // This is calculated using the frame PTS
+    UINT64 totalElementaryFrameRate;
 
     // Overall transfer rate across the streams
     UINT64 totalTransferRate;

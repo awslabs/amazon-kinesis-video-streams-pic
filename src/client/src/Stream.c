@@ -1007,6 +1007,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         pKinesisVideoStream->newSessionTimestamp = encodedFrameInfo.streamStartTs;
         CHK_STATUS(contentViewGetHead(pKinesisVideoStream->pView, &pViewItem));
         pKinesisVideoStream->newSessionIndex = pViewItem->index;
+        pKinesisVideoStream->diagnostics.lastFrameRatePts = pFrame->presentationTs;
     }
 
     // We need to check for the latency pressure. If the view head is ahead of the current
@@ -1055,6 +1056,8 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
                 pKinesisVideoStream->diagnostics.currentFrameRate =
                     EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.currentFrameRate, frameRate);
             }
+            DLOGD("Frame PTS for %d: %llu, prev PTS: %llu", pFrame->index, pFrame->presentationTs, pKinesisVideoStream->diagnostics.lastFrameRatePts);
+            pKinesisVideoStream->diagnostics.lastFrameRatePts = pFrame->presentationTs;
         }
 
         // Store the last frame timestamp

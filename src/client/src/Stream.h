@@ -92,8 +92,14 @@ struct __KinesisVideoStreamDiagnostics {
     // Current FPS value
     DOUBLE currentFrameRate;
 
+    // Current stream's elementary frame rate
+    DOUBLE elementaryFrameRate;
+
     // Last time we took a measurement for the frame rate
     UINT64 lastFrameRateTimestamp;
+
+    // Previous PTS for the frame
+    UINT64 lastFrameRatePts;
 
     // Current transfer bytes-per-second
     UINT64 currentTransferRate;
