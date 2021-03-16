@@ -556,6 +556,17 @@ TEST_F(StreamApiTest, kinesisVideoStreamFormatChanged_Multitrack_free)
     MEMFREE(pCpd);
 }
 
+TEST_F(StreamApiTest, kinesisVideoStreamSetNalAdaptionFlags_Negative)
+{
+    STREAM_HANDLE streamHandle = INVALID_STREAM_HANDLE_VALUE;
+    UINT32 nalFlags = NAL_ADAPTATION_ANNEXB_CPD_NALS | NAL_ADAPTATION_ANNEXB_NALS;
+
+    // Create a stream
+    CreateStream();
+
+    EXPECT_NE(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptationFlags(streamHandle, nalFlags));
+}
+
 PVOID streamStopNotifier(PVOID arg)
 {
     STREAM_HANDLE streamHandle = (STREAM_HANDLE) arg;
