@@ -629,11 +629,11 @@ STATUS getStreamMetrics(PKinesisVideoStream, PStreamMetrics);
 /**
  * Calculates the max number of items in the content view
  *
- * @param 1 PStreamInfo - Kinesis Video stream info object.
+ * @param 1 PKinesisVideoStream - Kinesis Video stream object.
  *
  * @return The max item count in the view.
  */
-UINT32 calculateViewItemCount(PStreamInfo);
+UINT32 calculateViewItemCount(PKinesisVideoStream);
 
 /**
  * Frees the previously allocated metadata tracking info

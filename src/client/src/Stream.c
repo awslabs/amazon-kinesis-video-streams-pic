@@ -232,7 +232,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     pCurPnt = (PBYTE)(pKinesisVideoStream->streamInfo.streamCaps.trackInfoList + pKinesisVideoStream->streamInfo.streamCaps.trackInfoCount);
 
     // Calculate the max items in the view
-    maxViewItems = calculateViewItemCount(&pKinesisVideoStream->streamInfo);
+    maxViewItems = calculateViewItemCount(pKinesisVideoStream);
 
     // Create the view
     CHK_STATUS(createContentView(maxViewItems, pKinesisVideoStream->streamInfo.streamCaps.bufferDuration, viewItemRemoved,
@@ -2454,19 +2454,35 @@ VOID deleteStreamUploadInfo(PKinesisVideoStream pKinesisVideoStream, PUploadHand
  * This function will calculate either for frames or fragments
  *
  */
-UINT32 calculateViewItemCount(PStreamInfo pStreamInfo)
+UINT32 calculateViewItemCount(PKinesisVideoStream pKinesisVideoStream)
 {
     UINT32 viewItemCount = 0;
-    switch (pStreamInfo->streamCaps.streamingType) {
+    switch (pKinesisVideoStream->streamInfo.streamCaps.streamingType) {
         case STREAMING_TYPE_REALTIME:
         case STREAMING_TYPE_OFFLINE:
-            // Calculate the number of frames for the duration of the buffer.
-            viewItemCount = pStreamInfo->streamCaps.frameRate * ((UINT32)(pStreamInfo->streamCaps.bufferDuration / HUNDREDS_OF_NANOS_IN_A_SECOND));
+            // Calculate the number of frames for the duration of the buffer in non-aggregated case
+            if (!pKinesisVideoStream->fragmentAggregator.aggregateFragment) {
+                viewItemCount = pKinesisVideoStream->streamInfo.streamCaps.frameRate *
+                                ((UINT32) (pKinesisVideoStream->streamInfo.streamCaps.bufferDuration /
+                                           HUNDREDS_OF_NANOS_IN_A_SECOND));
+            } else {
+                // Use the min aggregation duration for per-frame item count calculation and
+                // add the fragment aggregated item count to it.
+                viewItemCount = pKinesisVideoStream->streamInfo.streamCaps.frameRate *
+                                ((UINT32) (MIN_CONTENT_DURATION_FOR_FRAGMENT_ACCUMULATOR /
+                                           HUNDREDS_OF_NANOS_IN_A_SECOND));
+
+                // Assume averaging 1 fragment per second
+                viewItemCount += (pKinesisVideoStream->streamInfo.streamCaps.bufferDuration - MIN_CONTENT_DURATION_FOR_FRAGMENT_ACCUMULATOR) /
+                        HUNDREDS_OF_NANOS_IN_A_SECOND;
+            }
+
             break;
 
         case STREAMING_TYPE_NEAR_REALTIME:
             // Calculate the number of the fragments in the buffer.
-            viewItemCount = (UINT32)(pStreamInfo->streamCaps.bufferDuration / pStreamInfo->streamCaps.fragmentDuration);
+            viewItemCount = (UINT32)(pKinesisVideoStream->streamInfo.streamCaps.bufferDuration /
+                    pKinesisVideoStream->streamInfo.streamCaps.fragmentDuration);
             break;
     }
 

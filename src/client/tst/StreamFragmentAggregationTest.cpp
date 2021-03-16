@@ -45,6 +45,44 @@ TEST_F(StreamFragmentAggregationTest, fragmentAggregationModeSelection_False)
     EXPECT_FALSE(FROM_STREAM_HANDLE(mStreamHandle)->fragmentAggregator.aggregateFragment);
 }
 
+TEST_F(StreamFragmentAggregationTest, fragmentAggregationModeSelection_False_Non_Hybrid)
+{
+    CreateScenarioTestClient(MIN_STORAGE_SIZE_FOR_FRAGMENT_ACCUMULATOR + 1);
+
+    mStreamInfo.streamCaps.bufferDuration = MIN_CONTENT_DURATION_FOR_FRAGMENT_ACCUMULATOR + 1;
+    ReadyStream();
+
+    EXPECT_FALSE(FROM_STREAM_HANDLE(mStreamHandle)->fragmentAggregator.aggregateFragment);
+
+    ClientMetrics clientMetrics;
+    MEMSET(&clientMetrics, 0x00, SIZEOF(ClientMetrics));
+    clientMetrics.version = CLIENT_METRICS_CURRENT_VERSION;
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoMetrics(mClientHandle, &clientMetrics));
+    UINT64 expectedSize = SIZEOF(RollingContentView) + SIZEOF(ViewItem) * calculateViewItemCount(FROM_STREAM_HANDLE(mStreamHandle));
+    EXPECT_EQ(expectedSize, clientMetrics.totalContentViewsSize);
+}
+
+TEST_F(StreamFragmentAggregationTest, fragmentAggregationModeSelection_False_Offline)
+{
+    mDeviceInfo.storageInfo.storageType = DEVICE_STORAGE_TYPE_HYBRID_FILE;
+
+    CreateScenarioTestClient(MIN_STORAGE_SIZE_FOR_FRAGMENT_ACCUMULATOR + 1);
+
+    mStreamInfo.streamCaps.streamingType = STREAMING_TYPE_OFFLINE;
+    mStreamInfo.retention = 2 * HUNDREDS_OF_NANOS_IN_AN_HOUR;
+    mStreamInfo.streamCaps.bufferDuration = MIN_CONTENT_DURATION_FOR_FRAGMENT_ACCUMULATOR + 1;
+    ReadyStream();
+
+    EXPECT_FALSE(FROM_STREAM_HANDLE(mStreamHandle)->fragmentAggregator.aggregateFragment);
+
+    ClientMetrics clientMetrics;
+    MEMSET(&clientMetrics, 0x00, SIZEOF(ClientMetrics));
+    clientMetrics.version = CLIENT_METRICS_CURRENT_VERSION;
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoMetrics(mClientHandle, &clientMetrics));
+    UINT64 expectedSize = SIZEOF(RollingContentView) + SIZEOF(ViewItem) * calculateViewItemCount(FROM_STREAM_HANDLE(mStreamHandle));
+    EXPECT_EQ(expectedSize, clientMetrics.totalContentViewsSize);
+}
+
 TEST_F(StreamFragmentAggregationTest, fragmentAggregationModeSelection_True)
 {
     mDeviceInfo.storageInfo.storageType = DEVICE_STORAGE_TYPE_HYBRID_FILE;
@@ -55,6 +93,39 @@ TEST_F(StreamFragmentAggregationTest, fragmentAggregationModeSelection_True)
     ReadyStream();
 
     EXPECT_TRUE(FROM_STREAM_HANDLE(mStreamHandle)->fragmentAggregator.aggregateFragment);
+
+    ClientMetrics clientMetrics;
+    MEMSET(&clientMetrics, 0x00, SIZEOF(ClientMetrics));
+    clientMetrics.version = CLIENT_METRICS_CURRENT_VERSION;
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoMetrics(mClientHandle, &clientMetrics));
+    UINT64 expectedSize = SIZEOF(RollingContentView) + SIZEOF(ViewItem) * calculateViewItemCount(FROM_STREAM_HANDLE(mStreamHandle));
+    EXPECT_EQ(expectedSize, clientMetrics.totalContentViewsSize);
+}
+
+TEST_F(StreamFragmentAggregationTest, fragmentAggregationModeSelection_True_LongDuration)
+{
+    mDeviceInfo.storageInfo.storageType = DEVICE_STORAGE_TYPE_HYBRID_FILE;
+
+    CreateScenarioTestClient(MIN_STORAGE_SIZE_FOR_FRAGMENT_ACCUMULATOR + 1);
+
+    mStreamInfo.streamCaps.bufferDuration = 10 * 24 * HUNDREDS_OF_NANOS_IN_AN_HOUR;
+    ReadyStream();
+
+    EXPECT_TRUE(FROM_STREAM_HANDLE(mStreamHandle)->fragmentAggregator.aggregateFragment);
+
+    ClientMetrics clientMetrics;
+    MEMSET(&clientMetrics, 0x00, SIZEOF(ClientMetrics));
+    clientMetrics.version = CLIENT_METRICS_CURRENT_VERSION;
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoMetrics(mClientHandle, &clientMetrics));
+    UINT64 expectedSize = SIZEOF(RollingContentView) + SIZEOF(ViewItem) * calculateViewItemCount(FROM_STREAM_HANDLE(mStreamHandle));
+    EXPECT_EQ(expectedSize, clientMetrics.totalContentViewsSize);
+
+    UINT64 nonAggregatedExpectedSize = SIZEOF(RollingContentView) + SIZEOF(ViewItem) *
+        (mStreamInfo.streamCaps.frameRate * ((UINT32) (mStreamInfo.streamCaps.bufferDuration /
+                               HUNDREDS_OF_NANOS_IN_A_SECOND)));
+
+    // Should be over 10 times less
+    EXPECT_LT(10 * expectedSize, nonAggregatedExpectedSize);
 }
 
 TEST_F(StreamFragmentAggregationTest, fragmentAggregation_SpillOverToFileStorage)

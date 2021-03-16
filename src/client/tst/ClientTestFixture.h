@@ -114,6 +114,7 @@
 #include "src/client/src/Include_i.h"
 #include "src/client/src/Stream.h"
 #include "src/mkvgen/src/Include_i.h"
+#include "src/view/src/Include_i.h"
 
 #include "MockConsumer.h"
 #include "MockProducer.h"
