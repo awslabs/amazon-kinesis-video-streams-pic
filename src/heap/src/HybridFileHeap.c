@@ -377,6 +377,7 @@ DEFINE_HEAP_SET_ALLOC_SIZE(hybridFileHeapSetAllocSize)
     // Write the new size
     allocationHeader = gFileHeader;
     allocationHeader.size = newSize;
+    allocationHeader.fileHandle = fileHandle;
 
     CHK_STATUS(updateFile(filePath, TRUE, (PBYTE) &allocationHeader, 0, FILE_ALLOCATION_HEADER_SIZE));
 

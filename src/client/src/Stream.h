@@ -74,9 +74,19 @@ extern "C" {
 #define MAX_ALLOCATION_OVERHEAD_SIZE 100
 
 /**
+ * Multiplier factor for the initial allocation for the aggregated fragment
+ */
+#define FRAGMENT_AGGREGATION_ALLOCATION_FACTOR 10
+
+/**
+ * Multiplier factor for the re-sizing allocation when the allocated size is smaller than required
+ */
+#define FRAGMENT_AGGREGATION_ALLOCATION_RESIZE_FACTOR 2
+
+/**
  * Max wait time for the blocking put frame. An persisted ack should come back within this period.
  */
-#define MAX_BLOCKING_PUT_WAIT 15 * HUNDREDS_OF_NANOS_IN_A_SECOND
+#define MAX_BLOCKING_PUT_WAIT (15 * HUNDREDS_OF_NANOS_IN_A_SECOND)
 
 /**
  * Valid status codes from get stream data

@@ -270,7 +270,7 @@ extern "C" {
 /**
  * Minimum content duration after which we allow for fragment accumulation
  */
-#define MIN_CONTENT_DURATION_FOR_FRAGMENT_ACCUMULATOR (1 * HUNDREDS_OF_NANOS_IN_AN_HOUR)
+#define MIN_CONTENT_DURATION_FOR_FRAGMENT_ACCUMULATOR (10 * HUNDREDS_OF_NANOS_IN_A_MINUTE)
 
 /**
  * Max number of fragment metadatas in the segment
