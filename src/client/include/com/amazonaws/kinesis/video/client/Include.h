@@ -446,7 +446,7 @@ extern "C" {
 #define SERVICE_CALL_CONTEXT_CURRENT_VERSION 0
 #define STREAM_DESCRIPTION_CURRENT_VERSION   1
 #define FRAGMENT_ACK_CURRENT_VERSION         0
-#define STREAM_METRICS_CURRENT_VERSION       1
+#define STREAM_METRICS_CURRENT_VERSION       2
 #define CLIENT_METRICS_CURRENT_VERSION       0
 #define CLIENT_INFO_CURRENT_VERSION          2
 
@@ -1190,6 +1190,9 @@ struct __StreamMetrics {
 
     // Last measured put frame rate in bytes per second
     DOUBLE currentFrameRate;
+
+    // Current stream's elementary frame rate
+    DOUBLE elementaryFrameRate;
 
     // Last measured transfer rate in bytes per second
     UINT64 currentTransferRate;

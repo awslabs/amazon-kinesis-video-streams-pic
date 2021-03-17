@@ -711,6 +711,8 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     DLOGD("\tAverage Control Plane API latency (ms): %" PRIu64 " ", streamMetrics.cplApiCallLatency / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     DLOGD("\tAverage Data Plane API latency (ms): %" PRIu64 " ", streamMetrics.dataApiCallLatency / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
+    // V2 information
+    DLOGD("\tCurrent elementary frame rate (fps): %f ", streamMetrics.elementaryFrameRate);
 CleanUp:
 
     return retStatus;
@@ -1577,6 +1579,7 @@ STATUS getStreamMetrics(PKinesisVideoStream pKinesisVideoStream, PStreamMetrics 
 
     // Store the frame rate and the transfer rate
     pStreamMetrics->currentFrameRate = pKinesisVideoStream->diagnostics.currentFrameRate;
+    pStreamMetrics->elementaryFrameRate = pKinesisVideoStream->diagnostics.elementaryFrameRate;
     pStreamMetrics->currentTransferRate = pKinesisVideoStream->diagnostics.currentTransferRate;
 
     // Bail out for V0
