@@ -167,7 +167,7 @@ TEST_F(StreamFragmentAggregationTest, fragmentAggregation_SimpleAggregationNoSpi
     UINT64 i, frameCount;
     BOOL exist;
     CHAR filePath[MAX_PATH_LEN];
-    BYTE buffer[10000];
+    BYTE buffer[100000];
     UINT32 readSize;
 
     mSubmitServiceCallResultMode = STOP_AT_PUT_STREAM;
@@ -194,14 +194,14 @@ TEST_F(StreamFragmentAggregationTest, fragmentAggregation_SimpleAggregationNoSpi
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE, TEST_VIDEO_TRACK_ID)) << "frameCount " << i;
     }
 
-    STRCPY(filePath, "1.hfh");
-    EXPECT_EQ(STATUS_SUCCESS, fileExists(filePath, &exist));
-    EXPECT_FALSE(exist);
-
     checkContentViewAggregated(mStreamHandle);
 
     // Read up data in order to check the recovery
     while (STATUS_SUCCEEDED(getKinesisVideoStreamData(mStreamHandle, 0, buffer, SIZEOF(buffer), &readSize)));
+
+    STRCPY(filePath, "1.hfh");
+    EXPECT_EQ(STATUS_SUCCESS, fileExists(filePath, &exist));
+    EXPECT_FALSE(exist);
 
     for (i = 0; i < 10 * mMockProducerConfig.mKeyFrameInterval; i++) {
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE, TEST_VIDEO_TRACK_ID)) << "frameCount " << i;
@@ -215,7 +215,7 @@ TEST_F(StreamFragmentAggregationTest, fragmentAggregation_SimpleAggregationWithS
     UINT64 i, frameCount, fileSize;
     BOOL exist;
     CHAR filePath[MAX_PATH_LEN];
-    BYTE buffer[10000];
+    BYTE buffer[100000];
     UINT32 readSize;
 
     mSubmitServiceCallResultMode = STOP_AT_PUT_STREAM;
@@ -241,18 +241,22 @@ TEST_F(StreamFragmentAggregationTest, fragmentAggregation_SimpleAggregationWithS
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE, TEST_VIDEO_TRACK_ID)) << "frameCount " << i;
     }
 
+    checkContentViewAggregated(mStreamHandle);
+
+    // Read up data in order to check the recovery
+    while (STATUS_SUCCEEDED(getKinesisVideoStreamData(mStreamHandle, 0, buffer, SIZEOF(buffer), &readSize)));
+
+    // On VMs it seems that the file flushing takes time so the consequent check for
+    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+
     STRCPY(filePath, "253.hfh");
     EXPECT_EQ(STATUS_SUCCESS, fileExists(filePath, &exist));
     EXPECT_TRUE(exist);
     EXPECT_EQ(STATUS_SUCCESS, getFileLength(filePath, &fileSize));
 
-    // Accounting for aggregation, MKV packaging and allocation book keeping
-    EXPECT_EQ(90636, fileSize);
-
-    checkContentViewAggregated(mStreamHandle);
-
-    // Read up data in order to check the recovery
-    while (STATUS_SUCCEEDED(getKinesisVideoStreamData(mStreamHandle, 0, buffer, SIZEOF(buffer), &readSize)));
+    // Should have larger file which is initially 10 * the frame size then gets resized to be 2x to
+    // accommodate the frames and later gets trimmed to the size when we retrieve the data
+    EXPECT_EQ(90294, fileSize);
 
     for (i = 0; i < 10 * mMockProducerConfig.mKeyFrameInterval; i++) {
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE, TEST_VIDEO_TRACK_ID)) << "frameCount " << i;

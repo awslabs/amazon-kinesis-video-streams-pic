@@ -825,6 +825,15 @@ VOID logStreamInfo(PStreamInfo);
  */
 STATUS calculateCallLatency(PKinesisVideoStream, BOOL);
 
+/**
+ * Flushes and resets the fragment aggregator
+ *
+ * NOTE: The function assumes the client lock is held by the caller
+ *
+ * @return Status code of the operation
+ */
+STATUS flushFragmentAggregator(PKinesisVideoStream);
+
 ///////////////////////////////////////////////////////////////////////////
 // Service call event functions
 ///////////////////////////////////////////////////////////////////////////

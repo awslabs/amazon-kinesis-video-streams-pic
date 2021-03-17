@@ -354,7 +354,7 @@ STATUS freeStream(PKinesisVideoStream pKinesisVideoStream)
     if (pKinesisVideoStream->fragmentAggregator.aggregateFragment &&
         IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle) &&
         pKinesisVideoStream->fragmentAggregator.pAllocation != NULL) {
-        heapUnmap(pKinesisVideoClient->pHeap, pKinesisVideoStream->fragmentAggregator.pAllocation);
+        flushFragmentAggregator(pKinesisVideoStream);
     }
 
     // Release the underlying objects
@@ -810,6 +810,14 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     if (pKinesisVideoStream->resetGeneratorOnKeyFrame && CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)) {
         CHK_STATUS(mkvgenResetGenerator(pKinesisVideoStream->pMkvGenerator));
         pKinesisVideoStream->resetGeneratorOnKeyFrame = FALSE;
+
+        // Flush the aggregator if needed
+        if (pKinesisVideoStream->fragmentAggregator.aggregateFragment &&
+            pKinesisVideoStream->fragmentAggregator.pAllocation != NULL &&
+            IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle) &&
+            pKinesisVideoStream->fragmentAggregator.pViewItem != NULL) {
+            flushFragmentAggregator(pKinesisVideoStream);
+        }
     }
 
     // Check if the frames should be skipped and whether the skip flag needs to be reset
@@ -832,19 +840,10 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
         clientLocked = TRUE;
 
-        CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, pKinesisVideoStream->fragmentAggregator.pAllocation));
-        CHK_STATUS(heapSetAllocSize(pKinesisVideoClient->pHeap, &pKinesisVideoStream->fragmentAggregator.allocationHandle, pKinesisVideoStream->fragmentAggregator.currentSize));
-        // Update the view item handle as it might change during resizing
-        pKinesisVideoStream->fragmentAggregator.pViewItem->handle = pKinesisVideoStream->fragmentAggregator.allocationHandle;
+        flushFragmentAggregator(pKinesisVideoStream);
 
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
         clientLocked = FALSE;
-
-        pKinesisVideoStream->fragmentAggregator.pAllocation = NULL;
-        pKinesisVideoStream->fragmentAggregator.allocationHandle = INVALID_ALLOCATION_HANDLE_VALUE;
-        pKinesisVideoStream->fragmentAggregator.currentSize = 0;
-        pKinesisVideoStream->fragmentAggregator.allocationSize = 0;
-        pKinesisVideoStream->fragmentAggregator.pViewItem = NULL;
     }
 
     // Package and store the frame.
@@ -1461,6 +1460,20 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             clientLocked = TRUE;
 
             // Fill the rest of the buffer of the current view item first
+
+            // Need to handle an edge case here with the fragment aggregator.
+            // In case the aggregation was ON and suddenly the application stopped producing frames and
+            // the network catches up.
+            // We will need to flush the aggregator first.
+            // The main issue here is that if the producer continues with a P-frame then those might get skipped.
+            if (pKinesisVideoStream->fragmentAggregator.aggregateFragment &&
+                pKinesisVideoStream->fragmentAggregator.pAllocation != NULL &&
+                IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle) &&
+                pKinesisVideoStream->fragmentAggregator.pViewItem != NULL &&
+                pKinesisVideoStream->fragmentAggregator.pViewItem->index == pKinesisVideoStream->curViewItem.viewItem.index) {
+                flushFragmentAggregator(pKinesisVideoStream);
+            }
+
             // Map the storage
             CHK_STATUS(heapMap(pKinesisVideoClient->pHeap, pKinesisVideoStream->curViewItem.viewItem.handle, (PVOID*) &pAlloc, &allocSize));
             CHK(allocSize < MAX_UINT32 && (UINT32) allocSize >= pKinesisVideoStream->curViewItem.viewItem.length, STATUS_INVALID_ALLOCATION_SIZE);
@@ -1855,14 +1868,7 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
             // Unmap any outstanding fragment aggregator buffers
             if (IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle) &&
                 pKinesisVideoStream->fragmentAggregator.pAllocation != NULL) {
-                CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, pKinesisVideoStream->fragmentAggregator.pAllocation));
-                CHK_STATUS(heapSetAllocSize(pKinesisVideoClient->pHeap, &pKinesisVideoStream->fragmentAggregator.allocationHandle, pKinesisVideoStream->fragmentAggregator.currentSize));
-
-                pKinesisVideoStream->fragmentAggregator.pAllocation = NULL;
-                pKinesisVideoStream->fragmentAggregator.allocationHandle = INVALID_ALLOCATION_HANDLE_VALUE;
-                pKinesisVideoStream->fragmentAggregator.currentSize = 0;
-                pKinesisVideoStream->fragmentAggregator.allocationSize = 0;
-                pKinesisVideoStream->fragmentAggregator.pViewItem = NULL;
+                flushFragmentAggregator(pKinesisVideoStream);
             }
         }
     }
@@ -2100,6 +2106,15 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
     CHK_STATUS(contentViewGetCurrentIndex(pKinesisVideoStream->pView, &curIndex));
     CHK_STATUS(contentViewGetItemAt(pKinesisVideoStream->pView, curIndex, &pViewItem));
 
+    // Flush the aggregator if needed
+    if (pKinesisVideoStream->fragmentAggregator.aggregateFragment &&
+        pKinesisVideoStream->fragmentAggregator.pAllocation != NULL &&
+        IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle) &&
+        pKinesisVideoStream->fragmentAggregator.pViewItem != NULL &&
+        pKinesisVideoStream->fragmentAggregator.pViewItem->index == pViewItem->index) {
+        flushFragmentAggregator(pKinesisVideoStream);
+    }
+
     // Get the required size for the header
     CHK_STATUS(mkvgenGenerateHeader(pKinesisVideoStream->pMkvGenerator, NULL, &headerSize, &streamStartTs));
 
@@ -2203,6 +2218,15 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
 
     // Get the view item corresponding to the current item
     CHK_STATUS(contentViewGetItemAt(pKinesisVideoStream->pView, pKinesisVideoStream->curViewItem.viewItem.index, &pViewItem));
+
+    // Flush the aggregator
+    if (pKinesisVideoStream->fragmentAggregator.aggregateFragment &&
+        pKinesisVideoStream->fragmentAggregator.pAllocation != NULL &&
+        IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle) &&
+        pKinesisVideoStream->fragmentAggregator.pViewItem != NULL &&
+        pKinesisVideoStream->fragmentAggregator.pViewItem->index == pViewItem->index) {
+        flushFragmentAggregator(pKinesisVideoStream);
+    }
 
     // As we are removing the MKV header, the resulting allocation size will be actually smaller
     // We will simply copy/shift the data, including the MKV tags if any and the cluster header
@@ -3515,4 +3539,29 @@ CleanUp:
 
     CHK_LOG_ERR(retStatus);
     SAFE_MEMFREE(hexEncodedCpd);
+}
+
+STATUS flushFragmentAggregator(PKinesisVideoStream pKinesisVideoStream)
+{
+    STATUS retStatus = STATUS_SUCCESS, savedStatus;
+    PKinesisVideoClient pKinesisVideoClient = NULL;
+
+    CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+    pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+
+    CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, pKinesisVideoStream->fragmentAggregator.pAllocation));
+    CHK_STATUS(heapSetAllocSize(pKinesisVideoClient->pHeap, &pKinesisVideoStream->fragmentAggregator.allocationHandle, pKinesisVideoStream->fragmentAggregator.currentSize));
+
+    // Update the view item handle as it might change during resizing
+    pKinesisVideoStream->fragmentAggregator.pViewItem->handle = pKinesisVideoStream->fragmentAggregator.allocationHandle;
+
+    pKinesisVideoStream->fragmentAggregator.pAllocation = NULL;
+    pKinesisVideoStream->fragmentAggregator.allocationHandle = INVALID_ALLOCATION_HANDLE_VALUE;
+    pKinesisVideoStream->fragmentAggregator.currentSize = 0;
+    pKinesisVideoStream->fragmentAggregator.allocationSize = 0;
+    pKinesisVideoStream->fragmentAggregator.pViewItem = NULL;
+
+CleanUp:
+
+    return retStatus;
 }
