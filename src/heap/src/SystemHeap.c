@@ -229,7 +229,7 @@ DEFINE_HEAP_SET_ALLOC_SIZE(sysHeapSetAllocSize)
     CHK_STATUS(commonHeapSetAllocSize(pHeap, pHandle, size, newSize));
 
     // overall allocation size
-    overallSize = SYS_ALLOCATION_HEADER_SIZE + size + SYS_ALLOCATION_FOOTER_SIZE;
+    overallSize = SYS_ALLOCATION_HEADER_SIZE + newSize + SYS_ALLOCATION_FOOTER_SIZE;
 
     // This heap implementation uses a direct memory allocation so no mapping really needed - just conversion from a handle to memory pointer
     pAllocation = (PVOID) HANDLE_TO_POINTER(*pHandle);

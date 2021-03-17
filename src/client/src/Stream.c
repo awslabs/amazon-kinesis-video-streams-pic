@@ -834,6 +834,8 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 
         CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, pKinesisVideoStream->fragmentAggregator.pAllocation));
         CHK_STATUS(heapSetAllocSize(pKinesisVideoClient->pHeap, &pKinesisVideoStream->fragmentAggregator.allocationHandle, pKinesisVideoStream->fragmentAggregator.currentSize));
+        // Update the view item handle as it might change during resizing
+        pKinesisVideoStream->fragmentAggregator.pViewItem->handle = pKinesisVideoStream->fragmentAggregator.allocationHandle;
 
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
         clientLocked = FALSE;
@@ -1830,6 +1832,10 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
                 CHK_STATUS(heapSetAllocSize(pKinesisVideoClient->pHeap, &pKinesisVideoStream->fragmentAggregator.allocationHandle, overallSize));
                 CHK(IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle), retStatus);
                 pKinesisVideoStream->fragmentAggregator.allocationSize = overallSize;
+
+                // Update the allocation handle in the view as it might change during resizing
+                pKinesisVideoStream->fragmentAggregator.pViewItem->handle = pKinesisVideoStream->fragmentAggregator.allocationHandle;
+
                 CHK_STATUS(heapMap(pKinesisVideoClient->pHeap,
                                    pKinesisVideoStream->fragmentAggregator.allocationHandle,
                                    (PVOID*) &pKinesisVideoStream->fragmentAggregator.pAllocation,
