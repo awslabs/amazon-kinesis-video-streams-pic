@@ -679,14 +679,12 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     DLOGD("\tAvailable storage byte size: %" PRIu64 " ", clientMetrics.contentStoreAvailableSize);
     DLOGD("\tAllocated storage byte size: %" PRIu64 " ", clientMetrics.contentStoreAllocatedSize);
     DLOGD("\tTotal view allocation byte size: %" PRIu64 " ", clientMetrics.totalContentViewsSize);
-    DLOGD("\tTotal streams frame rate (fps): %" PRIu64 " ", clientMetrics.totalFrameRate);
     DLOGD("\tTotal streams transfer rate (bps): %" PRIu64 " (%" PRIu64 " Kbps)", clientMetrics.totalTransferRate * 8,
           clientMetrics.totalTransferRate * 8 / 1024);
     DLOGD("\tCurrent view duration (ms): %" PRIu64 " ", streamMetrics.currentViewDuration / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     DLOGD("\tOverall view duration (ms): %" PRIu64 " ", streamMetrics.overallViewDuration / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     DLOGD("\tCurrent view byte size: %" PRIu64 " ", streamMetrics.currentViewSize);
     DLOGD("\tOverall view byte size: %" PRIu64 " ", streamMetrics.overallViewSize);
-    DLOGD("\tCurrent frame rate (fps): %f ", streamMetrics.currentFrameRate);
     DLOGD("\tCurrent transfer rate (bps): %" PRIu64 " (%" PRIu64 " Kbps)", streamMetrics.currentTransferRate * 8,
           streamMetrics.currentTransferRate * 8 / 1024);
 
@@ -711,8 +709,11 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     DLOGD("\tAverage Control Plane API latency (ms): %" PRIu64 " ", streamMetrics.cplApiCallLatency / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     DLOGD("\tAverage Data Plane API latency (ms): %" PRIu64 " ", streamMetrics.dataApiCallLatency / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
-    // V2 information
+    // V2 stream information
     DLOGD("\tCurrent elementary frame rate (fps): %f ", streamMetrics.elementaryFrameRate);
+
+    // V1 client information
+    DLOGD("\tTotal elementary frame rate (fps): %f ", clientMetrics.totalElementaryFrameRate);
 CleanUp:
 
     return retStatus;
@@ -734,7 +735,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     EncodedFrameInfo encodedFrameInfo;
     MKV_STREAM_STATE generatorState = MKV_STATE_START_BLOCK;
     UINT64 currentTime = INVALID_TIMESTAMP_VALUE;
-    DOUBLE frameRate, deltaInSeconds, elementaryFrameRate;
+    DOUBLE frameRate, deltaInSeconds;
     PViewItem pViewItem = NULL;
     PUploadHandleInfo pUploadHandleInfo;
     UINT64 windowDuration, currentDuration;
@@ -1010,7 +1011,6 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         pKinesisVideoStream->newSessionTimestamp = encodedFrameInfo.streamStartTs;
         CHK_STATUS(contentViewGetHead(pKinesisVideoStream->pView, &pViewItem));
         pKinesisVideoStream->newSessionIndex = pViewItem->index;
-        pKinesisVideoStream->diagnostics.lastFrameRatePts = pFrame->presentationTs;
     }
 
     // We need to check for the latency pressure. If the view head is ahead of the current
@@ -1049,6 +1049,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             ? currentTime
             : pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
         if (!CHECK_ITEM_STREAM_START(itemFlags) && pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO) {
+            DLOGD("Track type: %d", pTrackInfo->trackType);
             // Calculate the delta time in seconds
             deltaInSeconds = (DOUBLE)(currentTime - pKinesisVideoStream->diagnostics.lastFrameRateTimestamp) / HUNDREDS_OF_NANOS_IN_A_SECOND;
 
@@ -1059,11 +1060,13 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
                 pKinesisVideoStream->diagnostics.currentFrameRate =
                     EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.currentFrameRate, frameRate);
             }
-            DLOGD("Frame PTS for %d: %llu, prev PTS: %llu", pFrame->index, pFrame->presentationTs, pKinesisVideoStream->diagnostics.lastFrameRatePts);
-            elementaryFrameRate = (DOUBLE)HUNDREDS_OF_NANOS_IN_A_SECOND / ((DOUBLE)(pFrame->presentationTs - pKinesisVideoStream->diagnostics.lastFrameRatePts));
-            pKinesisVideoStream->diagnostics.elementaryFrameRate = elementaryFrameRate;
-            DLOGD("Elementary frame rate: %lf, %lf, %llu", elementaryFrameRate, pKinesisVideoStream->diagnostics.currentFrameRate, (pFrame->presentationTs - pKinesisVideoStream->diagnostics.lastFrameRatePts));
-            pKinesisVideoStream->diagnostics.lastFrameRatePts = pFrame->presentationTs;
+            pKinesisVideoStream->diagnostics.elementaryFrameRate =
+                (DOUBLE) HUNDREDS_OF_NANOS_IN_A_SECOND / ((DOUBLE)(pFrame->presentationTs - pKinesisVideoStream->diagnostics.previousFrameRatePts));
+            pKinesisVideoStream->diagnostics.previousFrameRatePts = pFrame->presentationTs;
+        }
+        else if(CHECK_ITEM_STREAM_START(itemFlags) && pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO) {
+            // In case of first putFrame call, ensure we cache the presentationTs
+            pKinesisVideoStream->diagnostics.previousFrameRatePts = pFrame->presentationTs;
         }
 
         // Store the last frame timestamp
@@ -1564,6 +1567,7 @@ STATUS getStreamMetrics(PKinesisVideoStream pKinesisVideoStream, PStreamMetrics 
 
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL && pStreamMetrics != NULL, STATUS_NULL_ARG);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+    DLOGD("Metrics version: %d", pStreamMetrics->version);
     CHK(pStreamMetrics->version <= STREAM_METRICS_CURRENT_VERSION, STATUS_INVALID_STREAM_METRICS_VERSION);
 
     // Lock the stream

@@ -350,6 +350,26 @@ TEST_F(ClientApiTest, getKinesisVideoMetrics_Invalid)
 
     kinesisVideoClientMetrics.version = CLIENT_METRICS_CURRENT_VERSION;
     EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoMetrics(mClientHandle, &kinesisVideoClientMetrics));
+
+}
+
+TEST_F(ClientApiTest, getStreamMetrics_Invalid)
+{
+    StreamMetrics streamMetrics;
+
+    streamMetrics.version = STREAM_METRICS_CURRENT_VERSION;
+
+    EXPECT_NE(STATUS_SUCCESS, getKinesisVideoStreamMetrics(INVALID_STREAM_HANDLE_VALUE, &streamMetrics));
+    EXPECT_NE(STATUS_SUCCESS, getKinesisVideoStreamMetrics(mStreamHandle, NULL));
+    EXPECT_NE(STATUS_SUCCESS, getKinesisVideoStreamMetrics(INVALID_STREAM_HANDLE_VALUE, NULL));
+    EXPECT_NE(STATUS_SUCCESS, getKinesisVideoStreamMetrics(INVALID_STREAM_HANDLE_VALUE, &streamMetrics));
+    // Checking V1
+    streamMetrics.version = STREAM_METRICS_CURRENT_VERSION + 1;
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamMetrics(mStreamHandle, &streamMetrics));
+
+    // Checking V0
+    streamMetrics.version = 0;
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamMetrics(mStreamHandle, &streamMetrics));
 }
 
 TEST_F(ClientApiTest, kinesisVideoClientCreateInvalidSecurityTokenExpiration)

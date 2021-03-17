@@ -447,7 +447,7 @@ extern "C" {
 #define STREAM_DESCRIPTION_CURRENT_VERSION   1
 #define FRAGMENT_ACK_CURRENT_VERSION         0
 #define STREAM_METRICS_CURRENT_VERSION       2
-#define CLIENT_METRICS_CURRENT_VERSION       0
+#define CLIENT_METRICS_CURRENT_VERSION       1
 #define CLIENT_INFO_CURRENT_VERSION          2
 
 /**
@@ -1158,7 +1158,7 @@ struct __ClientMetrics {
 
     // Elementary stream frame rate in realtime/offline mode: This indicates the elementary stream frame rate
     // This is calculated using the frame PTS
-    UINT64 totalElementaryFrameRate;
+    DOUBLE totalElementaryFrameRate;
 
     // Overall transfer rate across the streams
     UINT64 totalTransferRate;
@@ -1191,7 +1191,7 @@ struct __StreamMetrics {
     // Last measured put frame rate in bytes per second
     DOUBLE currentFrameRate;
 
-    // Current stream's elementary frame rate
+    // Current stream's elementary frame rate.
     DOUBLE elementaryFrameRate;
 
     // Last measured transfer rate in bytes per second

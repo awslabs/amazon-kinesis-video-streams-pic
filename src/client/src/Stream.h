@@ -99,7 +99,7 @@ struct __KinesisVideoStreamDiagnostics {
     UINT64 lastFrameRateTimestamp;
 
     // Previous PTS for the frame
-    UINT64 lastFrameRatePts;
+    UINT64 previousFrameRatePts;
 
     // Current transfer bytes-per-second
     UINT64 currentTransferRate;

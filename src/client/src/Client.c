@@ -375,6 +375,7 @@ STATUS getKinesisVideoMetrics(CLIENT_HANDLE clientHandle, PClientMetrics pKinesi
     pKinesisVideoMetrics->totalContentViewsSize = 0;
     pKinesisVideoMetrics->totalTransferRate = 0;
     pKinesisVideoMetrics->totalFrameRate = 0;
+    pKinesisVideoMetrics->totalElementaryFrameRate = 0;
 
     // Lock the client streams list lock because we're iterating over
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
@@ -385,6 +386,7 @@ STATUS getKinesisVideoMetrics(CLIENT_HANDLE clientHandle, PClientMetrics pKinesi
             CHK_STATUS(contentViewGetAllocationSize(pKinesisVideoClient->streams[i]->pView, &viewAllocationSize));
             pKinesisVideoMetrics->totalContentViewsSize += viewAllocationSize;
             pKinesisVideoMetrics->totalFrameRate += (UINT64) pKinesisVideoClient->streams[i]->diagnostics.currentFrameRate;
+            pKinesisVideoMetrics->totalElementaryFrameRate += pKinesisVideoClient->streams[i]->diagnostics.elementaryFrameRate;
             pKinesisVideoMetrics->totalTransferRate += pKinesisVideoClient->streams[i]->diagnostics.currentTransferRate;
         }
     }
