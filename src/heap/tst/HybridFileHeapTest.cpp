@@ -170,7 +170,8 @@ TEST_P(HybridFileHeapTest, hybridFileHeapResizeLargeLimit)
     UINT32 spillRatio = 50;
     UINT32 numAlloc = AllocationCount / 2;
     UINT32 i, fileHandleIndex;
-    UINT64 numAllocations, heapLimit, diff = 1000;
+    UINT64 numAllocations, heapLimit, diff = 1000, size;
+    PVOID pAlloc;
 
     // Split the 50% and allocate half from ram and half from file heap
     memHeapLimit = (UINT32)(heapSize * ((DOUBLE)spillRatio / 100));
@@ -214,8 +215,23 @@ TEST_P(HybridFileHeapTest, hybridFileHeapResizeLargeLimit)
     heapLimit = pHeap->heapLimit;
     heapSize = pHeap->heapSize;
 
+    // Write and read some data to ensure we copy forward on reallocation. Use a mem handle
+    handle = handles[numAlloc / 2];
+    EXPECT_EQ(STATUS_SUCCESS, heapMap(pHeap, handle, &pAlloc, &size));
+    EXPECT_EQ(ramAllocSize, size);
+    MEMSET(pAlloc, 0x5a, size);
+    EXPECT_EQ(STATUS_SUCCESS, heapUnmap(pHeap, pAlloc));
+
     // Resize to larger size which will hit the encapsulated heap limit and cause re-allocation from file heap
-    EXPECT_EQ(STATUS_SUCCESS, heapSetAllocSize(pHeap, &handles[numAlloc / 2], ramAllocSize + diff));
+    EXPECT_EQ(STATUS_SUCCESS, heapSetAllocSize(pHeap, &handle, ramAllocSize + diff));
+
+    // Write and read
+    EXPECT_EQ(STATUS_SUCCESS, heapMap(pHeap, handle, &pAlloc, &size));
+    EXPECT_EQ(ramAllocSize + diff, size);
+    EXPECT_TRUE(MEMCHK(pAlloc, 0x5a, ramAllocSize));
+    EXPECT_EQ(STATUS_SUCCESS, heapUnmap(pHeap, pAlloc));
+
+    handles[numAlloc / 2] = handle;
 
     EXPECT_EQ(heapSize + diff, pHeap->heapSize);
     EXPECT_EQ(heapLimit, pHeap->heapLimit);
@@ -224,9 +240,6 @@ TEST_P(HybridFileHeapTest, hybridFileHeapResizeLargeLimit)
     // Free all of the allocations
     for (i = 0; i < AllocationCount; i++) {
         if (IS_VALID_ALLOCATION_HANDLE(handles[i])) {
-            if (i ==51){
-                DLOGE("<<<");
-            }
             EXPECT_EQ(STATUS_SUCCESS, heapFree(pHeap, handles[i]))  << "Failed to free handle at index: " << i;
         }
     }
