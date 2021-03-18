@@ -207,8 +207,7 @@ typedef enum {
     MKV_STATE_START_STREAM,
     MKV_STATE_START_CLUSTER,
     MKV_STATE_START_BLOCK,
-} MKV_STREAM_STATE,
-    *PMKV_STREAM_STATE;
+} MKV_STREAM_STATE, *PMKV_STREAM_STATE;
 
 /**
  * Track types taken from the MKV specification
@@ -217,8 +216,7 @@ typedef enum {
     MKV_TRACK_INFO_TYPE_VIDEO = (BYTE) 0x01,
     MKV_TRACK_INFO_TYPE_AUDIO = (BYTE) 0x02,
     MKV_TRACK_INFO_TYPE_UNKOWN = (BYTE) 0x03,
-} MKV_TRACK_INFO_TYPE,
-    *PMKV_TRACK_INFO_TYPE;
+} MKV_TRACK_INFO_TYPE, *PMKV_TRACK_INFO_TYPE;
 
 #define GET_TRACK_TYPE_STR(st)                                                                                                                       \
     ((st) == MKV_TRACK_INFO_TYPE_VIDEO ? (PCHAR) "TRACK_INFO_TYPE_VIDEO"                                                                             \

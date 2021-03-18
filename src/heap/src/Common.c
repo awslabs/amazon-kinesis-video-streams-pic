@@ -264,8 +264,12 @@ DEFINE_HEAP_FREE(commonHeapFree)
 
     overallSize = pBaseHeap->getAllocationSizeFn(pHeap, handle);
 
-    CHK_ERR(overallSize != INVALID_ALLOCATION_VALUE && pHeap->heapSize >= overallSize, STATUS_HEAP_CORRUPTED,
+    CHK_ERR(overallSize != INVALID_ALLOCATION_VALUE, STATUS_HEAP_CORRUPTED,
             "Invalid allocation or heap corruption trying to free handle 0x%016" PRIx64, handle);
+
+    if (pHeap->heapSize < overallSize) {
+        DLOGV("Possible memory corruption as the allocation sizes in hybrid heap might not be precise due to variable size overhead of the inner memory heap allocation");
+    }
 
     // Validate the heap
     CHK_STATUS(validateHeap(pHeap));

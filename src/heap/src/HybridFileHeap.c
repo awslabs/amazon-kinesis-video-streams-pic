@@ -343,7 +343,8 @@ DEFINE_HEAP_SET_ALLOC_SIZE(hybridFileHeapSetAllocSize)
     ALLOCATION_HEADER allocationHeader;
     CHAR filePath[MAX_PATH_LEN + 1];
     UINT32 fileHandle;
-    UINT64 overallSize;
+    UINT64 overallSize, allocationSize, existingSize;
+    PVOID pAllocation = NULL;
 
     // Call the base class to ensure the params are ok and set the default ret values
     CHK_STATUS(commonHeapSetAllocSize(pHeap, pHandle, size, newSize));
@@ -356,10 +357,48 @@ DEFINE_HEAP_SET_ALLOC_SIZE(hybridFileHeapSetAllocSize)
     if (IS_DIRECT_ALLOCATION_HANDLE(handle)) {
         DLOGS("Direct allocation 0x%016" PRIx64, handle);
         retStatus = pHybridHeap->pMemHeap->heapSetAllocSizeFn((PHeap) pHybridHeap->pMemHeap, pHandle, size, newSize);
-        CHK(retStatus == STATUS_SUCCESS || retStatus == STATUS_HEAP_REALLOC_ERROR, retStatus);
+        CHK(retStatus == STATUS_SUCCESS || retStatus == STATUS_HEAP_REALLOC_ERROR || retStatus == STATUS_NOT_ENOUGH_MEMORY, retStatus);
 
         // Exit on success
         CHK(!STATUS_SUCCEEDED(retStatus), STATUS_SUCCESS);
+
+        // Special handling for STATUS_NOT_ENOUGH_MEMORY
+        // This is the case when the request is to increase the allocation size of the encapsulated heap
+        // allocation but the encapsulated heap runs out of memory.
+        // We will need to alloc from the hybrid heap, copy and free the existing
+        if (retStatus == STATUS_NOT_ENOUGH_MEMORY) {
+            // Try to allocate from file storage
+            SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, pHybridHeap->handleNum);
+
+            allocationSize = newSize + FILE_ALLOCATION_HEADER_SIZE + FILE_ALLOCATION_FOOTER_SIZE;
+
+            // Create a file with the overall size
+            CHK_STATUS(createFile(filePath, allocationSize));
+
+            // map, write, unmap
+            // Set the header - no footer for file heap
+            allocationHeader = gFileHeader;
+            allocationHeader.size = newSize;
+            allocationHeader.fileHandle = pHybridHeap->handleNum;
+            CHK_STATUS(updateFile(filePath, TRUE, (PBYTE) &allocationHeader, 0, FILE_ALLOCATION_HEADER_SIZE));
+
+            // Map the existing allocation so we can copy the bits forward and unmap
+            CHK_STATUS(pHybridHeap->pMemHeap->heapMapFn((PHeap) pHybridHeap->pMemHeap, handle, &pAllocation, &existingSize));
+            CHK_STATUS(updateFile(filePath, TRUE, pAllocation, FILE_ALLOCATION_HEADER_SIZE, existingSize));
+            CHK_STATUS(pHybridHeap->pMemHeap->heapUnmapFn((PHeap) pHybridHeap->pMemHeap, pAllocation));
+            CHK_STATUS(pHybridHeap->pMemHeap->heapFreeFn((PHeap) pHybridHeap->pMemHeap, handle));
+            pAllocation = NULL;
+
+            // Setting the return handle
+            *pHandle = FROM_FILE_HANDLE(pHybridHeap->handleNum);
+
+            // Increment the handle number
+            pHybridHeap->handleNum++;
+
+            // Reset the return status and early exit as a success
+            retStatus = STATUS_SUCCESS;
+            CHK(FALSE, retStatus);
+        }
 
         // Reset the status
         retStatus = STATUS_SUCCESS;
@@ -377,10 +416,16 @@ DEFINE_HEAP_SET_ALLOC_SIZE(hybridFileHeapSetAllocSize)
     // Write the new size
     allocationHeader = gFileHeader;
     allocationHeader.size = newSize;
+    allocationHeader.fileHandle = fileHandle;
 
     CHK_STATUS(updateFile(filePath, TRUE, (PBYTE) &allocationHeader, 0, FILE_ALLOCATION_HEADER_SIZE));
 
 CleanUp:
+
+    if (pAllocation != NULL) {
+        pHybridHeap->pMemHeap->heapUnmapFn((PHeap) pHybridHeap->pMemHeap, pAllocation);
+        pHybridHeap->pMemHeap->heapFreeFn((PHeap) pHybridHeap->pMemHeap, handle);
+    }
 
     LEAVES();
     return retStatus;

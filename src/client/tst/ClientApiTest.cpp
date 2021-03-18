@@ -192,11 +192,21 @@ TEST_F(ClientApiTest, createKinesisVideoClient_ValidateDeviceInfo)
     EXPECT_TRUE(STATUS_FAILED(createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle)));
     mDeviceInfo.storageInfo.storageSize = MAX_STORAGE_ALLOCATION_SIZE + 1;
     EXPECT_TRUE(STATUS_FAILED(createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle)));
+
+    mDeviceInfo.storageInfo.storageType = DEVICE_STORAGE_TYPE_HYBRID_FILE;
     mDeviceInfo.storageInfo.storageSize = MIN_STORAGE_ALLOCATION_SIZE - 1;
     EXPECT_TRUE(STATUS_FAILED(createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle)));
     mDeviceInfo.storageInfo.storageSize = MAX_STORAGE_ALLOCATION_SIZE + 1;
     EXPECT_TRUE(STATUS_FAILED(createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle)));
+
+    mDeviceInfo.storageInfo.storageType = DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC;
+    mDeviceInfo.storageInfo.storageSize = MIN_STORAGE_ALLOCATION_SIZE - 1;
+    EXPECT_TRUE(STATUS_FAILED(createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle)));
+    mDeviceInfo.storageInfo.storageSize = MAX_STORAGE_ALLOCATION_SIZE + 1;
+    EXPECT_TRUE(STATUS_FAILED(createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle)));
+
     mDeviceInfo.storageInfo.storageSize = TEST_DEVICE_STORAGE_SIZE;
+    mDeviceInfo.storageInfo.storageType = DEVICE_STORAGE_TYPE_IN_MEM;
 
     mDeviceInfo.storageInfo.spillRatio = 101;
     EXPECT_TRUE(STATUS_FAILED(createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle)));

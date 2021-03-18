@@ -144,7 +144,6 @@ STATUS updateFile(PCHAR filePath, BOOL binMode, PBYTE pBuffer, UINT64 offset, UI
     STATUS retStatus = STATUS_SUCCESS;
     FILE* fp = NULL;
     UINT32 i;
-    PBYTE pCurPtr;
 
     CHK(filePath != NULL && pBuffer != NULL, STATUS_NULL_ARG);
 
@@ -154,8 +153,8 @@ STATUS updateFile(PCHAR filePath, BOOL binMode, PBYTE pBuffer, UINT64 offset, UI
 
     CHK(0 == FSEEK(fp, (UINT32) offset, SEEK_SET), STATUS_INVALID_OPERATION);
 
-    for (i = 0, pCurPtr = pBuffer + offset; i < size; i++, pCurPtr++) {
-        CHK(EOF != FPUTC(*pCurPtr, fp), STATUS_WRITE_TO_FILE_FAILED);
+    for (i = 0; i < size; i++, pBuffer++) {
+        CHK(EOF != FPUTC(*pBuffer, fp), STATUS_WRITE_TO_FILE_FAILED);
     }
 
 CleanUp:
