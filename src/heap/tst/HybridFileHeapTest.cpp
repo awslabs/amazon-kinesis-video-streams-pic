@@ -156,6 +156,85 @@ TEST_P(HybridFileHeapTest, hybridFileHeapOperationsAivPrimaryHeap)
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
+TEST_P(HybridFileHeapTest, hybridFileHeapResizeLargeLimit)
+{
+    const UINT32 AllocationCount = 100;
+    PHeap pHeap;
+    ALLOCATION_HANDLE handle;
+    ALLOCATION_HANDLE handles[AllocationCount];
+    UINT32 memHeapLimit;
+    UINT32 fileHeapLimit;
+    UINT32 fileAllocSize;
+    UINT32 ramAllocSize;
+    UINT32 heapSize = MIN_HEAP_SIZE * 2 + 100000;
+    UINT32 spillRatio = 50;
+    UINT32 numAlloc = AllocationCount / 2;
+    UINT32 i, fileHandleIndex;
+    UINT64 numAllocations, heapLimit, diff = 1000;
+
+    // Split the 50% and allocate half from ram and half from file heap
+    memHeapLimit = (UINT32)(heapSize * ((DOUBLE)spillRatio / 100));
+    fileHeapLimit = heapSize - memHeapLimit;
+    fileAllocSize = fileHeapLimit / numAlloc;
+    ramAllocSize = memHeapLimit / numAlloc;
+
+    // Set the invalid allocation handles
+    for (i = 0; i < AllocationCount; i++) {
+        handles[i] = INVALID_ALLOCATION_HANDLE_VALUE;
+    }
+
+    // Initialize
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
+                                                spillRatio,
+                                                mHeapType,
+                                                NULL,
+                                                &pHeap)));
+
+    DLOGV("Allocating from RAM");
+
+    // Allocate from ram - should be 1 less due to service structs
+    for (i = 0; i < numAlloc - 1; i++) {
+        EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, ramAllocSize, &handle)))  << "Failed allocating from direct heap with index: " << i;
+        EXPECT_TRUE(IS_VALID_ALLOCATION_HANDLE(handle)) << "Invalid direct allocation handle at index: " << i;
+
+        // Store the handle for later processing
+        handles[i] = handle;
+    }
+
+    DLOGV("Allocating from File heap");
+
+    // Allocate from file heap
+    for (i = 0, fileHandleIndex = numAlloc - 1; i < numAlloc; i++, fileHandleIndex++) {
+        EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, fileAllocSize, &handle))) << "Failed allocating from file heap with index: " << i;
+        EXPECT_TRUE(IS_VALID_ALLOCATION_HANDLE(handle)) << "Invalid file allocation handle at index: " << i;
+        handles[fileHandleIndex] = handle;
+    }
+
+    numAllocations = pHeap->numAlloc;
+    heapLimit = pHeap->heapLimit;
+    heapSize = pHeap->heapSize;
+
+    // Resize to larger size which will hit the encapsulated heap limit and cause re-allocation from file heap
+    EXPECT_EQ(STATUS_SUCCESS, heapSetAllocSize(pHeap, &handles[numAlloc / 2], ramAllocSize + diff));
+
+    EXPECT_EQ(heapSize + diff, pHeap->heapSize);
+    EXPECT_EQ(heapLimit, pHeap->heapLimit);
+    EXPECT_EQ(numAllocations, pHeap->numAlloc);
+
+    // Free all of the allocations
+    for (i = 0; i < AllocationCount; i++) {
+        if (IS_VALID_ALLOCATION_HANDLE(handles[i])) {
+            if (i ==51){
+                DLOGE("<<<");
+            }
+            EXPECT_EQ(STATUS_SUCCESS, heapFree(pHeap, handles[i]))  << "Failed to free handle at index: " << i;
+        }
+    }
+
+    // Release the heap which should free the rest of the allocations
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
+}
+
 TEST_P(HybridFileHeapTest, hybridFileCreateHeapMemHeapSmall)
 {
     PHeap pHeap;
