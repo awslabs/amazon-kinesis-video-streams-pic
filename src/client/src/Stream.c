@@ -1048,28 +1048,28 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         currentTime = IS_VALID_TIMESTAMP(currentTime)
             ? currentTime
             : pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
-        if (!CHECK_ITEM_STREAM_START(itemFlags) && pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO) {
-            // Calculate the delta time in seconds
-            deltaInSeconds = (DOUBLE)(currentTime - pKinesisVideoStream->diagnostics.lastFrameRateTimestamp) / HUNDREDS_OF_NANOS_IN_A_SECOND;
 
-            if (deltaInSeconds != 0) {
-                frameRate = 1 / deltaInSeconds;
+        if (pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO) {
+            if (!CHECK_ITEM_STREAM_START(itemFlags)) {
+                // Calculate the delta time in seconds
+                deltaInSeconds = (DOUBLE)(currentTime - pKinesisVideoStream->diagnostics.lastFrameRateTimestamp) / HUNDREDS_OF_NANOS_IN_A_SECOND;
+                if (deltaInSeconds != 0) {
+                    frameRate = 1 / deltaInSeconds;
 
-                // Update the current frame rate
-                pKinesisVideoStream->diagnostics.currentFrameRate =
-                    EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.currentFrameRate, frameRate);
+                    // Update the current frame rate
+                    pKinesisVideoStream->diagnostics.currentFrameRate =
+                        EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.currentFrameRate, frameRate);
+                }
+
+                // Update elementaryFrameRate
+                pKinesisVideoStream->diagnostics.elementaryFrameRate = (DOUBLE) HUNDREDS_OF_NANOS_IN_A_SECOND /
+                    ((DOUBLE)(pFrame->presentationTs - pKinesisVideoStream->diagnostics.previousFrameRatePts));
             }
-            pKinesisVideoStream->diagnostics.elementaryFrameRate =
-                (DOUBLE) HUNDREDS_OF_NANOS_IN_A_SECOND / ((DOUBLE)(pFrame->presentationTs - pKinesisVideoStream->diagnostics.previousFrameRatePts));
+            // For first putFrame call, we only store the Pts and not perform any computation
             pKinesisVideoStream->diagnostics.previousFrameRatePts = pFrame->presentationTs;
+            // Store the last frame timestamp
+            pKinesisVideoStream->diagnostics.lastFrameRateTimestamp = currentTime;
         }
-        else if(CHECK_ITEM_STREAM_START(itemFlags) && pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO) {
-            // In case of first putFrame call, ensure we cache the presentationTs
-            pKinesisVideoStream->diagnostics.previousFrameRatePts = pFrame->presentationTs;
-        }
-
-        // Store the last frame timestamp
-        pKinesisVideoStream->diagnostics.lastFrameRateTimestamp = currentTime;
     }
 
     // Only update the timestamp on success

@@ -1156,12 +1156,14 @@ struct __ClientMetrics {
     // This is calculated using the clock value
     UINT64 totalFrameRate;
 
+    // Overall transfer rate across the streams
+    UINT64 totalTransferRate;
+
+    // V1 metrics following
+
     // Elementary stream frame rate in realtime/offline mode: This indicates the elementary stream frame rate
     // This is calculated using the frame PTS
     DOUBLE totalElementaryFrameRate;
-
-    // Overall transfer rate across the streams
-    UINT64 totalTransferRate;
 };
 
 typedef struct __ClientMetrics* PClientMetrics;
@@ -1190,9 +1192,6 @@ struct __StreamMetrics {
 
     // Last measured put frame rate in bytes per second
     DOUBLE currentFrameRate;
-
-    // Current stream's elementary frame rate.
-    DOUBLE elementaryFrameRate;
 
     // Last measured transfer rate in bytes per second
     UINT64 currentTransferRate;
@@ -1256,6 +1255,11 @@ struct __StreamMetrics {
 
     // Backend Data Plane API call latency which includes success and failure
     UINT64 dataApiCallLatency;
+
+    // V2 metrics following
+
+    // Current stream's elementary frame rate.
+    DOUBLE elementaryFrameRate;
 };
 
 typedef struct __StreamMetrics* PStreamMetrics;
