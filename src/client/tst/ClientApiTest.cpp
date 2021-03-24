@@ -348,28 +348,51 @@ TEST_F(ClientApiTest, getKinesisVideoMetrics_Invalid)
     kinesisVideoClientMetrics.version = CLIENT_METRICS_CURRENT_VERSION + 1;
     EXPECT_NE(STATUS_SUCCESS, getKinesisVideoMetrics(mClientHandle, &kinesisVideoClientMetrics));
 
-    kinesisVideoClientMetrics.version = CLIENT_METRICS_CURRENT_VERSION;
-    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoMetrics(mClientHandle, &kinesisVideoClientMetrics));
+}
 
+TEST_F(ClientApiTest, getKinesisVideoMetrics_Valid)
+{
+    ClientMetrics kinesisVideoClientMetrics;
+    // Testing all versions
+    for(UINT64 i = 0; i <= CLIENT_METRICS_CURRENT_VERSION; i++) {
+        kinesisVideoClientMetrics.version = i;
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoMetrics(mClientHandle, &kinesisVideoClientMetrics));
+    }
 }
 
 TEST_F(ClientApiTest, getStreamMetrics_Invalid)
 {
     StreamMetrics streamMetrics;
+    STREAM_HANDLE streamHandle = INVALID_STREAM_HANDLE_VALUE;
+
+    EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoStream(mClientHandle, &mStreamInfo, &streamHandle));
 
     streamMetrics.version = STREAM_METRICS_CURRENT_VERSION;
 
     EXPECT_NE(STATUS_SUCCESS, getKinesisVideoStreamMetrics(INVALID_STREAM_HANDLE_VALUE, &streamMetrics));
-    EXPECT_NE(STATUS_SUCCESS, getKinesisVideoStreamMetrics(mStreamHandle, NULL));
+    EXPECT_NE(STATUS_SUCCESS, getKinesisVideoStreamMetrics(streamHandle, NULL));
     EXPECT_NE(STATUS_SUCCESS, getKinesisVideoStreamMetrics(INVALID_STREAM_HANDLE_VALUE, NULL));
     EXPECT_NE(STATUS_SUCCESS, getKinesisVideoStreamMetrics(INVALID_STREAM_HANDLE_VALUE, &streamMetrics));
-    // Checking V1
+    // Checking unknown version
     streamMetrics.version = STREAM_METRICS_CURRENT_VERSION + 1;
-    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamMetrics(mStreamHandle, &streamMetrics));
+    EXPECT_EQ(STATUS_INVALID_STREAM_METRICS_VERSION, getKinesisVideoStreamMetrics(streamHandle, &streamMetrics));
 
-    // Checking V0
-    streamMetrics.version = 0;
-    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamMetrics(mStreamHandle, &streamMetrics));
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&streamHandle));
+}
+
+TEST_F(ClientApiTest, getStreamMetrics_Valid)
+{
+    StreamMetrics streamMetrics;
+    STREAM_HANDLE streamHandle = INVALID_STREAM_HANDLE_VALUE;
+
+    EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoStream(mClientHandle, &mStreamInfo, &streamHandle));
+    // Testing all versions
+    for(UINT64 i = 0; i <= STREAM_METRICS_CURRENT_VERSION; i++) {
+        streamMetrics.version = i;
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamMetrics(streamHandle, &streamMetrics));
+    }
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&streamHandle));
 }
 
 TEST_F(ClientApiTest, kinesisVideoClientCreateInvalidSecurityTokenExpiration)

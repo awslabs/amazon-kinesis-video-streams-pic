@@ -1049,7 +1049,6 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             ? currentTime
             : pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
         if (!CHECK_ITEM_STREAM_START(itemFlags) && pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO) {
-            DLOGD("Track type: %d", pTrackInfo->trackType);
             // Calculate the delta time in seconds
             deltaInSeconds = (DOUBLE)(currentTime - pKinesisVideoStream->diagnostics.lastFrameRateTimestamp) / HUNDREDS_OF_NANOS_IN_A_SECOND;
 
