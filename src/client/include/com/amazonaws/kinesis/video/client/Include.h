@@ -446,8 +446,8 @@ extern "C" {
 #define SERVICE_CALL_CONTEXT_CURRENT_VERSION 0
 #define STREAM_DESCRIPTION_CURRENT_VERSION   1
 #define FRAGMENT_ACK_CURRENT_VERSION         0
-#define STREAM_METRICS_CURRENT_VERSION       1
-#define CLIENT_METRICS_CURRENT_VERSION       0
+#define STREAM_METRICS_CURRENT_VERSION       2
+#define CLIENT_METRICS_CURRENT_VERSION       1
 #define CLIENT_INFO_CURRENT_VERSION          2
 
 /**
@@ -1152,11 +1152,18 @@ struct __ClientMetrics {
     // Content view allocation size
     UINT64 totalContentViewsSize;
 
-    // Overall frame rate across the streams
+    // Overall frame rate across the streams: This is an indication of the rate at which frames are produced
+    // This is calculated using the clock value
     UINT64 totalFrameRate;
 
     // Overall transfer rate across the streams
     UINT64 totalTransferRate;
+
+    // V1 metrics following
+
+    // Elementary stream frame rate in realtime/offline mode: This indicates the elementary stream frame rate
+    // This is calculated using the frame PTS
+    DOUBLE totalElementaryFrameRate;
 };
 
 typedef struct __ClientMetrics* PClientMetrics;
@@ -1248,6 +1255,11 @@ struct __StreamMetrics {
 
     // Backend Data Plane API call latency which includes success and failure
     UINT64 dataApiCallLatency;
+
+    // V2 metrics following
+
+    // Current stream's elementary frame rate.
+    DOUBLE elementaryFrameRate;
 };
 
 typedef struct __StreamMetrics* PStreamMetrics;

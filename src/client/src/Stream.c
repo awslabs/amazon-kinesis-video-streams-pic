@@ -139,6 +139,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
 
     // Set the initial diagnostics information from the defaults
     pKinesisVideoStream->diagnostics.currentFrameRate = pStreamInfo->streamCaps.frameRate;
+    pKinesisVideoStream->diagnostics.elementaryFrameRate = pStreamInfo->streamCaps.frameRate;
     pKinesisVideoStream->diagnostics.currentTransferRate = pStreamInfo->streamCaps.avgBandwidthBps;
     pKinesisVideoStream->diagnostics.accumulatedByteCount = 0;
     pKinesisVideoStream->diagnostics.lastFrameRateTimestamp = pKinesisVideoStream->diagnostics.lastTransferRateTimestamp = 0;
@@ -678,14 +679,12 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     DLOGD("\tAvailable storage byte size: %" PRIu64 " ", clientMetrics.contentStoreAvailableSize);
     DLOGD("\tAllocated storage byte size: %" PRIu64 " ", clientMetrics.contentStoreAllocatedSize);
     DLOGD("\tTotal view allocation byte size: %" PRIu64 " ", clientMetrics.totalContentViewsSize);
-    DLOGD("\tTotal streams frame rate (fps): %" PRIu64 " ", clientMetrics.totalFrameRate);
     DLOGD("\tTotal streams transfer rate (bps): %" PRIu64 " (%" PRIu64 " Kbps)", clientMetrics.totalTransferRate * 8,
           clientMetrics.totalTransferRate * 8 / 1024);
     DLOGD("\tCurrent view duration (ms): %" PRIu64 " ", streamMetrics.currentViewDuration / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     DLOGD("\tOverall view duration (ms): %" PRIu64 " ", streamMetrics.overallViewDuration / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     DLOGD("\tCurrent view byte size: %" PRIu64 " ", streamMetrics.currentViewSize);
     DLOGD("\tOverall view byte size: %" PRIu64 " ", streamMetrics.overallViewSize);
-    DLOGD("\tCurrent frame rate (fps): %f ", streamMetrics.currentFrameRate);
     DLOGD("\tCurrent transfer rate (bps): %" PRIu64 " (%" PRIu64 " Kbps)", streamMetrics.currentTransferRate * 8,
           streamMetrics.currentTransferRate * 8 / 1024);
 
@@ -710,6 +709,11 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     DLOGD("\tAverage Control Plane API latency (ms): %" PRIu64 " ", streamMetrics.cplApiCallLatency / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     DLOGD("\tAverage Data Plane API latency (ms): %" PRIu64 " ", streamMetrics.dataApiCallLatency / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
+    // V2 stream information
+    DLOGD("\tCurrent elementary frame rate (fps): %f ", streamMetrics.elementaryFrameRate);
+
+    // V1 client information
+    DLOGD("\tTotal elementary frame rate (fps): %f ", clientMetrics.totalElementaryFrameRate);
 CleanUp:
 
     return retStatus;
@@ -1044,21 +1048,30 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         currentTime = IS_VALID_TIMESTAMP(currentTime)
             ? currentTime
             : pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
-        if (!CHECK_ITEM_STREAM_START(itemFlags)) {
-            // Calculate the delta time in seconds
-            deltaInSeconds = (DOUBLE)(currentTime - pKinesisVideoStream->diagnostics.lastFrameRateTimestamp) / HUNDREDS_OF_NANOS_IN_A_SECOND;
 
-            if (deltaInSeconds != 0) {
-                frameRate = 1 / deltaInSeconds;
+        if (pTrackInfo != NULL && pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO) {
+            if (!CHECK_ITEM_STREAM_START(itemFlags)) {
+                // Calculate the delta time in seconds
+                deltaInSeconds = (DOUBLE)(currentTime - pKinesisVideoStream->diagnostics.lastFrameRateTimestamp) / HUNDREDS_OF_NANOS_IN_A_SECOND;
+                if (deltaInSeconds != 0) {
+                    frameRate = 1 / deltaInSeconds;
 
-                // Update the current frame rate
-                pKinesisVideoStream->diagnostics.currentFrameRate =
-                    EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.currentFrameRate, frameRate);
+                    // Update the current frame rate
+                    pKinesisVideoStream->diagnostics.currentFrameRate =
+                        EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.currentFrameRate, frameRate);
+                }
+
+                // Update elementaryFrameRate.
+                deltaInSeconds = (DOUBLE)(pFrame->presentationTs - pKinesisVideoStream->diagnostics.previousFrameRatePts) / HUNDREDS_OF_NANOS_IN_A_SECOND;
+                if(deltaInSeconds != 0) {
+                    pKinesisVideoStream->diagnostics.elementaryFrameRate = 1/deltaInSeconds;
+                }
             }
+            // For first putFrame call, we only store the Pts and not perform any computation
+            pKinesisVideoStream->diagnostics.previousFrameRatePts = pFrame->presentationTs;
+            // Store the last frame timestamp
+            pKinesisVideoStream->diagnostics.lastFrameRateTimestamp = currentTime;
         }
-
-        // Store the last frame timestamp
-        pKinesisVideoStream->diagnostics.lastFrameRateTimestamp = currentTime;
     }
 
     // Only update the timestamp on success
@@ -1568,35 +1581,43 @@ STATUS getStreamMetrics(PKinesisVideoStream pKinesisVideoStream, PStreamMetrics 
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     streamLocked = FALSE;
 
-    // Store the frame rate and the transfer rate
-    pStreamMetrics->currentFrameRate = pKinesisVideoStream->diagnostics.currentFrameRate;
-    pStreamMetrics->currentTransferRate = pKinesisVideoStream->diagnostics.currentTransferRate;
-
-    // Bail out for V0
-    CHK(pStreamMetrics->version != 0, retStatus);
-
-    // Fill in data for V1 metrics
-    currentTime = pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(
-        pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.customData);
-    pStreamMetrics->uptime = currentTime - pKinesisVideoStream->diagnostics.createTime;
-    pStreamMetrics->transferredBytes = pKinesisVideoStream->diagnostics.transferredBytes;
-    pStreamMetrics->totalSessions = pKinesisVideoStream->diagnostics.totalSessions;
-    pStreamMetrics->totalActiveSessions = pKinesisVideoStream->diagnostics.totalActiveSessions;
-    pStreamMetrics->avgSessionDuration = pKinesisVideoStream->diagnostics.avgSessionDuration;
-    pStreamMetrics->bufferedAcks = pKinesisVideoStream->diagnostics.bufferedAcks;
-    pStreamMetrics->receivedAcks = pKinesisVideoStream->diagnostics.receivedAcks;
-    pStreamMetrics->persistedAcks = pKinesisVideoStream->diagnostics.persistedAcks;
-    pStreamMetrics->errorAcks = pKinesisVideoStream->diagnostics.errorAcks;
-    pStreamMetrics->droppedFrames = pKinesisVideoStream->diagnostics.droppedFrames;
-    pStreamMetrics->droppedFragments = pKinesisVideoStream->diagnostics.droppedFragments;
-    pStreamMetrics->skippedFrames = pKinesisVideoStream->diagnostics.skippedFrames;
-    pStreamMetrics->storagePressures = pKinesisVideoStream->diagnostics.storagePressures;
-    pStreamMetrics->latencyPressures = pKinesisVideoStream->diagnostics.latencyPressures;
-    pStreamMetrics->bufferPressures = pKinesisVideoStream->diagnostics.bufferPressures;
-    pStreamMetrics->staleEvents = pKinesisVideoStream->diagnostics.staleEvents;
-    pStreamMetrics->putFrameErrors = pKinesisVideoStream->diagnostics.putFrameErrors;
-    pStreamMetrics->cplApiCallLatency = pKinesisVideoStream->diagnostics.cplApiCallLatency;
-    pStreamMetrics->dataApiCallLatency = pKinesisVideoStream->diagnostics.dataApiCallLatency;
+    switch (pStreamMetrics->version) {
+        case 2:
+            // Fill in data for V2 metrics
+            pStreamMetrics->elementaryFrameRate = pKinesisVideoStream->diagnostics.elementaryFrameRate;
+            // explicit fall through to populate other version metrics
+        case 1:
+            currentTime = pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(
+                pKinesisVideoStream->pKinesisVideoClient->clientCallbacks.customData);
+            pStreamMetrics->uptime = currentTime - pKinesisVideoStream->diagnostics.createTime;
+            pStreamMetrics->transferredBytes = pKinesisVideoStream->diagnostics.transferredBytes;
+            pStreamMetrics->totalSessions = pKinesisVideoStream->diagnostics.totalSessions;
+            pStreamMetrics->totalActiveSessions = pKinesisVideoStream->diagnostics.totalActiveSessions;
+            pStreamMetrics->avgSessionDuration = pKinesisVideoStream->diagnostics.avgSessionDuration;
+            pStreamMetrics->bufferedAcks = pKinesisVideoStream->diagnostics.bufferedAcks;
+            pStreamMetrics->receivedAcks = pKinesisVideoStream->diagnostics.receivedAcks;
+            pStreamMetrics->persistedAcks = pKinesisVideoStream->diagnostics.persistedAcks;
+            pStreamMetrics->errorAcks = pKinesisVideoStream->diagnostics.errorAcks;
+            pStreamMetrics->droppedFrames = pKinesisVideoStream->diagnostics.droppedFrames;
+            pStreamMetrics->droppedFragments = pKinesisVideoStream->diagnostics.droppedFragments;
+            pStreamMetrics->skippedFrames = pKinesisVideoStream->diagnostics.skippedFrames;
+            pStreamMetrics->storagePressures = pKinesisVideoStream->diagnostics.storagePressures;
+            pStreamMetrics->latencyPressures = pKinesisVideoStream->diagnostics.latencyPressures;
+            pStreamMetrics->bufferPressures = pKinesisVideoStream->diagnostics.bufferPressures;
+            pStreamMetrics->staleEvents = pKinesisVideoStream->diagnostics.staleEvents;
+            pStreamMetrics->putFrameErrors = pKinesisVideoStream->diagnostics.putFrameErrors;
+            pStreamMetrics->cplApiCallLatency = pKinesisVideoStream->diagnostics.cplApiCallLatency;
+            pStreamMetrics->dataApiCallLatency = pKinesisVideoStream->diagnostics.dataApiCallLatency;
+            // explicit fall through to populate V0 members
+            // Store the frame rate and the transfer rate
+        case 0:
+            pStreamMetrics->currentFrameRate = pKinesisVideoStream->diagnostics.currentFrameRate;
+            pStreamMetrics->currentTransferRate = pKinesisVideoStream->diagnostics.currentTransferRate;
+            break;
+        default:
+            DLOGW("Invalid stream metric struct version. Nothing to populate");
+            break;
+    }
 
 CleanUp:
 
@@ -3217,6 +3238,7 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
 
     // Set the initial diagnostics information from the defaults
     pKinesisVideoStream->diagnostics.currentFrameRate = pKinesisVideoStream->streamInfo.streamCaps.frameRate;
+    pKinesisVideoStream->diagnostics.elementaryFrameRate = pKinesisVideoStream->streamInfo.streamCaps.frameRate;
     pKinesisVideoStream->diagnostics.currentTransferRate = pKinesisVideoStream->streamInfo.streamCaps.avgBandwidthBps;
     pKinesisVideoStream->diagnostics.accumulatedByteCount = 0;
     pKinesisVideoStream->diagnostics.lastFrameRateTimestamp = pKinesisVideoStream->diagnostics.lastTransferRateTimestamp = 0;

@@ -375,6 +375,7 @@ STATUS getKinesisVideoMetrics(CLIENT_HANDLE clientHandle, PClientMetrics pKinesi
     pKinesisVideoMetrics->totalContentViewsSize = 0;
     pKinesisVideoMetrics->totalTransferRate = 0;
     pKinesisVideoMetrics->totalFrameRate = 0;
+    //    pKinesisVideoMetrics->totalElementaryFrameRate = 0;
 
     // Lock the client streams list lock because we're iterating over
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
@@ -383,9 +384,18 @@ STATUS getKinesisVideoMetrics(CLIENT_HANDLE clientHandle, PClientMetrics pKinesi
     for (i = 0; i < pKinesisVideoClient->deviceInfo.streamCount; i++) {
         if (NULL != pKinesisVideoClient->streams[i]) {
             CHK_STATUS(contentViewGetAllocationSize(pKinesisVideoClient->streams[i]->pView, &viewAllocationSize));
-            pKinesisVideoMetrics->totalContentViewsSize += viewAllocationSize;
-            pKinesisVideoMetrics->totalFrameRate += (UINT64) pKinesisVideoClient->streams[i]->diagnostics.currentFrameRate;
-            pKinesisVideoMetrics->totalTransferRate += pKinesisVideoClient->streams[i]->diagnostics.currentTransferRate;
+            switch (pKinesisVideoMetrics->version) {
+                case 1:
+                    pKinesisVideoMetrics->totalElementaryFrameRate += pKinesisVideoClient->streams[i]->diagnostics.elementaryFrameRate;
+                    // explicit fall through since V1 would include V0 metrics as well
+                case 0:
+                    pKinesisVideoMetrics->totalContentViewsSize += viewAllocationSize;
+                    pKinesisVideoMetrics->totalFrameRate += (UINT64) pKinesisVideoClient->streams[i]->diagnostics.currentFrameRate;
+                    pKinesisVideoMetrics->totalTransferRate += pKinesisVideoClient->streams[i]->diagnostics.currentTransferRate;
+                    break;
+                default:
+                    DLOGW("Invalid client struct version. Nothing to populate");
+            }
         }
     }
 
