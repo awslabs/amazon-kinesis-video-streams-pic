@@ -375,7 +375,7 @@ STATUS getStreamingTokenResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_
     // Reset the status
     retStatus = STATUS_SUCCESS;
 
-    // NOTE: We won't calculate the latency for this API as most implementations will integreate
+    // NOTE: We won't calculate the latency for this API as most implementations will integrate
     // with the credential provider which might not evaluate into a service call and return
     // a pre-cached result resulting in skewed numbers for the overall control plane API latency.
 

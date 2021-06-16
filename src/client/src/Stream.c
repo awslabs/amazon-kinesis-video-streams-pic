@@ -2737,7 +2737,13 @@ STATUS checkStreamingTokenExpiration(PKinesisVideoStream pKinesisVideoStream)
 
     // Set the streaming mode to stopped to trigger the transitions.
     // Set the result that will move the state machinery to the get endpoint state
-    CHK_STATUS(streamTerminatedEvent(pKinesisVideoStream, INVALID_UPLOAD_HANDLE_VALUE, SERVICE_CALL_STREAM_AUTH_IN_GRACE_PERIOD, TRUE));
+    // In case of failure with get endpoint (i.e. if client state machine fails at auth,
+    // we will keep oscillating between STREAM_STATE_STOPPED and STREAM_STATE_GET_ENDPOINT
+    // with every putFrame call
+    if(STATUS_FAILED(retStatus = streamTerminatedEvent(pKinesisVideoStream, INVALID_UPLOAD_HANDLE_VALUE, SERVICE_CALL_STREAM_AUTH_IN_GRACE_PERIOD, TRUE))) {
+        pKinesisVideoStream->gracePeriod = FALSE;
+        CHK(FALSE, retStatus);
+    }
 
     if (IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
         // Set an indicator to reset the generator on the next key frame only when we are in the stopped state
