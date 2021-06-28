@@ -477,7 +477,7 @@ STATUS executeGetEndpointStreamState(UINT64 customData, UINT64 time)
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
     PKinesisVideoClient pKinesisVideoClient = NULL;
-    PStateMachineState pState;
+    PStateMachineState pState = NULL;
 
 
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
@@ -485,9 +485,8 @@ STATUS executeGetEndpointStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     // Step the client state machine first
-    //CHK_STATUS(stepClientStateMachine(pKinesisVideoClient));
+    if (STATUS_FAILED(retStatus = stepClientStateMachine(pKinesisVideoClient))) {
 
-    if(STATUS_FAILED(retStatus = stepClientStateMachine(pKinesisVideoClient))) {
         if(retStatus == STATUS_CLIENT_AUTH_CALL_FAILED) {
             // reset client state machine to READY state
 

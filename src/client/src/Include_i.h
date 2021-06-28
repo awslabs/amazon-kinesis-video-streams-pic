@@ -108,14 +108,14 @@ typedef STATUS (*KinesisVideoClientCallbackHookFunc)(UINT64);
 /**
  * Kinesis Video client states definitions
  */
-#define CLIENT_STATE_NONE       ((UINT64) 0)
-#define CLIENT_STATE_NEW        ((UINT64)(1 << 0))
-#define CLIENT_STATE_AUTH       ((UINT64)(1 << 1))
-#define CLIENT_STATE_PROVISION  ((UINT64)(1 << 2))
-#define CLIENT_STATE_GET_TOKEN  ((UINT64)(1 << 3))
-#define CLIENT_STATE_CREATE     ((UINT64)(1 << 4))
-#define CLIENT_STATE_TAG_CLIENT ((UINT64)(1 << 5))
-#define CLIENT_STATE_READY      ((UINT64)(1 << 6))
+#define CLIENT_STATE_NONE       ((UINT64) 0)       // 0x00
+#define CLIENT_STATE_NEW        ((UINT64)(1 << 0)) // 0x01
+#define CLIENT_STATE_AUTH       ((UINT64)(1 << 1)) // 0x02
+#define CLIENT_STATE_PROVISION  ((UINT64)(1 << 2)) // 0x04
+#define CLIENT_STATE_GET_TOKEN  ((UINT64)(1 << 3)) // 0x08
+#define CLIENT_STATE_CREATE     ((UINT64)(1 << 4)) // 0x10
+#define CLIENT_STATE_TAG_CLIENT ((UINT64)(1 << 5)) // 0x20
+#define CLIENT_STATE_READY      ((UINT64)(1 << 6)) // 0x40
 
 /**
  * Object identifier enum - these will serve as sentinel values to identify
