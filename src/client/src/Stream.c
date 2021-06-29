@@ -2715,7 +2715,6 @@ STATUS checkStreamingTokenExpiration(PKinesisVideoStream pKinesisVideoStream)
     STATUS retStatus = STATUS_SUCCESS;
     UINT64 currentTime;
 
-    DLOGD("Enter");
     // Check if we need to do anything and early exit
     // If we are already in a grace period then bail out
     CHK(!pKinesisVideoStream->gracePeriod, retStatus);
@@ -2735,7 +2734,6 @@ STATUS checkStreamingTokenExpiration(PKinesisVideoStream pKinesisVideoStream)
 
     // Set the grace period which will be reset when the new token is in place.
     pKinesisVideoStream->gracePeriod = TRUE;
-    DLOGD("Grace Period Set to TRUE");
 
     // Set the streaming mode to stopped to trigger the transitions.
     // Set the result that will move the state machinery to the get endpoint state
@@ -2744,8 +2742,6 @@ STATUS checkStreamingTokenExpiration(PKinesisVideoStream pKinesisVideoStream)
     // with every putFrame call
     if (STATUS_FAILED(retStatus = streamTerminatedEvent(pKinesisVideoStream, INVALID_UPLOAD_HANDLE_VALUE, SERVICE_CALL_STREAM_AUTH_IN_GRACE_PERIOD, TRUE))) {
         pKinesisVideoStream->gracePeriod = FALSE;
-        DLOGD("Grace Period RESET to FALSE");
-
         CHK(FALSE, retStatus);
     }
 
@@ -2758,14 +2754,6 @@ STATUS checkStreamingTokenExpiration(PKinesisVideoStream pKinesisVideoStream)
     }
 
 CleanUp:
-
-    if (pKinesisVideoStream->gracePeriod) {
-        DLOGD("In CleanUp, gracePeriod is TRUE");
-    } else {
-        DLOGD("In CleanUp, gracePeriod is FALSE");
-    }
-
-    DLOGD("In CleanUp, retStatus: 0x%08x", retStatus);
 
     LEAVES();
     return retStatus;

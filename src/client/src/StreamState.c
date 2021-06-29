@@ -486,7 +486,6 @@ STATUS executeGetEndpointStreamState(UINT64 customData, UINT64 time)
 
     // Step the client state machine first
     if (STATUS_FAILED(retStatus = stepClientStateMachine(pKinesisVideoClient))) {
-        DLOGD("retStatus: 0x%08x", retStatus);
 
         if(retStatus == STATUS_CLIENT_AUTH_CALL_FAILED) {
             // reset client state machine to READY state
