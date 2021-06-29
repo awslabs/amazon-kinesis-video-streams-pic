@@ -60,6 +60,12 @@ STATUS getAuthInfo(PKinesisVideoClient pKinesisVideoClient)
 
 CleanUp:
 
+    if (STATUS_FAILED(retStatus)) {
+        pKinesisVideoClient->base.result = SERVICE_CALL_AUTH_FAILURE;
+    } else {
+        pKinesisVideoClient->base.result = SERVICE_CALL_RESULT_OK;
+    }
+
     LEAVES();
     return retStatus;
 }

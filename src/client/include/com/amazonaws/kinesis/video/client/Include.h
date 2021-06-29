@@ -666,6 +666,9 @@ typedef enum {
     // Other errors
     SERVICE_CALL_UNKNOWN = 10006,
 
+    // Auth failure we don't know the specific reason at this layer
+    SERVICE_CALL_AUTH_FAILURE = 10007,
+
     // ACK errors
     // Error when reading the input stream
     SERVICE_CALL_RESULT_STREAM_READ_ERROR = 4000,

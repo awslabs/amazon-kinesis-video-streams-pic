@@ -741,11 +741,14 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
         }
     }
 
-    // return early if pic is already in process of spawning new uploading session
-    CHK(!STATUS_SUCCEEDED(acceptStateMachineState(pKinesisVideoStream->base.pStateMachine,
-                                                  STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE | STREAM_STATE_TAG_STREAM | STREAM_STATE_GET_TOKEN |
-                                                      STREAM_STATE_GET_ENDPOINT | STREAM_STATE_READY)),
-        retStatus);
+    // if we had an auth failure then we will not exit early we need to retry auth
+    if (pKinesisVideoClient->base.result != SERVICE_CALL_AUTH_FAILURE) {
+        // return early if pic is already in process of spawning new uploading session
+        CHK(!STATUS_SUCCEEDED(acceptStateMachineState(pKinesisVideoStream->base.pStateMachine,
+                                                      STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE | STREAM_STATE_TAG_STREAM | STREAM_STATE_GET_TOKEN |
+                                                          STREAM_STATE_GET_ENDPOINT | STREAM_STATE_READY)),
+            retStatus);
+    }
 
     if (spawnNewUploadSession) {
         // Stop the stream
