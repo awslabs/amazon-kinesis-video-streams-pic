@@ -477,13 +477,31 @@ STATUS executeGetEndpointStreamState(UINT64 customData, UINT64 time)
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
     PKinesisVideoClient pKinesisVideoClient = NULL;
+    PStateMachineState pState = NULL;
+
 
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
 
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     // Step the client state machine first
-    CHK_STATUS(stepClientStateMachine(pKinesisVideoClient));
+    if (STATUS_FAILED(retStatus = stepClientStateMachine(pKinesisVideoClient))) {
+
+        if(retStatus == STATUS_CLIENT_AUTH_CALL_FAILED) {
+            // reset client state machine to READY state
+
+            // Get the accepted state
+            CHK_STATUS(getStateMachineState(pKinesisVideoClient->base.pStateMachine, CLIENT_STATE_READY, &pState));
+
+            // Check if we are in the correct state
+            CHK_STATUS(acceptStateMachineState(pKinesisVideoClient->base.pStateMachine, pState->acceptStates));
+
+            // Step the machine
+            CHK_STATUS(stepStateMachine(pKinesisVideoClient->base.pStateMachine));
+        } else {
+            CHK(FALSE, retStatus);
+        }
+    }
 
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
