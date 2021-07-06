@@ -3,6 +3,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake;${CMAKE_MODULE_PATH}")
 include(Utilities)
 project(pic_project)
 
+include(GNUInstallDirs)
+
 # User Flags
 option(BUILD_DEPENDENCIES "Whether or not to build depending libraries from source" ON)
 
@@ -146,9 +148,9 @@ endif()
 
 install(
   TARGETS kvspic kvspicClient kvspicState kvspicUtils
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin)
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 
 install(
   DIRECTORY ${PIC_HEADERS}
@@ -160,7 +162,7 @@ install(
     ${CMAKE_CURRENT_BINARY_DIR}/libkvspicClient.pc
     ${CMAKE_CURRENT_BINARY_DIR}/libkvspicState.pc
     ${CMAKE_CURRENT_BINARY_DIR}/libkvspicUtils.pc
-  DESTINATION lib/pkgconfig)
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 
 if(BUILD_TEST)
   set(CMAKE_CXX_STANDARD 11)
