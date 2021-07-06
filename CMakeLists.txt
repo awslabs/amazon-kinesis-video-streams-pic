@@ -17,6 +17,13 @@ option(UNDEFINED_BEHAVIOR_SANITIZER "Build with UndefinedBehaviorSanitizer." OFF
 option(BUILD_DEBUG_HEAP "Build debug heap with guard bands and validation." OFF)
 option(ALIGNED_MEMORY_MODEL "Aligned memory model ONLY." OFF)
 option(FIXUP_ANNEX_B_TRAILING_NALU_ZERO "Fix-up some bad encoder behavior leaving a trailing zero at the end of NALu" OFF)
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+
+if(BUILD_SHARED_LIBS)
+  set(LIBTYPE SHARED)
+elseif()
+  set(LIBTYPE STATIC)
+endif()
 
 if(CODE_COVERAGE)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g -fprofile-arcs -ftest-coverage")
@@ -104,7 +111,7 @@ configure_file(
   "${CMAKE_CURRENT_BINARY_DIR}/libkvspic.pc" @ONLY)
 
 add_library(
-  kvspic STATIC
+  kvspic ${LIBTYPE}
   ${PIC_CLIENT_SOURCE_FILES}
   ${PIC_DURATION_SOURCE_FILES}
   ${PIC_HEAP_SOURCE_FILES}
@@ -113,6 +120,9 @@ add_library(
   ${PIC_TRACE_SOURCE_FILES}
   ${PIC_UTILS_SOURCE_FILES}
   ${PIC_VIEW_SOURCE_FILES})
+if(BUILD_SHARED_LIBS)
+  set_target_properties(kvspic PROPERTIES VERSION 0.0.0 SOVERSION 0)
+endif()
 target_link_libraries(kvspic ${CMAKE_DL_LIBS} Threads::Threads)
 if(UNIX AND NOT APPLE)
   # rt needed for clock_gettime
@@ -123,21 +133,30 @@ configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/libkvspicClient.pc.cmake"
   "${CMAKE_CURRENT_BINARY_DIR}/libkvspicClient.pc" @ONLY)
 
-add_library(kvspicClient STATIC ${PIC_CLIENT_SOURCE_FILES})
+add_library(kvspicClient ${LIBTYPE} ${PIC_CLIENT_SOURCE_FILES})
+if(BUILD_SHARED_LIBS)
+  set_target_properties(kvspicClient PROPERTIES VERSION 0.0.0 SOVERSION 0)
+endif()
 target_link_libraries(kvspicClient)
 
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/libkvspicState.pc.cmake"
   "${CMAKE_CURRENT_BINARY_DIR}/libkvspicState.pc" @ONLY)
 
-add_library(kvspicState STATIC ${PIC_STATE_SOURCE_FILES})
+add_library(kvspicState ${LIBTYPE} ${PIC_STATE_SOURCE_FILES})
+if(BUILD_SHARED_LIBS)
+  set_target_properties(kvspicState PROPERTIES VERSION 0.0.0 SOVERSION 0)
+endif()
 target_link_libraries(kvspicState)
 
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/libkvspicUtils.pc.cmake"
   "${CMAKE_CURRENT_BINARY_DIR}/libkvspicUtils.pc" @ONLY)
 
-add_library(kvspicUtils STATIC ${PIC_UTILS_SOURCE_FILES})
+add_library(kvspicUtils ${LIBTYPE} ${PIC_UTILS_SOURCE_FILES})
+if(BUILD_SHARED_LIBS)
+  set_target_properties(kvspicUtils PROPERTIES VERSION 0.0.0 SOVERSION 0)
+endif()
 target_link_libraries(kvspicUtils ${CMAKE_DL_LIBS} Threads::Threads)
 if(UNIX AND NOT APPLE)
   # rt needed for clock_gettime
