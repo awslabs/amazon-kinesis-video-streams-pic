@@ -542,6 +542,23 @@ typedef enum {
     STREAMING_TYPE_OFFLINE,
 } STREAMING_TYPE;
 
+/**
+ * Audio codec id
+ */
+typedef enum {
+    AUDIO_CODEC_ID_AAC,
+    AUDIO_CODEC_ID_PCM_ALAW,
+    AUDIO_CODEC_ID_PCM_MULAW,
+} AUDIO_CODEC_ID, *PAUDIO_CODEC_ID;
+
+/**
+ * Video codec id
+ */
+typedef enum {
+    VIDEO_CODEC_ID_H264,
+    VIDEO_CODEC_ID_H265,
+} VIDEO_CODEC_ID, *PVIDEO_CODEC_ID;
+
 #define GET_STREAMING_TYPE_STR(st)                                                                                                                   \
     ((st) == STREAMING_TYPE_REALTIME ? (PCHAR) "STREAMING_TYPE_REALTIME"                                                                             \
                                      : (st) == STREAMING_TYPE_NEAR_REALTIME ? (PCHAR) "STREAMING_TYPE_NEAR_REALTIME" : "STREAMING_TYPE_OFFLINE")
