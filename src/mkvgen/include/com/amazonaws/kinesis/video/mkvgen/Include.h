@@ -150,6 +150,7 @@ extern "C" {
 #define MKV_AVC_CONTENT_TYPE              ((PCHAR) "video/avc")
 #define MKV_HEVC_CONTENT_TYPE             ((PCHAR) "video/hevc")
 #define MKV_H264_AAC_MULTI_CONTENT_TYPE   ((PCHAR) "video/h264,audio/aac")
+#define MKV_H264_MULAW_MULTI_CONTENT_TYPE ((PCHAR) "video/h264,audio/mulaw")
 /**
  * Constant definitions for some known codec IDs
  */
