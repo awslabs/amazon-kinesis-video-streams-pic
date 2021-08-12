@@ -58,7 +58,7 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
             if (NULL != pKinesisVideoClient->streams[i]) {
                 pCurrStream = pKinesisVideoClient->streams[i];
                 pFrameOrderCoordinator = pCurrStream->pFrameOrderCoordinator;
-                if (pCurrStream->streamInfo.streamCaps.frameOrderingMode == FRAME_ORDER_MODE_PASS_THROUGH) {
+                if (pCurrStream->streamInfo.streamCaps.frameOrderingMode != FRAME_ORDER_MODE_PASS_THROUGH) {
                     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
                     frameOrderCoordinatorLocked = TRUE;
                 }
