@@ -34,7 +34,9 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = (PKinesisVideoClient) customData;
     UINT32 i;
+    BOOL frameOrderCoordinatorLocked = FALSE;
     PKinesisVideoStream pCurrStream = NULL;
+    PFrameOrderCoordinator pFrameOrderCoordinator = NULL;
     Frame eofr = EOFR_FRAME_INITIALIZER;
 
     CHK(pKinesisVideoClient, STATUS_NULL_ARG);
@@ -55,7 +57,12 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
         for (i = 0; i < pKinesisVideoClient->deviceInfo.streamCount; i++) {
             if (NULL != pKinesisVideoClient->streams[i]) {
                 pCurrStream = pKinesisVideoClient->streams[i];
-                // Lock the Stream
+                pFrameOrderCoordinator = pCurrStream->pFrameOrderCoordinator;
+                if (pCurrStream->streamInfo.streamCaps.frameOrderingMode == FRAME_ORDER_MODE_PASS_THROUGH) {
+                    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
+                    frameOrderCoordinatorLocked = TRUE;
+                }
+                    // Lock the Stream
                 pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pCurrStream->base.lock);
                 // Check if last PutFrame is older than max timeout, if so, send EoFR, if not, do nothing
                 // Ignoring currentTime it COULD be smaller than pCurrStream->lastPutFrametimestamp
@@ -69,6 +76,9 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
 
                 // Unlock the Stream
                 pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pCurrStream->base.lock);
+                if(frameOrderCoordinatorLocked) {
+                    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
+                }
             }
         }
 
