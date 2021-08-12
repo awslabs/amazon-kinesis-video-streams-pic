@@ -59,6 +59,8 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
                 pCurrStream = pKinesisVideoClient->streams[i];
                 pFrameOrderCoordinator = pCurrStream->pFrameOrderCoordinator;
                 if (pCurrStream->streamInfo.streamCaps.frameOrderingMode != FRAME_ORDER_MODE_PASS_THROUGH) {
+                    // In the case that frameOrderingMode = FRAME_ORDER_MODE_PASS_THROUGH, the mutex below does not even exist
+                    // so we will segfault, so the check is important
                     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
                     frameOrderCoordinatorLocked = TRUE;
                 }
