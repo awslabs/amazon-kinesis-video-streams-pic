@@ -1486,8 +1486,10 @@ PUBLIC_API STATUS freeFileLogger();
 ************************************************************************/
 /**
  * Factor for computing the exponential backoff wait time
+ * The larger the value, the slower the retries will be.
  */
 #define DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS                  300
+#define LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS                    600
 
 /**
  * Factor determining the curve of exponential wait time
@@ -1508,9 +1510,16 @@ PUBLIC_API STATUS freeFileLogger();
 #define DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS      25000
 
 /**
+ * Time after which connection from SDK to the service will be terminated
+ * if no data flows to the service
+ */
+#define KVS_BACKEND_STREAMING_IDLE_TIMEOUT_MILLISECONDS             40000
+
+/**
  * Factor to get a random jitter. Jitter values [0, 300).
  */
 #define DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS                      300
+#define LIMIT_KVS_JITTER_FACTOR_MILLISECONDS                        600
 
 typedef enum {
     BACKOFF_NOT_STARTED     = (UINT16) 0x01,

@@ -60,21 +60,20 @@ CleanUp:
     return retStatus;
 }
 
+STATUS inRange(UINT64 value, UINT64 low, UINT64 high) {
+    return value >= low && value <= high ? STATUS_SUCCESS : STATUS_INVALID_ARG;
+}
+
 STATUS validateExponentialBackoffConfig(PExponentialBackoffConfig pBackoffConfig) {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
 
     CHK(pBackoffConfig != NULL, STATUS_NULL_ARG);
 
-    // The upper bound on wait time should be at least DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS
-    CHK(pBackoffConfig->maxWaitTime >= DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS, STATUS_INVALID_ARG);
-    // The retry factor time should be at least DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS
-    CHK(pBackoffConfig->retryFactorTime >= DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS, STATUS_INVALID_ARG);
-    // Minimum time between two consecutive calls for exponential wait before the state is
-    // reset to start from count 0 must be at least DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS
-    CHK(pBackoffConfig->minTimeToResetRetryState >= DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS, STATUS_INVALID_ARG);
-    // Jitter factor must be at least DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS
-    CHK(pBackoffConfig->jitterFactor >= DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS, STATUS_INVALID_ARG);
+    CHK_STATUS(inRange(pBackoffConfig->maxWaitTime, DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS, KVS_BACKEND_STREAMING_IDLE_TIMEOUT_MILLISECONDS));
+    CHK_STATUS(inRange(pBackoffConfig->retryFactorTime, DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS, LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS));
+    CHK_STATUS(inRange(pBackoffConfig->minTimeToResetRetryState, DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS, KVS_BACKEND_STREAMING_IDLE_TIMEOUT_MILLISECONDS));
+    CHK_STATUS(inRange(pBackoffConfig->jitterFactor, DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS, LIMIT_KVS_JITTER_FACTOR_MILLISECONDS));
 
 CleanUp:
     LEAVES();
@@ -111,14 +110,6 @@ UINT64 getRandomJitter(UINT32 jitterFactor) {
 }
 
 UINT64 calculateWaitTime(PExponentialBackoffState pRetryState, PExponentialBackoffConfig pRetryConfig) {
-    // DEFAULT_KVS_EXPONENTIAL_FACTOR is 2 and if currentRetryCount > 64, then
-    // power(2, currentRetryCount) will overflow UINT64 buffer. In such case we
-    // always return the MAX_UINT64 value.
-    // This case will occur only if the exponential retries are configured with no
-    // upper bound on wait time. The implicit upper bound in that case will be MAX_UINT64.
-    if (pRetryState->currentRetryCount > 64) {
-        return MAX_UINT64;
-    }
     return power(DEFAULT_KVS_EXPONENTIAL_FACTOR, pRetryState->currentRetryCount) * pRetryConfig->retryFactorTime;
 }
 
@@ -172,11 +163,9 @@ STATUS exponentialBackoffBlockingWait(PExponentialBackoffState pRetryState) {
     //
     // Proceed if this is not the first retry
     currentTime = GETTIME();
-    if (pRetryState->currentRetryCount != 0) {
-        if (currentTime - pRetryState->lastRetryWaitTime > pRetryConfig->minTimeToResetRetryState) {
-            CHK_STATUS(resetExponentialBackoffRetryState(pRetryState));
-            pRetryState->status = BACKOFF_IN_PROGRESS;
-        }
+    if (pRetryState->currentRetryCount != 0 && currentTime - pRetryState->lastRetryWaitTime > pRetryConfig->minTimeToResetRetryState) {
+        CHK_STATUS(resetExponentialBackoffRetryState(pRetryState));
+        pRetryState->status = BACKOFF_IN_PROGRESS;
     }
 
     // Bound the exponential curve to maxWaitTime. Once we reach

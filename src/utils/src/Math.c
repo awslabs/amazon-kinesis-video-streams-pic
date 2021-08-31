@@ -15,7 +15,7 @@ UINT64 power(UINT32 base, UINT32 exponent) {
     }
 
     // loop till `exponent becomes 0
-    while (exponent) {
+    while (exponent != 0) {
         // if exponent is odd, multiply the result by base
         if (exponent & 1) {
             result *= base;
