@@ -65,6 +65,10 @@ To build the library run make in the build directory you executed CMake.
 
 The entire PIC codebase is built with aligned memory access to machine native word (up-to 64 bit). The only exception is the heap implementation. In order to provide for tight packing and low-fragmentation, we default to unaligned heap access. For devices and OS-es that do not have unaligned access or unaligned access emulation, `-DALIGNED_MEMORY_MODEL` CMake argument should be passed in build-time to ensure heap is aligned.
 
+## Contributing to this project
+
+If you wish to submit a pull request to this project, please do so on the `develop` branch. Code from develop will be merged into master periodically as a part of our release cycle.
+
 ## Documentation
 
 ## Related
