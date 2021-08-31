@@ -65,6 +65,8 @@ extern "C" {
 #define STATUS_UTIL_TAGS_COUNT_NON_ZERO_TAGS_NULL    STATUS_UTILS_BASE + 0x00000013
 #define STATUS_UTIL_INVALID_TAG_NAME_LEN             STATUS_UTILS_BASE + 0x00000014
 #define STATUS_UTIL_INVALID_TAG_VALUE_LEN            STATUS_UTILS_BASE + 0x00000015
+#define STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE     STATUS_UTILS_BASE + 0x0000002a
+#define STATUS_EXPONENTIAL_BACKOFF_RETRIES_EXHAUSTED STATUS_UTILS_BASE + 0x0000002b
 
 /**
  * Base64 encode/decode functionality
@@ -1526,7 +1528,7 @@ typedef struct __ExponentialBackoffConfig {
 typedef ExponentialBackoffConfig* PExponentialBackoffConfig;
 
 typedef struct __ExponentialBackoffState {
-    PExponentialBackoffConfig pExponentialBackoffConfig;
+    ExponentialBackoffConfig exponentialBackoffConfig;
     ExponentialBackoffStatus status;
     UINT32 currentRetryCount;
     UINT64 lastRetryWaitTime;
@@ -1537,7 +1539,7 @@ typedef ExponentialBackoffState* PExponentialBackoffState;
 API usage:
 
  PExponentialBackoffState pExponentialBackoffState = NULL;
- CHK_STATUS(createExponentialBackoffStateWithDefaultConfig(&pExponentialBackoffState));
+ CHK_STATUS(exponentialBackoffStateWithDefaultConfigCreate(&pExponentialBackoffState));
 
  while (...) {
      CHK_STATUS(exponentialBackoffBlockingWait(pExponentialBackoffState));
@@ -1554,7 +1556,7 @@ API usage:
  *
  * NOT THREAD SAFE.
  */
-PUBLIC_API STATUS createExponentialBackoffStateWithDefaultConfig(PExponentialBackoffState*);
+PUBLIC_API STATUS exponentialBackoffStateWithDefaultConfigCreate(PExponentialBackoffState*);
 
 /**
  * @brief Initializes exponential backoff state with provided configuration
@@ -1564,7 +1566,7 @@ PUBLIC_API STATUS createExponentialBackoffStateWithDefaultConfig(PExponentialBac
  *
  * NOT THREAD SAFE.
  */
-PUBLIC_API STATUS createExponentialBackoffState(PExponentialBackoffState*, PExponentialBackoffConfig);
+PUBLIC_API STATUS exponentialBackoffStateCreate(PExponentialBackoffState*, PExponentialBackoffConfig);
 
 /**
  * @brief
@@ -1575,7 +1577,7 @@ PUBLIC_API STATUS createExponentialBackoffState(PExponentialBackoffState*, PExpo
  *
  * Note: This API may return STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE error code if ExponentialBackoffState
  * is not configured correctly or is corrupted. In such case, the application should re-create
- * ExponentialBackoffState using the createExponentialBackoffState OR createExponentialBackoffStateWithDefaultConfig
+ * ExponentialBackoffState using the exponentialBackoffStateCreate OR exponentialBackoffStateWithDefaultConfigCreate
  * API and then call exponentialBackoffBlockingWait
  */
 PUBLIC_API STATUS exponentialBackoffBlockingWait(PExponentialBackoffState pExponentialBackoffState);
@@ -1586,6 +1588,24 @@ PUBLIC_API STATUS exponentialBackoffBlockingWait(PExponentialBackoffState pExpon
  * NOT THREAD SAFE.
  */
 PUBLIC_API STATUS exponentialBackoffStateFree(PExponentialBackoffState*);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// Math Utility APIs
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Computes power
+ *
+ * @param - UINT32 - IN - Base.
+ * @param - UINT32 - IN - Exponent.
+ *
+ * @return - Result of 'base power exponent'
+ *
+ * WARNING:
+ * The result could overflow if the 'base power exponent' exceeds UINT64 limit.
+ * It is the callers responsibility to sanitize the values before calling this API
+ */
+PUBLIC_API UINT64 power(UINT32, UINT32);
 
 #ifdef __cplusplus
 }
