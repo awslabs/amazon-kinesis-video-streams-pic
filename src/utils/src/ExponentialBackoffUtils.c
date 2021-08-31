@@ -1,6 +1,6 @@
 #include "Include_i.h"
 
-STATUS initializeDefaultExponentialBackOffConfig(PExponentialBackoffConfig pExponentialBackoffConfig) {
+STATUS initializeDefaultExponentialBackoffConfig(PExponentialBackoffConfig pExponentialBackoffConfig) {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
 
@@ -44,16 +44,14 @@ STATUS exponentialBackoffStateWithDefaultConfigCreate(PExponentialBackoffState* 
     pExponentialBackoffState = (PExponentialBackoffState) MEMCALLOC(0x00, SIZEOF(ExponentialBackoffState));
     CHK(pExponentialBackoffState != NULL, STATUS_NOT_ENOUGH_MEMORY);
 
-    CHK_STATUS(initializeDefaultExponentialBackOffConfig(&(pExponentialBackoffState->exponentialBackoffConfig)));
+    CHK_STATUS(initializeDefaultExponentialBackoffConfig(&(pExponentialBackoffState->exponentialBackoffConfig)));
     CHK_STATUS(resetExponentialBackoffRetryState(pExponentialBackoffState));
 
 CleanUp:
     if (STATUS_SUCCEEDED(retStatus)) {
         (*ppExponentialBackoffState) = pExponentialBackoffState;
     } else {
-        if (pExponentialBackoffState != NULL) {
-            SAFE_MEMFREE(pExponentialBackoffState);
-        }
+        SAFE_MEMFREE(pExponentialBackoffState);
     }
 
     LEAVES();
