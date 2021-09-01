@@ -107,8 +107,21 @@ UINT64 getRandomJitter(UINT32 jitterFactor) {
     return (RAND() % jitterFactor) * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
 }
 
-UINT64 calculateWaitTime(PExponentialBackoffState pRetryState, PExponentialBackoffConfig pRetryConfig) {
-    return power(DEFAULT_KVS_EXPONENTIAL_FACTOR, pRetryState->currentRetryCount) * pRetryConfig->retryFactorTime;
+STATUS calculateWaitTime(PExponentialBackoffState pRetryState, PExponentialBackoffConfig pRetryConfig, PVOID pWaitTime) {
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    UINT64 power = 0, waitTime = 0;
+
+    CHK(pWaitTime != NULL, STATUS_NULL_ARG);
+
+    CHK_STATUS(computePower(DEFAULT_KVS_EXPONENTIAL_FACTOR, pRetryState->currentRetryCount, &power));
+    waitTime = power * pRetryConfig->retryFactorTime;
+
+    *((PUINT64) pWaitTime) = waitTime;
+
+CleanUp:
+    LEAVES();
+    return retStatus;
 }
 
 STATUS validateAndUpdateExponentialBackoffStatus(PExponentialBackoffState pExponentialBackoffState) {
@@ -151,17 +164,17 @@ STATUS exponentialBackoffBlockingWait(PExponentialBackoffState pRetryState) {
     pRetryConfig = &(pRetryState->exponentialBackoffConfig);
 
     // If retries is exhausted, return error to the application
-    if (pRetryConfig->maxRetryCount != KVS_INFINITE_EXPONENTIAL_RETRIES) {
-        CHK(!(pRetryConfig->maxRetryCount == pRetryState->currentRetryCount),
-            STATUS_EXPONENTIAL_BACKOFF_RETRIES_EXHAUSTED);
-    }
+    CHK(pRetryConfig->maxRetryCount == KVS_INFINITE_EXPONENTIAL_RETRIES ||
+         pRetryConfig->maxRetryCount > pRetryState->currentRetryCount, STATUS_EXPONENTIAL_BACKOFF_RETRIES_EXHAUSTED);
 
     // check the last retry time. If the difference between last retry and current time is greater than
     // minTimeToResetRetryState, then reset the retry state
     //
     // Proceed if this is not the first retry
     currentTime = GETTIME();
-    if (pRetryState->currentRetryCount != 0 && currentTime - pRetryState->lastRetryWaitTime > pRetryConfig->minTimeToResetRetryState) {
+    if (pRetryState->currentRetryCount != 0 &&
+        currentTime > pRetryState->lastRetryWaitTime && // sanity check
+        currentTime - pRetryState->lastRetryWaitTime > pRetryConfig->minTimeToResetRetryState) {
         CHK_STATUS(resetExponentialBackoffRetryState(pRetryState));
         pRetryState->status = BACKOFF_IN_PROGRESS;
     }
@@ -172,7 +185,7 @@ STATUS exponentialBackoffBlockingWait(PExponentialBackoffState pRetryState) {
     if (pRetryState->lastRetryWaitTime == pRetryConfig->maxWaitTime) {
         waitTime = pRetryState->lastRetryWaitTime;
     } else {
-        waitTime = calculateWaitTime(pRetryState, pRetryConfig);
+        CHK_STATUS(calculateWaitTime(pRetryState, pRetryConfig, &waitTime));
         if (waitTime > pRetryConfig->maxWaitTime) {
             waitTime = pRetryConfig->maxWaitTime;
         }

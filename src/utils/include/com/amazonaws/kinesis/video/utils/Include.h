@@ -1604,17 +1604,20 @@ PUBLIC_API STATUS exponentialBackoffStateFree(PExponentialBackoffState*);
 
 /**
  * @brief Computes power
+ * Returns error when the base or exponent values are not within limits.
+ * Acceptable values:
+ *  base: [0, 5], exponent: [0, 27]
+ *  base: [6, 100], exponent: [0, 9]
+ *  base: [101, 1000], exponent: [0, 6]
  *
  * @param - UINT32 - IN - Base.
  * @param - UINT32 - IN - Exponent.
+ * @param - PUINT64 - OUT - Result.
  *
- * @return - Result of 'base power exponent'
+ * @return - STATUS code of the execution.
  *
- * WARNING:
- * The result could overflow if the 'base power exponent' exceeds UINT64 limit.
- * It is the callers responsibility to sanitize the values before calling this API
  */
-PUBLIC_API UINT64 power(UINT32, UINT32);
+PUBLIC_API STATUS computePower(UINT64, UINT64, PUINT64);
 
 #ifdef __cplusplus
 }
