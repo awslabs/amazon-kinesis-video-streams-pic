@@ -107,7 +107,7 @@ UINT64 getRandomJitter(UINT32 jitterFactor) {
     return (RAND() % jitterFactor) * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
 }
 
-STATUS calculateWaitTime(PExponentialBackoffState pRetryState, PExponentialBackoffConfig pRetryConfig, PVOID pWaitTime) {
+STATUS calculateWaitTime(PExponentialBackoffState pRetryState, PExponentialBackoffConfig pRetryConfig, PUINT64 pWaitTime) {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     UINT64 power = 0, waitTime = 0;
@@ -117,7 +117,7 @@ STATUS calculateWaitTime(PExponentialBackoffState pRetryState, PExponentialBacko
     CHK_STATUS(computePower(DEFAULT_KVS_EXPONENTIAL_FACTOR, pRetryState->currentRetryCount, &power));
     waitTime = power * pRetryConfig->retryFactorTime;
 
-    *((PUINT64) pWaitTime) = waitTime;
+    *pWaitTime = waitTime;
 
 CleanUp:
     LEAVES();
