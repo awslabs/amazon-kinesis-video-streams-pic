@@ -41,7 +41,7 @@ STATUS exponentialBackoffStateWithDefaultConfigCreate(PExponentialBackoffState* 
 
     CHK(ppExponentialBackoffState != NULL, STATUS_NULL_ARG);
 
-    pExponentialBackoffState = (PExponentialBackoffState) MEMCALLOC(0x01, SIZEOF(ExponentialBackoffState));
+    pExponentialBackoffState = (PExponentialBackoffState) MEMCALLOC(1, SIZEOF(ExponentialBackoffState));
     CHK(pExponentialBackoffState != NULL, STATUS_NOT_ENOUGH_MEMORY);
 
     CHK_STATUS(initializeDefaultExponentialBackoffConfig(&(pExponentialBackoffState->exponentialBackoffConfig)));
@@ -86,7 +86,7 @@ STATUS exponentialBackoffStateCreate(PExponentialBackoffState* ppBackoffState, P
     CHK(ppBackoffState != NULL && pBackoffConfig != NULL, STATUS_NULL_ARG);
     CHK_STATUS(validateExponentialBackoffConfig(pBackoffConfig));
 
-    pExponentialBackoffState = (PExponentialBackoffState) MEMCALLOC(0x01, SIZEOF(ExponentialBackoffState));
+    pExponentialBackoffState = (PExponentialBackoffState) MEMCALLOC(1, SIZEOF(ExponentialBackoffState));
     CHK(pExponentialBackoffState != NULL, STATUS_NOT_ENOUGH_MEMORY);
 
     pExponentialBackoffState->exponentialBackoffConfig = *pBackoffConfig;
