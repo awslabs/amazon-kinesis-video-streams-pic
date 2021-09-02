@@ -1530,7 +1530,7 @@ typedef enum {
 typedef struct __ExponentialBackoffConfig {
     UINT32  maxRetryCount;
     UINT64  maxWaitTime;
-    UINT32  retryFactorTime;
+    UINT64  retryFactorTime;
     UINT64  minTimeToResetRetryState;
     UINT32  jitterFactor;
 } ExponentialBackoffConfig;
