@@ -79,10 +79,23 @@ extern "C" {
 #define MAX_BLOCKING_PUT_WAIT 15 * HUNDREDS_OF_NANOS_IN_A_SECOND
 
 /**
+ * Maximum about of "tags" elements allowed in fragment metadata
+ */
+#define MAX_TAGS_COUNT 10
+
+/**
  * Valid status codes from get stream data
  */
 #define IS_VALID_GET_STREAM_DATA_STATUS(s)                                                                                                           \
     ((s) == STATUS_SUCCESS || (s) == STATUS_NO_MORE_DATA_AVAILABLE || (s) == STATUS_AWAITING_PERSISTED_ACK || (s) == STATUS_END_OF_STREAM)
+
+/**
+ * Streaming event strings
+ */
+
+#define KVSEVENT_IMAGE_GENERATION_STRING    "AWS_KINESISVIDEO_IMAGE_GENERATION"
+#define KVSEVENT_IMAGE_PREFIX_STRING        "AWS_KINESISVIDEO_IMAGE_PREFIX"
+#define KVSEVENT_NOTIFICATION_STRING        "AWS_KINESISVIDEO_NOTIFICATION"
 
 /**
  * Kinesis Video stream diagnostics information accumulator
@@ -202,6 +215,15 @@ struct __MetadataTracker {
 
     // Storage for the packaged metadata.
     PBYTE data;
+
+    // Tracking active MKV events
+    BOOL activeMkvEvent;
+
+    // Tracking total amount of "tags" elements in metadata queue
+    UINT8 tagsCount;
+
+    // Tracking event 'tags' element position in queue
+    UINT8 eventIndex;
 };
 typedef struct __MetadataTracker* PMetadataTracker;
 
@@ -446,9 +468,16 @@ struct __SerializedMetadata {
     // Whether the metadata has been already "applied". This makes sense only for persistent metadata.
     BOOL applied;
 
+    // An event type indicating how the data may be serialized, 
+    STREAM_EVENT_TYPE event;
+
+    // Highest parent needed to be made by mkvgen for this data
+    MKV_TREE_TYPE parent;
+
     // The actual strings are stored following the structure
 };
 typedef struct __SerializedMetadata* PSerializedMetadata;
+typedef struct __SerializedMetadata** PPSerializedMetadata;
 
 ////////////////////////////////////////////////////
 // Internal functionality
@@ -719,14 +748,37 @@ STATUS packageNotSentMetadata(PKinesisVideoStream);
  * Appends validated metadata name/value to the queue
  *
  * @param 1 - IN - KVS object
- * @param 2 - IN - Metadata name
- * @param 3 - IN - Metadata value
- * @param 4 - IN - Whether persistent
- * @param 5 - IN - Packaged size of the metadata
+ * @param 2 - IN - Metadata object
  *
  * @return Status code of the operation
  */
-STATUS appendValidatedMetadata(PKinesisVideoStream, PCHAR, PCHAR, BOOL, UINT32);
+STATUS appendValidatedMetadata(PKinesisVideoStream, PSerializedMetadata);
+
+/**
+ * Creates serialized metadata structure
+ *
+ * @param 1 - IN - KVS object
+ * @param 2 - IN - Metadata object
+ * @param 3 - IN - Index of queue to insert at
+ *
+ * @return Status code of the operation
+ */
+STATUS insertValidatedMetadata(PKinesisVideoStream, PSerializedMetadata, UINT32);
+
+/**
+ * Creates serialized metadata structure
+ *
+ * @param 1 - IN - Metadata name
+ * @param 2 - IN - Metadata value
+ * @param 3 - IN - Whether persistent
+ * @param 4 - IN - Packaged size of the metadata
+ * @param 5 - IN - KVS stream event
+ * @param 6 - IN - Top MKV element of metadata structure
+ * @param 7 - OUT - newly created metadata object
+ *
+ * @return Status code of the operation
+ */
+STATUS createSerializedMetadata(PCHAR, PCHAR, BOOL, UINT32, STREAM_EVENT_TYPE, MKV_TREE_TYPE, PPSerializedMetadata);
 
 /**
  * Notifies of stream listeners about the stream closed.

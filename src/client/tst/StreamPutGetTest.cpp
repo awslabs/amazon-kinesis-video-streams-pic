@@ -1421,6 +1421,65 @@ TEST_F(StreamPutGetTest, putFrame_PutGetTagsStoreData)
     MEMFREE(getDataBuffer);
 }
 
+TEST_F(StreamPutGetTest, putFrame_PutGetNotifyAndTagsStoreData)
+{
+    UINT32 i, filledSize;
+    BYTE tempBuffer[100];
+    PBYTE getDataBuffer = NULL;
+    UINT32 getDataBufferSize = 500000;
+    UINT64 timestamp;
+    Frame frame;
+    STATUS retStatus;
+
+    // Ensure we have fragmentation based on the key frames
+    mStreamInfo.streamCaps.keyFrameFragmentation = TRUE;
+
+    // Create and ready a stream
+    ReadyStream();
+
+    getDataBuffer = (PBYTE) MEMALLOC(getDataBufferSize);
+
+    // Produce frames
+    frame.duration = TEST_LONG_FRAME_DURATION;
+    frame.size = SIZEOF(tempBuffer);
+    frame.frameData = tempBuffer;
+    frame.trackId = TEST_TRACKID;
+    for (i = 0, timestamp = 0; i < 100; timestamp += TEST_LONG_FRAME_DURATION, i++) {
+        frame.index = i;
+        frame.decodingTs = timestamp;
+        frame.presentationTs = timestamp;
+
+        // Set the frame bits
+        MEMSET(frame.frameData, (BYTE) i, SIZEOF(tempBuffer));
+
+        // Key frame every 10th
+        frame.flags = i % 10 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
+        EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame)) << "Iteration " << i;
+
+        EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "postTagName", (PCHAR) "postTagValue", FALSE)) << i;
+        if (i == 79) {
+            EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, NULL)) << i;
+            EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_IMAGE_GENERATION, NULL)) << i;
+        }
+
+        // Return a put stream result on 20th
+        if (i == 20) {
+            EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
+        }
+    }
+
+    // Consume frames on the boundary and validate
+    retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, getDataBufferSize, &filledSize);
+    ASSERT_TRUE(retStatus == STATUS_SUCCESS || retStatus == STATUS_NO_MORE_DATA_AVAILABLE);
+
+    // Manually pre-validated data file size
+    EXPECT_EQ(18624, filledSize);
+
+    // Store the data in a file
+    EXPECT_EQ(STATUS_SUCCESS, writeFile((PCHAR) "test_put_get_tags.mkv", TRUE, FALSE, getDataBuffer, filledSize));
+    MEMFREE(getDataBuffer);
+}
+
 TEST_F(StreamPutGetTest, putFrame_PutGetPreTagsStoreData)
 {
     UINT32 i, filledSize;

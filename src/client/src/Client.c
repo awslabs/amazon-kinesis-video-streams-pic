@@ -862,6 +862,52 @@ CleanUp:
     return retStatus;
 }
 
+
+/**
+ * Puts an event & associated custom data into the Kinesis Video stream.
+ */
+
+STATUS putKinesisVideoEventMetadata(STREAM_HANDLE streamHandle, STREAM_EVENT_TYPE event, PStreamEventMetadata pStreamEventMetadata)
+{
+    STATUS retStatus = STATUS_SUCCESS;
+    BOOL releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
+    PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
+
+    DLOGS("Put event into an Kinesis Video stream.");
+
+    CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+    if(pStreamEventMetadata != NULL) {
+        CHK(pStreamEventMetadata->numberOfPairs <= MAX_EVENT_CUSTOM_PAIRS, STATUS_INVALID_ARG);
+        for(UINT8 iter = 0; iter < pStreamEventMetadata->numberOfPairs; iter++) {
+            CHK(pStreamEventMetadata->names[iter] != NULL && pStreamEventMetadata->values[iter] != NULL, STATUS_NULL_ARG);
+        }
+    }
+
+
+    // Shutdown sequencer
+    CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore, INFINITE_TIME_VALUE));
+    releaseClientSemaphore = TRUE;
+
+    CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->base.shutdownSemaphore, INFINITE_TIME_VALUE));
+    releaseStreamSemaphore = TRUE;
+
+    CHK_STATUS(putEventMetadata(pKinesisVideoStream, event, pStreamEventMetadata));
+
+CleanUp:
+
+    if (releaseStreamSemaphore) {
+        semaphoreRelease(pKinesisVideoStream->base.shutdownSemaphore);
+    }
+
+    if (releaseClientSemaphore) {
+        semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
+    }
+
+    CHK_LOG_ERR(retStatus);
+    LEAVES();
+    return retStatus;
+}
+
 /**
  * Stream format changed.
  *

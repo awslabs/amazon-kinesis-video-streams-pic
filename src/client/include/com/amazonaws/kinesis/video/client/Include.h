@@ -267,7 +267,17 @@ extern "C" {
 /**
  * Maximal size of the metadata queue for a fragment
  */
-#define MAX_FRAGMENT_METADATA_COUNT 10
+#define MAX_FRAGMENT_METADATA_COUNT 25
+
+/**
+ * Maximum amount of the "tags" element metadata for a fragment
+ */
+#define MAX_FRAGMENT_METADATA_TAGS 10
+
+/**
+ * Max name/value pairs for custom event metadata
+ */
+#define MAX_EVENT_CUSTOM_PAIRS 5
 
 /**
  * Max length of the fragment sequence number
@@ -928,6 +938,15 @@ typedef enum {
     CONTENT_STORE_PRESSURE_POLICY_DROP_TAIL_ITEM = 1,
 } CONTENT_STORE_PRESSURE_POLICY;
 
+typedef enum {
+    //base case
+    STREAM_EVENT_NONE = 0,
+    // To trigger image generation and persistence in s3
+    STREAM_EVENT_IMAGE_GENERATION,
+    // To receive a notification that fragment has been persisted
+    STREAM_EVENT_NOTIFICATION,
+} STREAM_EVENT_TYPE;
+
 /**
  * Stream capabilities declaration
  */
@@ -1414,6 +1433,21 @@ struct __ServiceCallContext {
 };
 
 typedef struct __ServiceCallContext* PServiceCallContext;
+
+typedef struct __StreamEventMetadata StreamEventMetadata;
+struct __StreamEventMetadata {
+    // optional s3 prefix
+    PBYTE imagePrefix;
+
+    //optional optimization, stating how many pairs to be appended
+    UINT8 numberOfPairs;
+
+    // optional custom data name/value pairs
+    PBYTE names[MAX_EVENT_CUSTOM_PAIRS];
+    PBYTE values[MAX_EVENT_CUSTOM_PAIRS];
+};
+
+typedef struct __StreamEventMetadata* PStreamEventMetadata;
 
 ////////////////////////////////////////////////////
 // General callbacks definitions
@@ -2060,6 +2094,30 @@ PUBLIC_API STATUS getKinesisVideoStreamData(STREAM_HANDLE, UPLOAD_HANDLE, PBYTE,
  * @return Status of the function call.
  */
 PUBLIC_API STATUS putKinesisVideoFragmentMetadata(STREAM_HANDLE, PCHAR, PCHAR, BOOL);
+
+/**
+ * Inserts a "metadata" - a key/value string pair into the stream.
+ *
+ * NOTE: The metadata are modelled as MKV tags and are not immediately put into the stream as
+ * it might break the fragment.
+ * This is a limitation of MKV format as Tags are level 1 elements.
+ * Instead, they will be accumulated and inserted in-between the fragments and at the end of the stream.
+ *
+ * MKV spec is available at: https://matroska.org/technical/specs/index.html
+ *
+ * Putting a "persistent" metadata will result in the metadata being inserted before every fragment.
+ * The metadata can be changed by calling this function with the same name and a different value.
+ * Specifying an empty string for the value for a persistent metadata will clear it and it won't
+ * be applied to the consecutive fragments.
+ *
+ * @param 1 STREAM_HANDLE - the stream handle.
+ * @param 2 PCHAR - the metadata name.
+ * @param 3 PCHAR - the metadata value.
+ * @param 4 BOOL - Whether to keep applying the metadata to following fragments.
+ *
+ * @return Status of the function call.
+ */
+PUBLIC_API STATUS putKinesisVideoEventMetadata(STREAM_HANDLE, STREAM_EVENT_TYPE, PStreamEventMetadata);
 
 ////////////////////////////////////////////////////
 // Diagnostics functions

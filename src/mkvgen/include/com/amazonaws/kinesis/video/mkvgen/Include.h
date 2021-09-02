@@ -67,6 +67,7 @@ extern "C" {
 #define STATUS_MKV_INVALID_AMS_ACM_CPD                      STATUS_MKVGEN_BASE + 0x0000002a
 #define STATUS_MKV_MISSING_SPS_FROM_H264_CPD                STATUS_MKVGEN_BASE + 0x0000002b
 #define STATUS_MKV_MISSING_PPS_FROM_H264_CPD                STATUS_MKVGEN_BASE + 0x0000002c
+#define STATUS_MKV_INVALID_PARENT_TYPE                      STATUS_MKVGEN_BASE + 0x0000002d
 
 ////////////////////////////////////////////////////
 // Main structure declarations
@@ -219,6 +220,13 @@ typedef enum {
     MKV_TRACK_INFO_TYPE_UNKOWN = (BYTE) 0x03,
 } MKV_TRACK_INFO_TYPE,
     *PMKV_TRACK_INFO_TYPE;
+
+typedef enum {
+    MKV_TREE_TAGS = 0,
+    MKV_TREE_TAG,
+    MKV_TREE_SIMPLE,
+    MKV_TREE_LAST
+} MKV_TREE_TYPE;
 
 #define GET_TRACK_TYPE_STR(st)                                                                                                                       \
     ((st) == MKV_TRACK_INFO_TYPE_VIDEO ? (PCHAR) "TRACK_INFO_TYPE_VIDEO"                                                                             \
@@ -534,6 +542,19 @@ PUBLIC_API STATUS mkvgenGenerateHeader(PMkvGenerator, PBYTE, PUINT32, PUINT64);
  */
 PUBLIC_API STATUS mkvgenGenerateTag(PMkvGenerator, PBYTE, PCHAR, PCHAR, PUINT32);
 
+/**
+ * Generates the MKV Tags/Tag/SimpleTag/<TagName, TagString> element
+ * and allows you to select to start at Tags, Tag, or Simple
+ *
+ * @PBYTE - Buffer to hold the packaged bits
+ * @PCHAR - Name of the tag
+ * @PCHAR - Value of the tag as a string
+ * @PUINT32 - IN/OUT - Size of the produced packaged bits
+ * @MKV_TREE_TYPE - top parent in series of prefix tags to generate
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS mkvgenGenerateTagsChain(PBYTE, PCHAR, PCHAR, PUINT32, MKV_TREE_TYPE);
 /**
  * Packages a frame into an MKV fragment
  *

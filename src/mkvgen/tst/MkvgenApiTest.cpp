@@ -407,6 +407,50 @@ TEST_F(MkvgenApiTest, mkvgenGenerateTag_PositiveAndNegativeTest)
     MEMFREE(tempBuffer);
 }
 
+TEST_F(MkvgenApiTest, mkvgenGenerateTagsChain_PositiveAndNegativeTest)
+{
+    PBYTE tempBuffer = NULL;
+    UINT32 size = 100000;
+    CHAR tagName[MKV_MAX_TAG_NAME_LEN + 2];
+    CHAR tagValue[MKV_MAX_TAG_VALUE_LEN + 2];
+    STRCPY(tagName, "TestTagName");
+    STRCPY(tagValue, "TestTagValue");
+    tempBuffer = (PBYTE) MEMALLOC(size);
+
+    for(int i = 0; static_cast<MKV_TREE_TYPE>(i) < MKV_TREE_LAST; i++)
+    {
+        EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, NULL, tagValue, &size, static_cast<MKV_TREE_TYPE>(i)));
+        EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, tagName, NULL, &size, static_cast<MKV_TREE_TYPE>(i)));
+        EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, tagName, tagValue, NULL, static_cast<MKV_TREE_TYPE>(i)));
+    }
+    EXPECT_EQ(STATUS_MKV_INVALID_PARENT_TYPE, mkvgenGenerateTagsChain(tempBuffer, tagName, tagValue, &size, MKV_TREE_LAST));
+
+    // Check for a smaller size returned
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTagsChain(NULL, tagName, tagValue, &size, MKV_TREE_TAGS));
+    size--;
+    EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, tagName, tagValue, &size, MKV_TREE_TAGS));
+
+    // Larger tagName
+    MEMSET(tagName, 'A', SIZEOF(tagName));
+    tagName[MKV_MAX_TAG_NAME_LEN + 1] = '\0';
+    EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, tagName, tagValue, &size, MKV_TREE_TAGS));
+
+    // Larger tagValue
+    STRCPY(tagName, "TestTagName");
+    MEMSET(tagValue, 'B', SIZEOF(tagValue));
+    tagValue[MKV_MAX_TAG_VALUE_LEN + 1] = '\0';
+    EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, tagName, tagValue, &size, MKV_TREE_TAGS));
+
+    // Both are larger
+    MEMSET(tagName, 'A', SIZEOF(tagName));
+    tagName[MKV_MAX_TAG_NAME_LEN + 1] = '\0';
+    MEMSET(tagValue, 'B', SIZEOF(tagValue));
+    tagValue[MKV_MAX_TAG_VALUE_LEN + 1] = '\0';
+    EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, tagName, tagValue, &size, MKV_TREE_TAGS));
+
+    MEMFREE(tempBuffer);
+}
+
 TEST_F(MkvgenApiTest, mkvgenContentType_GetContentType)
 {
     EXPECT_EQ(MKV_CONTENT_TYPE_NONE, mkvgenGetContentTypeFromContentTypeString(NULL));
