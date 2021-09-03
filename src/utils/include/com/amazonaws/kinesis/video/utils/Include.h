@@ -1528,10 +1528,22 @@ typedef enum {
 } ExponentialBackoffStatus;
 
 typedef struct __ExponentialBackoffConfig {
+    // Max retries after which an error will be returned
+    // to the application. For infinite retries, set this
+    // to KVS_INFINITE_EXPONENTIAL_RETRIES.
     UINT32  maxRetryCount;
-    UINT64  maxWaitTime;
+    // Maximum retry wait time. Once the retry wait time
+    // reaches this value, subsequent retries will wait for
+    // maxRetryWaitTime (plus jitter).
+    UINT64  maxRetryWaitTime;
+    // Factor for computing the exponential backoff wait time
     UINT64  retryFactorTime;
+    // The minimum time between two consecutive retries
+    // after which retry state will be reset i.e. retries
+    // will start from initial retry state.
     UINT64  minTimeToResetRetryState;
+    // Factor determining random jitter value.
+    // Jitter will be between [0, jitterFactor).
     UINT32  jitterFactor;
 } ExponentialBackoffConfig;
 typedef ExponentialBackoffConfig* PExponentialBackoffConfig;
@@ -1540,6 +1552,9 @@ typedef struct __ExponentialBackoffState {
     ExponentialBackoffConfig exponentialBackoffConfig;
     ExponentialBackoffStatus status;
     UINT32 currentRetryCount;
+    // The system time at which last retry happened
+    UINT64 lastRetrySystemTime;
+    // The actual wait time for last retry
     UINT64 lastRetryWaitTime;
 } ExponentialBackoffState;
 typedef ExponentialBackoffState* PExponentialBackoffState;

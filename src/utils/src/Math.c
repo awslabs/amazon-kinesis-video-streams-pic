@@ -10,7 +10,7 @@
  */
 STATUS computePower(UINT64 base, UINT64 exponent, PUINT64 result) {
     STATUS retStatus = STATUS_SUCCESS;
-    UINT64 _result = 1;
+    UINT64 res = 1;
 
     CHK(result != NULL, STATUS_NULL_ARG);
 
@@ -20,13 +20,14 @@ STATUS computePower(UINT64 base, UINT64 exponent, PUINT64 result) {
             (base <= 1000 && exponent <= 6), STATUS_INVALID_ARG);
 
     if (base == 0) {
-        return 0;
+        *result = 0;
+        return retStatus;
     }
 
     while (exponent != 0) {
         // if exponent is odd, multiply the result by base
         if (exponent & 1) {
-            _result *= base;
+            res *= base;
         }
         // divide exponent by 2
         exponent = exponent >> 1;
@@ -34,7 +35,7 @@ STATUS computePower(UINT64 base, UINT64 exponent, PUINT64 result) {
         base = base * base;
     }
 
-    *result = _result;
+    *result = res;
 
 CleanUp:
     return retStatus;

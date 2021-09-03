@@ -20,7 +20,7 @@ class ExponentialBackoffUtilsTest : public UtilTestBase {
         // If testing bounded retries, set max retry count to 5
         pExponentialBackoffConfig->maxRetryCount = KVS_INFINITE_EXPONENTIAL_RETRIES;
         // Set max exponential wait time to 3 seconds
-        pExponentialBackoffConfig->maxWaitTime = 3000 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+        pExponentialBackoffConfig->maxRetryWaitTime = 3000 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
         // Set retry factor to 100 milliseconds.
         // With this value, the exponential curve will be -
         // ((2^1)*X + jitter), ((2^1)*X + jitter), ((2^2)*X + jitter), ((2^3)*X + jitter) ...
@@ -43,7 +43,17 @@ class ExponentialBackoffUtilsTest : public UtilTestBase {
         // Record the actual wait time for validation
         double lastWaitTimeMilliSec = (pExponentialBackoffState->lastRetryWaitTime)/(HUNDREDS_OF_NANOS_IN_A_MILLISECOND * 1.0);
         double actualWaitTimeMilliSec = lastWaitTimeMilliSec - currentTimeMilliSec;
-        EXPECT_TRUE(inRange(actualWaitTimeMilliSec, acceptableWaitTimeRange));
+        EXPECT_TRUE(inRange(lastWaitTimeMilliSec, acceptableWaitTimeRange));
+
+        UINT64 lastRetrySystemTimeMilliSec = pExponentialBackoffState->lastRetrySystemTime/(HUNDREDS_OF_NANOS_IN_A_MILLISECOND * 1.0);
+        UINT64 diffInMilliSec = currentTimeMilliSec - lastRetrySystemTimeMilliSec;
+
+        // Technically current time should be always be equal to last retry time
+        // because we are capturing current time just before calling exponentialBackoffBlockingWait
+        // But to avoid any flakiness, we're checking >= condition and an acceptable deviation
+        // of 20 milliseconds.
+        EXPECT_TRUE(currentTimeMilliSec >= lastRetrySystemTimeMilliSec);
+        EXPECT_TRUE(diffInMilliSec < 20);
     }
 };
 
@@ -62,7 +72,7 @@ TEST_F(ExponentialBackoffUtilsTest, testInitializeExponentialBackoffStateWithDef
     EXPECT_EQ(HUNDREDS_OF_NANOS_IN_A_MILLISECOND * DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS,
               pExponentialBackoffState->exponentialBackoffConfig.retryFactorTime);
     EXPECT_EQ(HUNDREDS_OF_NANOS_IN_A_MILLISECOND * DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS,
-              pExponentialBackoffState->exponentialBackoffConfig.maxWaitTime);
+              pExponentialBackoffState->exponentialBackoffConfig.maxRetryWaitTime);
     EXPECT_EQ(KVS_INFINITE_EXPONENTIAL_RETRIES, pExponentialBackoffState->exponentialBackoffConfig.maxRetryCount);
     EXPECT_EQ(HUNDREDS_OF_NANOS_IN_A_MILLISECOND * DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS,
               pExponentialBackoffState->exponentialBackoffConfig.minTimeToResetRetryState);
@@ -86,7 +96,7 @@ TEST_F(ExponentialBackoffUtilsTest, testInitializeExponentialBackoffState)
 
     pExponentialBackoffConfig->minTimeToResetRetryState = 25;
     pExponentialBackoffConfig->maxRetryCount = 5;
-    pExponentialBackoffConfig->maxWaitTime = 10;
+    pExponentialBackoffConfig->maxRetryWaitTime = 10;
     pExponentialBackoffConfig->retryFactorTime = 20;
     pExponentialBackoffConfig->jitterFactor = 1;
     // validateExponentialBackoffConfig will return error since the config values are not within acceptable range
@@ -96,7 +106,7 @@ TEST_F(ExponentialBackoffUtilsTest, testInitializeExponentialBackoffState)
     // Use correct config values
     pExponentialBackoffConfig->minTimeToResetRetryState = 25000;
     pExponentialBackoffConfig->maxRetryCount = 5;
-    pExponentialBackoffConfig->maxWaitTime = 15000;
+    pExponentialBackoffConfig->maxRetryWaitTime = 15000;
     pExponentialBackoffConfig->retryFactorTime = 300;
     pExponentialBackoffConfig->jitterFactor = 300;
 
@@ -105,7 +115,7 @@ TEST_F(ExponentialBackoffUtilsTest, testInitializeExponentialBackoffState)
 
     EXPECT_EQ(25000, pExponentialBackoffState->exponentialBackoffConfig.minTimeToResetRetryState);
     EXPECT_EQ(5, pExponentialBackoffState->exponentialBackoffConfig.maxRetryCount);
-    EXPECT_EQ(15000, pExponentialBackoffState->exponentialBackoffConfig.maxWaitTime);
+    EXPECT_EQ(15000, pExponentialBackoffState->exponentialBackoffConfig.maxRetryWaitTime);
     EXPECT_EQ(300, pExponentialBackoffState->exponentialBackoffConfig.retryFactorTime);
     EXPECT_EQ(300, pExponentialBackoffState->exponentialBackoffConfig.jitterFactor);
 
