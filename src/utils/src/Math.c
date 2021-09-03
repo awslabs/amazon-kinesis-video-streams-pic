@@ -19,6 +19,13 @@ STATUS computePower(UINT64 base, UINT64 exponent, PUINT64 result) {
             (base <= 100 && exponent <= 9) ||
             (base <= 1000 && exponent <= 6), STATUS_INVALID_ARG);
 
+    // Anything power 0 is 1
+    if (exponent == 0) {
+        *result = 1;
+        return retStatus;
+    }
+
+    // Zero power anything except 1 is 0
     if (base == 0) {
         *result = 0;
         return retStatus;

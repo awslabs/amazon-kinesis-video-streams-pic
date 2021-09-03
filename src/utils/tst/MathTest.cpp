@@ -7,6 +7,9 @@ TEST_F(MathTest, testPowerAPI)
 {
     UINT64 result = 0;
 
+    EXPECT_EQ(STATUS_SUCCESS, computePower(0, 0, &result));
+    EXPECT_EQ(1, result);
+
     EXPECT_EQ(STATUS_SUCCESS, computePower(0, 2, &result));
     EXPECT_EQ(0, result);
 
