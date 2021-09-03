@@ -25,7 +25,7 @@ STATUS computePower(UINT64 base, UINT64 exponent, PUINT64 result) {
         return retStatus;
     }
 
-    // Zero power anything except 1 is 0
+    // Zero power anything except 0 is 0
     if (base == 0) {
         *result = 0;
         return retStatus;
