@@ -146,9 +146,8 @@ TEST_F(StackQueueFunctionalityTest, StackQueueBasicOperations)
     for (UINT64 i = 0; i < count; i++) {
         EXPECT_EQ(STATUS_SUCCESS, stackQueueEnqueue(pStackQueue, i));
         EXPECT_EQ(STATUS_SUCCESS, stackQueuePush(pStackQueue, i));
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueEnqueueAfterIndex(pStackQueue, rand()%i, i));
+        EXPECT_EQ(STATUS_SUCCESS, stackQueueEnqueueAfterIndex(pStackQueue, rand()%(i+1), i));
     }
-
     // Validate the count
     EXPECT_EQ(STATUS_SUCCESS, stackQueueGetCount(pStackQueue, &retCount));
     EXPECT_EQ(STATUS_SUCCESS, stackQueueIsEmpty(pStackQueue, &isEmpty));
