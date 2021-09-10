@@ -79,11 +79,6 @@ extern "C" {
 #define MAX_BLOCKING_PUT_WAIT 15 * HUNDREDS_OF_NANOS_IN_A_SECOND
 
 /**
- * Maximum about of "tags" elements allowed in fragment metadata
- */
-#define MAX_TAGS_COUNT 10
-
-/**
  * Valid status codes from get stream data
  */
 #define IS_VALID_GET_STREAM_DATA_STATUS(s)                                                                                                           \
@@ -93,9 +88,9 @@ extern "C" {
  * Streaming event strings
  */
 
-#define KVSEVENT_IMAGE_GENERATION_STRING    "AWS_KINESISVIDEO_IMAGE_GENERATION"
-#define KVSEVENT_IMAGE_PREFIX_STRING        "AWS_KINESISVIDEO_IMAGE_PREFIX"
-#define KVSEVENT_NOTIFICATION_STRING        "AWS_KINESISVIDEO_NOTIFICATION"
+#define KVSEVENT_IMAGE_GENERATION_STRING "AWS_KINESISVIDEO_IMAGE_GENERATION"
+#define KVSEVENT_IMAGE_PREFIX_STRING     "AWS_KINESISVIDEO_IMAGE_PREFIX"
+#define KVSEVENT_NOTIFICATION_STRING     "AWS_KINESISVIDEO_NOTIFICATION"
 
 /**
  * Kinesis Video stream diagnostics information accumulator
@@ -468,7 +463,7 @@ struct __SerializedMetadata {
     // Whether the metadata has been already "applied". This makes sense only for persistent metadata.
     BOOL applied;
 
-    // An event type indicating how the data may be serialized, 
+    // An event type indicating how the data may be serialized,
     STREAM_EVENT_TYPE event;
 
     // Highest parent needed to be made by mkvgen for this data

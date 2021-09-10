@@ -221,12 +221,7 @@ typedef enum {
 } MKV_TRACK_INFO_TYPE,
     *PMKV_TRACK_INFO_TYPE;
 
-typedef enum {
-    MKV_TREE_TAGS = 0,
-    MKV_TREE_TAG,
-    MKV_TREE_SIMPLE,
-    MKV_TREE_LAST
-} MKV_TREE_TYPE;
+typedef enum { MKV_TREE_TAGS = 0, MKV_TREE_TAG, MKV_TREE_SIMPLE, MKV_TREE_LAST } MKV_TREE_TYPE;
 
 #define GET_TRACK_TYPE_STR(st)                                                                                                                       \
     ((st) == MKV_TRACK_INFO_TYPE_VIDEO ? (PCHAR) "TRACK_INFO_TYPE_VIDEO"                                                                             \

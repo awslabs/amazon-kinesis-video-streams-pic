@@ -177,6 +177,7 @@ TEST_F(StackQueueFunctionalityTest, StackQueueEnqueueAfterValidation)
     UINT64 data;
 
     UINT64 checkIndex[5];
+    UINT64 indexShift[5] = {0};
 
     srand(GETTIME());
     // Create the list
@@ -198,9 +199,19 @@ TEST_F(StackQueueFunctionalityTest, StackQueueEnqueueAfterValidation)
         EXPECT_EQ(STATUS_SUCCESS, stackQueueEnqueueAfterIndex(pStackQueue, checkIndex[j], j));
     }
 
+    for (UINT64 init = 0; init < 5; init++) {
+        //placed AFTER the index, so always shifted at least 1 spot after
+        indexShift[init]++;
+        for (UINT64 b = init+1; b < 5; b++) {
+            if((checkIndex[init] + indexShift[init]) > checkIndex[b]) {
+                indexShift[init]++;
+            }
+        }
+    }
+
     for (UINT64 k = 0; k < 5; k++) {
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueGetAt(pStackQueue, checkIndex[k] + 1, &data));
-        EXPECT_EQ(checkIndex[k], data);
+        EXPECT_EQ(STATUS_SUCCESS, stackQueueGetAt(pStackQueue, checkIndex[k] + indexShift[k], &data));
+        EXPECT_EQ(k, data);
     }
 
     // Clear the data

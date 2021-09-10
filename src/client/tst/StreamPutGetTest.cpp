@@ -1458,8 +1458,8 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNotifyAndTagsStoreData)
 
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "postTagName", (PCHAR) "postTagValue", FALSE)) << i;
         if (i == 79) {
-            EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, NULL)) << i;
-            EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_IMAGE_GENERATION, NULL)) << i;
+            EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, NULL)) << i;
+            EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_IMAGE_GENERATION, NULL)) << i;
         }
 
         // Return a put stream result on 20th

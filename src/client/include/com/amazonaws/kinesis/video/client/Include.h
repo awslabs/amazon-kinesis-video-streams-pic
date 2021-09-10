@@ -559,7 +559,8 @@ typedef enum {
     AUDIO_CODEC_ID_AAC,
     AUDIO_CODEC_ID_PCM_ALAW,
     AUDIO_CODEC_ID_PCM_MULAW,
-} AUDIO_CODEC_ID, *PAUDIO_CODEC_ID;
+} AUDIO_CODEC_ID,
+    *PAUDIO_CODEC_ID;
 
 /**
  * Video codec id
@@ -567,7 +568,8 @@ typedef enum {
 typedef enum {
     VIDEO_CODEC_ID_H264,
     VIDEO_CODEC_ID_H265,
-} VIDEO_CODEC_ID, *PVIDEO_CODEC_ID;
+} VIDEO_CODEC_ID,
+    *PVIDEO_CODEC_ID;
 
 #define GET_STREAMING_TYPE_STR(st)                                                                                                                   \
     ((st) == STREAMING_TYPE_REALTIME ? (PCHAR) "STREAMING_TYPE_REALTIME"                                                                             \
@@ -939,12 +941,12 @@ typedef enum {
 } CONTENT_STORE_PRESSURE_POLICY;
 
 typedef enum {
-    //base case
-    STREAM_EVENT_NONE = 0,
+    // base case
+    STREAM_EVENT_TYPE_NONE = 0,
     // To trigger image generation and persistence in s3
-    STREAM_EVENT_IMAGE_GENERATION,
+    STREAM_EVENT_TYPE_IMAGE_GENERATION,
     // To receive a notification that fragment has been persisted
-    STREAM_EVENT_NOTIFICATION,
+    STREAM_EVENT_TYPE_NOTIFICATION,
 } STREAM_EVENT_TYPE;
 
 /**
@@ -1437,14 +1439,14 @@ typedef struct __ServiceCallContext* PServiceCallContext;
 typedef struct __StreamEventMetadata StreamEventMetadata;
 struct __StreamEventMetadata {
     // optional s3 prefix
-    PBYTE imagePrefix;
+    PCHAR imagePrefix;
 
-    //optional optimization, stating how many pairs to be appended
+    // optional optimization, stating how many pairs to be appended
     UINT8 numberOfPairs;
 
     // optional custom data name/value pairs
-    PBYTE names[MAX_EVENT_CUSTOM_PAIRS];
-    PBYTE values[MAX_EVENT_CUSTOM_PAIRS];
+    PCHAR names[MAX_EVENT_CUSTOM_PAIRS];
+    PCHAR values[MAX_EVENT_CUSTOM_PAIRS];
 };
 
 typedef struct __StreamEventMetadata* PStreamEventMetadata;
@@ -2096,24 +2098,11 @@ PUBLIC_API STATUS getKinesisVideoStreamData(STREAM_HANDLE, UPLOAD_HANDLE, PBYTE,
 PUBLIC_API STATUS putKinesisVideoFragmentMetadata(STREAM_HANDLE, PCHAR, PCHAR, BOOL);
 
 /**
- * Inserts a "metadata" - a key/value string pair into the stream.
- *
- * NOTE: The metadata are modelled as MKV tags and are not immediately put into the stream as
- * it might break the fragment.
- * This is a limitation of MKV format as Tags are level 1 elements.
- * Instead, they will be accumulated and inserted in-between the fragments and at the end of the stream.
- *
- * MKV spec is available at: https://matroska.org/technical/specs/index.html
- *
- * Putting a "persistent" metadata will result in the metadata being inserted before every fragment.
- * The metadata can be changed by calling this function with the same name and a different value.
- * Specifying an empty string for the value for a persistent metadata will clear it and it won't
- * be applied to the consecutive fragments.
+ * Inserts a KVS event accompanied by optional metadata (key/value string pairs) into the stream.
  *
  * @param 1 STREAM_HANDLE - the stream handle.
- * @param 2 PCHAR - the metadata name.
- * @param 3 PCHAR - the metadata value.
- * @param 4 BOOL - Whether to keep applying the metadata to following fragments.
+ * @param 2 STREAM_EVENT_TYPE - the type of event
+ * @param 3 PStreamEventMetadata - pointer to struct with optional metadata
  *
  * @return Status of the function call.
  */

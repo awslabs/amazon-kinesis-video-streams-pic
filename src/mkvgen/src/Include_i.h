@@ -227,9 +227,9 @@ extern UINT32 gMkvTagStringBitsSize;
 #define MKV_TAG_STRING_BITS      gMkvTagStringBits
 #define MKV_TAG_STRING_BITS_SIZE gMkvTagStringBitsSize
 
-//most MKV formatted 'tags' follow this pattern. TAGS is an exception
+// most MKV formatted 'tags' follow this pattern. TAGS is an exception
 #define MKV_GENERIC_ELEMENT_SIZE_OFFSET 2
-#define MKV_GENERIC_ELEMENT_OFFSET 8
+#define MKV_GENERIC_ELEMENT_OFFSET      8
 
 // gMkvTagsBits tags element size offset for fixing up
 #define MKV_TAGS_ELEMENT_SIZE_OFFSET 4

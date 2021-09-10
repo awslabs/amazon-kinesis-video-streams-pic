@@ -588,11 +588,11 @@ STATUS mkvgenGenerateTag(PMkvGenerator pMkvGenerator, PBYTE pBuffer, PCHAR tagNa
     // Fix-up the tags element size
     encodedElementLength = 0x100000000000000ULL | (UINT64)(packagedSize - MKV_TAG_ELEMENT_OFFSET);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + MKV_TAGS_ELEMENT_SIZE_OFFSET), encodedElementLength);
- 
+
     // Fix-up the tag element size
     encodedElementLength = 0x100000000000000ULL | (UINT64)(packagedSize - MKV_SIMPLE_TAG_ELEMENT_OFFSET);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + MKV_TAG_ELEMENT_SIZE_OFFSET), encodedElementLength);
- 
+
     // Fix-up the simple tag element size
     encodedElementLength = 0x100000000000000ULL | (UINT64)(packagedSize - MKV_TAGS_BITS_SIZE);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + MKV_SIMPLE_TAG_ELEMENT_SIZE_OFFSET), encodedElementLength);
@@ -620,7 +620,6 @@ CleanUp:
     return retStatus;
 }
 
-
 /**
  * Packages MKV tags/tag/simple element chain
  */
@@ -643,7 +642,7 @@ STATUS mkvgenGenerateTagsChain(PBYTE pBuffer, PCHAR tagName, PCHAR tagValue, PUI
     // Calculate the necessary size
 
     // Get the overhead when packaging MKV
-    switch(parent) {
+    switch (parent) {
         case MKV_TREE_TAGS:
             packagedSize += MKV_TAGS_ELEMENT_SIZE_OFFSET + MKV_GENERIC_ELEMENT_OFFSET;
 
@@ -669,7 +668,7 @@ STATUS mkvgenGenerateTagsChain(PBYTE pBuffer, PCHAR tagName, PCHAR tagValue, PUI
     bufferSize = *pSize;
 
     // Check the size and copy the structure first
-    switch(parent) {
+    switch (parent) {
         case MKV_TREE_TAGS:
             encodedLen = MKV_TAGS_BITS_SIZE;
             CHK(bufferSize >= encodedLen, STATUS_NOT_ENOUGH_MEMORY);
@@ -696,7 +695,6 @@ STATUS mkvgenGenerateTagsChain(PBYTE pBuffer, PCHAR tagName, PCHAR tagValue, PUI
 
         default:
             break;
-
     }
 
     // Copy the tag name
@@ -733,30 +731,32 @@ STATUS mkvgenGenerateTagsChain(PBYTE pBuffer, PCHAR tagName, PCHAR tagValue, PUI
      *     TAGS + TAG + SIMPLE
      *     TAG + SIMPLE
      *     SIMPLE
+     *
+     * missing break statements are on purpose, to allow higher tier elements to fall through and serialize
+     * the required lower tier elements.
      */
-    switch(parent) {
+    switch (parent) {
         case MKV_TREE_TAGS:
             totalOffset += MKV_TAGS_ELEMENT_SIZE_OFFSET;
             encodedElementLength = 0x100000000000000ULL | (UINT64)(packagedSize - (totalOffset + MKV_GENERIC_ELEMENT_OFFSET));
             PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + totalOffset), encodedElementLength);
-            totalOffset += MKV_GENERIC_ELEMENT_OFFSET; 
+            totalOffset += MKV_GENERIC_ELEMENT_OFFSET;
 
         case MKV_TREE_TAG:
             totalOffset += MKV_GENERIC_ELEMENT_SIZE_OFFSET;
             encodedElementLength = 0x100000000000000ULL | (UINT64)(packagedSize - (totalOffset + MKV_GENERIC_ELEMENT_OFFSET));
             PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + totalOffset), encodedElementLength);
-            totalOffset += MKV_GENERIC_ELEMENT_OFFSET; 
+            totalOffset += MKV_GENERIC_ELEMENT_OFFSET;
 
         case MKV_TREE_SIMPLE:
             totalOffset += MKV_GENERIC_ELEMENT_SIZE_OFFSET;
             encodedElementLength = 0x100000000000000ULL | (UINT64)(packagedSize - (totalOffset + MKV_GENERIC_ELEMENT_OFFSET));
             PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + totalOffset), encodedElementLength);
-            totalOffset += MKV_GENERIC_ELEMENT_OFFSET; 
+            totalOffset += MKV_GENERIC_ELEMENT_OFFSET;
 
             break;
         default:
             break;
-
     }
 
     // Fix-up the tag name element size

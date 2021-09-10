@@ -344,48 +344,45 @@ TEST_F(StreamApiTest, insertKinesisVideoEvent_NULL_Invalid)
 
     MEMCPY(tagName, (PCHAR)"tagName", STRLEN("tagName"));
     MEMCPY(tagValue, (PCHAR)"tagValue", STRLEN("tagValue"));
-    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(streamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
+    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(streamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
     Meta.names[0] = NULL;
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
+    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
     Meta.names[0] = tagName;
     MEMCPY(tagName, (PCHAR)"", STRLEN(""));
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
+    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
     MEMCPY(tagName, (PCHAR)"tagName", STRLEN("tagName"));
     Meta.values[0] = NULL;
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
+    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
     Meta.names[0] = NULL;
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(streamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
+    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(streamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
     MEMSET(tagName, 'a', MKV_MAX_TAG_NAME_LEN + 1);
     tagName[MKV_MAX_TAG_NAME_LEN + 1] = '\0';
     Meta.names[0] = tagName;
     Meta.values[0] = tagValue;
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
+    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
     MEMCPY(tagName, (PCHAR)"tagName", STRLEN("tagName"));
     MEMSET(tagValue, 'b', MKV_MAX_TAG_VALUE_LEN + 1);
     tagValue[MKV_MAX_TAG_VALUE_LEN + 1] = '\0';
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
+    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
     MEMSET(tagName, 'a', MKV_MAX_TAG_NAME_LEN + 1);
     tagName[MKV_MAX_TAG_NAME_LEN + 1] = '\0';
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
+    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
     // Validate the negative case with state
     MEMCPY(tagName, (PCHAR)"tagName", STRLEN("tagName"));
     MEMCPY(tagValue, (PCHAR)"tagValue", STRLEN("tagValue"));
-    EXPECT_EQ(STATUS_INVALID_STREAM_STATE, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
-
-    // Validate NULL case
-    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, NULL));
+    EXPECT_EQ(STATUS_INVALID_STREAM_STATE, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 }
 
-TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Name)
+TEST_F(StreamApiTest, insertKinesisVideoTag_Invalid_Name)
 {
     // Create and ready stream
     ReadyStream();
@@ -405,7 +402,7 @@ TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Name)
     EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "aws", (PCHAR) "Tag Value", TRUE));
 }
 
-TEST_F(StreamApiTest, insertKinesisVideoTag_Invalid_Name)
+TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Name)
 {
     StreamEventMetadata Meta{NULL, 1, {}, {}};
 
@@ -420,22 +417,28 @@ TEST_F(StreamApiTest, insertKinesisVideoTag_Invalid_Name)
     // Create and ready stream
     ReadyStream();
 
-    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
+    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    printf("%d\n", __LINE__);
 
     MEMCPY(tagName, (PCHAR)"AWS ", STRLEN("AWS "));
-    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
+    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    printf("%d\n", __LINE__);
 
     MEMCPY(tagName, (PCHAR)"AWSTag", STRLEN("AWSTag"));
-    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
+    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    printf("%d\n", __LINE__);
 
     MEMCPY(tagName, (PCHAR)"AWS:", STRLEN("AWS:"));
-    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
+    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    printf("%d\n", __LINE__);
 
     MEMCPY(tagName, (PCHAR)"aWS", STRLEN("aWS"));
-    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
+    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    printf("%d\n", __LINE__);
 
     MEMCPY(tagName, (PCHAR)"aws", STRLEN("aws"));
-    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_NOTIFICATION, &Meta));
+    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    printf("%d\n", __LINE__);
 }
 
 TEST_F(StreamApiTest, insertKinesisVideoTag_Stream_State_Error) {
