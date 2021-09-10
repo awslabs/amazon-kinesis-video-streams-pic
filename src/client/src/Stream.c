@@ -1846,7 +1846,7 @@ CleanUp:
 /**
  * Puts a metadata into the stream
  */
-STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, STREAM_EVENT_TYPE_TYPE event, PStreamEventMetadata pMetadata)
+STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, STREAM_EVENT_TYPE event, PStreamEventMetadata pMetadata)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -1907,7 +1907,7 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, STREAM_EVENT_TY
             }
             break;
         default:
-            DLOGW("Unsupported STREAM_EVENT_TYPE_TYPE, %d", event);
+            DLOGW("Unsupported STREAM_EVENT_TYPE, %d", event);
             break;
     }
     if (hasMetadata) {
@@ -3219,7 +3219,7 @@ CleanUp:
     return retStatus;
 }
 
-STATUS createSerializedMetadata(PCHAR name, PCHAR value, BOOL persistent, UINT32 packagedSize, STREAM_EVENT_TYPE_TYPE event, MKV_TREE_TYPE parent,
+STATUS createSerializedMetadata(PCHAR name, PCHAR value, BOOL persistent, UINT32 packagedSize, STREAM_EVENT_TYPE event, MKV_TREE_TYPE parent,
                                 PPSerializedMetadata ppSerializedMetadata)
 {
     ENTERS();
