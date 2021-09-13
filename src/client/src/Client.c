@@ -873,6 +873,7 @@ STATUS putKinesisVideoEventMetadata(STREAM_HANDLE streamHandle, STREAM_EVENT_TYP
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
+    UINT8 iter = 0;
     BOOL releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
 
@@ -881,7 +882,7 @@ STATUS putKinesisVideoEventMetadata(STREAM_HANDLE streamHandle, STREAM_EVENT_TYP
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
     if (pStreamEventMetadata != NULL) {
         CHK(pStreamEventMetadata->numberOfPairs <= MAX_EVENT_CUSTOM_PAIRS, STATUS_INVALID_ARG);
-        for (UINT8 iter = 0; iter < pStreamEventMetadata->numberOfPairs; iter++) {
+        for (iter = 0; iter < pStreamEventMetadata->numberOfPairs; iter++) {
             CHK(pStreamEventMetadata->names[iter] != NULL && pStreamEventMetadata->values[iter] != NULL, STATUS_NULL_ARG);
         }
     }

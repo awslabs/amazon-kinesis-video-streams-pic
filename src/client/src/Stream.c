@@ -1893,6 +1893,7 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, STREAM_EVENT_TY
             CHK(0 != STRNCMP(AWS_INTERNAL_METADATA_PREFIX, pMetadata->imagePrefix, (SIZEOF(AWS_INTERNAL_METADATA_PREFIX) - 1) / SIZEOF(CHAR)),
                 STATUS_INVALID_METADATA_NAME);
         }
+        neededNodes += pMetadata->numberOfPairs;
     }
 
     // Ensure we don't have more than MAX size of the metadata queue
@@ -1909,9 +1910,6 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, STREAM_EVENT_TY
         default:
             DLOGW("Unsupported STREAM_EVENT_TYPE, %d", event);
             break;
-    }
-    if (hasMetadata) {
-        neededNodes += pMetadata->numberOfPairs;
     }
     CHK_STATUS(stackQueueGetCount(pKinesisVideoStream->pMetadataQueue, &metadataQueueSize));
     CHK((metadataQueueSize + neededNodes) <= MAX_FRAGMENT_METADATA_COUNT, STATUS_MAX_FRAGMENT_METADATA_COUNT);
