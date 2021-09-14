@@ -869,7 +869,7 @@ CleanUp:
  * Puts an event & associated custom data into the Kinesis Video stream.
  */
 
-STATUS putKinesisVideoEventMetadata(STREAM_HANDLE streamHandle, STREAM_EVENT_TYPE event, PStreamEventMetadata pStreamEventMetadata)
+STATUS putKinesisVideoEventMetadata(STREAM_HANDLE streamHandle, UINT32 event, PStreamEventMetadata pStreamEventMetadata)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -885,6 +885,11 @@ STATUS putKinesisVideoEventMetadata(STREAM_HANDLE streamHandle, STREAM_EVENT_TYP
         for (iter = 0; iter < pStreamEventMetadata->numberOfPairs; iter++) {
             CHK(pStreamEventMetadata->names[iter] != NULL && pStreamEventMetadata->values[iter] != NULL, STATUS_NULL_ARG);
         }
+    }
+
+    // check for valid events
+    if (event >= STREAM_EVENT_TYPE_LAST || !event) {
+        CHK(FALSE, STATUS_INVALID_ARG);
     }
 
     // Shutdown sequencer

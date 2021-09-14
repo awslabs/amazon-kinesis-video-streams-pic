@@ -940,14 +940,11 @@ typedef enum {
     CONTENT_STORE_PRESSURE_POLICY_DROP_TAIL_ITEM = 1,
 } CONTENT_STORE_PRESSURE_POLICY;
 
-typedef enum {
-    // base case
-    STREAM_EVENT_TYPE_NONE = 0,
-    // To trigger image generation and persistence in s3
-    STREAM_EVENT_TYPE_IMAGE_GENERATION,
-    // To receive a notification that fragment has been persisted
-    STREAM_EVENT_TYPE_NOTIFICATION,
-} STREAM_EVENT_TYPE;
+// KVS Stream events
+#define STREAM_EVENT_TYPE_IMAGE_GENERATION 0x00000001L
+#define STREAM_EVENT_TYPE_NOTIFICATION     0x00000002L
+// used to iterative purposes, always keep last. NOTE have most significant bit set to 1. 0x8* not allowed
+#define STREAM_EVENT_TYPE_LAST 0x00000004L
 
 /**
  * Stream capabilities declaration
@@ -2098,15 +2095,16 @@ PUBLIC_API STATUS getKinesisVideoStreamData(STREAM_HANDLE, UPLOAD_HANDLE, PBYTE,
 PUBLIC_API STATUS putKinesisVideoFragmentMetadata(STREAM_HANDLE, PCHAR, PCHAR, BOOL);
 
 /**
- * Inserts a KVS event accompanied by optional metadata (key/value string pairs) into the stream.
+ * Inserts a KVS event(s) accompanied by optional metadata (key/value string pairs) into the stream.
+ * Multiple events can be submitted at once by using bitwise OR
  *
  * @param 1 STREAM_HANDLE - the stream handle.
- * @param 2 STREAM_EVENT_TYPE - the type of event
+ * @param 2 UINT32 - the type of event(s)
  * @param 3 PStreamEventMetadata - pointer to struct with optional metadata
  *
  * @return Status of the function call.
  */
-PUBLIC_API STATUS putKinesisVideoEventMetadata(STREAM_HANDLE, STREAM_EVENT_TYPE, PStreamEventMetadata);
+PUBLIC_API STATUS putKinesisVideoEventMetadata(STREAM_HANDLE, UINT32, PStreamEventMetadata);
 
 ////////////////////////////////////////////////////
 // Diagnostics functions

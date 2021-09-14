@@ -828,8 +828,8 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 
     if (CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
         // We will append the EoFr tag and package the tags
-        CHK_STATUS(createSerializedMetadata((PCHAR) EOFR_METADATA_NAME, (PCHAR) "", FALSE, pKinesisVideoStream->eosTracker.size, STREAM_EVENT_TYPE_NONE,
-                                            MKV_TREE_TAGS, &pSerializedMetadata));
+        CHK_STATUS(createSerializedMetadata((PCHAR) EOFR_METADATA_NAME, (PCHAR) "", FALSE, pKinesisVideoStream->eosTracker.size, 0, MKV_TREE_TAGS,
+                                            &pSerializedMetadata));
         CHK_STATUS(appendValidatedMetadata(pKinesisVideoStream, pSerializedMetadata));
 
         // Package the not-applied metadata as the frame bits
@@ -1846,12 +1846,12 @@ CleanUp:
 /**
  * Puts a metadata into the stream
  */
-STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, STREAM_EVENT_TYPE event, PStreamEventMetadata pMetadata)
+STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, PStreamEventMetadata pMetadata)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = NULL;
-    BOOL streamLocked = FALSE, hasMetadata = pMetadata == NULL ? FALSE : TRUE, firstEvent = TRUE, creatingNodes = FALSE;
+    BOOL streamLocked = FALSE, hasMetadata = pMetadata == NULL ? FALSE : TRUE, firstEvent = TRUE, creatingNodes = FALSE, tagsNeeded = TRUE;
     UINT8 iter = 0;
     UINT32 packagedSize = 0, totalPackagedSize = 0, metadataQueueSize;
     UINT32 packagedSizes[MAX_FRAGMENT_METADATA_COUNT] = {0};
@@ -1897,19 +1897,14 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, STREAM_EVENT_TY
     }
 
     // Ensure we don't have more than MAX size of the metadata queue
-    switch (event) {
-        case STREAM_EVENT_TYPE_NOTIFICATION:
+    if (event & STREAM_EVENT_TYPE_NOTIFICATION) {
+        neededNodes++;
+    }
+    if (event & STREAM_EVENT_TYPE_IMAGE_GENERATION) {
+        neededNodes++;
+        if (hasMetadata && pMetadata->imagePrefix != NULL) {
             neededNodes++;
-            break;
-        case STREAM_EVENT_TYPE_IMAGE_GENERATION:
-            neededNodes++;
-            if (hasMetadata && pMetadata->imagePrefix != NULL) {
-                neededNodes++;
-            }
-            break;
-        default:
-            DLOGW("Unsupported STREAM_EVENT_TYPE, %d", event);
-            break;
+        }
     }
     CHK_STATUS(stackQueueGetCount(pKinesisVideoStream->pMetadataQueue, &metadataQueueSize));
     CHK((metadataQueueSize + neededNodes) <= MAX_FRAGMENT_METADATA_COUNT, STATUS_MAX_FRAGMENT_METADATA_COUNT);
@@ -1920,36 +1915,33 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, STREAM_EVENT_TY
     // Check whether we are OK to package the metadata but do not package.
     // create all metadata nodes
     creatingNodes = TRUE;
-    switch (event) {
-        case STREAM_EVENT_TYPE_NOTIFICATION:
-            if (firstEvent) {
-                CHK_STATUS(mkvgenGenerateTagsChain(NULL, KVSEVENT_NOTIFICATION_STRING, "", &packagedSize, MKV_TREE_TAGS));
-                CHK_STATUS(createSerializedMetadata(KVSEVENT_NOTIFICATION_STRING, "", FALSE, packagedSize, event, MKV_TREE_TAGS,
-                                                    &serializedNodes[neededNodes++]));
-            } else {
-                CHK_STATUS(mkvgenGenerateTagsChain(NULL, KVSEVENT_NOTIFICATION_STRING, "", &packagedSize, MKV_TREE_SIMPLE));
-                CHK_STATUS(createSerializedMetadata(KVSEVENT_NOTIFICATION_STRING, "", FALSE, packagedSize, event, MKV_TREE_SIMPLE,
-                                                    &serializedNodes[neededNodes++]));
-            }
-            break;
-        case STREAM_EVENT_TYPE_IMAGE_GENERATION:
-            if (firstEvent) {
-                CHK_STATUS(mkvgenGenerateTagsChain(NULL, KVSEVENT_IMAGE_GENERATION_STRING, "", &packagedSize, MKV_TREE_TAGS));
-                CHK_STATUS(createSerializedMetadata(KVSEVENT_IMAGE_GENERATION_STRING, "", FALSE, packagedSize, event, MKV_TREE_TAGS,
-                                                    &serializedNodes[neededNodes++]));
-            } else {
-                CHK_STATUS(mkvgenGenerateTagsChain(NULL, KVSEVENT_IMAGE_GENERATION_STRING, "", &packagedSize, MKV_TREE_SIMPLE));
-                CHK_STATUS(createSerializedMetadata(KVSEVENT_IMAGE_GENERATION_STRING, "", FALSE, packagedSize, event, MKV_TREE_SIMPLE,
-                                                    &serializedNodes[neededNodes++]));
-            }
-            if (hasMetadata && pMetadata->imagePrefix != NULL) {
-                CHK_STATUS(mkvgenGenerateTagsChain(NULL, KVSEVENT_IMAGE_PREFIX_STRING, pMetadata->imagePrefix, &packagedSize, MKV_TREE_SIMPLE));
-                CHK_STATUS(createSerializedMetadata(KVSEVENT_IMAGE_PREFIX_STRING, pMetadata->imagePrefix, FALSE, packagedSize, event, MKV_TREE_SIMPLE,
-                                                    &serializedNodes[neededNodes++]));
-            }
-            break;
-        default:
-            break;
+    if (event & STREAM_EVENT_TYPE_NOTIFICATION) {
+        if (firstEvent) {
+            CHK_STATUS(mkvgenGenerateTagsChain(NULL, KVSEVENT_NOTIFICATION_STRING, "", &packagedSize, MKV_TREE_TAGS));
+            CHK_STATUS(createSerializedMetadata(KVSEVENT_NOTIFICATION_STRING, "", FALSE, packagedSize, event, MKV_TREE_TAGS,
+                                                &serializedNodes[neededNodes++]));
+            tagsNeeded = FALSE;
+        } else {
+            CHK_STATUS(mkvgenGenerateTagsChain(NULL, KVSEVENT_NOTIFICATION_STRING, "", &packagedSize, MKV_TREE_SIMPLE));
+            CHK_STATUS(createSerializedMetadata(KVSEVENT_NOTIFICATION_STRING, "", FALSE, packagedSize, event, MKV_TREE_SIMPLE,
+                                                &serializedNodes[neededNodes++]));
+        }
+    }
+    if (event & STREAM_EVENT_TYPE_IMAGE_GENERATION) {
+        if (firstEvent && tagsNeeded) {
+            CHK_STATUS(mkvgenGenerateTagsChain(NULL, KVSEVENT_IMAGE_GENERATION_STRING, "", &packagedSize, MKV_TREE_TAGS));
+            CHK_STATUS(createSerializedMetadata(KVSEVENT_IMAGE_GENERATION_STRING, "", FALSE, packagedSize, event, MKV_TREE_TAGS,
+                                                &serializedNodes[neededNodes++]));
+        } else {
+            CHK_STATUS(mkvgenGenerateTagsChain(NULL, KVSEVENT_IMAGE_GENERATION_STRING, "", &packagedSize, MKV_TREE_SIMPLE));
+            CHK_STATUS(createSerializedMetadata(KVSEVENT_IMAGE_GENERATION_STRING, "", FALSE, packagedSize, event, MKV_TREE_SIMPLE,
+                                                &serializedNodes[neededNodes++]));
+        }
+        if (hasMetadata && pMetadata->imagePrefix != NULL) {
+            CHK_STATUS(mkvgenGenerateTagsChain(NULL, KVSEVENT_IMAGE_PREFIX_STRING, pMetadata->imagePrefix, &packagedSize, MKV_TREE_SIMPLE));
+            CHK_STATUS(createSerializedMetadata(KVSEVENT_IMAGE_PREFIX_STRING, pMetadata->imagePrefix, FALSE, packagedSize, event, MKV_TREE_SIMPLE,
+                                                &serializedNodes[neededNodes++]));
+        }
     }
     // Check that custom data can fit as well
     if (hasMetadata) {
@@ -1961,14 +1953,11 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, STREAM_EVENT_TY
     }
     creatingNodes = FALSE;
 
-    // if we're the first event, then we need to track the location of event 'tags' element in the queue for potential follow-up events in this
-    // fragment.
-    if (firstEvent) {
-        pKinesisVideoStream->metadataTracker.eventIndex = metadataQueueSize;
-    }
-
     // append/insert all metadata nodes to the queue.
     if (firstEvent) {
+        // if we're the first event, then we need to track the location of event 'tags' element in the queue for potential follow-up events in this
+        // fragment.
+        pKinesisVideoStream->metadataTracker.eventIndex = metadataQueueSize;
         for (iter = 0; iter < neededNodes; iter++) {
             CHK_STATUS(appendValidatedMetadata(pKinesisVideoStream, serializedNodes[iter]));
         }
@@ -2074,7 +2063,7 @@ STATUS putFragmentMetadata(PKinesisVideoStream pKinesisVideoStream, PCHAR name, 
     CHK_STATUS(stackQueueGetCount(pKinesisVideoStream->pMetadataQueue, &metadataQueueSize));
     CHK(metadataQueueSize < MAX_FRAGMENT_METADATA_COUNT, STATUS_MAX_FRAGMENT_METADATA_COUNT);
 
-    CHK_STATUS(createSerializedMetadata(name, value, persistent, packagedSize, STREAM_EVENT_TYPE_NONE, MKV_TREE_TAGS, &pSerializedMetadata));
+    CHK_STATUS(createSerializedMetadata(name, value, persistent, packagedSize, 0, MKV_TREE_TAGS, &pSerializedMetadata));
     CHK_STATUS(appendValidatedMetadata(pKinesisVideoStream, pSerializedMetadata));
 
     // Unlock the stream (even though it will be unlocked in the cleanup
@@ -3024,14 +3013,14 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
             CHK_STATUS(stackQueueEnqueue(pKinesisVideoStream->pMetadataQueue, item));
             pSerializedMetadata = NULL;
         } else {
-            if (pSerializedMetadata->event != STREAM_EVENT_TYPE_NONE && pKinesisVideoStream->metadataTracker.activeMkvEvent) {
+            if (pSerializedMetadata->event != 0 && pKinesisVideoStream->metadataTracker.activeMkvEvent) {
                 pKinesisVideoStream->metadataTracker.activeMkvEvent = FALSE;
             }
 
             if (pSerializedMetadata->parent == MKV_TREE_TAGS) {
                 pKinesisVideoStream->metadataTracker.tagsCount--;
             }
-            if (pSerializedMetadata->event != STREAM_EVENT_TYPE_NONE) {
+            if (pSerializedMetadata->event != 0) {
                 pKinesisVideoStream->metadataTracker.eventIndex = 0;
             }
             // Delete the allocation otherwise
@@ -3186,7 +3175,7 @@ STATUS packageNotSentMetadata(PKinesisVideoStream pKinesisVideoStream)
             if (pSerializedMetadata->parent == MKV_TREE_TAGS) {
                 pKinesisVideoStream->metadataTracker.tagsCount--;
             }
-            if (pSerializedMetadata->event != STREAM_EVENT_TYPE_NONE) {
+            if (pSerializedMetadata->event != 0) {
                 pKinesisVideoStream->metadataTracker.eventIndex = 0;
             }
 
@@ -3217,7 +3206,7 @@ CleanUp:
     return retStatus;
 }
 
-STATUS createSerializedMetadata(PCHAR name, PCHAR value, BOOL persistent, UINT32 packagedSize, STREAM_EVENT_TYPE event, MKV_TREE_TYPE parent,
+STATUS createSerializedMetadata(PCHAR name, PCHAR value, BOOL persistent, UINT32 packagedSize, UINT32 event, MKV_TREE_TYPE parent,
                                 PPSerializedMetadata ppSerializedMetadata)
 {
     ENTERS();
@@ -3297,7 +3286,7 @@ STATUS appendValidatedMetadata(PKinesisVideoStream pKinesisVideoStream, PSeriali
     CHK_STATUS(stackQueueEnqueue(pKinesisVideoStream->pMetadataQueue, (UINT64) pSerializedMetadata));
 
     // update metadataTracker
-    if (pSerializedMetadata->event != STREAM_EVENT_TYPE_NONE) {
+    if (pSerializedMetadata->event != 0) {
         pKinesisVideoStream->metadataTracker.activeMkvEvent = TRUE;
     }
 
@@ -3336,7 +3325,7 @@ STATUS insertValidatedMetadata(PKinesisVideoStream pKinesisVideoStream, PSeriali
     }
 
     // update metadataTracker
-    if (pSerializedMetadata->event != STREAM_EVENT_TYPE_NONE) {
+    if (pSerializedMetadata->event != 0) {
         pKinesisVideoStream->metadataTracker.activeMkvEvent = TRUE;
     }
 

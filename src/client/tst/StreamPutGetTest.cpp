@@ -83,8 +83,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetFrameBoundary)
         // Set the buffer size to be the offset + frame bits size
         bufferSize = SIZEOF(tempBuffer) + offset;
 
-        EXPECT_EQ(STATUS_SUCCESS,
-                  getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
         EXPECT_EQ(bufferSize, filledSize);
 
         // Validate the fill pattern
@@ -266,12 +265,11 @@ TEST_F(StreamPutGetTest, putFrame_PutGetFrameBoundaryInterleavedUnderrun)
             for (k = 0; k < i; k++) {
                 getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer,
                                           SIZEOF(tempBuffer) +
-                                          mkvgenGetMkvHeaderOverhead((PStreamMkvGenerator) FROM_STREAM_HANDLE(mStreamHandle)->pMkvGenerator),
+                                              mkvgenGetMkvHeaderOverhead((PStreamMkvGenerator) FROM_STREAM_HANDLE(mStreamHandle)->pMkvGenerator),
                                           &filledSize);
             }
         } else {
-            retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize,
-                                                  &filledSize);
+            retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize);
 
             if (i > putStreamResultCount) {
                 EXPECT_EQ(STATUS_SUCCESS, retStatus);
@@ -297,8 +295,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetFrameBoundaryInterleavedUnderrun)
                 if (k >= putStreamResultCount) {
                     // No more data should be available
                     EXPECT_EQ(STATUS_NO_MORE_DATA_AVAILABLE,
-                              getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize,
-                                                        &filledSize));
+                              getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
                 }
             }
         }
@@ -353,8 +350,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetInterleavedUnderrun)
 
         // Return a put stream result on 20th
         if (i == putStreamResultCount) {
-            EXPECT_EQ(STATUS_SUCCESS,
-                      putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
+            EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
         }
 
         // The first frame will have the cluster and MKV overhead
@@ -376,12 +372,11 @@ TEST_F(StreamPutGetTest, putFrame_PutGetInterleavedUnderrun)
             for (k = 0; k < i; k++) {
                 getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer,
                                           SIZEOF(tempBuffer) +
-                                          mkvgenGetMkvHeaderOverhead((PStreamMkvGenerator) FROM_STREAM_HANDLE(mStreamHandle)->pMkvGenerator),
+                                              mkvgenGetMkvHeaderOverhead((PStreamMkvGenerator) FROM_STREAM_HANDLE(mStreamHandle)->pMkvGenerator),
                                           &filledSize);
             }
         } else {
-            retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize,
-                                                  &filledSize);
+            retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize);
 
             if (i > putStreamResultCount) {
                 EXPECT_EQ(STATUS_NO_MORE_DATA_AVAILABLE, retStatus);
@@ -474,16 +469,13 @@ TEST_F(StreamPutGetTest, putFrame_PutGetHalfBuffer)
         bufferSize = SIZEOF(tempBuffer) / 2 + offset;
 
         // Read the first half
-        EXPECT_EQ(STATUS_SUCCESS,
-                  getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
         EXPECT_EQ(bufferSize, filledSize);
 
         // Read the second half
         filledSize = bufferSize;
         bufferSize = SIZEOF(tempBuffer) / 2;
-        EXPECT_EQ(STATUS_SUCCESS,
-                  getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer + filledSize, bufferSize,
-                                            &filledSize));
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer + filledSize, bufferSize, &filledSize));
         EXPECT_EQ(bufferSize, filledSize);
 
         // Validate the fill pattern
@@ -499,7 +491,8 @@ TEST_F(StreamPutGetTest, putFrame_PutGetHalfBuffer)
     }
 }
 
-TEST_F(StreamPutGetTest, putFrame_PutGetHalfBufferInterleaved) {
+TEST_F(StreamPutGetTest, putFrame_PutGetHalfBufferInterleaved)
+{
     UINT32 i, j, k, filledSize, offset, bufferSize;
     BOOL validPattern;
     BYTE tempBuffer[1000];
@@ -546,8 +539,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetHalfBufferInterleaved) {
 
         // Return a put stream result on 20th
         if (i == putStreamResultCount) {
-            EXPECT_EQ(STATUS_SUCCESS,
-                      putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
+            EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
         }
 
         // The first frame will have the cluster and MKV overhead
@@ -565,8 +557,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetHalfBufferInterleaved) {
         bufferSize = SIZEOF(tempBuffer) / 2 + offset;
 
         // Read the first half
-        retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize,
-                                              &filledSize);
+        retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize);
 
         if (i == putStreamResultCount) {
             EXPECT_EQ(STATUS_SUCCESS, retStatus);
@@ -575,7 +566,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetHalfBufferInterleaved) {
             for (k = 0; k < i; k++) {
                 getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer,
                                           SIZEOF(tempBuffer) +
-                                          mkvgenGetMkvHeaderOverhead((PStreamMkvGenerator) FROM_STREAM_HANDLE(mStreamHandle)->pMkvGenerator),
+                                              mkvgenGetMkvHeaderOverhead((PStreamMkvGenerator) FROM_STREAM_HANDLE(mStreamHandle)->pMkvGenerator),
                                           &filledSize);
             }
         } else {
@@ -590,8 +581,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetHalfBufferInterleaved) {
             // Read the second half
             filledSize = bufferSize;
             bufferSize = SIZEOF(tempBuffer) / 2;
-            retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer + filledSize,
-                                                  bufferSize, &filledSize);
+            retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer + filledSize, bufferSize, &filledSize);
 
             if (i > putStreamResultCount) {
                 EXPECT_EQ(STATUS_SUCCESS, retStatus);
@@ -610,8 +600,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetHalfBufferInterleaved) {
 
                 // No more data should be available
                 EXPECT_EQ(STATUS_NO_MORE_DATA_AVAILABLE,
-                          getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize,
-                                                    &filledSize));
+                          getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
             } else {
                 // PutStreamResult hasn't been called yet
                 EXPECT_EQ(STATUS_UPLOAD_HANDLE_ABORTED, retStatus);
@@ -672,7 +661,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetDoubleBuffer)
 
     // Consume frames
     iterations = i / 2;
-    for (i = 0; i < iterations; i+=2) {
+    for (i = 0; i < iterations; i += 2) {
         // The first two frames will have the simple block, cluster and MKV overhead
         if (i == 0) {
             offset1 = mkvgenGetMkvHeaderOverhead((PStreamMkvGenerator) FROM_STREAM_HANDLE(mStreamHandle)->pMkvGenerator);
@@ -690,8 +679,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetDoubleBuffer)
         bufferSize = SIZEOF(tempBuffer) * 2 + offset1 + offset2;
 
         // Read the double
-        EXPECT_EQ(STATUS_SUCCESS,
-                  getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
         EXPECT_EQ(bufferSize, filledSize);
 
         // Validate the fill pattern
@@ -783,8 +771,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonBoundaryBuffer)
         bufferSize = SIZEOF(tempBuffer) + offset;
 
         // Read the double
-        EXPECT_EQ(STATUS_SUCCESS,
-                  getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
         EXPECT_EQ(bufferSize, filledSize);
 
         // Validate the fill pattern
@@ -801,8 +788,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonBoundaryBuffer)
 
     // Read 1.5 frame size
     bufferSize = SIZEOF(tempBuffer) + SIZEOF(tempBuffer) / 2 + MKV_CLUSTER_OVERHEAD + MKV_SIMPLE_BLOCK_OVERHEAD;
-    EXPECT_EQ(STATUS_SUCCESS,
-              getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
     EXPECT_EQ(bufferSize, filledSize);
 
     // Validate the first part fill pattern
@@ -827,7 +813,6 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonBoundaryBuffer)
     }
 
     EXPECT_TRUE(validPattern) << "Failed at first half offset: " << j << " from the beginning of frame: " << i;
-
 }
 
 TEST_F(StreamPutGetTest, putFrame_PutGetNonKeyFrameFirstFrame)
@@ -899,9 +884,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonKeyFrameFirstFrame)
         bufferSize = SIZEOF(tempBuffer) + offset;
 
         if (timestamp < TEST_BUFFER_DURATION - 10 * TEST_LONG_FRAME_DURATION) {
-            EXPECT_EQ(STATUS_SUCCESS,
-                      getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize,
-                                                &filledSize));
+            EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
             EXPECT_EQ(bufferSize, filledSize);
 
             // Validate the fill pattern
@@ -917,8 +900,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonKeyFrameFirstFrame)
         } else {
             // We should get STATUS_NO_MORE_DATA_AVAILABLE
             EXPECT_EQ(STATUS_NO_MORE_DATA_AVAILABLE,
-                      getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize,
-                                                &filledSize));
+                      getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
         }
     }
 }
@@ -998,9 +980,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonKeyFrameFirstFrameCpd1Byte)
         bufferSize = SIZEOF(tempBuffer) + offset;
 
         if (timestamp < TEST_BUFFER_DURATION - 10 * TEST_LONG_FRAME_DURATION) {
-            EXPECT_EQ(STATUS_SUCCESS,
-                      getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize,
-                                                &filledSize));
+            EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
             EXPECT_EQ(bufferSize, filledSize);
 
             // Validate the fill pattern
@@ -1016,8 +996,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonKeyFrameFirstFrameCpd1Byte)
         } else {
             // Should be getting no more data
             EXPECT_EQ(STATUS_NO_MORE_DATA_AVAILABLE,
-                      getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize,
-                                                &filledSize));
+                      getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
         }
     }
 }
@@ -1097,9 +1076,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonKeyFrameFirstFrameCpd2Byte)
         bufferSize = SIZEOF(tempBuffer) + offset;
 
         if (timestamp < TEST_BUFFER_DURATION - 10 * TEST_LONG_FRAME_DURATION) {
-            EXPECT_EQ(STATUS_SUCCESS,
-                      getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize,
-                                                &filledSize));
+            EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
             EXPECT_EQ(bufferSize, filledSize);
 
             // Validate the fill pattern
@@ -1115,8 +1092,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonKeyFrameFirstFrameCpd2Byte)
         } else {
             // Should be getting no more data status due to skipped frames at the start
             EXPECT_EQ(STATUS_NO_MORE_DATA_AVAILABLE,
-                      getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize,
-                                                &filledSize));
+                      getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
         }
     }
 }
@@ -1198,9 +1174,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonKeyFrameFirstFrameCpd3Byte)
         bufferSize = SIZEOF(tempBuffer) + offset;
 
         if (timestamp < TEST_BUFFER_DURATION - 10 * TEST_LONG_FRAME_DURATION) {
-            EXPECT_EQ(STATUS_SUCCESS,
-                      getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize,
-                                                &filledSize));
+            EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
             EXPECT_EQ(bufferSize, filledSize);
 
             // Validate the fill pattern
@@ -1216,8 +1190,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNonKeyFrameFirstFrameCpd3Byte)
         } else {
             // We should be getting no more data status as we skipped the first frames
             EXPECT_EQ(STATUS_NO_MORE_DATA_AVAILABLE,
-                      getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize,
-                                                &filledSize));
+                      getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, bufferSize, &filledSize));
         }
     }
     MEMFREE(cpd);
@@ -1322,7 +1295,9 @@ TEST_F(StreamPutGetTest, putFrame_PutGetGeneratedSegmentUidCheck)
     mStreamName[0] = '\0';
     EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, &mStreamDescription));
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN, SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 
     getDataBuffer = (PBYTE) MEMALLOC(getDataBufferSize);
 
@@ -1458,8 +1433,9 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNotifyAndTagsStoreData)
 
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "postTagName", (PCHAR) "postTagValue", FALSE)) << i;
         if (i == 79) {
-            EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, NULL)) << i;
-            EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_IMAGE_GENERATION, NULL)) << i;
+            EXPECT_EQ(STATUS_SUCCESS,
+                      putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION | STREAM_EVENT_TYPE_IMAGE_GENERATION, NULL))
+                << i;
         }
 
         // Return a put stream result on 20th
@@ -1514,8 +1490,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetPreTagsStoreData)
 
         // Add tag every 3rd frame
         if (i % 3 == 0) {
-            EXPECT_EQ(STATUS_SUCCESS,
-                      putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "preTagName", (PCHAR) "preTagValue", FALSE)) << i;
+            EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "preTagName", (PCHAR) "preTagValue", FALSE)) << i;
         }
 
         // Key frame every 10th
@@ -1524,8 +1499,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetPreTagsStoreData)
 
         // Add tag every 3rd frame
         if (i % 3 == 0) {
-            EXPECT_EQ(STATUS_SUCCESS,
-                      putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "postTagName", (PCHAR) "postTagValue", FALSE)) << i;
+            EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "postTagName", (PCHAR) "postTagValue", FALSE)) << i;
         }
 
         // Return a put stream result on 20th
@@ -1568,8 +1542,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetTagsBeforeStoreData)
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
 
     // Insert a tag first - these should just accumulate
-    EXPECT_EQ(STATUS_SUCCESS,
-              putFragmentMetadata(pKinesisVideoStream, (PCHAR) "prePrependTagName1", (PCHAR) "prePrependTagValue1", FALSE));
+    EXPECT_EQ(STATUS_SUCCESS, putFragmentMetadata(pKinesisVideoStream, (PCHAR) "prePrependTagName1", (PCHAR) "prePrependTagValue1", FALSE));
 
     // Produce frames
     frame.duration = TEST_LONG_FRAME_DURATION;
@@ -1589,10 +1562,8 @@ TEST_F(StreamPutGetTest, putFrame_PutGetTagsBeforeStoreData)
 
         // Insert before a key frame
         if ((frame.flags & FRAME_FLAG_KEY_FRAME) == FRAME_FLAG_KEY_FRAME) {
-            EXPECT_EQ(STATUS_SUCCESS,
-                      putFragmentMetadata(pKinesisVideoStream, (PCHAR) "AppendTagName1", (PCHAR) "AppendTagValue1", FALSE)) << i;
-            EXPECT_EQ(STATUS_SUCCESS,
-                      putFragmentMetadata(pKinesisVideoStream, (PCHAR) "AppendTagName2", (PCHAR) "AppendTagValue2", FALSE)) << i;
+            EXPECT_EQ(STATUS_SUCCESS, putFragmentMetadata(pKinesisVideoStream, (PCHAR) "AppendTagName1", (PCHAR) "AppendTagValue1", FALSE)) << i;
+            EXPECT_EQ(STATUS_SUCCESS, putFragmentMetadata(pKinesisVideoStream, (PCHAR) "AppendTagName2", (PCHAR) "AppendTagValue2", FALSE)) << i;
         }
 
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame)) << "Iteration " << i;
@@ -1674,8 +1645,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetPersistentTagsStoreData)
 
         if (frame.index % 9 == 0) {
             sprintf(tagValue, "tagValue%d", frame.index);
-            EXPECT_EQ(STATUS_SUCCESS,
-                      putFragmentMetadata(pKinesisVideoStream, (PCHAR) "tagName1", (PCHAR) "nonPersistentTagValue", FALSE)) << i;
+            EXPECT_EQ(STATUS_SUCCESS, putFragmentMetadata(pKinesisVideoStream, (PCHAR) "tagName1", (PCHAR) "nonPersistentTagValue", FALSE)) << i;
             EXPECT_EQ(STATUS_SUCCESS, putFragmentMetadata(pKinesisVideoStream, (PCHAR) "tagName1", tagValue, TRUE)) << i;
 
             EXPECT_EQ(STATUS_SUCCESS, putFragmentMetadata(pKinesisVideoStream, (PCHAR) "tagName2", tagValue, TRUE)) << i;

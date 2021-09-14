@@ -464,7 +464,7 @@ struct __SerializedMetadata {
     BOOL applied;
 
     // An event type indicating how the data may be serialized,
-    STREAM_EVENT_TYPE event;
+    UINT32 event;
 
     // Highest parent needed to be made by mkvgen for this data
     MKV_TREE_TYPE parent;
@@ -773,7 +773,7 @@ STATUS insertValidatedMetadata(PKinesisVideoStream, PSerializedMetadata, UINT32)
  *
  * @return Status code of the operation
  */
-STATUS createSerializedMetadata(PCHAR, PCHAR, BOOL, UINT32, STREAM_EVENT_TYPE, MKV_TREE_TYPE, PPSerializedMetadata);
+STATUS createSerializedMetadata(PCHAR, PCHAR, BOOL, UINT32, UINT32, MKV_TREE_TYPE, PPSerializedMetadata);
 
 /**
  * Notifies of stream listeners about the stream closed.
