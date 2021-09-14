@@ -273,6 +273,7 @@ typedef enum {
 
 } UPLOAD_HANDLE_STATE;
 
+#define CHECK_UPLOAD_CONNECTION_STATE_IN_USE(f) (((f) &UPLOAD_CONNECTION_STATE_IN_USE) != UPLOAD_CONNECTION_STATE_NONE)
 /**
  * Upload connection state enum type definition
  */
@@ -464,7 +465,7 @@ struct __SerializedMetadata {
     BOOL applied;
 
     // An event type indicating how the data may be serialized,
-    UINT32 event;
+    STREAM_EVENT_TYPE event;
 
     // Highest parent needed to be made by mkvgen for this data
     MKV_TREE_TYPE parent;
@@ -773,7 +774,7 @@ STATUS insertValidatedMetadata(PKinesisVideoStream, PSerializedMetadata, UINT32)
  *
  * @return Status code of the operation
  */
-STATUS createSerializedMetadata(PCHAR, PCHAR, BOOL, UINT32, UINT32, MKV_TREE_TYPE, PPSerializedMetadata);
+STATUS createSerializedMetadata(PCHAR, PCHAR, BOOL, UINT32, STREAM_EVENT_TYPE, MKV_TREE_TYPE, PPSerializedMetadata);
 
 /**
  * Notifies of stream listeners about the stream closed.

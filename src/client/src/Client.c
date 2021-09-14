@@ -889,7 +889,7 @@ STATUS putKinesisVideoEventMetadata(STREAM_HANDLE streamHandle, UINT32 event, PS
     }
 
     // check for valid events
-    if (event >= STREAM_EVENT_TYPE_LAST || !event) {
+    if (event >= STREAM_EVENT_TYPE_LAST || event == STREAM_EVENT_TYPE_NONE) {
         CHK(FALSE, STATUS_INVALID_ARG);
     }
 

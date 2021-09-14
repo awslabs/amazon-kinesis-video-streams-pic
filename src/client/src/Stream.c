@@ -828,7 +828,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 
     if (CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
         // We will append the EoFr tag and package the tags
-        CHK_STATUS(createSerializedMetadata((PCHAR) EOFR_METADATA_NAME, (PCHAR) "", FALSE, pKinesisVideoStream->eosTracker.size, 0, MKV_TREE_TAGS,
+        CHK_STATUS(createSerializedMetadata((PCHAR) EOFR_METADATA_NAME, (PCHAR) "", FALSE, pKinesisVideoStream->eosTracker.size, STREAM_EVENT_TYPE_NONE, MKV_TREE_TAGS,
                                             &pSerializedMetadata));
         CHK_STATUS(appendValidatedMetadata(pKinesisVideoStream, pSerializedMetadata));
 
@@ -1156,7 +1156,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
     // and we are not in grace period
     // and we are not in a retry state on rotation
     // then we need to rollback the current view pointer
-    if ((pKinesisVideoStream->connectionState & UPLOAD_CONNECTION_STATE_IN_USE) != UPLOAD_CONNECTION_STATE_NONE) {
+    if (CHECK_UPLOAD_CONNECTION_STATE_IN_USE(pKinesisVideoStream->connectionState)) {
         if (IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
             // In case of offline mode, we just need to set the current to the tail.
             CHK_STATUS(contentViewGetTail(pKinesisVideoStream->pView, &pViewItem));
@@ -1897,10 +1897,10 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
     }
 
     // Ensure we don't have more than MAX size of the metadata queue
-    if (event & STREAM_EVENT_TYPE_NOTIFICATION) {
+    if (CHECK_STREAM_EVENT_TYPE_NOTIFICATION(event)) {
         neededNodes++;
     }
-    if (event & STREAM_EVENT_TYPE_IMAGE_GENERATION) {
+    if (CHECK_STREAM_EVENT_TYPE_IMAGE_GENERATION(event)) {
         neededNodes++;
         if (hasMetadata && pMetadata->imagePrefix != NULL) {
             neededNodes++;
@@ -1915,7 +1915,7 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
     // Check whether we are OK to package the metadata but do not package.
     // create all metadata nodes
     creatingNodes = TRUE;
-    if (event & STREAM_EVENT_TYPE_NOTIFICATION) {
+    if (CHECK_STREAM_EVENT_TYPE_NOTIFICATION(event)) {
         if (firstEvent) {
             CHK_STATUS(mkvgenGenerateTagsChain(NULL, KVSEVENT_NOTIFICATION_STRING, "", &packagedSize, MKV_TREE_TAGS));
             CHK_STATUS(createSerializedMetadata(KVSEVENT_NOTIFICATION_STRING, "", FALSE, packagedSize, event, MKV_TREE_TAGS,
@@ -1927,7 +1927,7 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
                                                 &serializedNodes[neededNodes++]));
         }
     }
-    if (event & STREAM_EVENT_TYPE_IMAGE_GENERATION) {
+    if (CHECK_STREAM_EVENT_TYPE_IMAGE_GENERATION(event)) {
         if (firstEvent && tagsNeeded) {
             CHK_STATUS(mkvgenGenerateTagsChain(NULL, KVSEVENT_IMAGE_GENERATION_STRING, "", &packagedSize, MKV_TREE_TAGS));
             CHK_STATUS(createSerializedMetadata(KVSEVENT_IMAGE_GENERATION_STRING, "", FALSE, packagedSize, event, MKV_TREE_TAGS,
@@ -2063,7 +2063,7 @@ STATUS putFragmentMetadata(PKinesisVideoStream pKinesisVideoStream, PCHAR name, 
     CHK_STATUS(stackQueueGetCount(pKinesisVideoStream->pMetadataQueue, &metadataQueueSize));
     CHK(metadataQueueSize < MAX_FRAGMENT_METADATA_COUNT, STATUS_MAX_FRAGMENT_METADATA_COUNT);
 
-    CHK_STATUS(createSerializedMetadata(name, value, persistent, packagedSize, 0, MKV_TREE_TAGS, &pSerializedMetadata));
+    CHK_STATUS(createSerializedMetadata(name, value, persistent, packagedSize, STREAM_EVENT_TYPE_NONE, MKV_TREE_TAGS, &pSerializedMetadata));
     CHK_STATUS(appendValidatedMetadata(pKinesisVideoStream, pSerializedMetadata));
 
     // Unlock the stream (even though it will be unlocked in the cleanup

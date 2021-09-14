@@ -941,11 +941,26 @@ typedef enum {
     CONTENT_STORE_PRESSURE_POLICY_DROP_TAIL_ITEM = 1,
 } CONTENT_STORE_PRESSURE_POLICY;
 
-// KVS Stream events (bit flags)
-#define STREAM_EVENT_TYPE_IMAGE_GENERATION 0x00000001L
-#define STREAM_EVENT_TYPE_NOTIFICATION     0x00000002L
-// used to iterative purposes, always keep last.
-#define STREAM_EVENT_TYPE_LAST 0x00000004L
+/**
+ * Macros checking for the stream event types
+ */
+#define CHECK_STREAM_EVENT_TYPE_IMAGE_GENERATION(f) (((f) &STREAM_EVENT_TYPE_IMAGE_GENERATION) != STREAM_EVENT_TYPE_NONE)
+#define CHECK_STREAM_EVENT_TYPE_NOTIFICATION(f)     (((f) &STREAM_EVENT_TYPE_NOTIFICATION) != STREAM_EVENT_TYPE_NONE)
+#define CHECK_STREAM_EVENT_TYPE_LAST(f)             (((f) &STREAM_EVENT_TYPE_LAST) != STREAM_EVENT_TYPE_NONE)
+
+typedef enum {
+
+    // KVS Stream events (bit flags)a
+    STREAM_EVENT_TYPE_NONE = 0,
+
+    STREAM_EVENT_TYPE_IMAGE_GENERATION = (1 << 0),
+
+    STREAM_EVENT_TYPE_NOTIFICATION = (1 << 1),
+
+    // used to iterative purposes, always keep last.
+    STREAM_EVENT_TYPE_LAST = (1 << 2),
+
+} STREAM_EVENT_TYPE;
 
 /**
  * Stream capabilities declaration
@@ -2103,7 +2118,7 @@ PUBLIC_API STATUS putKinesisVideoFragmentMetadata(STREAM_HANDLE, PCHAR, PCHAR, B
  * Multiple events can be submitted at once by using bitwise OR
  *
  * @param 1 STREAM_HANDLE - the stream handle.
- * @param 2 UINT32 - the type of event(s)
+ * @param 2 UINT32 - the type of event(s), it is suggested to use bit-wise OR combination from STREAM_EVENT_TYPE enum
  * @param 3 PStreamEventMetadata - pointer to struct with optional metadata
  *
  * @return Status of the function call.
