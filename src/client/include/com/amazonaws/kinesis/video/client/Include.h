@@ -944,7 +944,7 @@ typedef enum {
 // KVS Stream events (bit flags)
 #define STREAM_EVENT_TYPE_IMAGE_GENERATION 0x00000001L
 #define STREAM_EVENT_TYPE_NOTIFICATION     0x00000002L
-// used to iterative purposes, always keep last. NOTE have most significant bit set to 1. 0x8* not allowed
+// used to iterative purposes, always keep last.
 #define STREAM_EVENT_TYPE_LAST 0x00000004L
 
 /**
