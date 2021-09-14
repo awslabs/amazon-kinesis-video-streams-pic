@@ -1969,7 +1969,7 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
         }
     }
 
-    // Unlock the stream (even though it will be unlocked in the cleanup
+    // Unlock the stream (even though it will be unlocked in the cleanup)
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     streamLocked = FALSE;
 
@@ -2900,7 +2900,7 @@ STATUS checkStreamingTokenExpiration(PKinesisVideoStream pKinesisVideoStream)
     // Set the result that will move the state machinery to the get endpoint state
     // In case of failure with get endpoint (i.e. if client state machine fails at auth,
     // we will keep oscillating between STREAM_STATE_STOPPED and STREAM_STATE_GET_ENDPOINT
-    // with every putFrame call
+    // with every putFrame call)
     if (STATUS_FAILED(retStatus =
                           streamTerminatedEvent(pKinesisVideoStream, INVALID_UPLOAD_HANDLE_VALUE, SERVICE_CALL_STREAM_AUTH_IN_GRACE_PERIOD, TRUE))) {
         pKinesisVideoStream->gracePeriod = FALSE;

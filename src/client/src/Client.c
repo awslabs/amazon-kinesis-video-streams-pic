@@ -885,6 +885,7 @@ STATUS putKinesisVideoEventMetadata(STREAM_HANDLE streamHandle, UINT32 event, PS
         for (iter = 0; iter < pStreamEventMetadata->numberOfPairs; iter++) {
             CHK(pStreamEventMetadata->names[iter] != NULL && pStreamEventMetadata->values[iter] != NULL, STATUS_NULL_ARG);
         }
+        pStreamEventMetadata->version = STREAM_EVENT_METADATA_CURRENT_VERSION;
     }
 
     // check for valid events

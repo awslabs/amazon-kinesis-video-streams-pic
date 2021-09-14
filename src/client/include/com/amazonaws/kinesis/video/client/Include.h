@@ -447,18 +447,19 @@ extern "C" {
 /**
  * Current versions for the public structs
  */
-#define DEVICE_INFO_CURRENT_VERSION          1
-#define CALLBACKS_CURRENT_VERSION            0
-#define STREAM_INFO_CURRENT_VERSION          2
-#define SEGMENT_INFO_CURRENT_VERSION         0
-#define STORAGE_INFO_CURRENT_VERSION         0
-#define AUTH_INFO_CURRENT_VERSION            0
-#define SERVICE_CALL_CONTEXT_CURRENT_VERSION 0
-#define STREAM_DESCRIPTION_CURRENT_VERSION   1
-#define FRAGMENT_ACK_CURRENT_VERSION         0
-#define STREAM_METRICS_CURRENT_VERSION       2
-#define CLIENT_METRICS_CURRENT_VERSION       1
-#define CLIENT_INFO_CURRENT_VERSION          2
+#define DEVICE_INFO_CURRENT_VERSION           1
+#define CALLBACKS_CURRENT_VERSION             0
+#define STREAM_INFO_CURRENT_VERSION           2
+#define SEGMENT_INFO_CURRENT_VERSION          0
+#define STORAGE_INFO_CURRENT_VERSION          0
+#define AUTH_INFO_CURRENT_VERSION             0
+#define SERVICE_CALL_CONTEXT_CURRENT_VERSION  0
+#define STREAM_DESCRIPTION_CURRENT_VERSION    1
+#define FRAGMENT_ACK_CURRENT_VERSION          0
+#define STREAM_METRICS_CURRENT_VERSION        2
+#define CLIENT_METRICS_CURRENT_VERSION        1
+#define CLIENT_INFO_CURRENT_VERSION           2
+#define STREAM_EVENT_METADATA_CURRENT_VERSION 0
 
 /**
  * Definition of the client handle
@@ -1435,6 +1436,9 @@ typedef struct __ServiceCallContext* PServiceCallContext;
 
 typedef struct __StreamEventMetadata StreamEventMetadata;
 struct __StreamEventMetadata {
+    // Version of the struct
+    UINT32 version;
+
     // optional s3 prefix
     PCHAR imagePrefix;
 

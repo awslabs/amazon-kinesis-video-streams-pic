@@ -330,7 +330,7 @@ TEST_F(StreamApiTest, insertKinesisVideoTag_NULL_Invalid)
 TEST_F(StreamApiTest, insertKinesisVideoEvent_NULL_Invalid)
 {
     STREAM_HANDLE streamHandle = INVALID_STREAM_HANDLE_VALUE;
-    StreamEventMetadata Meta{NULL, 1, {}, {}};
+    StreamEventMetadata Meta{STREAM_EVENT_METADATA_CURRENT_VERSION, NULL, 1, {}, {}};
 
     CHAR tagName[MKV_MAX_TAG_NAME_LEN + 2] = {0};
     CHAR tagValue[MKV_MAX_TAG_VALUE_LEN + 2] = {0};
@@ -406,7 +406,7 @@ TEST_F(StreamApiTest, insertKinesisVideoTag_Invalid_Name)
 
 TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Name)
 {
-    StreamEventMetadata Meta{NULL, 1, {}, {}};
+    StreamEventMetadata Meta{STREAM_EVENT_METADATA_CURRENT_VERSION, NULL, 1, {}, {}};
 
     CHAR tagName[MKV_MAX_TAG_NAME_LEN + 2] = {0};
     CHAR tagValue[MKV_MAX_TAG_VALUE_LEN + 2] = {0};
