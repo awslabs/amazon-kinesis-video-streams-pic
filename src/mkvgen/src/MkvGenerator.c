@@ -642,6 +642,7 @@ STATUS mkvgenGenerateTagsChain(PBYTE pBuffer, PCHAR tagName, PCHAR tagValue, PUI
     // Calculate the necessary size
 
     // Get the overhead when packaging MKV
+    // The missing break statements are on purpose
     switch (parent) {
         case MKV_TREE_TAGS:
             packagedSize += MKV_TAGS_ELEMENT_SIZE_OFFSET + MKV_GENERIC_ELEMENT_OFFSET;
@@ -654,6 +655,8 @@ STATUS mkvgenGenerateTagsChain(PBYTE pBuffer, PCHAR tagName, PCHAR tagValue, PUI
             break;
 
         default:
+            DLOGE("This should be unreachable");
+            CHK(FALSE, STATUS_MKV_INVALID_PARENT_TYPE);
             break;
     }
     packagedSize += MKV_TAG_NAME_BITS_SIZE + MKV_TAG_STRING_BITS_SIZE + tagNameLen + tagValueLen;
@@ -694,6 +697,8 @@ STATUS mkvgenGenerateTagsChain(PBYTE pBuffer, PCHAR tagName, PCHAR tagValue, PUI
             break;
 
         default:
+            DLOGE("This should be unreachable");
+            CHK(FALSE, STATUS_MKV_INVALID_PARENT_TYPE);
             break;
     }
 
@@ -753,9 +758,10 @@ STATUS mkvgenGenerateTagsChain(PBYTE pBuffer, PCHAR tagName, PCHAR tagValue, PUI
             encodedElementLength = 0x100000000000000ULL | (UINT64)(packagedSize - (totalOffset + MKV_GENERIC_ELEMENT_OFFSET));
             PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + totalOffset), encodedElementLength);
             totalOffset += MKV_GENERIC_ELEMENT_OFFSET;
-
             break;
         default:
+            DLOGE("This should be unreachable");
+            CHK(FALSE, STATUS_MKV_INVALID_PARENT_TYPE);
             break;
     }
 
