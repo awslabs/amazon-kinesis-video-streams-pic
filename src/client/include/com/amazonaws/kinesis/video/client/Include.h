@@ -941,7 +941,7 @@ typedef enum {
     CONTENT_STORE_PRESSURE_POLICY_DROP_TAIL_ITEM = 1,
 } CONTENT_STORE_PRESSURE_POLICY;
 
-// KVS Stream events
+// KVS Stream events (bit flags)
 #define STREAM_EVENT_TYPE_IMAGE_GENERATION 0x00000001L
 #define STREAM_EVENT_TYPE_NOTIFICATION     0x00000002L
 // used to iterative purposes, always keep last. NOTE have most significant bit set to 1. 0x8* not allowed
