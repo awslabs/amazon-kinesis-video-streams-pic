@@ -676,24 +676,18 @@ STATUS mkvgenGenerateTagsChain(PBYTE pBuffer, PCHAR tagName, PCHAR tagValue, PUI
             encodedLen = MKV_TAGS_BITS_SIZE;
             CHK(bufferSize >= encodedLen, STATUS_NOT_ENOUGH_MEMORY);
             MEMCPY(pCurrentPnt, MKV_TAGS_BITS, encodedLen);
-            bufferSize -= encodedLen;
-            pCurrentPnt += encodedLen;
             break;
 
         case MKV_TREE_TAG:
             encodedLen = MKV_TAG_BITS_SIZE;
             CHK(bufferSize >= encodedLen, STATUS_NOT_ENOUGH_MEMORY);
             MEMCPY(pCurrentPnt, MKV_TAG_BITS, encodedLen);
-            bufferSize -= encodedLen;
-            pCurrentPnt += encodedLen;
             break;
 
         case MKV_TREE_SIMPLE:
             encodedLen = MKV_TAG_SIMPLE_BITS_SIZE;
             CHK(bufferSize >= encodedLen, STATUS_NOT_ENOUGH_MEMORY);
             MEMCPY(pCurrentPnt, MKV_TAG_SIMPLE_BITS, encodedLen);
-            bufferSize -= encodedLen;
-            pCurrentPnt += encodedLen;
             break;
 
         default:
@@ -701,6 +695,10 @@ STATUS mkvgenGenerateTagsChain(PBYTE pBuffer, PCHAR tagName, PCHAR tagValue, PUI
             CHK(FALSE, STATUS_MKV_INVALID_PARENT_TYPE);
             break;
     }
+
+    // encodedLen set in previous switch statement
+    bufferSize -= encodedLen;
+    pCurrentPnt += encodedLen;
 
     // Copy the tag name
     encodedLen = MKV_TAG_NAME_BITS_SIZE;

@@ -214,9 +214,6 @@ struct __MetadataTracker {
     // Tracking active MKV events
     BOOL activeMkvEvent;
 
-    // Tracking total amount of "tags" elements in metadata queue
-    UINT8 tagsCount;
-
     // Tracking event 'tags' element position in queue
     UINT8 eventIndex;
 };

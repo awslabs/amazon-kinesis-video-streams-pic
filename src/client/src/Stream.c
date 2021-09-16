@@ -154,7 +154,6 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     pKinesisVideoStream->metadataTracker.send = FALSE;
     pKinesisVideoStream->metadataTracker.data = NULL;
     pKinesisVideoStream->metadataTracker.activeMkvEvent = FALSE;
-    pKinesisVideoStream->metadataTracker.tagsCount = 0;
     pKinesisVideoStream->metadataTracker.eventIndex = 0;
 
     // initialize streamingAuthInfo expiration
@@ -828,8 +827,8 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 
     if (CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
         // We will append the EoFr tag and package the tags
-        CHK_STATUS(createSerializedMetadata((PCHAR) EOFR_METADATA_NAME, (PCHAR) "", FALSE, pKinesisVideoStream->eosTracker.size, STREAM_EVENT_TYPE_NONE, MKV_TREE_TAGS,
-                                            &pSerializedMetadata));
+        CHK_STATUS(createSerializedMetadata((PCHAR) EOFR_METADATA_NAME, (PCHAR) "", FALSE, pKinesisVideoStream->eosTracker.size,
+                                            STREAM_EVENT_TYPE_NONE, MKV_TREE_TAGS, &pSerializedMetadata));
         CHK_STATUS(appendValidatedMetadata(pKinesisVideoStream, pSerializedMetadata));
 
         // Package the not-applied metadata as the frame bits
@@ -3016,10 +3015,6 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
             if (pSerializedMetadata->event != 0 && pKinesisVideoStream->metadataTracker.activeMkvEvent) {
                 pKinesisVideoStream->metadataTracker.activeMkvEvent = FALSE;
             }
-
-            if (pSerializedMetadata->parent == MKV_TREE_TAGS) {
-                pKinesisVideoStream->metadataTracker.tagsCount--;
-            }
             if (pSerializedMetadata->event != 0) {
                 pKinesisVideoStream->metadataTracker.eventIndex = 0;
             }
@@ -3172,9 +3167,6 @@ STATUS packageNotSentMetadata(PKinesisVideoStream pKinesisVideoStream)
             packagedSize = allocSize;
             CHK_STATUS(mkvgenGenerateTagsChain(pBuffer + overallSize, pSerializedMetadata->name, pSerializedMetadata->value, &packagedSize,
                                                pSerializedMetadata->parent));
-            if (pSerializedMetadata->parent == MKV_TREE_TAGS) {
-                pKinesisVideoStream->metadataTracker.tagsCount--;
-            }
             if (pSerializedMetadata->event != 0) {
                 pKinesisVideoStream->metadataTracker.eventIndex = 0;
             }
@@ -3290,10 +3282,6 @@ STATUS appendValidatedMetadata(PKinesisVideoStream pKinesisVideoStream, PSeriali
         pKinesisVideoStream->metadataTracker.activeMkvEvent = TRUE;
     }
 
-    if (pSerializedMetadata->parent == MKV_TREE_TAGS) {
-        pKinesisVideoStream->metadataTracker.tagsCount++;
-    }
-
 CleanUp:
 
     // Free the allocation on error.
@@ -3327,10 +3315,6 @@ STATUS insertValidatedMetadata(PKinesisVideoStream pKinesisVideoStream, PSeriali
     // update metadataTracker
     if (pSerializedMetadata->event != 0) {
         pKinesisVideoStream->metadataTracker.activeMkvEvent = TRUE;
-    }
-
-    if (pSerializedMetadata->parent == MKV_TREE_TAGS) {
-        pKinesisVideoStream->metadataTracker.tagsCount++;
     }
 
 CleanUp:
