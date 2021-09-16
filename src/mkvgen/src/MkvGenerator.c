@@ -771,7 +771,7 @@ STATUS mkvgenGenerateTagsChain(PBYTE pBuffer, PCHAR tagName, PCHAR tagValue, PUI
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + totalOffset), encodedElementLength);
 
     // Fix-up the tag string element size
-    totalOffset += tagNameLen + MKV_GENERIC_ELEMENT_SIZE_OFFSET;
+    totalOffset += tagNameLen + MKV_TAG_NAME_BITS_SIZE;
     encodedElementLength = 0x100000000000000ULL | (UINT64)(tagValueLen);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + totalOffset), encodedElementLength);
 
