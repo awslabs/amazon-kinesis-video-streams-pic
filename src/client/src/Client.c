@@ -64,7 +64,7 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
                     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
                     frameOrderCoordinatorLocked = TRUE;
                 }
-                    // Lock the Stream
+                // Lock the Stream
                 pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pCurrStream->base.lock);
                 // Check if last PutFrame is older than max timeout, if so, send EoFR, if not, do nothing
                 // Ignoring currentTime it COULD be smaller than pCurrStream->lastPutFrametimestamp
@@ -78,7 +78,7 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
 
                 // Unlock the Stream
                 pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pCurrStream->base.lock);
-                if(frameOrderCoordinatorLocked) {
+                if (frameOrderCoordinatorLocked) {
                     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
                 }
             }
@@ -732,6 +732,7 @@ CleanUp:
  */
 STATUS freeKinesisVideoStream(PSTREAM_HANDLE pStreamHandle)
 {
+    ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     BOOL releaseClientSemaphore = FALSE;
     PKinesisVideoStream pKinesisVideoStream;
@@ -781,6 +782,7 @@ CleanUp:
  */
 STATUS putKinesisVideoFrame(STREAM_HANDLE streamHandle, PFrame pFrame)
 {
+    ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
     BOOL releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
@@ -830,6 +832,7 @@ CleanUp:
  */
 STATUS putKinesisVideoFragmentMetadata(STREAM_HANDLE streamHandle, PCHAR name, PCHAR value, BOOL persistent)
 {
+    ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     BOOL releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
@@ -863,12 +866,65 @@ CleanUp:
 }
 
 /**
+ * Puts an event & associated custom data into the Kinesis Video stream.
+ */
+
+STATUS putKinesisVideoEventMetadata(STREAM_HANDLE streamHandle, UINT32 event, PStreamEventMetadata pStreamEventMetadata)
+{
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    UINT8 iter = 0;
+    BOOL releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
+    PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
+
+    DLOGS("Put event into an Kinesis Video stream.");
+
+    CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+    if (pStreamEventMetadata != NULL) {
+        CHK(pStreamEventMetadata->numberOfPairs <= MAX_EVENT_CUSTOM_PAIRS, STATUS_INVALID_ARG);
+        for (iter = 0; iter < pStreamEventMetadata->numberOfPairs; iter++) {
+            CHK(pStreamEventMetadata->names[iter] != NULL && pStreamEventMetadata->values[iter] != NULL, STATUS_NULL_ARG);
+        }
+        pStreamEventMetadata->version = STREAM_EVENT_METADATA_CURRENT_VERSION;
+    }
+
+    // check for valid events
+    if (event >= STREAM_EVENT_TYPE_LAST || event == STREAM_EVENT_TYPE_NONE) {
+        CHK(FALSE, STATUS_INVALID_ARG);
+    }
+
+    // Shutdown sequencer
+    CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore, INFINITE_TIME_VALUE));
+    releaseClientSemaphore = TRUE;
+
+    CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->base.shutdownSemaphore, INFINITE_TIME_VALUE));
+    releaseStreamSemaphore = TRUE;
+
+    CHK_STATUS(putEventMetadata(pKinesisVideoStream, event, pStreamEventMetadata));
+
+CleanUp:
+
+    if (releaseStreamSemaphore) {
+        semaphoreRelease(pKinesisVideoStream->base.shutdownSemaphore);
+    }
+
+    if (releaseClientSemaphore) {
+        semaphoreRelease(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore);
+    }
+
+    CHK_LOG_ERR(retStatus);
+    LEAVES();
+    return retStatus;
+}
+
+/**
  * Stream format changed.
  *
  * NOTE: Currently, the format change should happen while it's not streaming.
  */
 STATUS kinesisVideoStreamFormatChanged(STREAM_HANDLE streamHandle, UINT32 codecPrivateDataSize, PBYTE codecPrivateData, UINT64 trackId)
 {
+    ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
     BOOL releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
@@ -909,6 +965,7 @@ CleanUp:
  */
 STATUS kinesisVideoStreamSetNalAdaptationFlags(STREAM_HANDLE streamHandle, UINT32 nalAdaptationFlags)
 {
+    ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
     BOOL releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
@@ -948,6 +1005,7 @@ CleanUp:
  */
 STATUS getKinesisVideoStreamData(STREAM_HANDLE streamHandle, UPLOAD_HANDLE uploadHandle, PBYTE pBuffer, UINT32 bufferSize, PUINT32 pFilledSize)
 {
+    ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     BOOL releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);

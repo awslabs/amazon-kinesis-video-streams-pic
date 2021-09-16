@@ -407,6 +407,124 @@ TEST_F(MkvgenApiTest, mkvgenGenerateTag_PositiveAndNegativeTest)
     MEMFREE(tempBuffer);
 }
 
+TEST_F(MkvgenApiTest, mkvgenGenerateTagsChain_PositiveAndNegativeTest)
+{
+    PBYTE tempBuffer = NULL;
+    UINT32 size = 100000;
+    CHAR tagName[MKV_MAX_TAG_NAME_LEN + 2];
+    CHAR tagValue[MKV_MAX_TAG_VALUE_LEN + 2];
+    STRCPY(tagName, "TestTagName");
+    STRCPY(tagValue, "TestTagValue");
+    tempBuffer = (PBYTE) MEMALLOC(size);
+
+    for(int i = 0; static_cast<MKV_TREE_TYPE>(i) < MKV_TREE_LAST; i++)
+    {
+        EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, NULL, tagValue, &size, static_cast<MKV_TREE_TYPE>(i)));
+        EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, tagName, NULL, &size, static_cast<MKV_TREE_TYPE>(i)));
+        EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, tagName, tagValue, NULL, static_cast<MKV_TREE_TYPE>(i)));
+    }
+    EXPECT_EQ(STATUS_MKV_INVALID_PARENT_TYPE, mkvgenGenerateTagsChain(tempBuffer, tagName, tagValue, &size, MKV_TREE_LAST));
+
+    // Check for a smaller size returned
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTagsChain(NULL, tagName, tagValue, &size, MKV_TREE_TAGS));
+    size--;
+    EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, tagName, tagValue, &size, MKV_TREE_TAGS));
+
+    // Larger tagName
+    MEMSET(tagName, 'A', SIZEOF(tagName));
+    tagName[MKV_MAX_TAG_NAME_LEN + 1] = '\0';
+    EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, tagName, tagValue, &size, MKV_TREE_TAGS));
+
+    // Larger tagValue
+    STRCPY(tagName, "TestTagName");
+    MEMSET(tagValue, 'B', SIZEOF(tagValue));
+    tagValue[MKV_MAX_TAG_VALUE_LEN + 1] = '\0';
+    EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, tagName, tagValue, &size, MKV_TREE_TAGS));
+
+    // Both are larger
+    MEMSET(tagName, 'A', SIZEOF(tagName));
+    tagName[MKV_MAX_TAG_NAME_LEN + 1] = '\0';
+    MEMSET(tagValue, 'B', SIZEOF(tagValue));
+    tagValue[MKV_MAX_TAG_VALUE_LEN + 1] = '\0';
+    EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, tagName, tagValue, &size, MKV_TREE_TAGS));
+
+    MEMFREE(tempBuffer);
+}
+
+TEST_F(MkvgenApiTest, mkvgenGenerateTagsChain_OriginalAPICheck)
+{
+    UINT32 size = 100000;
+    CHAR tagName[MKV_MAX_TAG_NAME_LEN + 2];
+    CHAR tagValue[MKV_MAX_TAG_VALUE_LEN + 2];
+    STRCPY(tagName, "TestTagName");
+    STRCPY(tagValue, "TestTagValue");
+    PBYTE tagsChainAPIBuffer = (PBYTE) MEMCALLOC(1, size);
+    PBYTE originalAPIBuffer = (PBYTE) MEMCALLOC(1, size);
+
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mMkvGenerator, originalAPIBuffer, tagName, tagValue, &size));
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTagsChain(tagsChainAPIBuffer, tagName, tagValue, &size, MKV_TREE_TAGS));
+
+    //TAGS equal check
+    EXPECT_EQ(0, MEMCMP(tagsChainAPIBuffer, originalAPIBuffer, size));
+
+    //reset and check TAG
+    MEMSET(tagsChainAPIBuffer, 0, size);
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTagsChain(tagsChainAPIBuffer, tagName, tagValue, &size, MKV_TREE_TAG));
+    EXPECT_EQ(0, MEMCMP(tagsChainAPIBuffer, originalAPIBuffer + MKV_TAG_ELEMENT_OFFSET, size));
+
+    //reset and check SIMPLE
+    MEMSET(tagsChainAPIBuffer, 0, size);
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTagsChain(tagsChainAPIBuffer, tagName, tagValue, &size, MKV_TREE_SIMPLE));
+    EXPECT_EQ(0, MEMCMP(tagsChainAPIBuffer, originalAPIBuffer + MKV_SIMPLE_TAG_ELEMENT_OFFSET, size));
+
+    MEMFREE(tagsChainAPIBuffer);
+    MEMFREE(originalAPIBuffer);
+}
+
+TEST_F(MkvgenApiTest, mkvgenGenerateTagsChain_MaxStringsCheck)
+{
+    UINT32 size = 100000;
+    srand(GETTIME());
+    CHAR tagName[MKV_MAX_TAG_NAME_LEN + 2] = {0};
+    CHAR tagValue[MKV_MAX_TAG_VALUE_LEN + 2] = {0};
+    CHAR temp;
+    PBYTE tagsChainAPIBuffer = (PBYTE) MEMCALLOC(1, size);
+
+    //randomize the name
+    for(int i = 0; i < MKV_MAX_TAG_NAME_LEN; i++) {
+        //generate random ascii character
+        temp = ( rand()%223 ) + 32;
+
+        //no delete character
+        if(temp == 127) {
+            temp++;
+        }
+        tagName[i] = temp;
+    }
+
+    //randomize the value
+    for(int i = 0; i < MKV_MAX_TAG_VALUE_LEN; i++) {
+        //generate random ascii character
+        temp = ( rand()%223 ) + 32;
+
+        //no delete character
+        if(temp == 127) {
+            temp++;
+        }
+        tagValue[i] = temp;
+    }
+
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTagsChain(tagsChainAPIBuffer, tagName, tagValue, &size, MKV_TREE_SIMPLE));
+
+    //Check name
+    EXPECT_EQ(0, MEMCMP(tagName, tagsChainAPIBuffer + 2*(MKV_GENERIC_ELEMENT_SIZE_OFFSET + MKV_GENERIC_ELEMENT_OFFSET), MKV_MAX_TAG_NAME_LEN));
+
+    //Check string
+    EXPECT_EQ(0, MEMCMP(tagValue, tagsChainAPIBuffer + 3*(MKV_GENERIC_ELEMENT_SIZE_OFFSET + MKV_GENERIC_ELEMENT_OFFSET) + MKV_MAX_TAG_NAME_LEN, MKV_MAX_TAG_VALUE_LEN));
+
+    MEMFREE(tagsChainAPIBuffer);
+}
+
 TEST_F(MkvgenApiTest, mkvgenContentType_GetContentType)
 {
     EXPECT_EQ(MKV_CONTENT_TYPE_NONE, mkvgenGetContentTypeFromContentTypeString(NULL));
