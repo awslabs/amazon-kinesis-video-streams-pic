@@ -57,7 +57,7 @@ VOID addLogMetadata(PCHAR buffer, UINT32 bufferLen, PCHAR fmt, UINT32 logLevel)
 VOID defaultLogPrint(UINT32 level, PCHAR tag, PCHAR fmt, ...)
 {
     CHAR logFmtString[MAX_LOG_FORMAT_LENGTH + 1];
-    UINT32 logLevel = 0;
+    UINT32 logLevel = LOG_LEVEL_VERBOSE;
 
     UNUSED_PARAM(tag);
 
