@@ -1446,12 +1446,42 @@ PUBLIC_API STATUS createFileLogger(UINT64, UINT64, PCHAR, BOOL, BOOL, logPrintFu
 PUBLIC_API STATUS freeFileLogger();
 
 /**
+ * Creates a syslog  based logger object and installs the global logger callback function
+ *
+ * @param - UINT32 - IN - Syslog facility
+ * @param - BOOL - IN - Whether to print log to std out too
+ * @param - BOOL - IN - Whether to set global logger function pointer
+ * @param - logPrintFunc* - OUT/OPT - Optional function pointer to be returned to the caller that contains the main function for actual output
+ *
+ * @return - STATUS code of the execution
+ */
+#if !defined(_WIN32) && !defined(_WIN64)
+PUBLIC_API STATUS createSyslogLogger(UINT32, BOOL, BOOL, logPrintFunc*);
+#endif
+
+/**
+ * Frees the syslog logger object and resets the global logging function if it was
+ * previously set by the create function.
+ *
+ * @return - STATUS code of the execution
+ */
+#if !defined(_WIN32) && !defined(_WIN64)
+PUBLIC_API STATUS freeSyslogLogger();
+#endif
+
+/**
  * Helper macros to be used in pairs at the application start and end
  */
 #define CREATE_DEFAULT_FILE_LOGGER()                                                                                                                 \
     createFileLogger(FILE_LOGGER_STRING_BUFFER_SIZE, FILE_LOGGER_LOG_FILE_COUNT, (PCHAR) FILE_LOGGER_LOG_FILE_DIRECTORY_PATH, TRUE, TRUE, NULL);
 
 #define RELEASE_FILE_LOGGER() freeFileLogger();
+
+#if !defined(_WIN32) && !defined(_WIN64)
+#define CREATE_DEFAULT_SYSLOG_LOGGER() createSyslogLogger(LOG_USER, TRUE, TRUE, NULL);
+
+#define RELEASE_SYSLOG_LOGGER() freeSyslogLogger();
+#endif
 
 #ifdef __cplusplus
 }

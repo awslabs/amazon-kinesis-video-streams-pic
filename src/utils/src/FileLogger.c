@@ -165,7 +165,7 @@ STATUS createFileLogger(UINT64 maxStringBufferLen, UINT64 maxLogFileCount, PCHAR
     UINT64 charWritten = 0, indexFileSize = KVS_COMMON_FILE_INDEX_BUFFER_SIZE;
 
     // allocate the struct and string buffer together
-    gFileLogger = (PFileLogger) MEMALLOC(SIZEOF(FileLogger) + maxStringBufferLen * SIZEOF(CHAR));
+    CHK(NULL != (gFileLogger = (PFileLogger) MEMALLOC(SIZEOF(FileLogger) + maxStringBufferLen * SIZEOF(CHAR))), retStatus);
     MEMSET(gFileLogger, 0x00, SIZEOF(FileLogger));
     // point stringBuffer to the right place
     gFileLogger->stringBuffer = (PCHAR)(gFileLogger + 1);
