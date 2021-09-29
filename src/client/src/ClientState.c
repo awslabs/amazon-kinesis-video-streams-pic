@@ -79,14 +79,18 @@ UINT32 CLIENT_STATE_MACHINE_STATE_COUNT = SIZEOF(CLIENT_STATE_MACHINE_STATES) / 
 STATUS defaultClientStateMachineErrorHandler(UINT64 customData /* customData should be PKinesisVideoClient */) {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
+    PKinesisVideoClient pKinesisVideoClient = NULL;
+    PKVSRetryStrategy pKVSRetryStrategy = NULL;
 
-    PKinesisVideoClient pKinesisVideoClient = CLIENT_FROM_CUSTOM_DATA(customData);
-    PKVSRetryStrategy pKVSRetryStrategy = &(pKinesisVideoClient->kVSRetryStrategy);
+    pKinesisVideoClient = CLIENT_FROM_CUSTOM_DATA(customData);
+    CHK(pKinesisVideoClient != NULL, STATUS_NULL_ARG);
 
-    CHK(pKinesisVideoClient->base.result != SERVICE_CALL_RESULT_OK, STATUS_SUCCESS);
-    CHK(pKVSRetryStrategy != NULL &&
-        pKVSRetryStrategy->pRetryStrategy != NULL &&
-        pKVSRetryStrategy->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
+    pKVSRetryStrategy = &(pKinesisVideoClient->kVSRetryStrategy);
+
+    CHK(pKinesisVideoClient->base.result != SERVICE_CALL_RESULT_OK &&
+            pKVSRetryStrategy != NULL &&
+            pKVSRetryStrategy->pRetryStrategy != NULL &&
+            pKVSRetryStrategy->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
 
     DLOGD("KinesisVideoClient base result is [%u]. Executing KVS retry handler of retry strategy type [%u]",
           pKinesisVideoClient->base.result, pKVSRetryStrategy->retryStrategyType);

@@ -309,6 +309,7 @@ class ClientTestBase : public ::testing::Test {
         mClientCallbacks.streamErrorReportFn = streamErrorReportFunc;
         mClientCallbacks.streamConnectionStaleFn = streamConnectionStaleFunc;
         mClientCallbacks.fragmentAckReceivedFn = fragmentAckReceivedFunc;
+        mClientCallbacks.getRetryStrategyFn = getClientRetryStrategyFn;
     }
 
     PVOID basicProducerRoutine(UINT64);
@@ -593,7 +594,6 @@ class ClientTestBase : public ::testing::Test {
 
         // Create the client
         STATUS status = createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &mClientHandle);
-        overrideStreamRetryConfigForTests(FROM_CLIENT_HANDLE(mClientHandle));
 
         DLOGI("Create client returned status code is %08x\n", status);
         EXPECT_EQ(STATUS_SUCCESS, status);
@@ -726,7 +726,6 @@ class ClientTestBase : public ::testing::Test {
             EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&pClient->mClientHandle));
         }
         EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoClientSync(&pClient->mDeviceInfo, &pClient->mClientCallbacks, &pClient->mClientHandle));
-        overrideStreamRetryConfigForTests(FROM_CLIENT_HANDLE(pClient->mClientHandle));
         return NULL;
     }
 
@@ -779,8 +778,6 @@ class ClientTestBase : public ::testing::Test {
         status = createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &mClientHandle);
         DLOGI("Create client returned status code is %08x\n", status);
         EXPECT_EQ(STATUS_SUCCESS, status) << "Create client failed with " << std::hex << status;
-
-        overrideStreamRetryConfigForTests(FROM_CLIENT_HANDLE(mClientHandle));
 
         // Satisfy the create device callback
         EXPECT_EQ(STATUS_SUCCESS, createDeviceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_DEVICE_ARN));
@@ -911,16 +908,6 @@ class ClientTestBase : public ::testing::Test {
         EXPECT_EQ(2, ATOMIC_LOAD(&mDescribeStreamFuncCount));
 
         return MoveFromEndpointToReady();
-    }
-
-    static VOID overrideStreamRetryConfigForTests(PKinesisVideoClient pKinesisVideoClient) {
-        PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState = NULL;
-        KVSRetryStrategy* kvsRetryStrategy = &(pKinesisVideoClient->kVSRetryStrategy);
-        if (kvsRetryStrategy->retryStrategyType == KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT) {
-            pExponentialBackoffRetryStrategyState = TO_EXPONENTIAL_BACKOFF_STATE(kvsRetryStrategy->pRetryStrategy);
-            // Change retry wait time factor time from default 300ms to 50ms to avoid long running tests
-            pExponentialBackoffRetryStrategyState->exponentialBackoffRetryStrategyConfig.retryFactorTime = 20;
-        }
     }
 
     virtual void SetUp()
@@ -1063,6 +1050,8 @@ class ClientTestBase : public ::testing::Test {
     static STATUS streamConnectionStaleFunc(UINT64, STREAM_HANDLE, UINT64);
 
     static STATUS fragmentAckReceivedFunc(UINT64, STREAM_HANDLE, UPLOAD_HANDLE, PFragmentAck);
+
+    static STATUS getClientRetryStrategyFn(CLIENT_HANDLE);
 
     static STATUS clientShutdownFunc(UINT64, CLIENT_HANDLE);
     static STATUS streamShutdownFunc(UINT64, STREAM_HANDLE, BOOL);

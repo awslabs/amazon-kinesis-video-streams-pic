@@ -106,6 +106,7 @@ STATUS configureClientWithRetryStrategy(PKinesisVideoClient pKinesisVideoClient,
             pKinesisVideoClient->kVSRetryStrategy.createRetryStrategyFn = exponentialBackoffRetryStrategyCreate;
             pKinesisVideoClient->kVSRetryStrategy.freeRetryStrategyFn = exponentialBackoffRetryStrategyFree;
             pKinesisVideoClient->kVSRetryStrategy.executeRetryStrategyFn = exponentialBackoffRetryStrategyBlockingWait;
+            pKinesisVideoClient->kVSRetryStrategy.retryStrategyType = KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT;
             break;
         case KVS_RETRY_STRATEGY_DISABLED:
         default:
@@ -130,8 +131,7 @@ STATUS freeClientRetryStrategy(PKinesisVideoClient pKinesisVideoClient) {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
 
-    CHK(pKinesisVideoClient != NULL, STATUS_NULL_ARG);
-    CHK(pKinesisVideoClient->kVSRetryStrategy.pRetryStrategy != NULL, STATUS_SUCCESS);
+    CHK(pKinesisVideoClient != NULL && pKinesisVideoClient->kVSRetryStrategy.pRetryStrategy != NULL, STATUS_SUCCESS);
 
     if (pKinesisVideoClient->kVSRetryStrategy.freeRetryStrategyFn != NULL) {
         CHK_STATUS(pKinesisVideoClient->kVSRetryStrategy.freeRetryStrategyFn(
@@ -206,11 +206,16 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     // Set the streams pointer right after the struct
     pKinesisVideoClient->streams = (PKinesisVideoStream*) (pKinesisVideoClient + 1);
 
-    // Set retry strategy. As of now, we'll use default Exponential wait retry strategy
-    CHK_STATUS(configureClientWithRetryStrategy(pKinesisVideoClient, KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT));
-
     // Copy the structures in their entirety
     MEMCPY(&pKinesisVideoClient->clientCallbacks, pClientCallbacks, SIZEOF(ClientCallbacks));
+
+    // Set retry strategy. As of now, we'll use default Exponential wait retry strategy if the
+    // retry strategy is not provided through client callbacks
+    if (pKinesisVideoClient->clientCallbacks.getRetryStrategyFn != NULL) {
+        CHK_STATUS(pKinesisVideoClient->clientCallbacks.getRetryStrategyFn(TO_CLIENT_HANDLE(pKinesisVideoClient)));
+    } else {
+        CHK_STATUS(configureClientWithRetryStrategy(pKinesisVideoClient, KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT));
+    }
 
     // Fix-up the defaults if needed
     // IMPORTANT!!! The calloc allocator will zero the memory which will also act as a

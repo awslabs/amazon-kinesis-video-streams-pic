@@ -112,15 +112,22 @@ UINT32 STREAM_STATE_MACHINE_STATE_COUNT = SIZEOF(STREAM_STATE_MACHINE_STATES) / 
 STATUS defaultStreamStateMachineErrorHandler(UINT64 customData /* customData should be PKinesisVideoStream */) {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
+    PKinesisVideoStream pKinesisVideoStream = NULL;
+    PKinesisVideoClient pKinesisVideoClient = NULL;
+    PKVSRetryStrategy pKVSRetryStrategy = NULL;
 
-    PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
-    PKinesisVideoClient pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
-    PKVSRetryStrategy pKVSRetryStrategy = &(pKinesisVideoClient->kVSRetryStrategy);
+    pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
+    CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
 
-    CHK(pKinesisVideoStream->base.result != SERVICE_CALL_RESULT_OK, STATUS_SUCCESS);
-    CHK(pKVSRetryStrategy != NULL &&
-        pKVSRetryStrategy->pRetryStrategy != NULL &&
-        pKVSRetryStrategy->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
+    pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+    CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
+
+    pKVSRetryStrategy = &(pKinesisVideoClient->kVSRetryStrategy);
+
+    CHK(pKinesisVideoStream->base.result != SERVICE_CALL_RESULT_OK &&
+            pKVSRetryStrategy != NULL &&
+            pKVSRetryStrategy->pRetryStrategy != NULL &&
+            pKVSRetryStrategy->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
 
     DLOGD("\n KinesisVideoStream base result is [%u]. Executing KVS retry handler of retry strategy type [%u]",
           pKinesisVideoStream->base.result, pKVSRetryStrategy->retryStrategyType);

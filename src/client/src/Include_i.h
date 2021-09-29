@@ -470,6 +470,9 @@ STATUS defaultClientStateMachineErrorHandler(UINT64);
 
 STATUS checkIntermittentProducerCallback(UINT32, UINT64, UINT64);
 
+STATUS freeClientRetryStrategy(PKinesisVideoClient);
+STATUS configureClientWithRetryStrategy(PKinesisVideoClient, KVS_RETRY_STRATEGY_TYPE);
+
 #ifdef __cplusplus
 }
 #endif

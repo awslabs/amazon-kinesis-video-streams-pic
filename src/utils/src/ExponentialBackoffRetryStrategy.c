@@ -59,7 +59,7 @@ CleanUp:
     return retStatus;
 }
 
-STATUS inRange(UINT64 value, UINT64 low, UINT64 high) {
+STATUS checkConfigParameterRange(UINT64 value, UINT64 low, UINT64 high) {
     return value >= low && value <= high ? STATUS_SUCCESS : STATUS_INVALID_ARG;
 }
 
@@ -69,13 +69,13 @@ STATUS validateExponentialBackoffConfig(PExponentialBackoffRetryStrategyConfig p
 
     CHK(pExponentialBackoffRetryStrategyConfig != NULL, STATUS_NULL_ARG);
 
-    CHK_STATUS(inRange(pExponentialBackoffRetryStrategyConfig->maxRetryWaitTime,
+    CHK_STATUS(checkConfigParameterRange(pExponentialBackoffRetryStrategyConfig->maxRetryWaitTime,
                        DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS, KVS_BACKEND_STREAMING_IDLE_TIMEOUT_MILLISECONDS));
-    CHK_STATUS(inRange(pExponentialBackoffRetryStrategyConfig->retryFactorTime,
+    CHK_STATUS(checkConfigParameterRange(pExponentialBackoffRetryStrategyConfig->retryFactorTime,
                        DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS, LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS));
-    CHK_STATUS(inRange(pExponentialBackoffRetryStrategyConfig->minTimeToResetRetryState,
+    CHK_STATUS(checkConfigParameterRange(pExponentialBackoffRetryStrategyConfig->minTimeToResetRetryState,
                        DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS, KVS_BACKEND_STREAMING_IDLE_TIMEOUT_MILLISECONDS));
-    CHK_STATUS(inRange(pExponentialBackoffRetryStrategyConfig->jitterFactor,
+    CHK_STATUS(checkConfigParameterRange(pExponentialBackoffRetryStrategyConfig->jitterFactor,
                        DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS, LIMIT_KVS_JITTER_FACTOR_MILLISECONDS));
 
 CleanUp:
@@ -153,11 +153,11 @@ STATUS validateAndUpdateExponentialBackoffStatus(PExponentialBackoffRetryStrateg
             break;
         case BACKOFF_TERMINATED:
             DLOGD("Cannot execute exponentialBackoffBlockingWait. Current status is BACKOFF_TERMINATED");
-            CHK(FALSE, STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE);
+            CHK_ERR(FALSE, STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE, "Exponential backoff is already terminated");
             // No 'break' needed since CHK(FALSE, ...) will always jump to CleanUp
         default:
             DLOGD("Cannot execute exponentialBackoffBlockingWait. Unexpected state [%"PRIu64"]", pExponentialBackoffRetryStrategyState->status);
-            CHK(FALSE, STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE);
+            CHK_ERR(FALSE, STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE, "Unexpected exponential backoff state");
     }
 
 CleanUp:
@@ -176,7 +176,6 @@ STATUS exponentialBackoffRetryStrategyBlockingWait(PRetryStrategy pRetryStrategy
 
     pRetryState = TO_EXPONENTIAL_BACKOFF_STATE(pRetryStrategy);
     CHK_STATUS(validateAndUpdateExponentialBackoffStatus(pRetryState));
-
     pRetryConfig = &(pRetryState->exponentialBackoffRetryStrategyConfig);
 
     // If retries is exhausted, return error to the application
@@ -218,7 +217,7 @@ STATUS exponentialBackoffRetryStrategyBlockingWait(PRetryStrategy pRetryStrategy
     pRetryState->lastRetrySystemTime = currentSystemTime;
     pRetryState->currentRetryCount++;
 
-    printf("\n Thread Id [%"PRIu64"] "
+    DLOGD("\n ####### Thread Id [%"PRIu64"] "
           "Number of retries done [%"PRIu64"], "
           "Last retry wait time [%"PRIu64"], "
           "Last retry system time [%"PRIu64"]",

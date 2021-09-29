@@ -161,7 +161,7 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
         // Call the state machine error handler
         // This call could be a no-op if the state transition is happening for SERVICE_CALL_RESULT_OK code
         if (pStateMachineImpl->context.pCurrentState->errorHandlerStateFunc != NULL) {
-            pStateMachineImpl->context.pCurrentState->errorHandlerStateFunc(pStateMachineImpl->customData);
+            CHK_STATUS(pStateMachineImpl->context.pCurrentState->errorHandlerStateFunc(pStateMachineImpl->customData));
         }
 
         DLOGD("State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64, pStateMachineImpl->context.pCurrentState->state,

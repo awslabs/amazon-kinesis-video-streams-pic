@@ -1913,6 +1913,21 @@ typedef STATUS (*ClientShutdownFunc)(UINT64, CLIENT_HANDLE);
 typedef STATUS (*StreamShutdownFunc)(UINT64, STREAM_HANDLE, BOOL);
 
 /**
+ * Function to create a retry strategy to be used for the client and streams
+ * on detecting errors from service API calls. The retry strategy is a part of
+ * client struct.
+ *
+ * NOTE: This is an optional callback. If not specified, the SDK will use
+ * default retry strategy. Unless there is no specific use case, it is
+ * recommended to leave this callback NULL and let SDK handle the retries.
+ *
+ * @param 1 CLIENT_HANDLE - OUT - The client handle.
+ *
+ * @return Status of the callback
+ */
+typedef STATUS (*GetRetryStrategyFn)(CLIENT_HANDLE);
+
+/**
  * The callbacks structure to be passed in to the client
  */
 typedef struct __ClientCallbacks ClientCallbacks;
@@ -1963,6 +1978,7 @@ struct __ClientCallbacks {
     LogPrintFunc logPrintFn;
     ClientShutdownFunc clientShutdownFn;
     StreamShutdownFunc streamShutdownFn;
+    GetRetryStrategyFn getRetryStrategyFn;
 };
 typedef struct __ClientCallbacks* PClientCallbacks;
 
