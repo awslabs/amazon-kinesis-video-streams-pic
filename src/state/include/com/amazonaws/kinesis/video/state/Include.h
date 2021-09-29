@@ -65,6 +65,16 @@ typedef STATUS (*GetNextStateFunc)(UINT64, PUINT64);
 typedef STATUS (*ExecuteStateFunc)(UINT64, UINT64);
 
 /**
+ * State's error handler function. Called before state machine
+ * transitions to a different state.
+ *
+ * @param 1 - IN - Custom data passed in
+ *
+ * @return Status of the callback
+ */
+typedef STATUS (*ErrorHandlerStateFunc)(UINT64);
+
+/**
  * State Machine state
  */
 typedef struct __StateMachineState StateMachineState;
@@ -73,6 +83,7 @@ struct __StateMachineState {
     UINT64 acceptStates;
     GetNextStateFunc getNextStateFn;
     ExecuteStateFunc executeStateFn;
+    ErrorHandlerStateFunc errorHandlerStateFunc;
     UINT32 retry;
     STATUS status;
 };

@@ -9,23 +9,94 @@
  * Static definitions of the states
  */
 StateMachineState CLIENT_STATE_MACHINE_STATES[] = {
-    {CLIENT_STATE_NEW, CLIENT_STATE_NONE | CLIENT_STATE_NEW, fromNewClientState, executeNewClientState, INFINITE_RETRY_COUNT_SENTINEL,
-     STATUS_INVALID_CLIENT_READY_STATE},
-    {CLIENT_STATE_AUTH, CLIENT_STATE_READY | CLIENT_STATE_NEW | CLIENT_STATE_AUTH, fromAuthClientState, executeAuthClientState,
-     SERVICE_CALL_MAX_RETRY_COUNT, STATUS_CLIENT_AUTH_CALL_FAILED},
-    {CLIENT_STATE_GET_TOKEN, CLIENT_STATE_AUTH | CLIENT_STATE_PROVISION | CLIENT_STATE_GET_TOKEN, fromGetTokenClientState, executeGetTokenClientState,
-     SERVICE_CALL_MAX_RETRY_COUNT, STATUS_GET_CLIENT_TOKEN_CALL_FAILED},
-    {CLIENT_STATE_PROVISION, CLIENT_STATE_AUTH | CLIENT_STATE_PROVISION, fromProvisionClientState, executeProvisionClientState,
-     SERVICE_CALL_MAX_RETRY_COUNT, STATUS_CLIENT_PROVISION_CALL_FAILED},
-    {CLIENT_STATE_CREATE, CLIENT_STATE_PROVISION | CLIENT_STATE_GET_TOKEN | CLIENT_STATE_AUTH | CLIENT_STATE_CREATE, fromCreateClientState,
-     executeCreateClientState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_CREATE_CLIENT_CALL_FAILED},
-    {CLIENT_STATE_TAG_CLIENT, CLIENT_STATE_CREATE | CLIENT_STATE_TAG_CLIENT | CLIENT_STATE_READY, fromTagClientState, executeTagClientState,
-     SERVICE_CALL_MAX_RETRY_COUNT, STATUS_TAG_CLIENT_CALL_FAILED},
-    {CLIENT_STATE_READY, CLIENT_STATE_GET_TOKEN | CLIENT_STATE_AUTH | CLIENT_STATE_TAG_CLIENT | CLIENT_STATE_CREATE | CLIENT_STATE_READY,
-     fromReadyClientState, executeReadyClientState, INFINITE_RETRY_COUNT_SENTINEL, STATUS_CLIENT_READY_CALLBACK_FAILED},
+    {
+        CLIENT_STATE_NEW,
+        CLIENT_STATE_NONE | CLIENT_STATE_NEW,
+        fromNewClientState,
+        executeNewClientState,
+        defaultClientStateMachineErrorHandler,
+        INFINITE_RETRY_COUNT_SENTINEL,
+        STATUS_INVALID_CLIENT_READY_STATE
+    },
+    {
+        CLIENT_STATE_AUTH,
+        CLIENT_STATE_READY | CLIENT_STATE_NEW | CLIENT_STATE_AUTH,
+        fromAuthClientState,
+        executeAuthClientState,
+        defaultClientStateMachineErrorHandler,
+        SERVICE_CALL_MAX_RETRY_COUNT,
+        STATUS_CLIENT_AUTH_CALL_FAILED
+    },
+    {
+        CLIENT_STATE_GET_TOKEN,
+        CLIENT_STATE_AUTH | CLIENT_STATE_PROVISION | CLIENT_STATE_GET_TOKEN,
+        fromGetTokenClientState,
+        executeGetTokenClientState,
+        defaultClientStateMachineErrorHandler,
+        SERVICE_CALL_MAX_RETRY_COUNT,
+        STATUS_GET_CLIENT_TOKEN_CALL_FAILED
+    },
+    {
+        CLIENT_STATE_PROVISION,
+        CLIENT_STATE_AUTH | CLIENT_STATE_PROVISION,
+        fromProvisionClientState,
+        executeProvisionClientState,
+        defaultClientStateMachineErrorHandler,
+        SERVICE_CALL_MAX_RETRY_COUNT,
+        STATUS_CLIENT_PROVISION_CALL_FAILED
+    },
+    {
+        CLIENT_STATE_CREATE,
+        CLIENT_STATE_PROVISION | CLIENT_STATE_GET_TOKEN | CLIENT_STATE_AUTH | CLIENT_STATE_CREATE,
+        fromCreateClientState,
+        executeCreateClientState,
+        defaultClientStateMachineErrorHandler,
+        SERVICE_CALL_MAX_RETRY_COUNT,
+        STATUS_CREATE_CLIENT_CALL_FAILED
+    },
+    {
+        CLIENT_STATE_TAG_CLIENT,
+        CLIENT_STATE_CREATE | CLIENT_STATE_TAG_CLIENT | CLIENT_STATE_READY,
+        fromTagClientState,
+        executeTagClientState,
+        defaultClientStateMachineErrorHandler,
+        SERVICE_CALL_MAX_RETRY_COUNT,
+        STATUS_TAG_CLIENT_CALL_FAILED
+    },
+    {
+        CLIENT_STATE_READY,
+        CLIENT_STATE_GET_TOKEN | CLIENT_STATE_AUTH | CLIENT_STATE_TAG_CLIENT | CLIENT_STATE_CREATE | CLIENT_STATE_READY,
+        fromReadyClientState,
+        executeReadyClientState,
+        defaultClientStateMachineErrorHandler,
+        INFINITE_RETRY_COUNT_SENTINEL,
+        STATUS_CLIENT_READY_CALLBACK_FAILED
+    }
 };
 
 UINT32 CLIENT_STATE_MACHINE_STATE_COUNT = SIZEOF(CLIENT_STATE_MACHINE_STATES) / SIZEOF(StateMachineState);
+
+STATUS defaultClientStateMachineErrorHandler(UINT64 customData /* customData should be PKinesisVideoClient */) {
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+
+    PKinesisVideoClient pKinesisVideoClient = CLIENT_FROM_CUSTOM_DATA(customData);
+    PKVSRetryStrategy pKVSRetryStrategy = &(pKinesisVideoClient->kVSRetryStrategy);
+
+    CHK(pKinesisVideoClient->base.result != SERVICE_CALL_RESULT_OK, STATUS_SUCCESS);
+    CHK(pKVSRetryStrategy != NULL &&
+        pKVSRetryStrategy->pRetryStrategy != NULL &&
+        pKVSRetryStrategy->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
+
+    DLOGD("KinesisVideoClient base result is [%u]. Executing KVS retry handler of retry strategy type [%u]",
+          pKinesisVideoClient->base.result, pKVSRetryStrategy->retryStrategyType);
+    pKVSRetryStrategy->executeRetryStrategyFn(pKVSRetryStrategy->pRetryStrategy);
+
+CleanUp:
+
+    LEAVES();
+    return retStatus;
+}
 
 // Helper method for stepping the client state machine
 STATUS stepClientStateMachine(PKinesisVideoClient pKinesisVideoClient)

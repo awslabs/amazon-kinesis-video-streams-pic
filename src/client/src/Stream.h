@@ -875,6 +875,8 @@ STATUS executeStreamingStreamState(UINT64, UINT64);
 STATUS executeStoppedStreamState(UINT64, UINT64);
 STATUS executeTagStreamState(UINT64, UINT64);
 
+STATUS defaultStreamStateMachineErrorHandler(UINT64);
+
 #ifdef __cplusplus
 }
 #endif

@@ -144,3 +144,96 @@ TEST_F(StateApiFunctionalityTest, nullGetNextStateFn)
 
     EXPECT_EQ(STATUS_SUCCESS, freeStateMachine(pStateMachine));
 }
+
+TEST_F(StateApiFunctionalityTest, checkStateErrorHandlerOnStateTransitions)
+{
+    PStateMachineState pStateMachineState = NULL;
+    PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) mStateMachine;
+
+    // Verify that the state machine error handler has not been executed
+    EXPECT_EQ(0, this->testErrorHandlerMetaData.errorHandlerExecutionCount);
+
+    // Mock a service API call response to be a timeout in state 0 before
+    // transitioning to state 1. Verify that the error handler's business
+    // logic was executed.
+    this->testServiceAPICallResult = SERVICE_CALL_GATEWAY_TIMEOUT;
+    mTestTransitions[0].nextState = TEST_STATE_1;
+    EXPECT_EQ(STATUS_SUCCESS, stepStateMachine(mStateMachine));
+    EXPECT_EQ(STATUS_SUCCESS, getStateMachineCurrentState(mStateMachine, &pStateMachineState));
+    EXPECT_EQ(TEST_STATE_1, pStateMachineState->state);
+    // Error handler execution count was correctly incremented
+    EXPECT_EQ(1, this->testErrorHandlerMetaData.errorHandlerExecutionCount);
+    // State's local retry count should be zero since no retries are
+    // happening within this state.
+    EXPECT_EQ(0, pStateMachineImpl->context.retryCount);
+
+    // Mock a service API call response to be 200 OK in state 1 before
+    // transitioning to state 2. Verify that the error handler's execution
+    // was a no-op.
+    this->testServiceAPICallResult = SERVICE_CALL_RESULT_OK;
+    mTestTransitions[1].nextState = TEST_STATE_2;
+    EXPECT_EQ(STATUS_SUCCESS, stepStateMachine(mStateMachine));
+    EXPECT_EQ(STATUS_SUCCESS, getStateMachineCurrentState(mStateMachine, &pStateMachineState));
+    EXPECT_EQ(TEST_STATE_2, pStateMachineState->state);
+    // Error handler execution count did not increment
+    EXPECT_EQ(1, this->testErrorHandlerMetaData.errorHandlerExecutionCount);
+    // State's local retry count should be zero since no retries are
+    // happening within this state.
+    EXPECT_EQ(0, pStateMachineImpl->context.retryCount);
+
+    // Mock a service API call response to be a timeout in state 2 before
+    // transitioning to state 3. Verify that the error handler's business
+    // logic was executed.
+    this->testServiceAPICallResult = SERVICE_CALL_GATEWAY_TIMEOUT;
+    mTestTransitions[2].nextState = TEST_STATE_3;
+    EXPECT_EQ(STATUS_SUCCESS, stepStateMachine(mStateMachine));
+    EXPECT_EQ(STATUS_SUCCESS, getStateMachineCurrentState(mStateMachine, &pStateMachineState));
+    EXPECT_EQ(TEST_STATE_3, pStateMachineState->state);
+    // Error handler execution count was correctly incremented
+    EXPECT_EQ(2, this->testErrorHandlerMetaData.errorHandlerExecutionCount);
+    // State's local retry count should be zero since no retries are
+    // happening within this state.
+    EXPECT_EQ(0, pStateMachineImpl->context.retryCount);
+
+    // Mock a service API call response to be a timeout in state 3 before
+    // transitioning to state 3 (same state). Verify that the error was
+    // not executed. Instead, StateMachineImpl's retry count will be incremented.
+    // This retry count indicates the retries within the same state.
+    this->testServiceAPICallResult = SERVICE_CALL_GATEWAY_TIMEOUT;
+    mTestTransitions[3].nextState = TEST_STATE_3;
+    EXPECT_EQ(STATUS_SUCCESS, stepStateMachine(mStateMachine));
+    EXPECT_EQ(STATUS_SUCCESS, getStateMachineCurrentState(mStateMachine, &pStateMachineState));
+    EXPECT_EQ(TEST_STATE_3, pStateMachineState->state);
+    // Error handler execution count did not increment
+    EXPECT_EQ(2, this->testErrorHandlerMetaData.errorHandlerExecutionCount);
+    // State's local retry count should be 1 since we retried once within TEST_STATE_3
+    EXPECT_EQ(1, pStateMachineImpl->context.retryCount);
+
+    // Mock a service API call response to be 200 OK in state 3 before
+    // transitioning to state 2. Verify that the error handler's execution
+    // was a no-op.
+    this->testServiceAPICallResult = SERVICE_CALL_RESULT_OK;
+    mTestTransitions[3].nextState = TEST_STATE_2;
+    EXPECT_EQ(STATUS_SUCCESS, stepStateMachine(mStateMachine));
+    EXPECT_EQ(STATUS_SUCCESS, getStateMachineCurrentState(mStateMachine, &pStateMachineState));
+    EXPECT_EQ(TEST_STATE_2, pStateMachineState->state);
+    // Error handler execution count did not increment
+    EXPECT_EQ(2, this->testErrorHandlerMetaData.errorHandlerExecutionCount);
+    // State's local retry count should be zero since no retries are
+    // happening within this state.
+    EXPECT_EQ(0, pStateMachineImpl->context.retryCount);
+
+    // Mock a service API call response to be a timeout in state 2 before
+    // transitioning to state 3. Verify that the error handler's business
+    // logic was executed.
+    this->testServiceAPICallResult = SERVICE_CALL_GATEWAY_TIMEOUT;
+    mTestTransitions[2].nextState = TEST_STATE_3;
+    EXPECT_EQ(STATUS_SUCCESS, stepStateMachine(mStateMachine));
+    EXPECT_EQ(STATUS_SUCCESS, getStateMachineCurrentState(mStateMachine, &pStateMachineState));
+    EXPECT_EQ(TEST_STATE_3, pStateMachineState->state);
+    // Error handler execution count was correctly incremented
+    EXPECT_EQ(3, this->testErrorHandlerMetaData.errorHandlerExecutionCount);
+    // State's local retry count should be zero since no retries are
+    // happening within this state.
+    EXPECT_EQ(0, pStateMachineImpl->context.retryCount);
+}

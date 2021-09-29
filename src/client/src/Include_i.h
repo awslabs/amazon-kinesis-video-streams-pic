@@ -280,6 +280,9 @@ typedef struct __KinesisVideoClient {
     // ID for timer created to wake and check if streams have incoming data
     UINT32 timerId;
 
+    // Retry strategy for the client and all the streams under it
+    KVSRetryStrategy kVSRetryStrategy;
+
     // Stored function pointers to reset on exit
     memAlloc storedMemAlloc;
     memAlignAlloc storedMemAlignAlloc;
@@ -462,6 +465,8 @@ STATUS executeProvisionClientState(UINT64, UINT64);
 STATUS executeCreateClientState(UINT64, UINT64);
 STATUS executeTagClientState(UINT64, UINT64);
 STATUS executeReadyClientState(UINT64, UINT64);
+
+STATUS defaultClientStateMachineErrorHandler(UINT64);
 
 STATUS checkIntermittentProducerCallback(UINT32, UINT64, UINT64);
 
