@@ -4,6 +4,8 @@
 
 #define LOG_CLASS "Stream"
 
+#include <unistd.h>
+#include <stdio.h>
 #include "Include_i.h"
 
 /**
@@ -913,9 +915,9 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, FALSE, pAlloc + encodedFrameInfo.dataOffset,
                                              &packagedMetadataSize));
             DLOGW("$$$ %d", __LINE__);
-            int fd = open("~/workspace/amazon-video-streams-pic/build/MkvOutput.bin", O_CREATE | O_WRONLY);
-            write(fd, pAlloc + encodedFrameInfo.dataOffset, packagedMetadataSize);
-            close(fd);
+            FILE * fp = fopen("~/MkvOutput.bin", "w");
+            fwrite(pAlloc + encodedFrameInfo.dataOffset, 1, packagedMetadataSize, fp);
+            fclose(fp);
         }
     }
 
