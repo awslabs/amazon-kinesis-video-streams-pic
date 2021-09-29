@@ -2968,6 +2968,7 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
     // Get the count of metadata
     CHK_STATUS(stackQueueGetCount(pKinesisVideoStream->pMetadataQueue, &metadataCount));
 
+    DLOGW("$$$$$$$$$$$$$$$$$$$$$$$$$$$$ %d", __LINE__);
     // Iterate to get the required size if we only need the size
     if (pBuffer == NULL) {
         for (i = 0; i < metadataCount; i++) {
