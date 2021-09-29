@@ -919,7 +919,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             FILE * fp = fopen("~/MkvOutput.bin", "w");
             if(fp == NULL)
             {
-                DLOGW("@@@@@@@@@@ %d", errno);
+                DLOGW("@@@@@@@@@@ %s", strerror(errno));
             }
             //fwrite(pAlloc + encodedFrameInfo.dataOffset, 1, packagedMetadataSize, fp);
             fclose(fp);
