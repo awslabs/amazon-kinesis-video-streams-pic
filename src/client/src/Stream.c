@@ -916,7 +916,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, FALSE, pAlloc + encodedFrameInfo.dataOffset,
                                              &packagedMetadataSize));
             DLOGW("$$$ %d %d", __LINE__, packagedMetadataSize);
-            FILE * fp = fopen("~/MkvOutput.bin", "w");
+            FILE * fp = fopen("MkvOutput.bin", "w");
             if(fp == NULL)
             {
                 DLOGW("@@@@@@@@@@ %s", strerror(errno));
