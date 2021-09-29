@@ -879,6 +879,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     if (CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
         // Store the metadata at the beginning of the allocation
         CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, TRUE, pAlloc, &packagedSize));
+            DLOGW("$$$ %d", __LINE__);
 
         // Synthesize the encodedFrameInfo
         CHK_STATUS(mkvgenGetCurrentTimestamps(pKinesisVideoStream->pMkvGenerator, &encodedFrameInfo.streamStartTs, &encodedFrameInfo.clusterPts,
@@ -911,6 +912,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             // Metadata will be packaged after the MKV header but before the cluster
             CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, FALSE, pAlloc + encodedFrameInfo.dataOffset,
                                              &packagedMetadataSize));
+            DLOGW("$$$ %d", __LINE__);
         }
     }
 
