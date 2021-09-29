@@ -911,10 +911,11 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             MEMMOVE(pAlloc + encodedFrameInfo.dataOffset + packagedMetadataSize, pAlloc + encodedFrameInfo.dataOffset,
                     packagedSize - encodedFrameInfo.dataOffset);
 
+            DLOGW("$$$ %d %d", __LINE__, packagedMetadataSize);
             // Metadata will be packaged after the MKV header but before the cluster
             CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, FALSE, pAlloc + encodedFrameInfo.dataOffset,
                                              &packagedMetadataSize));
-            DLOGW("$$$ %d", __LINE__);
+            DLOGW("$$$ %d %d", __LINE__, packagedMetadataSize);
             FILE * fp = fopen("~/MkvOutput.bin", "w");
             fwrite(pAlloc + encodedFrameInfo.dataOffset, 1, packagedMetadataSize, fp);
             fclose(fp);
