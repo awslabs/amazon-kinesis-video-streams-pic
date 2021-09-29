@@ -921,7 +921,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             {
                 DLOGW("@@@@@@@@@@ %s", strerror(errno));
             }
-            fwrite(pAlloc + encodedFrameInfo.dataOffset, 1, packagedMetadataSize, fp);
+            fwrite(pAlloc, 1, packagedMetadataSize + encodedFrameInfo.dataOffset, fp);
             fclose(fp);
         }
     }
