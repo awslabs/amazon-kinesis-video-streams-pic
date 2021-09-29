@@ -917,6 +917,10 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
                                              &packagedMetadataSize));
             DLOGW("$$$ %d %d", __LINE__, packagedMetadataSize);
             FILE * fp = fopen("~/MkvOutput.bin", "w");
+            if(fp == NULL)
+            {
+                DLOGW("@@@@@@@@@@ %d", errno);
+            }
             //fwrite(pAlloc + encodedFrameInfo.dataOffset, 1, packagedMetadataSize, fp);
             fclose(fp);
         }
