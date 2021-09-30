@@ -1508,7 +1508,7 @@ typedef STATUS (*ExecuteRetryStrategyFn)(PRetryStrategy);
 /**
  * A generic retry strategy
  */
-struct __KVSRetryStrategy {
+struct __KvsRetryStrategy {
     // Retry strategy type as defined in the above enum
     KVS_RETRY_STRATEGY_TYPE retryStrategyType;
     // Pointer to metadata/state/details for the retry strategy.
@@ -1527,8 +1527,8 @@ struct __KVSRetryStrategy {
     ExecuteRetryStrategyFn executeRetryStrategyFn;
 };
 
-typedef struct __KVSRetryStrategy KVSRetryStrategy;
-typedef struct __KVSRetryStrategy* PKVSRetryStrategy;
+typedef struct __KvsRetryStrategy KvsRetryStrategy;
+typedef struct __KvsRetryStrategy* PKvsRetryStrategy;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // APIs for exponential backoff retry strategy

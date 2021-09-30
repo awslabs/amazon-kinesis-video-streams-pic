@@ -59,24 +59,20 @@ CleanUp:
     return retStatus;
 }
 
-STATUS checkConfigParameterRange(UINT64 value, UINT64 low, UINT64 high) {
-    return value >= low && value <= high ? STATUS_SUCCESS : STATUS_INVALID_ARG;
-}
-
 STATUS validateExponentialBackoffConfig(PExponentialBackoffRetryStrategyConfig pExponentialBackoffRetryStrategyConfig) {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
 
     CHK(pExponentialBackoffRetryStrategyConfig != NULL, STATUS_NULL_ARG);
 
-    CHK_STATUS(checkConfigParameterRange(pExponentialBackoffRetryStrategyConfig->maxRetryWaitTime,
-                       DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS, KVS_BACKEND_STREAMING_IDLE_TIMEOUT_MILLISECONDS));
-    CHK_STATUS(checkConfigParameterRange(pExponentialBackoffRetryStrategyConfig->retryFactorTime,
-                       DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS, LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS));
-    CHK_STATUS(checkConfigParameterRange(pExponentialBackoffRetryStrategyConfig->minTimeToResetRetryState,
-                       DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS, KVS_BACKEND_STREAMING_IDLE_TIMEOUT_MILLISECONDS));
-    CHK_STATUS(checkConfigParameterRange(pExponentialBackoffRetryStrategyConfig->jitterFactor,
-                       DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS, LIMIT_KVS_JITTER_FACTOR_MILLISECONDS));
+    CHK(CHECK_IN_RANGE(pExponentialBackoffRetryStrategyConfig->maxRetryWaitTime,
+                     DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS, KVS_BACKEND_STREAMING_IDLE_TIMEOUT_MILLISECONDS), STATUS_INVALID_ARG);
+    CHK(CHECK_IN_RANGE(pExponentialBackoffRetryStrategyConfig->retryFactorTime,
+                       DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS, LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS), STATUS_INVALID_ARG);
+    CHK(CHECK_IN_RANGE(pExponentialBackoffRetryStrategyConfig->minTimeToResetRetryState,
+                       DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS, KVS_BACKEND_STREAMING_IDLE_TIMEOUT_MILLISECONDS), STATUS_INVALID_ARG);
+    CHK(CHECK_IN_RANGE(pExponentialBackoffRetryStrategyConfig->jitterFactor,
+                       DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS, LIMIT_KVS_JITTER_FACTOR_MILLISECONDS), STATUS_INVALID_ARG);
 
 CleanUp:
     LEAVES();
@@ -88,7 +84,6 @@ STATUS exponentialBackoffRetryStrategyCreate(PRetryStrategyConfig pRetryStrategy
     STATUS retStatus = STATUS_SUCCESS;
     PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState = NULL;
     PExponentialBackoffRetryStrategyConfig pExponentialBackoffConfig = NULL;
-
     CHK(ppRetryStrategy != NULL, STATUS_NULL_ARG);
 
     // If no config provided, create retry strategy with default config

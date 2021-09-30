@@ -80,21 +80,25 @@ STATUS defaultClientStateMachineErrorHandler(UINT64 customData /* customData sho
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = NULL;
-    PKVSRetryStrategy pKVSRetryStrategy = NULL;
+    PKvsRetryStrategy pKvsRetryStrategy = NULL;
 
     pKinesisVideoClient = CLIENT_FROM_CUSTOM_DATA(customData);
     CHK(pKinesisVideoClient != NULL, STATUS_NULL_ARG);
 
-    pKVSRetryStrategy = &(pKinesisVideoClient->kVSRetryStrategy);
+    pKvsRetryStrategy = &(pKinesisVideoClient->kvsRetryStrategy);
 
-    CHK(pKinesisVideoClient->base.result != SERVICE_CALL_RESULT_OK &&
-            pKVSRetryStrategy != NULL &&
-            pKVSRetryStrategy->pRetryStrategy != NULL &&
-            pKVSRetryStrategy->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
+    // result > SERVICE_CALL_RESULT_OK covers case for -
+    // result != SERVICE_CALL_RESULT_NOT_SET and != SERVICE_CALL_RESULT_OK
+    // If we support any other 2xx service call results, the condition
+    // should change to (pKinesisVideoStream->base.result > 299 && ...)
+    CHK(pKinesisVideoClient->base.result > SERVICE_CALL_RESULT_OK &&
+            pKvsRetryStrategy != NULL &&
+            pKvsRetryStrategy->pRetryStrategy != NULL &&
+            pKvsRetryStrategy->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
 
     DLOGD("KinesisVideoClient base result is [%u]. Executing KVS retry handler of retry strategy type [%u]",
-          pKinesisVideoClient->base.result, pKVSRetryStrategy->retryStrategyType);
-    pKVSRetryStrategy->executeRetryStrategyFn(pKVSRetryStrategy->pRetryStrategy);
+          pKinesisVideoClient->base.result, pKvsRetryStrategy->retryStrategyType);
+    pKvsRetryStrategy->executeRetryStrategyFn(pKvsRetryStrategy->pRetryStrategy);
 
 CleanUp:
 

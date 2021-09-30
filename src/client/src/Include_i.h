@@ -281,7 +281,7 @@ typedef struct __KinesisVideoClient {
     UINT32 timerId;
 
     // Retry strategy for the client and all the streams under it
-    KVSRetryStrategy kVSRetryStrategy;
+    KvsRetryStrategy kvsRetryStrategy;
 
     // Stored function pointers to reset on exit
     memAlloc storedMemAlloc;
@@ -471,7 +471,7 @@ STATUS defaultClientStateMachineErrorHandler(UINT64);
 STATUS checkIntermittentProducerCallback(UINT32, UINT64, UINT64);
 
 STATUS freeClientRetryStrategy(PKinesisVideoClient);
-STATUS configureClientWithRetryStrategy(PKinesisVideoClient, KVS_RETRY_STRATEGY_TYPE);
+STATUS configureClientWithRetryStrategy(PKinesisVideoClient);
 
 #ifdef __cplusplus
 }

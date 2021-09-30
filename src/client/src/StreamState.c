@@ -114,7 +114,7 @@ STATUS defaultStreamStateMachineErrorHandler(UINT64 customData /* customData sho
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = NULL;
     PKinesisVideoClient pKinesisVideoClient = NULL;
-    PKVSRetryStrategy pKVSRetryStrategy = NULL;
+    PKvsRetryStrategy pKvsRetryStrategy = NULL;
 
     pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
@@ -122,16 +122,20 @@ STATUS defaultStreamStateMachineErrorHandler(UINT64 customData /* customData sho
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
 
-    pKVSRetryStrategy = &(pKinesisVideoClient->kVSRetryStrategy);
+    pKvsRetryStrategy = &(pKinesisVideoClient->kvsRetryStrategy);
 
-    CHK(pKinesisVideoStream->base.result != SERVICE_CALL_RESULT_OK &&
-            pKVSRetryStrategy != NULL &&
-            pKVSRetryStrategy->pRetryStrategy != NULL &&
-            pKVSRetryStrategy->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
+    // result > SERVICE_CALL_RESULT_OK covers case for -
+    // result != SERVICE_CALL_RESULT_NOT_SET and != SERVICE_CALL_RESULT_OK
+    // If we support any other 2xx service call results, the condition
+    // should change to (pKinesisVideoStream->base.result > 299 && ...)
+    CHK(pKinesisVideoStream->base.result > SERVICE_CALL_RESULT_OK &&
+            pKvsRetryStrategy != NULL &&
+            pKvsRetryStrategy->pRetryStrategy != NULL &&
+            pKvsRetryStrategy->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
 
     DLOGD("\n KinesisVideoStream base result is [%u]. Executing KVS retry handler of retry strategy type [%u]",
-          pKinesisVideoStream->base.result, pKVSRetryStrategy->retryStrategyType);
-    pKVSRetryStrategy->executeRetryStrategyFn(pKVSRetryStrategy->pRetryStrategy);
+          pKinesisVideoStream->base.result, pKvsRetryStrategy->retryStrategyType);
+    pKvsRetryStrategy->executeRetryStrategyFn(pKvsRetryStrategy->pRetryStrategy);
 
 CleanUp:
 

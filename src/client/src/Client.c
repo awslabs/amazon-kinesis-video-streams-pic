@@ -94,31 +94,38 @@ CleanUp:
     return retStatus;
 }
 
-STATUS configureClientWithRetryStrategy(PKinesisVideoClient pKinesisVideoClient, KVS_RETRY_STRATEGY_TYPE kvsRetryStrategyType) {
+STATUS configureClientWithRetryStrategy(PKinesisVideoClient pKinesisVideoClient) {
     ENTERS();
     PRetryStrategy pRetryStrategy = NULL;
     STATUS retStatus = STATUS_SUCCESS;
+    KVS_RETRY_STRATEGY_TYPE defaultKvsRetryStrategyType = KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT;
 
     CHK(pKinesisVideoClient != NULL, STATUS_NULL_ARG);
 
-    switch (kvsRetryStrategyType) {
-        case KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT:
-            pKinesisVideoClient->kVSRetryStrategy.createRetryStrategyFn = exponentialBackoffRetryStrategyCreate;
-            pKinesisVideoClient->kVSRetryStrategy.freeRetryStrategyFn = exponentialBackoffRetryStrategyFree;
-            pKinesisVideoClient->kVSRetryStrategy.executeRetryStrategyFn = exponentialBackoffRetryStrategyBlockingWait;
-            pKinesisVideoClient->kVSRetryStrategy.retryStrategyType = KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT;
-            break;
-        case KVS_RETRY_STRATEGY_DISABLED:
-        default:
-            pKinesisVideoClient->kVSRetryStrategy.createRetryStrategyFn = NULL;
-            pKinesisVideoClient->kVSRetryStrategy.freeRetryStrategyFn = NULL;
-            pKinesisVideoClient->kVSRetryStrategy.executeRetryStrategyFn = NULL;
+    // If the callbacks for retry strategy are already set, then use that otherwise
+    // build the client with a default retry strategy.
+    if (pKinesisVideoClient->clientCallbacks.getRetryStrategyFn != NULL) {
+        CHK_STATUS(pKinesisVideoClient->clientCallbacks.getRetryStrategyFn(TO_CLIENT_HANDLE(pKinesisVideoClient)));
+    } else {
+        switch (defaultKvsRetryStrategyType) {
+            case KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT:
+                pKinesisVideoClient->kvsRetryStrategy.createRetryStrategyFn = exponentialBackoffRetryStrategyCreate;
+                pKinesisVideoClient->kvsRetryStrategy.freeRetryStrategyFn = exponentialBackoffRetryStrategyFree;
+                pKinesisVideoClient->kvsRetryStrategy.executeRetryStrategyFn = exponentialBackoffRetryStrategyBlockingWait;
+                pKinesisVideoClient->kvsRetryStrategy.retryStrategyType = KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT;
+                break;
+            case KVS_RETRY_STRATEGY_DISABLED:
+            default:
+                pKinesisVideoClient->kvsRetryStrategy.createRetryStrategyFn = NULL;
+                pKinesisVideoClient->kvsRetryStrategy.freeRetryStrategyFn = NULL;
+                pKinesisVideoClient->kvsRetryStrategy.executeRetryStrategyFn = NULL;
+        }
     }
 
-    if (pKinesisVideoClient->kVSRetryStrategy.createRetryStrategyFn != NULL) {
-        CHK_STATUS(pKinesisVideoClient->kVSRetryStrategy.createRetryStrategyFn(
+    if (pKinesisVideoClient->kvsRetryStrategy.createRetryStrategyFn != NULL) {
+        CHK_STATUS(pKinesisVideoClient->kvsRetryStrategy.createRetryStrategyFn(
             NULL /* use default retry strategy configuration */, &pRetryStrategy));
-        pKinesisVideoClient->kVSRetryStrategy.pRetryStrategy = pRetryStrategy;
+        pKinesisVideoClient->kvsRetryStrategy.pRetryStrategy = pRetryStrategy;
     }
 
 CleanUp:
@@ -131,13 +138,13 @@ STATUS freeClientRetryStrategy(PKinesisVideoClient pKinesisVideoClient) {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
 
-    CHK(pKinesisVideoClient != NULL && pKinesisVideoClient->kVSRetryStrategy.pRetryStrategy != NULL, STATUS_SUCCESS);
+    CHK(pKinesisVideoClient != NULL &&
+            pKinesisVideoClient->kvsRetryStrategy.pRetryStrategy != NULL &&
+            pKinesisVideoClient->kvsRetryStrategy.freeRetryStrategyFn != NULL, STATUS_SUCCESS);
 
-    if (pKinesisVideoClient->kVSRetryStrategy.freeRetryStrategyFn != NULL) {
-        CHK_STATUS(pKinesisVideoClient->kVSRetryStrategy.freeRetryStrategyFn(
-            &(pKinesisVideoClient->kVSRetryStrategy.pRetryStrategy)));
-        pKinesisVideoClient->kVSRetryStrategy.pRetryStrategy = NULL;
-    }
+    CHK_STATUS(pKinesisVideoClient->kvsRetryStrategy.freeRetryStrategyFn(
+        &(pKinesisVideoClient->kvsRetryStrategy.pRetryStrategy)));
+    pKinesisVideoClient->kvsRetryStrategy.pRetryStrategy = NULL;
 
 CleanUp:
 
@@ -209,13 +216,7 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     // Copy the structures in their entirety
     MEMCPY(&pKinesisVideoClient->clientCallbacks, pClientCallbacks, SIZEOF(ClientCallbacks));
 
-    // Set retry strategy. As of now, we'll use default Exponential wait retry strategy if the
-    // retry strategy is not provided through client callbacks
-    if (pKinesisVideoClient->clientCallbacks.getRetryStrategyFn != NULL) {
-        CHK_STATUS(pKinesisVideoClient->clientCallbacks.getRetryStrategyFn(TO_CLIENT_HANDLE(pKinesisVideoClient)));
-    } else {
-        CHK_STATUS(configureClientWithRetryStrategy(pKinesisVideoClient, KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT));
-    }
+    CHK_STATUS(configureClientWithRetryStrategy(pKinesisVideoClient));
 
     // Fix-up the defaults if needed
     // IMPORTANT!!! The calloc allocator will zero the memory which will also act as a
@@ -1627,9 +1628,6 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
         }
     }
 
-    // Free retry strategy
-    freeClientRetryStrategy(pKinesisVideoClient);
-
     // unlock and free the streamListLock
     if (locked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
@@ -1674,6 +1672,9 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
         // Reset the singleton instance
         gKinesisVideoClient = NULL;
     }
+
+    // Free retry strategy
+    freeClientRetryStrategy(pKinesisVideoClient);
 
     // Release the heap
     if (pKinesisVideoClient->pHeap) {

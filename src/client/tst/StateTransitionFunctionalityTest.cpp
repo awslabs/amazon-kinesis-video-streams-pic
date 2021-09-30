@@ -585,32 +585,35 @@ TEST_P(StateTransitionFunctionalityTest, TestExecutionOfStreamStateMachineErrorH
     mStreamInfo.tagCount = 1;
     mStreamInfo.tags = tags;
 
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
     CreateStream();
     setupStreamDescription();
 
     PKinesisVideoClient pKinesisVideoClient = FROM_STREAM_HANDLE(mCallContext.customData)->pKinesisVideoClient;
-    KVSRetryStrategy* kVSRetryStrategy = &(pKinesisVideoClient->kVSRetryStrategy);
+    KvsRetryStrategy* kvsRetryStrategy = &(pKinesisVideoClient->kvsRetryStrategy);
     PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState =
-        TO_EXPONENTIAL_BACKOFF_STATE(kVSRetryStrategy->pRetryStrategy);
+        TO_EXPONENTIAL_BACKOFF_STATE(kvsRetryStrategy->pRetryStrategy);
 
-    EXPECT_EQ(1, pExponentialBackoffRetryStrategyState->currentRetryCount);
+    EXPECT_EQ(0, pExponentialBackoffRetryStrategyState->currentRetryCount);
 
     // Response from describeStreamAPI was not SERVICE_CALL_RESULT_OK. This resulted in state getting
     // transitioned to create stream state. The error handler must haven been executed. Verify this
     // by checking if exponential backoff state's retry count was incremented or not.
     EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESOURCE_NOT_FOUND, &mStreamDescription));
     EXPECT_EQ(STATUS_SUCCESS, createStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAM_ARN));
-    EXPECT_EQ(2, pExponentialBackoffRetryStrategyState->currentRetryCount);
+    EXPECT_EQ(1, pExponentialBackoffRetryStrategyState->currentRetryCount);
 
     // Happy case path when the state machine moves from create stream state to tag resource state to get endpoint state
     // In this case, the error handler will still be called because of state transition but since the state transition
     // is happening on SERVICE_CALL_RESULT_OK error code, the error handler will be a no-op.
     EXPECT_EQ(STATUS_SUCCESS, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK));
     // exponential backoff retry count should not change
-    EXPECT_EQ(2, pExponentialBackoffRetryStrategyState->currentRetryCount);
+    EXPECT_EQ(1, pExponentialBackoffRetryStrategyState->currentRetryCount);
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
     // exponential backoff retry count should not change
-    EXPECT_EQ(2, pExponentialBackoffRetryStrategyState->currentRetryCount);
+    EXPECT_EQ(1, pExponentialBackoffRetryStrategyState->currentRetryCount);
+
+    VerifyStopStreamSyncAndFree();
 }
 
 INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, StateTransitionFunctionalityTest,
