@@ -3010,10 +3010,10 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
             if (pSerializedMetadata->parent == MKV_TREE_TAGS) {
                 if (tagsFound) {
                     CHK_STATUS(mkvgenIncreaseTagsTagSize(tagsStart, simpleSizes));
-                    simpleSizes = 0;
-                    tagsStart = pBuffer + packagedSize;
                 }
                 tagsFound = TRUE;
+                simpleSizes = 0;
+                tagsStart = pBuffer + packagedSize;
             }
             else if (pSerializedMetadata->parent != MKV_TREE_SIMPLE) {
                 //if the tag is neither 
@@ -3201,10 +3201,10 @@ STATUS packageNotSentMetadata(PKinesisVideoStream pKinesisVideoStream)
             if (pSerializedMetadata->parent == MKV_TREE_TAGS) {
                 if (tagsFound) {
                     CHK_STATUS(mkvgenIncreaseTagsTagSize(tagsStart, simpleSizes));
-                    simpleSizes = 0;
-                    tagsStart = pBuffer + overallSize;
                 }
                 tagsFound = TRUE;
+                simpleSizes = 0;
+                tagsStart = pBuffer + overallSize;
             }
             else if (pSerializedMetadata->parent != MKV_TREE_SIMPLE) {
                 //if the tag is neither 
