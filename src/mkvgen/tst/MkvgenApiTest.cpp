@@ -533,7 +533,7 @@ TEST_F(MkvgenApiTest, mkvgenIncreaseTagsTagSize_FunctionalityTest)
 
     EXPECT_EQ(STATUS_INVALID_ARG, mkvgenIncreaseTagsTagSize(NULL, 0));
 
-    /*** RANDOMIZATION TESTING ***//
+    /*** RANDOMIZATION TESTING ***/
     randomSize = rand()%(0x000fffffffffffff); //UINT64, first byte is occupied,
     EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTagsChain(tagsMkvHolder, "TEST_NAME", "TEST_VALUE", &size, MKV_TREE_TAGS));
     EXPECT_EQ(STATUS_SUCCESS, mkvgenIncreaseTagsTagSize(tagsMkvHolder, randomSize));
