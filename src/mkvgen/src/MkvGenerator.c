@@ -795,20 +795,12 @@ STATUS mkvgenIncreaseTagsTagSize(PBYTE pBuffer, UINT32 sizeIncrease)
 
     CHK(pBuffer != NULL, STATUS_INVALID_ARG);
 
-    for(int i = 0; i < 23; i++)
-    {
-        DLOGW("@@@@@@@@@@@@@ %.02x", pBuffer[i]);
-    }
     encodedElementLength = GET_UNALIGNED_BIG_ENDIAN((PINT64)(pBuffer + MKV_TAGS_ELEMENT_SIZE_OFFSET));
-    DLOGW("@@@@@@@@@@@@@ %d, %.08llx", __LINE__, encodedElementLength);
     encodedElementLength += (UINT64) sizeIncrease;
-    DLOGW("@@@@@@@@@@@@@ %d, %.08llx", __LINE__, encodedElementLength);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pBuffer + MKV_TAGS_ELEMENT_SIZE_OFFSET), encodedElementLength);
 
     encodedElementLength = GET_UNALIGNED_BIG_ENDIAN((PINT64)(pBuffer + MKV_TAG_ELEMENT_SIZE_OFFSET));
-    DLOGW("@@@@@@@@@@@@@ %d, %.08llx", __LINE__, encodedElementLength);
     encodedElementLength += (UINT64) sizeIncrease;
-    DLOGW("@@@@@@@@@@@@@ %d, %.08llx", __LINE__, encodedElementLength);
     PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pBuffer + MKV_TAG_ELEMENT_SIZE_OFFSET), encodedElementLength);
 
 CleanUp:

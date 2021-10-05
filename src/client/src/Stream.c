@@ -5,7 +5,6 @@
 #define LOG_CLASS "Stream"
 
 #include "Include_i.h"
-#include <stdio.h>
 
 /**
  * Static definitions of the states
@@ -912,15 +911,6 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             // Metadata will be packaged after the MKV header but before the cluster
             CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, FALSE, pAlloc + encodedFrameInfo.dataOffset,
                                              &packagedMetadataSize));
-            DLOGW("$$$ %d %d", __LINE__, packagedMetadataSize);
-            FILE * fp = fopen("MkvOutput.bin", "w");
-            if(fp == NULL)
-            {
-                DLOGW("@@@@@@@@@@ %s", strerror(errno));
-            }
-            fwrite(pAlloc, 1, packagedMetadataSize + encodedFrameInfo.dataOffset, fp);
-            fclose(fp);
-
         }
     }
 
