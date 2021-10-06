@@ -3004,9 +3004,6 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
                 tagsFound = TRUE;
                 simpleSizes = 0;
                 tagsStart = pBuffer + packagedSize;
-            } else if (pSerializedMetadata->parent != MKV_TREE_SIMPLE) {
-                // if the tag is neither
-                tagsFound = FALSE;
             }
 
             CHK_STATUS(mkvgenGenerateTagsChain(pBuffer + packagedSize, pSerializedMetadata->name, pSerializedMetadata->value, &metadataSize,
