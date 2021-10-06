@@ -545,6 +545,8 @@ TEST_F(MkvgenApiTest, mkvgenIncreaseTagsTagSize_FunctionalityTest)
     //check TAG size as well.
     encodedSize = GET_UNALIGNED_BIG_ENDIAN((PUINT64)(tagsMkvHolder + MKV_TAG_ELEMENT_SIZE_OFFSET));
     EXPECT_EQ(encodedSize, randomSize + size - MKV_SIMPLE_TAG_ELEMENT_OFFSET);
+
+    SAFE_MEMFREE(tagsMkvHolder);
 }
 
 TEST_F(MkvgenApiTest, mkvgenContentType_GetContentType)
