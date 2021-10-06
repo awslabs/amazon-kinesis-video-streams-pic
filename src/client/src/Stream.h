@@ -559,19 +559,6 @@ STATUS putFrame(PKinesisVideoStream, PFrame);
 STATUS putFragmentMetadata(PKinesisVideoStream, PCHAR, PCHAR, BOOL);
 
 /**
- * Puts an event metadata into the stream.
- *
- * The event will be appended to an existing event TAGS in the MKV, or appended to the end of the MKV.
- *
- * @param 1 PKinesisVideoStream - Kinesis Video stream object.
- * @param 2 UINT32 - value from enum STREAM_EVENT_TYPE
- * @param 3 PStreamEventMetadata - (optional) event metadata struct
- *
- * @return Status of the function call.
- */
-STATUS putEventMetadata(PKinesisVideoStream, UINT32, PStreamEventMetadata);
-
-/**
  * Sets a new CPD for the given track. The API should be called before the first frame is produced.
  *
  * @param 1 PKinesisVideoStream - Kinesis Video stream object.
