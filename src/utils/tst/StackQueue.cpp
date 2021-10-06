@@ -41,7 +41,6 @@ TEST_F(StackQueueFunctionalityTest, NegativeInvalidInput_StackQueuePushEnqueue)
 {
     EXPECT_NE(STATUS_SUCCESS, stackQueuePush(NULL, 0));
     EXPECT_NE(STATUS_SUCCESS, stackQueueEnqueue(NULL, 0));
-    EXPECT_NE(STATUS_SUCCESS, stackQueueEnqueueAfterIndex(NULL, 0, 0));
 }
 
 TEST_F(StackQueueFunctionalityTest, NegativeInvalidInput_StackQueuePopPeekDequeue)
@@ -138,80 +137,6 @@ TEST_F(StackQueueFunctionalityTest, StackQueueBasicOperations)
     EXPECT_EQ(STATUS_SUCCESS, stackQueueIsEmpty(pStackQueue, &isEmpty));
     EXPECT_EQ(count * 2, (UINT64) retCount);
     EXPECT_FALSE(isEmpty);
-
-    // Clear the data
-    EXPECT_EQ(STATUS_SUCCESS, stackQueueClear(pStackQueue, FALSE));
-
-    // Enqueue/push/insert
-    for (UINT64 i = 0; i < count; i++) {
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueEnqueue(pStackQueue, i));
-        EXPECT_EQ(STATUS_SUCCESS, stackQueuePush(pStackQueue, i));
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueEnqueueAfterIndex(pStackQueue, rand()%(i+1), i));
-    }
-    // Validate the count
-    EXPECT_EQ(STATUS_SUCCESS, stackQueueGetCount(pStackQueue, &retCount));
-    EXPECT_EQ(STATUS_SUCCESS, stackQueueIsEmpty(pStackQueue, &isEmpty));
-    EXPECT_EQ(count * 3, (UINT64) retCount);
-    EXPECT_FALSE(isEmpty);
-
-    // Clear the data
-    EXPECT_EQ(STATUS_SUCCESS, stackQueueClear(pStackQueue, FALSE));
-
-    // Validate the count
-    EXPECT_EQ(STATUS_SUCCESS, stackQueueGetCount(pStackQueue, &retCount));
-    EXPECT_EQ(STATUS_SUCCESS, stackQueueIsEmpty(pStackQueue, &isEmpty));
-    EXPECT_EQ(0, retCount);
-    EXPECT_TRUE(isEmpty);
-
-    // Destroy the list
-    EXPECT_EQ(STATUS_SUCCESS, stackQueueFree(pStackQueue));
-}
-
-TEST_F(StackQueueFunctionalityTest, StackQueueEnqueueAfterValidation)
-{
-    PStackQueue pStackQueue;
-    UINT64 count = 100;
-    UINT32 retCount;
-    BOOL isEmpty;
-    UINT64 data;
-
-    UINT64 checkIndex[5];
-    UINT64 indexShift[5] = {0};
-
-    srand(GETTIME());
-    // Create the list
-    EXPECT_EQ(STATUS_SUCCESS, stackQueueCreate(&pStackQueue));
-
-    // Validate the count
-    EXPECT_EQ(STATUS_SUCCESS, stackQueueGetCount(pStackQueue, &retCount));
-    EXPECT_EQ(STATUS_SUCCESS, stackQueueIsEmpty(pStackQueue, &isEmpty));
-    EXPECT_EQ(0, retCount);
-    EXPECT_TRUE(isEmpty);
-
-    // Enqueue
-    for (UINT64 i = 0; i < count; i++) {
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueEnqueue(pStackQueue, i));
-    }
-
-    for (UINT64 j = 0; j < 5; j++) {
-        checkIndex[j] = rand()%count;
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueEnqueueAfterIndex(pStackQueue, checkIndex[j], j));
-    }
-
-    for (UINT64 init = 0; init < 5; init++) {
-        //placed AFTER the index, so always shifted at least 1 spot after
-        indexShift[init]++;
-        for (UINT64 b = init+1; b < 5; b++) {
-            if((checkIndex[init] + indexShift[init]) > checkIndex[b]) {
-                indexShift[init]++;
-            }
-        }
-    }
-
-    for (UINT64 k = 0; k < 5; k++) {
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueGetAt(pStackQueue, checkIndex[k] + indexShift[k], &data));
-        EXPECT_EQ(k, data);
-    }
 
     // Clear the data
     EXPECT_EQ(STATUS_SUCCESS, stackQueueClear(pStackQueue, FALSE));

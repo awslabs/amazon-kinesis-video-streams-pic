@@ -197,26 +197,6 @@ extern UINT32 gMkvTagsBitsSize;
 #define MKV_TAGS_BITS      gMkvTagsBits
 #define MKV_TAGS_BITS_SIZE gMkvTagsBitsSize
 
-extern BYTE gMkvTagBits[];
-extern UINT32 gMkvTagBitsSize;
-#define MKV_TAG_BITS      gMkvTagBits
-#define MKV_TAG_BITS_SIZE gMkvTagBitsSize
-
-extern BYTE gMkvTagTagsBits[];
-extern UINT32 gMkvTagTagsBitsSize;
-#define MKV_TAG_TAGS_BITS      gMkvTagTagsBits
-#define MKV_TAG_TAGS_BITS_SIZE gMkvTagTagsBitsSize
-
-extern BYTE gMkvTagTagBits[];
-extern UINT32 gMkvTagTagBitsSize;
-#define MKV_TAG_TAG_BITS      gMkvTagTagBits
-#define MKV_TAG_TAG_BITS_SIZE gMkvTagTagBitsSize
-
-extern BYTE gMkvTagSimpleBits[];
-extern UINT32 gMkvTagSimpleBitsSize;
-#define MKV_TAG_SIMPLE_BITS      gMkvTagSimpleBits
-#define MKV_TAG_SIMPLE_BITS_SIZE gMkvTagSimpleBitsSize
-
 extern BYTE gMkvTagNameBits[];
 extern UINT32 gMkvTagNameBitsSize;
 #define MKV_TAG_NAME_BITS      gMkvTagNameBits
@@ -226,10 +206,6 @@ extern BYTE gMkvTagStringBits[];
 extern UINT32 gMkvTagStringBitsSize;
 #define MKV_TAG_STRING_BITS      gMkvTagStringBits
 #define MKV_TAG_STRING_BITS_SIZE gMkvTagStringBitsSize
-
-// most MKV formatted 'tags' follow this pattern. TAGS is an exception
-#define MKV_GENERIC_ELEMENT_SIZE_OFFSET 2
-#define MKV_GENERIC_ELEMENT_OFFSET      8
 
 // gMkvTagsBits tags element size offset for fixing up
 #define MKV_TAGS_ELEMENT_SIZE_OFFSET 4

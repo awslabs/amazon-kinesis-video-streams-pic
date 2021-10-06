@@ -263,19 +263,3 @@ CleanUp:
 
     return retStatus;
 }
-
-/**
- * Inserts item into queue after given index
- */
-STATUS stackQueueEnqueueAfterIndex(PStackQueue pStackQueue, UINT32 index, UINT64 item)
-{
-    STATUS retStatus = STATUS_SUCCESS;
-    PSingleListNode pNode;
-
-    CHK_STATUS(singleListGetNodeAt(pStackQueue, index, &pNode));
-    CHK_STATUS(singleListInsertItemAfter(pStackQueue, pNode, item));
-
-CleanUp:
-
-    return retStatus;
-}

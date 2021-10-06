@@ -634,11 +634,6 @@ PUBLIC_API STATUS stackQueueIteratorNext(PStackQueueIterator);
  */
 PUBLIC_API STATUS stackQueueIteratorGetItem(StackQueueIterator, PUINT64);
 
-/**
- * Inserts item into queue after given index
- */
-PUBLIC_API STATUS stackQueueEnqueueAfterIndex(PStackQueue, UINT32, UINT64);
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // Hash table functionality
 //////////////////////////////////////////////////////////////////////////////////////////////////////
