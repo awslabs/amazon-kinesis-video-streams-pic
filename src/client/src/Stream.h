@@ -210,12 +210,6 @@ struct __MetadataTracker {
 
     // Storage for the packaged metadata.
     PBYTE data;
-
-    // Tracking active MKV events
-    BOOL activeMkvEvent;
-
-    // Tracking event 'tags' element position in queue
-    UINT8 eventIndex;
 };
 typedef struct __MetadataTracker* PMetadataTracker;
 
@@ -759,17 +753,6 @@ STATUS packageNotSentMetadata(PKinesisVideoStream);
  * @return Status code of the operation
  */
 STATUS appendValidatedMetadata(PKinesisVideoStream, PSerializedMetadata);
-
-/**
- * Creates serialized metadata structure
- *
- * @param 1 - IN - KVS object
- * @param 2 - IN - Metadata object
- * @param 3 - IN - Index of queue to insert at
- *
- * @return Status code of the operation
- */
-STATUS insertValidatedMetadata(PKinesisVideoStream, PSerializedMetadata, UINT32);
 
 /**
  * Creates serialized metadata structure
