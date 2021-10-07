@@ -3037,8 +3037,6 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
     }
     if (tagsFound) {
         CHK_STATUS(mkvgenIncreaseTagsTagSize(tagsStart, simpleSizes));
-        simpleSizes = 0;
-        tagsStart = pBuffer + packagedSize;
     }
 
 CleanUp:
@@ -3215,8 +3213,6 @@ STATUS packageNotSentMetadata(PKinesisVideoStream pKinesisVideoStream)
     }
     if (tagsFound) {
         CHK_STATUS(mkvgenIncreaseTagsTagSize(tagsStart, simpleSizes));
-        simpleSizes = 0;
-        tagsStart = pBuffer + packagedSize;
     }
 
     pKinesisVideoStream->metadataTracker.send = TRUE;
