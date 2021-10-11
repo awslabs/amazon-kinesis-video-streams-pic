@@ -2136,11 +2136,15 @@ PUBLIC_API STATUS putKinesisVideoFragmentMetadata(STREAM_HANDLE, PCHAR, PCHAR, B
 
 /**
  * Inserts a KVS event(s) accompanied by optional metadata (key/value string pairs) into the stream.
- * Multiple events can be submitted at once by using bitwise OR
+ * Multiple events can be submitted at once by using bitwise OR of event types, or multiple calls of this
+ * function with different unique events.
  *
  * @param 1 STREAM_HANDLE - the stream handle.
- * @param 2 UINT32 - the type of event(s), it is suggested to use bit-wise OR combination from STREAM_EVENT_TYPE enum
- * @param 3 PStreamEventMetadata - pointer to struct with optional metadata
+ * @param 2 UINT32 - the type of event(s), a value from STREAM_EVENT_TYPE enum. If
+ *                   if you want to submit multiple events in one call it is suggested to use bit-wise
+ *                   OR combination from STREAM_EVENT_TYPE enum.
+ * @param 3 PStreamEventMetadata - pointer to struct with optional metadata. This metadata will be applied
+ *                                 to all events included in THIS function call.
  *
  * @return Status of the function call.
  */
