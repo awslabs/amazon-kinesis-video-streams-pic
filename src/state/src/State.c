@@ -136,6 +136,7 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
     UINT64 nextState, time;
     UINT64 customData;
     PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
+    UINT64 errorStateTransitionWaitTime;
 
     CHK(pStateMachineImpl != NULL, STATUS_NULL_ARG);
     customData = pStateMachineImpl->customData;
@@ -161,7 +162,8 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
         // Call the state machine error handler
         // This call could be a no-op if the state transition is happening for SERVICE_CALL_RESULT_OK code
         if (pStateMachineImpl->context.pCurrentState->stateTransitionHookFunc != NULL) {
-            CHK_STATUS(pStateMachineImpl->context.pCurrentState->stateTransitionHookFunc(pStateMachineImpl->customData));
+            CHK_STATUS(pStateMachineImpl->context.pCurrentState->stateTransitionHookFunc(pStateMachineImpl->customData, &errorStateTransitionWaitTime));
+            pStateMachineImpl->context.time = time + errorStateTransitionWaitTime;
         }
 
         DLOGD("State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64, pStateMachineImpl->context.pCurrentState->state,

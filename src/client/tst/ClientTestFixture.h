@@ -309,7 +309,6 @@ class ClientTestBase : public ::testing::Test {
         mClientCallbacks.streamErrorReportFn = streamErrorReportFunc;
         mClientCallbacks.streamConnectionStaleFn = streamConnectionStaleFunc;
         mClientCallbacks.fragmentAckReceivedFn = fragmentAckReceivedFunc;
-        mClientCallbacks.getRetryStrategyFn = getClientRetryStrategyFn;
     }
 
     PVOID basicProducerRoutine(UINT64);
@@ -417,6 +416,7 @@ class ClientTestBase : public ::testing::Test {
         mDeviceInfo.clientInfo.metricLoggingPeriod = 1 * HUNDREDS_OF_NANOS_IN_A_MINUTE;
         mDeviceInfo.clientInfo.automaticStreamingFlags = AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER;
         mDeviceInfo.clientInfo.reservedCallbackPeriod = INTERMITTENT_PRODUCER_PERIOD_DEFAULT;
+        mDeviceInfo.clientInfo.getKvsRetryStrategyFn = getClientRetryStrategyFn;
 
         // Initialize stream info
         mStreamInfo.version = STREAM_INFO_CURRENT_VERSION;

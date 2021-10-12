@@ -590,7 +590,7 @@ TEST_P(StateTransitionFunctionalityTest, TestExecutionOfStreamStateMachineErrorH
     setupStreamDescription();
 
     PKinesisVideoClient pKinesisVideoClient = FROM_STREAM_HANDLE(mCallContext.customData)->pKinesisVideoClient;
-    KvsRetryStrategy* kvsRetryStrategy = &(pKinesisVideoClient->kvsRetryStrategy);
+    KvsRetryStrategy* kvsRetryStrategy = &(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy);
     PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState =
         TO_EXPONENTIAL_BACKOFF_STATE(kvsRetryStrategy->pRetryStrategy);
 

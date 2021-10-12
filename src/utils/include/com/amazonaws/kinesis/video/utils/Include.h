@@ -1499,11 +1499,12 @@ typedef STATUS (*FreeRetryStrategyFn)(PRetryStrategy*);
 /**
  * Handler to execute retry strategy
  *
- * @param 1 PUINT64 - Custom data passed by the caller.
+ * @param 1 PRetryStrategy - IN - Custom data passed by the caller.
+ * @param 2 PUINT64 - OUT - wait time value computed by ExecuteRetryStrategyFn
  *
  * @return Status of the callback
  */
-typedef STATUS (*ExecuteRetryStrategyFn)(PRetryStrategy);
+typedef STATUS (*ExecuteRetryStrategyFn)(PRetryStrategy, PUINT64);
 
 /**
  * A generic retry strategy
@@ -1631,6 +1632,8 @@ typedef struct __ExponentialBackoffRetryStrategyState {
     UINT64 lastRetrySystemTime;
     // The actual wait time for last retry
     UINT64 lastRetryWaitTime;
+    // Lock to update operations
+    MUTEX retryStrategyLock;
 } ExponentialBackoffRetryStrategyState;
 typedef ExponentialBackoffRetryStrategyState* PExponentialBackoffRetryStrategyState;
 
@@ -1656,7 +1659,7 @@ API usage:
  * @brief Initializes exponential backoff state with default configuration
  * This should be called once before calling exponentialBackoffBlockingWait.
  *
- * NOT THREAD SAFE.
+ * THREAD SAFE.
  *
  * @param 1 PRetryStrategy* - OUT - Newly created exponential backoff state with
  *                           default exponential configuration.
@@ -1670,7 +1673,7 @@ PUBLIC_API STATUS exponentialBackoffRetryStrategyWithDefaultConfigCreate(PRetryS
  * If unsure about the configuration parameters, it is recommended to initialize
  * the state using initializeExponentialBackoffStateWithDefaultConfig API
  *
- * NOT THREAD SAFE.
+ * THREAD SAFE.
  *
  * @param 1 PRetryStrategyConfig - IN - Exponential backoff configuration to be used. This is optional
  *                         parameter. If the value is NULL, the API will be equivalent to
@@ -1683,10 +1686,28 @@ PUBLIC_API STATUS exponentialBackoffRetryStrategyCreate(PRetryStrategyConfig, PR
 
 /**
  * @brief
- * Computes next exponential backoff wait time and blocks the thread for that
- * much time
+ * Computes and returns the next exponential backoff wait time
  *
- * NOT THREAD SAFE.
+ * THREAD SAFE.
+ *
+ * Note: This API may return STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE error code if ExponentialBackoffState
+ * is not configured correctly or is corrupted. In such case, the application should re-create
+ * ExponentialBackoffState using the exponentialBackoffStateCreate OR exponentialBackoffStateWithDefaultConfigCreate
+ * API and then call exponentialBackoffBlockingWait
+ *
+ * @param 1 PRetryStrategy - IN - Exponential backoff state
+ * @return Status of the function call.
+ */
+PUBLIC_API STATUS getExponentialBackoffRetryStrategyWaitTime(PRetryStrategy, PUINT64);
+
+/**
+ * @brief
+ * Computes next exponential backoff wait time and blocks the current thread for that
+ * much time. This is identical to getExponentialBackoffRetryStrategyWaitTime API
+ * but it waits for the actual wait time before returning. To not block the current
+ * thread, use getExponentialBackoffRetryStrategyWaitTime API.
+ *
+ * THREAD SAFE.
  *
  * Note: This API may return STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE error code if ExponentialBackoffState
  * is not configured correctly or is corrupted. In such case, the application should re-create
@@ -1701,7 +1722,7 @@ PUBLIC_API STATUS exponentialBackoffRetryStrategyBlockingWait(PRetryStrategy);
 /**
  * @brief Frees ExponentialBackoffState and its corresponding ExponentialBackoffConfig struct
  *
- * NOT THREAD SAFE.
+ * THREAD SAFE.
  *
  * @param 1 PRetryStrategy* - IN - Exponential backoff state to be released
  * @return Status of the function call.

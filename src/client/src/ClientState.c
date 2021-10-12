@@ -14,7 +14,7 @@ StateMachineState CLIENT_STATE_MACHINE_STATES[] = {
         CLIENT_STATE_NONE | CLIENT_STATE_NEW,
         fromNewClientState,
         executeNewClientState,
-        defaultClientStateMachineErrorHandler,
+        defaultClientStateTransitionHook,
         INFINITE_RETRY_COUNT_SENTINEL,
         STATUS_INVALID_CLIENT_READY_STATE
     },
@@ -23,7 +23,7 @@ StateMachineState CLIENT_STATE_MACHINE_STATES[] = {
         CLIENT_STATE_READY | CLIENT_STATE_NEW | CLIENT_STATE_AUTH,
         fromAuthClientState,
         executeAuthClientState,
-        defaultClientStateMachineErrorHandler,
+        defaultClientStateTransitionHook,
         SERVICE_CALL_MAX_RETRY_COUNT,
         STATUS_CLIENT_AUTH_CALL_FAILED
     },
@@ -32,7 +32,7 @@ StateMachineState CLIENT_STATE_MACHINE_STATES[] = {
         CLIENT_STATE_AUTH | CLIENT_STATE_PROVISION | CLIENT_STATE_GET_TOKEN,
         fromGetTokenClientState,
         executeGetTokenClientState,
-        defaultClientStateMachineErrorHandler,
+        defaultClientStateTransitionHook,
         SERVICE_CALL_MAX_RETRY_COUNT,
         STATUS_GET_CLIENT_TOKEN_CALL_FAILED
     },
@@ -41,7 +41,7 @@ StateMachineState CLIENT_STATE_MACHINE_STATES[] = {
         CLIENT_STATE_AUTH | CLIENT_STATE_PROVISION,
         fromProvisionClientState,
         executeProvisionClientState,
-        defaultClientStateMachineErrorHandler,
+        defaultClientStateTransitionHook,
         SERVICE_CALL_MAX_RETRY_COUNT,
         STATUS_CLIENT_PROVISION_CALL_FAILED
     },
@@ -50,7 +50,7 @@ StateMachineState CLIENT_STATE_MACHINE_STATES[] = {
         CLIENT_STATE_PROVISION | CLIENT_STATE_GET_TOKEN | CLIENT_STATE_AUTH | CLIENT_STATE_CREATE,
         fromCreateClientState,
         executeCreateClientState,
-        defaultClientStateMachineErrorHandler,
+        defaultClientStateTransitionHook,
         SERVICE_CALL_MAX_RETRY_COUNT,
         STATUS_CREATE_CLIENT_CALL_FAILED
     },
@@ -59,7 +59,7 @@ StateMachineState CLIENT_STATE_MACHINE_STATES[] = {
         CLIENT_STATE_CREATE | CLIENT_STATE_TAG_CLIENT | CLIENT_STATE_READY,
         fromTagClientState,
         executeTagClientState,
-        defaultClientStateMachineErrorHandler,
+        defaultClientStateTransitionHook,
         SERVICE_CALL_MAX_RETRY_COUNT,
         STATUS_TAG_CLIENT_CALL_FAILED
     },
@@ -68,7 +68,7 @@ StateMachineState CLIENT_STATE_MACHINE_STATES[] = {
         CLIENT_STATE_GET_TOKEN | CLIENT_STATE_AUTH | CLIENT_STATE_TAG_CLIENT | CLIENT_STATE_CREATE | CLIENT_STATE_READY,
         fromReadyClientState,
         executeReadyClientState,
-        defaultClientStateMachineErrorHandler,
+        defaultClientStateTransitionHook,
         INFINITE_RETRY_COUNT_SENTINEL,
         STATUS_CLIENT_READY_CALLBACK_FAILED
     }
@@ -76,16 +76,19 @@ StateMachineState CLIENT_STATE_MACHINE_STATES[] = {
 
 UINT32 CLIENT_STATE_MACHINE_STATE_COUNT = SIZEOF(CLIENT_STATE_MACHINE_STATES) / SIZEOF(StateMachineState);
 
-STATUS defaultClientStateMachineErrorHandler(UINT64 customData /* customData should be PKinesisVideoClient */) {
+STATUS defaultClientStateTransitionHook(
+        UINT64 customData /* customData should be PKinesisVideoClient */,
+        PUINT64 stateTransitionWaitTime) {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = NULL;
     PKvsRetryStrategy pKvsRetryStrategy = NULL;
+    UINT64 retryWaitTime = 0;
 
     pKinesisVideoClient = CLIENT_FROM_CUSTOM_DATA(customData);
-    CHK(pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+    CHK(pKinesisVideoClient != NULL && stateTransitionWaitTime != NULL, STATUS_NULL_ARG);
 
-    pKvsRetryStrategy = &(pKinesisVideoClient->kvsRetryStrategy);
+    pKvsRetryStrategy = &(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy);
 
     // result > SERVICE_CALL_RESULT_OK covers case for -
     // result != SERVICE_CALL_RESULT_NOT_SET and != SERVICE_CALL_RESULT_OK
@@ -98,7 +101,8 @@ STATUS defaultClientStateMachineErrorHandler(UINT64 customData /* customData sho
 
     DLOGD("KinesisVideoClient base result is [%u]. Executing KVS retry handler of retry strategy type [%u]",
           pKinesisVideoClient->base.result, pKvsRetryStrategy->retryStrategyType);
-    pKvsRetryStrategy->executeRetryStrategyFn(pKvsRetryStrategy->pRetryStrategy);
+    pKvsRetryStrategy->executeRetryStrategyFn(pKvsRetryStrategy->pRetryStrategy, &retryWaitTime);
+    *stateTransitionWaitTime = retryWaitTime;
 
 CleanUp:
 

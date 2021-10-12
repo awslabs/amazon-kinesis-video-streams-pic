@@ -19,7 +19,7 @@
 
 STATUS fromTestState(UINT64, PUINT64);
 STATUS executeTestState(UINT64, UINT64);
-STATUS stateErrorHandler(UINT64);
+STATUS stateTransitionHook(UINT64, PUINT64);
 
 extern StateMachineState TEST_STATE_MACHINE_STATES[];
 extern UINT32 TEST_STATE_MACHINE_STATE_COUNT;

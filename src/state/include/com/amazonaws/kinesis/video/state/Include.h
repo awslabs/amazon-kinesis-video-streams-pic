@@ -70,10 +70,11 @@ typedef STATUS (*ExecuteStateFunc)(UINT64, UINT64);
  * the same state will not result in the transition hook being called
  *
  * @param 1 - IN - Custom data passed in
+ * @param 2 - OUT - An opaque return value
  *
  * @return Status of the callback
  */
-typedef STATUS (*StateTransitionHookFunc)(UINT64);
+typedef STATUS (*StateTransitionHookFunc)(UINT64, PUINT64);
 
 /**
  * State Machine state
