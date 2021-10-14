@@ -434,7 +434,6 @@ STATUS fromStoppedStreamState(UINT64 customData, PUINT64 pState)
         default:
             // Default state in any other case
             retStatus = STATUS_SUCCESS;
-
             break;
     }
 
