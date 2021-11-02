@@ -440,7 +440,7 @@ CleanUp:
 }
 
 /**
- * Stops the stream
+ * stops the stream
  */
 STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
 {
@@ -550,7 +550,7 @@ CleanUp:
 }
 
 /**
- * Synchronously Stops the stream
+ * Synchronously stops the stream
  */
 STATUS stopStreamSync(PKinesisVideoStream pKinesisVideoStream)
 {
@@ -2930,10 +2930,11 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
-    UINT32 packagedSize = 0, metadataCount = 0, metadataSize = 0, overallSize = 0, i;
+    UINT32 packagedSize = 0, metadataCount = 0, metadataSize = 0, overallSize = 0, simpleSizes = 0, i;
+    PBYTE tagsStart;
     UINT64 item;
     PSerializedMetadata pSerializedMetadata = NULL;
-    BOOL firstTimeCheck = TRUE;
+    BOOL firstTimeCheck = TRUE, tagsFound = FALSE;
 
     // NOTE: Assuming the locking is already done.
     // We will calculate the size and return the size only if buffer is NULL
@@ -2975,8 +2976,21 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
         pSerializedMetadata = (PSerializedMetadata) item;
         if (!(pSerializedMetadata->applied && notSentOnly)) {
             metadataSize = overallSize;
+            if (pSerializedMetadata->parent == MKV_TREE_TAGS) {
+                if (tagsFound) {
+                    CHK_STATUS(mkvgenIncreaseTagsTagSize(tagsStart, simpleSizes));
+                }
+                tagsFound = TRUE;
+                simpleSizes = 0;
+                tagsStart = pBuffer + packagedSize;
+            }
+
             CHK_STATUS(mkvgenGenerateTagsChain(pBuffer + packagedSize, pSerializedMetadata->name, pSerializedMetadata->value, &metadataSize,
                                                pSerializedMetadata->parent));
+
+            if (pSerializedMetadata->parent == MKV_TREE_SIMPLE) {
+                simpleSizes += metadataSize;
+            }
 
             // Account for the sizes
             packagedSize += metadataSize;
@@ -2989,11 +3003,13 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
         // If we have a persistent metadata then enqueue it back
         if (pSerializedMetadata->persistent) {
             CHK_STATUS(stackQueueEnqueue(pKinesisVideoStream->pMetadataQueue, item));
-            pSerializedMetadata = NULL;
         } else {
             // Delete the allocation otherwise
             SAFE_MEMFREE(pSerializedMetadata);
         }
+    }
+    if (tagsFound) {
+        CHK_STATUS(mkvgenIncreaseTagsTagSize(tagsStart, simpleSizes));
     }
 
 CleanUp:
@@ -3102,9 +3118,10 @@ STATUS packageNotSentMetadata(PKinesisVideoStream pKinesisVideoStream)
     STATUS retStatus = STATUS_SUCCESS;
     StackQueueIterator iterator;
     UINT64 data;
-    UINT32 overallSize = 0, packagedSize = 0, allocSize = 0, metadataCount = 0;
-    PBYTE pBuffer = NULL;
+    UINT32 overallSize = 0, packagedSize = 0, allocSize = 0, metadataCount = 0, simpleSizes = 0;
+    PBYTE pBuffer = NULL, tagsStart = NULL;
     PSerializedMetadata pSerializedMetadata = NULL;
+    BOOL tagsFound = FALSE;
 
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
 
@@ -3138,8 +3155,23 @@ STATUS packageNotSentMetadata(PKinesisVideoStream pKinesisVideoStream)
 
         if (!pSerializedMetadata->applied) {
             packagedSize = allocSize;
+            if (pSerializedMetadata->parent == MKV_TREE_TAGS) {
+                if (tagsFound) {
+                    CHK_STATUS(mkvgenIncreaseTagsTagSize(tagsStart, simpleSizes));
+                }
+                tagsFound = TRUE;
+                simpleSizes = 0;
+                tagsStart = pBuffer + overallSize;
+            } else if (pSerializedMetadata->parent != MKV_TREE_SIMPLE) {
+                // if the tag is neither
+                tagsFound = FALSE;
+            }
             CHK_STATUS(mkvgenGenerateTagsChain(pBuffer + overallSize, pSerializedMetadata->name, pSerializedMetadata->value, &packagedSize,
                                                pSerializedMetadata->parent));
+
+            if (pSerializedMetadata->parent == MKV_TREE_SIMPLE) {
+                simpleSizes += packagedSize;
+            }
 
             allocSize -= packagedSize;
             overallSize += packagedSize;
@@ -3147,6 +3179,9 @@ STATUS packageNotSentMetadata(PKinesisVideoStream pKinesisVideoStream)
 
         // The item is the allocation so free it
         MEMFREE(pSerializedMetadata);
+    }
+    if (tagsFound) {
+        CHK_STATUS(mkvgenIncreaseTagsTagSize(tagsStart, simpleSizes));
     }
 
     pKinesisVideoStream->metadataTracker.send = TRUE;

@@ -786,6 +786,29 @@ CleanUp:
     LEAVES();
     return retStatus;
 }
+
+STATUS mkvgenIncreaseTagsTagSize(PBYTE pBuffer, UINT32 sizeIncrease)
+{
+    ENTERS();
+    UINT64 encodedElementLength;
+    STATUS retStatus = STATUS_SUCCESS;
+
+    CHK(pBuffer != NULL, STATUS_INVALID_ARG);
+
+    encodedElementLength = GET_UNALIGNED_BIG_ENDIAN((PINT64)(pBuffer + MKV_TAGS_ELEMENT_SIZE_OFFSET));
+    encodedElementLength += (UINT64) sizeIncrease;
+    PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pBuffer + MKV_TAGS_ELEMENT_SIZE_OFFSET), encodedElementLength);
+
+    encodedElementLength = GET_UNALIGNED_BIG_ENDIAN((PINT64)(pBuffer + MKV_TAG_ELEMENT_SIZE_OFFSET));
+    encodedElementLength += (UINT64) sizeIncrease;
+    PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pBuffer + MKV_TAG_ELEMENT_SIZE_OFFSET), encodedElementLength);
+
+CleanUp:
+
+    LEAVES();
+    return retStatus;
+}
+
 /**
  * Gets the MKV overhead size
  */
