@@ -440,7 +440,7 @@ CleanUp:
 }
 
 /**
- * Stops the stream
+ * stops the stream
  */
 STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
 {
