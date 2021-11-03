@@ -3515,7 +3515,7 @@ VOID logStreamInfo(PStreamInfo pStreamInfo)
     if (pStreamInfo == NULL) {
         return;
     }
-
+    LOG_GIT_HASH();
     DLOGD("Kinesis Video Stream Info");
     DLOGD("\tStream name: %s ", pStreamInfo->name);
     DLOGD("\tStreaming type: %s ", GET_STREAMING_TYPE_STR(pStreamInfo->streamCaps.streamingType));

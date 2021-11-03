@@ -15,6 +15,12 @@ extern "C" {
 #define LOG_CLASS "platform-utils"
 #endif
 
+#ifdef DETECTED_GIT_HASH
+#define GIT_HASH SDK_VERSION
+#else
+#define GIT_HASH EMPTY_STRING
+#endif
+
 // Log print function definition
 typedef VOID (*logPrintFunc)(UINT32, PCHAR, PCHAR, ...);
 
@@ -126,6 +132,10 @@ extern logPrintFunc globalCustomLogPrintFn;
 #ifndef CHECK_EXT
 #define CHECK_EXT(x, fmt, ...)                                                                                                                       \
     LOG_ALWAYS_FATAL_IF(!(x), "%s::%s: ASSERTION FAILED at %s:%d: " fmt, (PCHAR) LOG_CLASS, __FUNCTION__, SANITIZED_FILE, __LINE__, ##__VA_ARGS__)
+#endif
+
+#ifndef LOG_GIT_HASH    
+#define LOG_GIT_HASH()    DLOGI("SDK version: %s", GIT_HASH)
 #endif
 
 #ifdef __cplusplus
