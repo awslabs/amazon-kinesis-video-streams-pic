@@ -1472,24 +1472,24 @@ PUBLIC_API STATUS freeFileLogger();
     ************************************
     * Retry Count *      Wait time     *
     * **********************************
-    *     1       *    300ms + jitter  *
-    *     2       *    600ms + jitter  *
-    *     3       *   1200ms + jitter  *
-    *     4       *   2400ms + jitter  *
-    *     5       *   4800ms + jitter  *
-    *     6       *   9600ms + jitter  *
-    *     7       *  10000ms + jitter  *
-    *     8       *  10000ms + jitter  *
-    *     9       *  10000ms + jitter  *
+    *     1       *   1000ms + jitter  *
+    *     2       *   2000ms + jitter  *
+    *     3       *   4000ms + jitter  *
+    *     4       *   8000ms + jitter  *
+    *     5       *  16000ms + jitter  *
+    *     6       *  25000ms + jitter  *
+    *     6       *  25000ms + jitter  *
+    *     6       *  25000ms + jitter  *
+    *     6       *  25000ms + jitter  *
     ************************************
- jitter = random number between [0, 300)ms.
+ jitter = random number between [0, 600)ms.
 ************************************************************************/
 /**
  * Factor for computing the exponential backoff wait time
  * The larger the value, the slower the retries will be.
  */
-#define DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS                  300
-#define LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS                    600
+#define DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS                  1000
+#define LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS                    1000
 
 /**
  * Factor determining the curve of exponential wait time
@@ -1501,24 +1501,24 @@ PUBLIC_API STATUS freeFileLogger();
  * curve reaches this value, it stays at this value. This is
  * required to put a reasonable upper bound on wait time.
  */
-#define DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS                      15000
+#define DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS                      25000
 
 /**
  * Maximum time between two consecutive calls to exponentialBackoffBlockingWait
  * after which the retry count will be reset to initial state.
  */
-#define DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS      25000
+#define DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS      90000
 
 /**
  * Time after which connection from SDK to the service will be terminated
  * if no data flows to the service
  */
-#define KVS_BACKEND_STREAMING_IDLE_TIMEOUT_MILLISECONDS             40000
+#define KVS_BACKEND_STREAMING_IDLE_TIMEOUT_MILLISECONDS             90000
 
 /**
- * Factor to get a random jitter. Jitter values [0, 300).
+ * Factor to get a random jitter. Jitter values [0, 600).
  */
-#define DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS                      300
+#define DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS                      600
 #define LIMIT_KVS_JITTER_FACTOR_MILLISECONDS                        600
 
 typedef enum {
