@@ -21,6 +21,16 @@ option(ALIGNED_MEMORY_MODEL "Aligned memory model ONLY." OFF)
 option(FIXUP_ANNEX_B_TRAILING_NALU_ZERO "Fix-up some bad encoder behavior leaving a trailing zero at the end of NALu" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
+execute_process(
+        COMMAND git rev-parse HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_COMMIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+add_definitions(-DSDK_VERSION=\"${GIT_COMMIT_HASH}\")
+add_definitions(-DDETECTED_GIT_HASH)
+
+
 if(BUILD_SHARED_LIBS)
   set(LIBTYPE SHARED)
 elseif()
