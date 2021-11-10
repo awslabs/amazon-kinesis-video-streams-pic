@@ -128,7 +128,3 @@ TEST_P(IntermittentProducerFunctionalityTest, RepeatedCreateSyncStopSyncFree)
         freeKinesisVideoStream(&mStreamHandle);
     }
 }
-
-
-INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, IntermittentProducerFunctionalityTest,
-                        Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));

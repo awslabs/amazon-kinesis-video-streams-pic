@@ -1472,15 +1472,15 @@ PUBLIC_API STATUS freeFileLogger();
     ************************************
     * Retry Count *      Wait time     *
     * **********************************
-    *     1       *   1000ms + jitter  *
-    *     2       *   2000ms + jitter  *
+    *     1       *   2500ms + jitter  *
+    *     2       *   2500ms + jitter  *
     *     3       *   4000ms + jitter  *
     *     4       *   8000ms + jitter  *
     *     5       *  16000ms + jitter  *
     *     6       *  25000ms + jitter  *
-    *     6       *  25000ms + jitter  *
-    *     6       *  25000ms + jitter  *
-    *     6       *  25000ms + jitter  *
+    *     7       *  25000ms + jitter  *
+    *     8       *  25000ms + jitter  *
+    *     9       *  25000ms + jitter  *
     ************************************
  jitter = random number between [0, 600)ms.
 ************************************************************************/
@@ -1495,6 +1495,15 @@ PUBLIC_API STATUS freeFileLogger();
  * Factor determining the curve of exponential wait time
  */
 #define DEFAULT_KVS_EXPONENTIAL_FACTOR                              2
+
+/**
+ * Default minimum exponential wait time. If the actual computed wait
+ * time is smaller than this value, then this value will be chosen.
+ * In other words, this value will be picked for first few retries
+ * till the retry wait time goes past this value. This is specifically
+ * useful to avoid spiky traffic for first few "shorter" wait times.
+ */
+#define DEFAULT_KVS_MIN_WAIT_TIME_MILLISECONDS                      1000
 
 /**
  * Maximum exponential wait time. Once the exponential wait time
@@ -1527,6 +1536,12 @@ typedef enum {
     BACKOFF_TERMINATED      = (UINT16) 0x03
 } ExponentialBackoffStatus;
 
+typedef enum {
+   FULL_JITTER = 0,
+   FIXED_JITTER,
+   NO_JITTER
+} ExponentialBackoffJitterType;
+
 typedef struct __ExponentialBackoffConfig {
     // Max retries after which an error will be returned
     // to the application. For infinite retries, set this
@@ -1536,14 +1551,22 @@ typedef struct __ExponentialBackoffConfig {
     // reaches this value, subsequent retries will wait for
     // maxRetryWaitTime (plus jitter).
     UINT64  maxRetryWaitTime;
+    // Optional value which determines the minimum wait time
+    // If the computed wait time is smaller than this value, then
+    // minRetryWaitTime will be used.
+    UINT64 minRetryWaitTime;
     // Factor for computing the exponential backoff wait time
     UINT64  retryFactorTime;
     // The minimum time between two consecutive retries
     // after which retry state will be reset i.e. retries
     // will start from initial retry state.
     UINT64  minTimeToResetRetryState;
+    // Jitter type
+    // Default will be FULL_JITTER
+    ExponentialBackoffJitterType jitterType;
     // Factor determining random jitter value.
     // Jitter will be between [0, jitterFactor).
+    // This is only valid for jitter type FIXED_JITTER
     UINT32  jitterFactor;
 } ExponentialBackoffConfig;
 typedef ExponentialBackoffConfig* PExponentialBackoffConfig;
