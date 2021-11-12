@@ -1478,9 +1478,9 @@ PUBLIC_API STATUS freeFileLogger();
     *     4       *   8000ms + jitter  *
     *     5       *  16000ms + jitter  *
     *     6       *  25000ms + jitter  *
-    *     6       *  25000ms + jitter  *
-    *     6       *  25000ms + jitter  *
-    *     6       *  25000ms + jitter  *
+    *     7       *  25000ms + jitter  *
+    *     8       *  25000ms + jitter  *
+    *     9       *  25000ms + jitter  *
     ************************************
  jitter = random number between [0, 600)ms.
 ************************************************************************/
@@ -1527,6 +1527,12 @@ typedef enum {
     BACKOFF_TERMINATED      = (UINT16) 0x03
 } ExponentialBackoffStatus;
 
+typedef enum {
+   FULL_JITTER = 0,
+   FIXED_JITTER,
+   NO_JITTER
+} ExponentialBackoffJitterType;
+
 typedef struct __ExponentialBackoffConfig {
     // Max retries after which an error will be returned
     // to the application. For infinite retries, set this
@@ -1542,8 +1548,12 @@ typedef struct __ExponentialBackoffConfig {
     // after which retry state will be reset i.e. retries
     // will start from initial retry state.
     UINT64  minTimeToResetRetryState;
+    // Jitter type
+    // Default will be FULL_JITTER
+    ExponentialBackoffJitterType jitterType;
     // Factor determining random jitter value.
     // Jitter will be between [0, jitterFactor).
+    // This is only valid for jitter type FIXED_JITTER
     UINT32  jitterFactor;
 } ExponentialBackoffConfig;
 typedef ExponentialBackoffConfig* PExponentialBackoffConfig;

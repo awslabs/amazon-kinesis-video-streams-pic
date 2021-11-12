@@ -11,6 +11,10 @@ STATUS initializeDefaultExponentialBackoffConfig(PExponentialBackoffConfig pExpo
     pExponentialBackoffConfig->retryFactorTime = HUNDREDS_OF_NANOS_IN_A_MILLISECOND * DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS;
     pExponentialBackoffConfig->minTimeToResetRetryState = HUNDREDS_OF_NANOS_IN_A_MILLISECOND * DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS;
     pExponentialBackoffConfig->jitterFactor = DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS;
+    pExponentialBackoffConfig->jitterType = FULL_JITTER;
+
+    // Seed rand to generate random number for jitter
+    SRAND(GETTIME());
 
 CleanUp:
     LEAVES();
@@ -72,7 +76,9 @@ STATUS validateExponentialBackoffConfig(PExponentialBackoffConfig pBackoffConfig
     CHK_STATUS(inRange(pBackoffConfig->maxRetryWaitTime, DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS, KVS_BACKEND_STREAMING_IDLE_TIMEOUT_MILLISECONDS));
     CHK_STATUS(inRange(pBackoffConfig->retryFactorTime, DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS, LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS));
     CHK_STATUS(inRange(pBackoffConfig->minTimeToResetRetryState, DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS, KVS_BACKEND_STREAMING_IDLE_TIMEOUT_MILLISECONDS));
-    CHK_STATUS(inRange(pBackoffConfig->jitterFactor, DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS, LIMIT_KVS_JITTER_FACTOR_MILLISECONDS));
+    if (pBackoffConfig->jitterFactor == FIXED_JITTER) {
+        CHK_STATUS(inRange(pBackoffConfig->jitterFactor, DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS, LIMIT_KVS_JITTER_FACTOR_MILLISECONDS));
+    }
 
 CleanUp:
     LEAVES();
@@ -104,8 +110,19 @@ CleanUp:
     return retStatus;
 }
 
-UINT64 getRandomJitter(UINT32 jitterFactor) {
-    return (RAND() % jitterFactor) * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+UINT64 getRandomJitter(PExponentialBackoffConfig pExponentialBackoffConfig, UINT64 currentRetryWaitTime) {
+    UINT64 jitter = 0;
+    switch (pExponentialBackoffConfig->jitterType) {
+        case FULL_JITTER:
+            jitter = RAND() % currentRetryWaitTime;
+            break;
+        case FIXED_JITTER:
+            jitter = RAND() % (pExponentialBackoffConfig->jitterFactor * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+        case NO_JITTER:
+            return 0;
+    }
+
+    return jitter;
 }
 
 STATUS calculateWaitTime(PExponentialBackoffState pRetryState, PExponentialBackoffConfig pRetryConfig, PUINT64 pWaitTime) {
@@ -194,7 +211,7 @@ STATUS exponentialBackoffBlockingWait(PExponentialBackoffState pRetryState) {
 
     // Note: Do not move the call to getRandomJitter in calculateWaitTime.
     // This is because we need randomization for wait time after we reach maxRetryWaitTime
-    jitter = getRandomJitter(pRetryState->exponentialBackoffConfig.jitterFactor);
+    jitter = getRandomJitter(&(pRetryState->exponentialBackoffConfig), currentRetryWaitTime);
     currentRetryWaitTime += jitter;
     THREAD_SLEEP(currentRetryWaitTime);
 

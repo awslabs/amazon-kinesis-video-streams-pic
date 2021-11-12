@@ -28,6 +28,8 @@ class ExponentialBackoffUtilsTest : public UtilTestBase {
         pExponentialBackoffConfig->retryFactorTime = 200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
         // Set random jitter between [0, 4] * HUNDREDS_OF_NANOS_IN_A_MILLISECOND
         pExponentialBackoffConfig->jitterFactor = 50;
+        // Set jitter type as fixed jitter
+        pExponentialBackoffConfig->jitterType = FIXED_JITTER;
     }
 
     void validateExponentialBackoffWaitTime(
@@ -76,6 +78,7 @@ TEST_F(ExponentialBackoffUtilsTest, testInitializeExponentialBackoffStateWithDef
     EXPECT_EQ(KVS_INFINITE_EXPONENTIAL_RETRIES, pExponentialBackoffState->exponentialBackoffConfig.maxRetryCount);
     EXPECT_EQ(HUNDREDS_OF_NANOS_IN_A_MILLISECOND * DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS,
               pExponentialBackoffState->exponentialBackoffConfig.minTimeToResetRetryState);
+    EXPECT_EQ(FULL_JITTER, pExponentialBackoffState->exponentialBackoffConfig.jitterType);
 
     EXPECT_EQ(STATUS_SUCCESS, exponentialBackoffStateFree(&pExponentialBackoffState));
     EXPECT_TRUE(pExponentialBackoffState == NULL);
@@ -108,6 +111,7 @@ TEST_F(ExponentialBackoffUtilsTest, testInitializeExponentialBackoffState)
     pExponentialBackoffConfig->maxRetryCount = 5;
     pExponentialBackoffConfig->maxRetryWaitTime = 25000;
     pExponentialBackoffConfig->retryFactorTime = 1000;
+    pExponentialBackoffConfig->jitterType = FIXED_JITTER;
     pExponentialBackoffConfig->jitterFactor = 600;
 
     EXPECT_EQ(STATUS_SUCCESS, exponentialBackoffStateCreate(&pExponentialBackoffState, pExponentialBackoffConfig));
@@ -117,6 +121,7 @@ TEST_F(ExponentialBackoffUtilsTest, testInitializeExponentialBackoffState)
     EXPECT_EQ(5, pExponentialBackoffState->exponentialBackoffConfig.maxRetryCount);
     EXPECT_EQ(25000, pExponentialBackoffState->exponentialBackoffConfig.maxRetryWaitTime);
     EXPECT_EQ(1000, pExponentialBackoffState->exponentialBackoffConfig.retryFactorTime);
+    EXPECT_EQ(FIXED_JITTER, pExponentialBackoffState->exponentialBackoffConfig.jitterType);
     EXPECT_EQ(600, pExponentialBackoffState->exponentialBackoffConfig.jitterFactor);
 
     EXPECT_EQ(STATUS_SUCCESS, exponentialBackoffStateFree(&pExponentialBackoffState));
@@ -218,6 +223,57 @@ TEST_F(ExponentialBackoffUtilsTest, testExponentialBackoffBlockingWait_Bounded)
             retryCount+1,
             BACKOFF_IN_PROGRESS,
             acceptableRetryWaitTimeRangeMilliSec.at(retryCount));
+    }
+
+    // After the retries are exhausted, subsequent call to exponentialBackoffBlockingWait should return an error
+    EXPECT_EQ(STATUS_EXPONENTIAL_BACKOFF_RETRIES_EXHAUSTED, exponentialBackoffBlockingWait(pExponentialBackoffState));
+    EXPECT_EQ(0, pExponentialBackoffState->currentRetryCount);
+    EXPECT_EQ(0, pExponentialBackoffState->lastRetryWaitTime);
+    EXPECT_EQ(BACKOFF_NOT_STARTED, pExponentialBackoffState->status);
+
+    EXPECT_EQ(STATUS_SUCCESS, exponentialBackoffStateFree(&pExponentialBackoffState));
+    EXPECT_TRUE(pExponentialBackoffState == NULL);
+}
+
+/**
+ * Test to validate bounded exponentially backed-off retries.
+ * The test performs 5 consecutive and validates the wait time for each retry.
+ * The test verifies reception of error upon calling exponentialBackoffBlockingWait after
+ * configured retries are exhausted.
+ *
+ * This test takes roughly 6 seconds to execute
+ */
+TEST_F(ExponentialBackoffUtilsTest, testExponentialBackoffBlockingWait_FullJitter_UnBounded)
+{
+    PExponentialBackoffState pExponentialBackoffState = NULL;
+    UINT32 maxTestRetryCount = 5;
+
+    EXPECT_EQ(STATUS_SUCCESS, exponentialBackoffStateWithDefaultConfigCreate(&pExponentialBackoffState));
+    EXPECT_TRUE(pExponentialBackoffState != NULL);
+    // Overwrite the default config values with test config values
+    getTestRetryConfiguration(&(pExponentialBackoffState->exponentialBackoffConfig));
+    pExponentialBackoffState->exponentialBackoffConfig.maxRetryCount = maxTestRetryCount;
+    pExponentialBackoffState->exponentialBackoffConfig.jitterType = FULL_JITTER;
+
+    std::vector<double> actualRetryWaitTime;
+    std::vector<Range> acceptableRetryWaitTimeRangeMilliSec {
+        {200.0, 399.0},     // 1st retry 200ms + jitter
+        {400.0, 799.0},     // 2st retry 400ms + jitter
+        {800.0, 1599.0},     // 3st retry 800ms + jitter
+        {1600.0, 3199.0},   // 4st retry 1600ms + jitter
+        {3000.0, 5999.0},   // 5st retry 3000ms + jitter
+    };
+
+    for (int retryCount = 0; retryCount < maxTestRetryCount; retryCount++) {
+        double currentTimeMilliSec = GETTIME()/(HUNDREDS_OF_NANOS_IN_A_MILLISECOND * 1.0);
+        EXPECT_EQ(STATUS_SUCCESS, exponentialBackoffBlockingWait(pExponentialBackoffState));
+
+        validateExponentialBackoffWaitTime(
+                pExponentialBackoffState,
+                currentTimeMilliSec,
+                retryCount+1,
+                BACKOFF_IN_PROGRESS,
+                acceptableRetryWaitTimeRangeMilliSec.at(retryCount));
     }
 
     // After the retries are exhausted, subsequent call to exponentialBackoffBlockingWait should return an error
