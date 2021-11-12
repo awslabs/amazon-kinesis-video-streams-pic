@@ -1472,8 +1472,8 @@ PUBLIC_API STATUS freeFileLogger();
     ************************************
     * Retry Count *      Wait time     *
     * **********************************
-    *     1       *   2500ms + jitter  *
-    *     2       *   2500ms + jitter  *
+    *     1       *   1000ms + jitter  *
+    *     2       *   2000ms + jitter  *
     *     3       *   4000ms + jitter  *
     *     4       *   8000ms + jitter  *
     *     5       *  16000ms + jitter  *
