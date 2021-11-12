@@ -1477,10 +1477,10 @@ PUBLIC_API STATUS freeFileLogger();
     *     3       *   4000ms + jitter  *
     *     4       *   8000ms + jitter  *
     *     5       *  16000ms + jitter  *
-    *     6       *  25000ms + jitter  *
-    *     7       *  25000ms + jitter  *
-    *     8       *  25000ms + jitter  *
-    *     9       *  25000ms + jitter  *
+    *     6       *  16000ms + jitter  *
+    *     7       *  16000ms + jitter  *
+    *     8       *  16000ms + jitter  *
+    *     9       *  16000ms + jitter  *
     ************************************
  jitter = random number between [0, 600)ms.
 ************************************************************************/
@@ -1501,7 +1501,7 @@ PUBLIC_API STATUS freeFileLogger();
  * curve reaches this value, it stays at this value. This is
  * required to put a reasonable upper bound on wait time.
  */
-#define DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS                      25000
+#define DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS                      16000
 
 /**
  * Maximum time between two consecutive calls to exponentialBackoffBlockingWait
