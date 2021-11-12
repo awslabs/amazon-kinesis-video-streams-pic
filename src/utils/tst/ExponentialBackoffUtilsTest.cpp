@@ -26,7 +26,6 @@ class ExponentialBackoffUtilsTest : public UtilTestBase {
         // ((2^1)*X + jitter), ((2^1)*X + jitter), ((2^2)*X + jitter), ((2^3)*X + jitter) ...
         // where X = 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND
         pExponentialBackoffConfig->retryFactorTime = 200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
-        pExponentialBackoffConfig->minRetryWaitTime = 200;
         // Set random jitter between [0, 4] * HUNDREDS_OF_NANOS_IN_A_MILLISECOND
         pExponentialBackoffConfig->jitterFactor = 50;
         // Set jitter type as fixed jitter
@@ -112,7 +111,6 @@ TEST_F(ExponentialBackoffUtilsTest, testInitializeExponentialBackoffState)
     pExponentialBackoffConfig->maxRetryCount = 5;
     pExponentialBackoffConfig->maxRetryWaitTime = 25000;
     pExponentialBackoffConfig->retryFactorTime = 1000;
-    pExponentialBackoffConfig->minRetryWaitTime = 2000;
     pExponentialBackoffConfig->jitterType = FIXED_JITTER;
     pExponentialBackoffConfig->jitterFactor = 600;
 
@@ -123,7 +121,6 @@ TEST_F(ExponentialBackoffUtilsTest, testInitializeExponentialBackoffState)
     EXPECT_EQ(5, pExponentialBackoffState->exponentialBackoffConfig.maxRetryCount);
     EXPECT_EQ(25000, pExponentialBackoffState->exponentialBackoffConfig.maxRetryWaitTime);
     EXPECT_EQ(1000, pExponentialBackoffState->exponentialBackoffConfig.retryFactorTime);
-    EXPECT_EQ(2000, pExponentialBackoffState->exponentialBackoffConfig.minRetryWaitTime);
     EXPECT_EQ(FIXED_JITTER, pExponentialBackoffState->exponentialBackoffConfig.jitterType);
     EXPECT_EQ(600, pExponentialBackoffState->exponentialBackoffConfig.jitterFactor);
 

@@ -13,11 +13,6 @@ STATUS initializeDefaultExponentialBackoffConfig(PExponentialBackoffConfig pExpo
     pExponentialBackoffConfig->jitterFactor = DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS;
     pExponentialBackoffConfig->jitterType = FULL_JITTER;
 
-    if (pExponentialBackoffConfig->minRetryWaitTime == 0) {
-        // set minimum wait time to lowest possible value
-        pExponentialBackoffConfig->minRetryWaitTime = HUNDREDS_OF_NANOS_IN_A_MILLISECOND * DEFAULT_KVS_MIN_WAIT_TIME_MILLISECONDS;
-    }
-
     // Seed rand to generate random number for jitter
     SRAND(GETTIME());
 
@@ -84,12 +79,6 @@ STATUS validateExponentialBackoffConfig(PExponentialBackoffConfig pBackoffConfig
     if (pBackoffConfig->jitterFactor == FIXED_JITTER) {
         CHK_STATUS(inRange(pBackoffConfig->jitterFactor, DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS, LIMIT_KVS_JITTER_FACTOR_MILLISECONDS));
     }
-
-    // minRetryWaitTime is optional. If not specified, set to the lowest possible wait time value.
-    if (pBackoffConfig->minRetryWaitTime == 0) {
-        pBackoffConfig->minRetryWaitTime = HUNDREDS_OF_NANOS_IN_A_MILLISECOND * DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS;
-    }
-    CHK(pBackoffConfig->minRetryWaitTime > 0 && pBackoffConfig->minRetryWaitTime <= pBackoffConfig->maxRetryWaitTime, STATUS_INVALID_ARG);
 
 CleanUp:
     LEAVES();
@@ -211,15 +200,12 @@ STATUS exponentialBackoffBlockingWait(PExponentialBackoffState pRetryState) {
     // Bound the exponential curve to maxRetryWaitTime. Once we reach
     // maxRetryWaitTime, then we always wait for maxRetryWaitTime time
     // till the state is reset.
-    // Also make sure that the wait time is never smaller than the minRetryWaitTime.
     if (pRetryState->lastRetryWaitTime >= pRetryConfig->maxRetryWaitTime) {
         currentRetryWaitTime = pRetryConfig->maxRetryWaitTime;
     } else {
         CHK_STATUS(calculateWaitTime(pRetryState, pRetryConfig, &currentRetryWaitTime));
         if (currentRetryWaitTime > pRetryConfig->maxRetryWaitTime) {
             currentRetryWaitTime = pRetryConfig->maxRetryWaitTime;
-        } else if (currentRetryWaitTime < pRetryConfig->minRetryWaitTime){
-            currentRetryWaitTime = pRetryConfig->minRetryWaitTime;
         }
     }
 

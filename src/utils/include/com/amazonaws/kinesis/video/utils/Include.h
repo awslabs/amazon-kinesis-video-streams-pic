@@ -1497,15 +1497,6 @@ PUBLIC_API STATUS freeFileLogger();
 #define DEFAULT_KVS_EXPONENTIAL_FACTOR                              2
 
 /**
- * Default minimum exponential wait time. If the actual computed wait
- * time is smaller than this value, then this value will be chosen.
- * In other words, this value will be picked for first few retries
- * till the retry wait time goes past this value. This is specifically
- * useful to avoid spiky traffic for first few "shorter" wait times.
- */
-#define DEFAULT_KVS_MIN_WAIT_TIME_MILLISECONDS                      1000
-
-/**
  * Maximum exponential wait time. Once the exponential wait time
  * curve reaches this value, it stays at this value. This is
  * required to put a reasonable upper bound on wait time.
@@ -1551,10 +1542,6 @@ typedef struct __ExponentialBackoffConfig {
     // reaches this value, subsequent retries will wait for
     // maxRetryWaitTime (plus jitter).
     UINT64  maxRetryWaitTime;
-    // Optional value which determines the minimum wait time
-    // If the computed wait time is smaller than this value, then
-    // minRetryWaitTime will be used.
-    UINT64 minRetryWaitTime;
     // Factor for computing the exponential backoff wait time
     UINT64  retryFactorTime;
     // The minimum time between two consecutive retries
