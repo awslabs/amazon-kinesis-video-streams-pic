@@ -1,12 +1,12 @@
 #include "StateTestFixture.h"
 
 StateMachineState TEST_STATE_MACHINE_STATES[] = {
-        {TEST_STATE_0, TEST_STATE_0 | TEST_STATE_1, fromTestState, executeTestState, INFINITE_RETRY_COUNT_SENTINEL, STATUS_INVALID_OPERATION},
-        {TEST_STATE_1, TEST_STATE_0, fromTestState, executeTestState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_INVALID_OPERATION},
-        {TEST_STATE_2, TEST_STATE_0 | TEST_STATE_1 | TEST_STATE_2 | TEST_STATE_3 | TEST_STATE_4 | TEST_STATE_5, fromTestState, executeTestState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_INVALID_OPERATION},
-        {TEST_STATE_3, TEST_STATE_2 | TEST_STATE_3, fromTestState, executeTestState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_INVALID_OPERATION},
-        {TEST_STATE_4, TEST_STATE_3 | TEST_STATE_4, fromTestState, executeTestState, INFINITE_RETRY_COUNT_SENTINEL, STATUS_INVALID_OPERATION},
-        {TEST_STATE_5, TEST_STATE_4 | TEST_STATE_5, fromTestState, executeTestState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_INVALID_OPERATION},
+        {TEST_STATE_0, TEST_STATE_0 | TEST_STATE_1, fromTestState, executeTestState, stateTransitionHook, INFINITE_RETRY_COUNT_SENTINEL, STATUS_INVALID_OPERATION},
+    {TEST_STATE_1, TEST_STATE_0, fromTestState, executeTestState, stateTransitionHook, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_INVALID_OPERATION},
+    {TEST_STATE_2, TEST_STATE_0 | TEST_STATE_1 | TEST_STATE_2 | TEST_STATE_3 | TEST_STATE_4 | TEST_STATE_5, fromTestState, executeTestState, stateTransitionHook, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_INVALID_OPERATION},
+    {TEST_STATE_3, TEST_STATE_2 | TEST_STATE_3, fromTestState, executeTestState, stateTransitionHook, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_INVALID_OPERATION},
+    {TEST_STATE_4, TEST_STATE_3 | TEST_STATE_4, fromTestState, executeTestState, stateTransitionHook, INFINITE_RETRY_COUNT_SENTINEL, STATUS_INVALID_OPERATION},
+    {TEST_STATE_5, TEST_STATE_4 | TEST_STATE_5, fromTestState, executeTestState, stateTransitionHook, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_INVALID_OPERATION},
 };
 
 UINT32 TEST_STATE_MACHINE_STATE_COUNT = SIZEOF(TEST_STATE_MACHINE_STATES) / SIZEOF(StateMachineState);
@@ -14,6 +14,21 @@ UINT32 TEST_STATE_MACHINE_STATE_COUNT = SIZEOF(TEST_STATE_MACHINE_STATES) / SIZE
 ///////////////////////////////////////////////////////////////////////////
 // State machine callback functions
 ///////////////////////////////////////////////////////////////////////////
+STATUS stateTransitionHook(UINT64 customData, PUINT64 returnData)
+{
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+
+    StateTestBase* pTest = (StateTestBase*) customData;
+    if (pTest->testServiceAPICallResult != SERVICE_CALL_RESULT_OK) {
+        pTest->testErrorHandlerMetaData.errorHandlerExecutionCount++;
+    }
+
+CleanUp:
+    LEAVES();
+    return retStatus;
+}
+
 STATUS fromTestState(UINT64 customData, PUINT64 pState)
 {
     ENTERS();

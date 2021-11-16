@@ -1115,6 +1115,21 @@ struct __StorageInfo {
 typedef struct __StorageInfo* PStorageInfo;
 
 /**
+ * Function to create a retry strategy to be used for the client and streams
+ * on detecting errors from service API calls. The retry strategy is a part of
+ * client struct.
+ *
+ * NOTE: This is an optional callback. If not specified, the SDK will use
+ * default retry strategy. Unless there is no specific use case, it is
+ * recommended to leave this callback NULL and let SDK handle the retries.
+ *
+ * @param 1 CLIENT_HANDLE - IN - The client handle.
+ *
+ * @return Status of the callback
+ */
+typedef STATUS (*GetKvsRetryStrategyFn)(CLIENT_HANDLE);
+
+/**
  * Client Info
  */
 typedef struct __ClientInfo {
@@ -1152,6 +1167,12 @@ typedef struct __ClientInfo {
     // period (in hundreds of nanos) at which callback will be fired to check stream
     // clients should set this value to 0.
     UINT64 reservedCallbackPeriod;
+
+    // Retry strategy for the client and all the streams under it
+    KvsRetryStrategy kvsRetryStrategy;
+
+    // Function pointer for application to provide a custom retry strategy
+    GetKvsRetryStrategyFn getKvsRetryStrategyFn;
 } ClientInfo, *PClientInfo;
 
 /**
