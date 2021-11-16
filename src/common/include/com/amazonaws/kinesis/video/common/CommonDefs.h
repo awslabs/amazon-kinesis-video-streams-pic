@@ -1188,6 +1188,9 @@ typedef UINT64 HANDLE;
         }                                                                                                                                            \
     } while (FALSE)
 
+// Checks if the data provided is in range [low, high]
+#define CHECK_IN_RANGE(data, low, high) ((data) >= (low) && (data) <= (high))
+
 #ifdef __cplusplus
 }
 #endif
