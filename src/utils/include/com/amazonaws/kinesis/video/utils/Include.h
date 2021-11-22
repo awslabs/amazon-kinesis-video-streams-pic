@@ -1720,6 +1720,15 @@ PUBLIC_API STATUS getExponentialBackoffRetryStrategyWaitTime(PRetryStrategy, PUI
 PUBLIC_API STATUS exponentialBackoffRetryStrategyBlockingWait(PRetryStrategy);
 
 /**
+ * @brief Returns updated exponential backoff retry count when PRetryStrategy object is passed
+ *
+ * THREAD SAFE.
+ *
+ * @param 1 PRetryStrategy - IN - Exponential backoff object for which retry state is maintained
+ * @return Retry count
+ */
+PUBLIC_API UINT32 getExponentialBackoffRetryCount(PRetryStrategy);
+/**
  * @brief Frees ExponentialBackoffState and its corresponding ExponentialBackoffConfig struct
  *
  * THREAD SAFE.

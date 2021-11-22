@@ -232,6 +232,17 @@ CleanUp:
     return retStatus;
 }
 
+UINT32 getExponentialBackoffRetryCount(PRetryStrategy pRetryStrategy) {
+    PExponentialBackoffRetryStrategyState pRetryState = NULL;
+    UINT32 retryCount = 0;
+    pRetryState = TO_EXPONENTIAL_BACKOFF_STATE(pRetryStrategy);
+    MUTEX_LOCK(pRetryState->retryStrategyLock);
+    retryCount = pRetryState->currentRetryCount;
+    MUTEX_UNLOCK(pRetryState->retryStrategyLock);
+    return retryCount;
+
+}
+
 STATUS exponentialBackoffRetryStrategyBlockingWait(PRetryStrategy pRetryStrategy) {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
