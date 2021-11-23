@@ -270,6 +270,18 @@ typedef struct {
     logPrintFunc storedLoggerLogPrintFn;
 } FileLogger, *PFileLogger;
 
+typedef struct {
+    ExponentialBackoffRetryStrategyConfig exponentialBackoffRetryStrategyConfig;
+    ExponentialBackoffStatus status;
+    UINT32 currentRetryCount;
+    // The system time at which last retry happened
+    UINT64 lastRetrySystemTime;
+    // The actual wait time for last retry
+    UINT64 lastRetryWaitTime;
+    // Lock to update operations
+    MUTEX retryStrategyLock;
+} ExponentialBackoffRetryStrategyState, *PExponentialBackoffRetryStrategyState;
+
 /////////////////////////////////////////////////////////////////////
 // Internal functionality
 /////////////////////////////////////////////////////////////////////

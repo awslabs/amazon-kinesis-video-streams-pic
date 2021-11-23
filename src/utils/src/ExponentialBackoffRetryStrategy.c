@@ -232,15 +232,18 @@ CleanUp:
     return retStatus;
 }
 
-UINT32 getExponentialBackoffRetryCount(PRetryStrategy pRetryStrategy) {
+STATUS getExponentialBackoffRetryCount(PRetryStrategy pRetryStrategy, PUINT32 retryCount) {
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
     PExponentialBackoffRetryStrategyState pRetryState = NULL;
-    UINT32 retryCount = 0;
+    CHK_STATUS(pRetryStrategy == NULL, STATUS_NULL_ARG);
     pRetryState = TO_EXPONENTIAL_BACKOFF_STATE(pRetryStrategy);
     MUTEX_LOCK(pRetryState->retryStrategyLock);
-    retryCount = pRetryState->currentRetryCount;
+    *retryCount = pRetryState->currentRetryCount;
     MUTEX_UNLOCK(pRetryState->retryStrategyLock);
-    return retryCount;
-
+CleanUp:
+    LEAVES();
+    return retStatus;
 }
 
 STATUS exponentialBackoffRetryStrategyBlockingWait(PRetryStrategy pRetryStrategy) {

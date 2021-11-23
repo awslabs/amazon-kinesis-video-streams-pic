@@ -101,6 +101,7 @@ STATUS setupDefaultKvsRetryStrategy(PKinesisVideoClient pKinesisVideoClient) {
     pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.createRetryStrategyFn = exponentialBackoffRetryStrategyCreate;
     pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.freeRetryStrategyFn = exponentialBackoffRetryStrategyFree;
     pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.executeRetryStrategyFn = getExponentialBackoffRetryStrategyWaitTime;
+    pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.getCurrentRetryAttemptNumberFn = getExponentialBackoffRetryCount;
     pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.retryStrategyType = KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT;
 
 CleanUp:

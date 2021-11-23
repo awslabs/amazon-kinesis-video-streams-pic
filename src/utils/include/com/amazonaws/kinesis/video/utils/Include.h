@@ -1488,6 +1488,16 @@ typedef PUINT64 PRetryStrategyConfig;
 typedef STATUS (*CreateRetryStrategyFn)(PRetryStrategyConfig, PRetryStrategy*);
 
 /**
+ * Handler to get retry count
+ *
+ * @param 1 PRetryStrategy - IN - Retry strategy struct passed by the caller.
+ * @param 2 PUINT32 - OUT - retry count value
+ *
+ * @return Status of the callback
+ */
+typedef STATUS (*GetCurrentRetryAttemptNumberFn) (PRetryStrategy, PUINT32);
+
+/**
  * Handler to release resources associated with a retry strategy
  *
  * @param 1 PRetryStrategy* - Custom data passed by the caller.
@@ -1519,6 +1529,9 @@ struct __KvsRetryStrategy {
 
     // Pointer to the function to create new retry strategy
     CreateRetryStrategyFn createRetryStrategyFn;
+
+    // Get retry count
+    GetCurrentRetryAttemptNumberFn getCurrentRetryAttemptNumberFn;
 
     // Pointer to the function to release allocated resources
     // associated with the retry strategy
@@ -1624,19 +1637,6 @@ typedef struct __ExponentialBackoffRetryStrategyConfig {
 } ExponentialBackoffRetryStrategyConfig;
 typedef ExponentialBackoffRetryStrategyConfig* PExponentialBackoffRetryStrategyConfig;
 
-typedef struct __ExponentialBackoffRetryStrategyState {
-    ExponentialBackoffRetryStrategyConfig exponentialBackoffRetryStrategyConfig;
-    ExponentialBackoffStatus status;
-    UINT32 currentRetryCount;
-    // The system time at which last retry happened
-    UINT64 lastRetrySystemTime;
-    // The actual wait time for last retry
-    UINT64 lastRetryWaitTime;
-    // Lock to update operations
-    MUTEX retryStrategyLock;
-} ExponentialBackoffRetryStrategyState;
-typedef ExponentialBackoffRetryStrategyState* PExponentialBackoffRetryStrategyState;
-
 #define TO_EXPONENTIAL_BACKOFF_STATE(ptr)  ((PExponentialBackoffRetryStrategyState)(ptr))
 #define TO_EXPONENTIAL_BACKOFF_CONFIG(ptr) ((PExponentialBackoffRetryStrategyConfig)(ptr))
 
@@ -1725,9 +1725,10 @@ PUBLIC_API STATUS exponentialBackoffRetryStrategyBlockingWait(PRetryStrategy);
  * THREAD SAFE.
  *
  * @param 1 PRetryStrategy - IN - Exponential backoff object for which retry state is maintained
- * @return Retry count
+ * @param 2 PUINT32 - OUT - Retry count
+ * @return Status of the function call.
  */
-PUBLIC_API UINT32 getExponentialBackoffRetryCount(PRetryStrategy);
+PUBLIC_API STATUS getExponentialBackoffRetryCount(PRetryStrategy, PUINT32);
 /**
  * @brief Frees ExponentialBackoffState and its corresponding ExponentialBackoffConfig struct
  *
