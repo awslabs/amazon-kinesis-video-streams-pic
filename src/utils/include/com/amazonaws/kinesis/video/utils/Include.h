@@ -1520,12 +1520,13 @@ typedef STATUS (*ExecuteRetryStrategyFn)(PRetryStrategy, PUINT64);
  * A generic retry strategy
  */
 struct __KvsRetryStrategy {
-    // Retry strategy type as defined in the above enum
-    KVS_RETRY_STRATEGY_TYPE retryStrategyType;
     // Pointer to metadata/state/details for the retry strategy.
     // The actual data type is abstracted and will be inferred by
     // the RetryHandlerFn
     PRetryStrategy pRetryStrategy;
+
+    // Retry strategy type as defined in the above enum
+    KVS_RETRY_STRATEGY_TYPE retryStrategyType;
 
     // Pointer to the function to create new retry strategy
     CreateRetryStrategyFn createRetryStrategyFn;
@@ -1634,10 +1635,8 @@ typedef struct __ExponentialBackoffRetryStrategyConfig {
     // Factor determining random jitter value.
     // Jitter will be between [0, jitterFactor).
     UINT32  jitterFactor;
-} ExponentialBackoffRetryStrategyConfig;
-typedef ExponentialBackoffRetryStrategyConfig* PExponentialBackoffRetryStrategyConfig;
+} ExponentialBackoffRetryStrategyConfig, *PExponentialBackoffRetryStrategyConfig;
 
-#define TO_EXPONENTIAL_BACKOFF_STATE(ptr)  ((PExponentialBackoffRetryStrategyState)(ptr))
 #define TO_EXPONENTIAL_BACKOFF_CONFIG(ptr) ((PExponentialBackoffRetryStrategyConfig)(ptr))
 
 /**************************************************************************************************

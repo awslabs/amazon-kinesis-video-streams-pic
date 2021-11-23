@@ -12,6 +12,8 @@ extern "C" {
 
 #include "com/amazonaws/kinesis/video/utils/Include.h"
 
+#define TO_EXPONENTIAL_BACKOFF_STATE(ptr)  ((PExponentialBackoffRetryStrategyState)(ptr))
+
 /**
  * Thread wrapper for Windows
  */

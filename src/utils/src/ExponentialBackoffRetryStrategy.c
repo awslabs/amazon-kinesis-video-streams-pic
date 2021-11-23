@@ -232,15 +232,24 @@ CleanUp:
     return retStatus;
 }
 
-STATUS getExponentialBackoffRetryCount(PRetryStrategy pRetryStrategy, PUINT32 retryCount) {
+STATUS getExponentialBackoffRetryCount(PRetryStrategy pRetryStrategy, PUINT32 pRetryCount) {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
+    PKvsRetryStrategy pKvsRetryStrategy = NULL;
     PExponentialBackoffRetryStrategyState pRetryState = NULL;
+
+    CHK(pRetryStrategy != NULL && pRetryCount != NULL, STATUS_NULL_ARG);
+    pKvsRetryStrategy = (PKvsRetryStrategy)(pRetryStrategy);
     pRetryState = TO_EXPONENTIAL_BACKOFF_STATE(pRetryStrategy);
-    CHK(pRetryStrategy != NULL && pRetryState != NULL, STATUS_NULL_ARG);
+
+    // Only do the rest if exponential backoff wait strategy is used. This is to ensure the user does not set all callbacks
+    // to default and ends up disabling the retry strategy
+    CHK(pKvsRetryStrategy->retryStrategyType == KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT, STATUS_NOT_IMPLEMENTED);
+
     MUTEX_LOCK(pRetryState->retryStrategyLock);
-    *retryCount = pRetryState->currentRetryCount;
+    *pRetryCount = pRetryState->currentRetryCount;
     MUTEX_UNLOCK(pRetryState->retryStrategyLock);
+
 CleanUp:
     LEAVES();
     return retStatus;
