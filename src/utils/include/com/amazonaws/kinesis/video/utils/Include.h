@@ -1488,6 +1488,16 @@ typedef PUINT64 PRetryStrategyConfig;
 typedef STATUS (*CreateRetryStrategyFn)(PRetryStrategyConfig, PRetryStrategy*);
 
 /**
+ * Handler to get retry count
+ *
+ * @param 1 PRetryStrategy - IN - Retry strategy struct passed by the caller.
+ * @param 2 PUINT32 - OUT - retry count value
+ *
+ * @return Status of the callback
+ */
+typedef STATUS (*GetCurrentRetryAttemptNumberFn) (PRetryStrategy, PUINT32);
+
+/**
  * Handler to release resources associated with a retry strategy
  *
  * @param 1 PRetryStrategy* - Custom data passed by the caller.
@@ -1510,15 +1520,19 @@ typedef STATUS (*ExecuteRetryStrategyFn)(PRetryStrategy, PUINT64);
  * A generic retry strategy
  */
 struct __KvsRetryStrategy {
-    // Retry strategy type as defined in the above enum
-    KVS_RETRY_STRATEGY_TYPE retryStrategyType;
     // Pointer to metadata/state/details for the retry strategy.
     // The actual data type is abstracted and will be inferred by
     // the RetryHandlerFn
     PRetryStrategy pRetryStrategy;
 
+    // Retry strategy type as defined in the above enum
+    KVS_RETRY_STRATEGY_TYPE retryStrategyType;
+
     // Pointer to the function to create new retry strategy
     CreateRetryStrategyFn createRetryStrategyFn;
+
+    // Get retry count
+    GetCurrentRetryAttemptNumberFn getCurrentRetryAttemptNumberFn;
 
     // Pointer to the function to release allocated resources
     // associated with the retry strategy
@@ -1621,10 +1635,13 @@ typedef struct __ExponentialBackoffRetryStrategyConfig {
     // Factor determining random jitter value.
     // Jitter will be between [0, jitterFactor).
     UINT32  jitterFactor;
-} ExponentialBackoffRetryStrategyConfig;
-typedef ExponentialBackoffRetryStrategyConfig* PExponentialBackoffRetryStrategyConfig;
+} ExponentialBackoffRetryStrategyConfig, *PExponentialBackoffRetryStrategyConfig;
 
-typedef struct __ExponentialBackoffRetryStrategyState {
+#define TO_EXPONENTIAL_BACKOFF_STATE(ptr)  ((PExponentialBackoffRetryStrategyState)(ptr))
+#define TO_EXPONENTIAL_BACKOFF_CONFIG(ptr) ((PExponentialBackoffRetryStrategyConfig)(ptr))
+
+
+typedef struct {
     ExponentialBackoffRetryStrategyConfig exponentialBackoffRetryStrategyConfig;
     ExponentialBackoffStatus status;
     UINT32 currentRetryCount;
@@ -1634,11 +1651,7 @@ typedef struct __ExponentialBackoffRetryStrategyState {
     UINT64 lastRetryWaitTime;
     // Lock to update operations
     MUTEX retryStrategyLock;
-} ExponentialBackoffRetryStrategyState;
-typedef ExponentialBackoffRetryStrategyState* PExponentialBackoffRetryStrategyState;
-
-#define TO_EXPONENTIAL_BACKOFF_STATE(ptr)  ((PExponentialBackoffRetryStrategyState)(ptr))
-#define TO_EXPONENTIAL_BACKOFF_CONFIG(ptr) ((PExponentialBackoffRetryStrategyConfig)(ptr))
+} ExponentialBackoffRetryStrategyState, *PExponentialBackoffRetryStrategyState;
 
 /**************************************************************************************************
 API usage:
@@ -1719,6 +1732,16 @@ PUBLIC_API STATUS getExponentialBackoffRetryStrategyWaitTime(PRetryStrategy, PUI
  */
 PUBLIC_API STATUS exponentialBackoffRetryStrategyBlockingWait(PRetryStrategy);
 
+/**
+ * @brief Returns updated exponential backoff retry count when PRetryStrategy object is passed
+ *
+ * THREAD SAFE.
+ *
+ * @param 1 PRetryStrategy - IN - Exponential backoff object for which retry state is maintained
+ * @param 2 PUINT32 - OUT - Retry count
+ * @return Status of the function call.
+ */
+PUBLIC_API STATUS getExponentialBackoffRetryCount(PRetryStrategy, PUINT32);
 /**
  * @brief Frees ExponentialBackoffState and its corresponding ExponentialBackoffConfig struct
  *
