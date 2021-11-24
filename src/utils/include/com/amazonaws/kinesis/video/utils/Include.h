@@ -1540,32 +1540,13 @@ typedef struct __KvsRetryStrategy* PKvsRetryStrategy;
  */
 #define KVS_INFINITE_EXPONENTIAL_RETRIES 0
 
-/************************************************************************
- Following #define values are default configuration values for
- exponential backoff retries.
-
- With these values, the wait times will look like following -
-    ************************************
-    * Retry Count *      Wait time     *
-    * **********************************
-    *     1       *    300ms + jitter  *
-    *     2       *    600ms + jitter  *
-    *     3       *   1200ms + jitter  *
-    *     4       *   2400ms + jitter  *
-    *     5       *   4800ms + jitter  *
-    *     6       *   9600ms + jitter  *
-    *     7       *  10000ms + jitter  *
-    *     8       *  10000ms + jitter  *
-    *     9       *  10000ms + jitter  *
-    ************************************
- jitter = random number between [0, 300)ms.
-************************************************************************/
 /**
  * Factor for computing the exponential backoff wait time
  * The larger the value, the slower the retries will be.
  */
-#define DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS                  300
-#define LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS                    600
+#define MIN_KVS_RETRY_TIME_FACTOR_MILLISECONDS                       50
+#define LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS                    1000
+#define DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS                  LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS
 
 /**
  * Factor determining the curve of exponential wait time
@@ -1575,33 +1556,42 @@ typedef struct __KvsRetryStrategy* PKvsRetryStrategy;
 /**
  * Maximum exponential wait time. Once the exponential wait time
  * curve reaches this value, it stays at this value. This is
- * required to put a reasonable upper bound on wait time.
+ * required to put a reasonable upper bound on wait time. If not provided
+ * in the config, we'll use the default value
  */
-#define DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS                      15000
+#define MIN_KVS_MAX_WAIT_TIME_MILLISECONDS                      10000
+#define LIMIT_KVS_MAX_WAIT_TIME_MILLISECONDS                    25000
+#define DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS                  16000
+
 
 /**
  * Maximum time between two consecutive calls to exponentialBackoffBlockingWait
- * after which the retry count will be reset to initial state.
+ * after which the retry count will be reset to initial state. This is needed
+ * to restart the exponential wait time from base value if
  */
-#define DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS      25000
-
-/**
- * Time after which connection from SDK to the service will be terminated
- * if no data flows to the service
- */
-#define KVS_BACKEND_STREAMING_IDLE_TIMEOUT_MILLISECONDS             40000
+#define MIN_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS          90000
+#define LIMIT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS       120000
+#define DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS     MIN_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS
 
 /**
  * Factor to get a random jitter. Jitter values [0, 300).
+ * Only applicable for Fixed jitter variant
  */
-#define DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS                      300
+#define MIN_KVS_JITTER_FACTOR_MILLISECONDS                           50
 #define LIMIT_KVS_JITTER_FACTOR_MILLISECONDS                        600
+#define DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS                      300
 
 typedef enum {
     BACKOFF_NOT_STARTED     = (UINT16) 0x01,
     BACKOFF_IN_PROGRESS     = (UINT16) 0x02,
     BACKOFF_TERMINATED      = (UINT16) 0x03
 } ExponentialBackoffStatus;
+
+typedef enum {
+    FULL_JITTER     = (UINT16) 0x01,
+    FIXED_JITTER    = (UINT16) 0x02,
+    NO_JITTER       = (UINT16) 0x03,
+} ExponentialBackoffJitterType;
 
 typedef struct __ExponentialBackoffRetryStrategyConfig {
     // Max retries after which an error will be returned
@@ -1618,8 +1608,12 @@ typedef struct __ExponentialBackoffRetryStrategyConfig {
     // after which retry state will be reset i.e. retries
     // will start from initial retry state.
     UINT64  minTimeToResetRetryState;
+    // Jitter type indicating how much jitter to be added
+    // Default will be FULL_JITTER
+    ExponentialBackoffJitterType jitterType;
     // Factor determining random jitter value.
-    // Jitter will be between [0, jitterFactor).
+    // Jitter will be between [0, jitterFactor)
+    // This parameter is only valid for jitter type FIXED_JITTER
     UINT32  jitterFactor;
 } ExponentialBackoffRetryStrategyConfig;
 typedef ExponentialBackoffRetryStrategyConfig* PExponentialBackoffRetryStrategyConfig;
@@ -1639,6 +1633,32 @@ typedef ExponentialBackoffRetryStrategyState* PExponentialBackoffRetryStrategySt
 
 #define TO_EXPONENTIAL_BACKOFF_STATE(ptr)  ((PExponentialBackoffRetryStrategyState)(ptr))
 #define TO_EXPONENTIAL_BACKOFF_CONFIG(ptr) ((PExponentialBackoffRetryStrategyConfig)(ptr))
+
+/************************************************************************
+ With default exponential values, the wait times will look like following -
+    ************************************
+    * Retry Count *      Wait time     *
+    * **********************************
+    *     1       *   1000ms + jitter  *
+    *     2       *   2000ms + jitter  *
+    *     3       *   4000ms + jitter  *
+    *     4       *   8000ms + jitter  *
+    *     5       *  16000ms + jitter  *
+    *     6       *  16000ms + jitter  *
+    *     7       *  16000ms + jitter  *
+    *     8       *  16000ms + jitter  *
+    ************************************
+ for FULL_JITTER variant, jitter = random number between [0, wait time)
+ for FIXED_JITTER variant, jitter = random number between [0, DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS)
+************************************************************************/
+static const ExponentialBackoffRetryStrategyConfig DEFAULT_EXPONENTIAL_BACKOFF_CONFIGURATION = {
+        KVS_INFINITE_EXPONENTIAL_RETRIES, /* max retry count */
+        DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS, /* max retry wait time */
+        DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS, /* factor determining exponential curve */
+        DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS, /* minimum time to reset retry state */
+        FULL_JITTER, /* use full jitter variant */
+        0 /* jitter value unused for full jitter variant */
+};
 
 /**************************************************************************************************
 API usage:
