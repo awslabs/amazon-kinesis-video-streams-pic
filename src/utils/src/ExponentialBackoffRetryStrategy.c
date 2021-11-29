@@ -266,9 +266,9 @@ STATUS getExponentialBackoffRetryStrategyWaitTime(PRetryStrategy pRetryStrategy,
 
     DLOGD("\n Thread Id [%"PRIu64"] "
           "Number of retries [%"PRIu64"], "
-          "Retry wait time [%"PRIu64"], "
+          "Retry wait time [%"PRIu64"] ms, "
           "Retry system time [%"PRIu64"]",
-          GETTID(), pRetryState->currentRetryCount, pRetryState->lastRetryWaitTime, pRetryState->lastRetrySystemTime);
+          GETTID(), pRetryState->currentRetryCount, pRetryState->lastRetryWaitTime/HUNDREDS_OF_NANOS_IN_A_MILLISECOND, pRetryState->lastRetrySystemTime);
 
 CleanUp:
     if (retStatus == STATUS_EXPONENTIAL_BACKOFF_RETRIES_EXHAUSTED) {

@@ -86,7 +86,7 @@ struct __StateMachineState {
     GetNextStateFunc getNextStateFn;
     ExecuteStateFunc executeStateFn;
     StateTransitionHookFunc stateTransitionHookFunc;
-    UINT32 retry;
+    UINT32 maxLocalStateRetryCount;
     STATUS status;
 };
 typedef struct __StateMachineState* PStateMachineState;
