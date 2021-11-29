@@ -127,7 +127,7 @@ STATUS configureClientWithRetryStrategy(PKinesisVideoClient pKinesisVideoClient)
 
     if (pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.createRetryStrategyFn != NULL) {
         CHK_STATUS(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.createRetryStrategyFn(
-            NULL /* use default retry strategy configuration */, &pRetryStrategy));
+                (PRetryStrategyConfig)&DEFAULT_STATE_MACHINE_EXPONENTIAL_BACKOFF_RETRY_CONFIGURATION, &pRetryStrategy));
         pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.pRetryStrategy = pRetryStrategy;
     }
 
