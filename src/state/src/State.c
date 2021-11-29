@@ -136,7 +136,7 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
     UINT64 nextState, time;
     UINT64 customData;
     PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
-    UINT64 errorStateTransitionWaitTime;
+    UINT64 errorStateTransitionWaitTime = 0;
 
     CHK(pStateMachineImpl != NULL, STATUS_NULL_ARG);
     customData = pStateMachineImpl->customData;
@@ -153,37 +153,42 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
     // Clear the iteration info if a different state and transition the state
     time = pStateMachineImpl->getCurrentTimeFunc(pStateMachineImpl->getCurrentTimeFuncCustomData);
 
-    // Check if we are changing the state
-    if (pState->state != pStateMachineImpl->context.pCurrentState->state) {
-        // Clear the iteration data
-        pStateMachineImpl->context.retryCount = 0;
-        pStateMachineImpl->context.time = time;
-
-        // Call the state machine error handler
-        // This call could be a no-op if the state transition is happening for SERVICE_CALL_RESULT_OK code
-        if (pStateMachineImpl->context.pCurrentState->stateTransitionHookFunc != NULL) {
-            CHK_STATUS(pStateMachineImpl->context.pCurrentState->stateTransitionHookFunc(pStateMachineImpl->customData, &errorStateTransitionWaitTime));
-            pStateMachineImpl->context.time = time + errorStateTransitionWaitTime;
-        }
-
-        DLOGD("State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64, pStateMachineImpl->context.pCurrentState->state,
-              nextState);
-    } else {
-        // Increment the state retry count
-        pStateMachineImpl->context.retryCount++;
-        pStateMachineImpl->context.time = time + NEXT_SERVICE_CALL_RETRY_DELAY(pStateMachineImpl->context.retryCount);
-
-        // Check if we have tried enough times
-        if (pState->retry != INFINITE_RETRY_COUNT_SENTINEL) {
-            CHK(pStateMachineImpl->context.retryCount <= pState->retry, pState->status);
-        }
+    // This stateTransitionHookFunc will return state transition wait time if the state transition is happening for non 200 service response
+    // For 200 service response, errorStateTransitionWaitTime will be 0.
+    if (pStateMachineImpl->context.pCurrentState->stateTransitionHookFunc != NULL) {
+        CHK_STATUS(pStateMachineImpl->context.pCurrentState->stateTransitionHookFunc(pStateMachineImpl->customData, &errorStateTransitionWaitTime));
     }
 
+    // Check if we are changing the state
+    if (pState->state != pStateMachineImpl->context.pCurrentState->state) {
+        // Since we're transitioning to a different state from this state, reset the local state retry count to0
+        pStateMachineImpl->context.localStateRetryCount = 0;
+    } else {
+        // Increment the local state retry count.
+        // Local state retry count determines the number of retries done within the same state.
+        pStateMachineImpl->context.localStateRetryCount++;
+    }
+
+    DLOGV("State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64 ", "
+          "Current local state retry count [%u], Max local state retry count [%u], State transition wait time [" PRIx64 "] ms",
+          pStateMachineImpl->context.pCurrentState->state,
+          nextState,
+          pStateMachineImpl->context.localStateRetryCount,
+          pState->maxLocalStateRetryCount,
+          errorStateTransitionWaitTime/HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+
+    // Check if we have tried enough times within the same state
+    if (pState->maxLocalStateRetryCount != INFINITE_RETRY_COUNT_SENTINEL) {
+        CHK(pStateMachineImpl->context.localStateRetryCount <= pState->maxLocalStateRetryCount, pState->status);
+    }
+
+    pStateMachineImpl->context.stateTransitionWaitTime = time + errorStateTransitionWaitTime;
     pStateMachineImpl->context.pCurrentState = pState;
 
     // Execute the state function if specified
+    // The executeStateFn callback is expected to wait for stateTransitionWaitTime before executing the actual logic
     if (pStateMachineImpl->context.pCurrentState->executeStateFn != NULL) {
-        CHK_STATUS(pStateMachineImpl->context.pCurrentState->executeStateFn(pStateMachineImpl->customData, pStateMachineImpl->context.time));
+        CHK_STATUS(pStateMachineImpl->context.pCurrentState->executeStateFn(pStateMachineImpl->customData, pStateMachineImpl->context.stateTransitionWaitTime));
     }
 
 CleanUp:
@@ -247,8 +252,8 @@ STATUS resetStateMachineRetryCount(PStateMachine pStateMachine)
     CHK(pStateMachineImpl != NULL, STATUS_NULL_ARG);
 
     // Reset the state
-    pStateMachineImpl->context.retryCount = 0;
-    pStateMachineImpl->context.time = 0;
+    pStateMachineImpl->context.localStateRetryCount = 0;
+    pStateMachineImpl->context.stateTransitionWaitTime = 0;
 
 CleanUp:
 
