@@ -239,7 +239,6 @@ STATUS getExponentialBackoffRetryCount(PRetryStrategy pRetryStrategy, PUINT32 pR
     CHK(pRetryStrategy != NULL && pRetryCount != NULL, STATUS_NULL_ARG);
     pRetryState = TO_EXPONENTIAL_BACKOFF_STATE(pRetryStrategy);
     MUTEX_LOCK(pRetryState->retryStrategyLock);
-    DLOGD("Retry count: %d", pRetryState->currentRetryCount);
     *pRetryCount = pRetryState->currentRetryCount;
     MUTEX_UNLOCK(pRetryState->retryStrategyLock);
 

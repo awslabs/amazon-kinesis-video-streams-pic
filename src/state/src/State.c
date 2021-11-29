@@ -171,13 +171,8 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
     } else {
         // Increment the state retry count
         pStateMachineImpl->context.retryCount++;
-//        pStateMachineImpl->context.time = time + NEXT_SERVICE_CALL_RETRY_DELAY(pStateMachineImpl->context.retryCount);
-        // Call the state machine error handler
-        // This call could be a no-op if the state transition is happening for SERVICE_CALL_RESULT_OK code
-        if (pStateMachineImpl->context.pCurrentState->stateTransitionHookFunc != NULL) {
-            CHK_STATUS(pStateMachineImpl->context.pCurrentState->stateTransitionHookFunc(pStateMachineImpl->customData, &errorStateTransitionWaitTime));
-            pStateMachineImpl->context.time = time + errorStateTransitionWaitTime;
-        }
+        pStateMachineImpl->context.time = time + NEXT_SERVICE_CALL_RETRY_DELAY(pStateMachineImpl->context.retryCount);
+
         // Check if we have tried enough times
         if (pState->retry != INFINITE_RETRY_COUNT_SENTINEL) {
             CHK(pStateMachineImpl->context.retryCount <= pState->retry, pState->status);
