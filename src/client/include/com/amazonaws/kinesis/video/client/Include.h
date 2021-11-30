@@ -1171,8 +1171,8 @@ typedef struct __ClientInfo {
     // Retry strategy for the client and all the streams under it
     KvsRetryStrategy kvsRetryStrategy;
 
-    // Function pointer for application to provide a custom retry strategy
-    GetKvsRetryStrategyFn getKvsRetryStrategyFn;
+    // Function pointers for application to provide a custom retry strategy
+    KvsRetryStrategyCallbacks kvsRetryStrategyCallbacks;
 } ClientInfo, *PClientInfo;
 
 /**

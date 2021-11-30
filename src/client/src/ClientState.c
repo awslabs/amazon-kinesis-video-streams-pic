@@ -83,12 +83,14 @@ STATUS defaultClientStateTransitionHook(
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = NULL;
     PKvsRetryStrategy pKvsRetryStrategy = NULL;
+    PKvsRetryStrategyCallbacks pKvsRetryStrategyCallbacks = NULL;
     UINT64 retryWaitTime = 0;
 
     pKinesisVideoClient = CLIENT_FROM_CUSTOM_DATA(customData);
     CHK(pKinesisVideoClient != NULL && stateTransitionWaitTime != NULL, STATUS_NULL_ARG);
 
     pKvsRetryStrategy = &(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy);
+    pKvsRetryStrategyCallbacks = &(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategyCallbacks);
 
     // result > SERVICE_CALL_RESULT_OK covers case for -
     // result != SERVICE_CALL_RESULT_NOT_SET and != SERVICE_CALL_RESULT_OK
@@ -97,11 +99,12 @@ STATUS defaultClientStateTransitionHook(
     CHK(pKinesisVideoClient->base.result > SERVICE_CALL_RESULT_OK &&
             pKvsRetryStrategy != NULL &&
             pKvsRetryStrategy->pRetryStrategy != NULL &&
-            pKvsRetryStrategy->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
+            pKvsRetryStrategyCallbacks->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
 
-    DLOGD("KinesisVideoClient base result is [%u]. Executing KVS retry handler of retry strategy type [%u]",
+    DLOGV("KinesisVideoClient base result is [%u]. Executing KVS retry handler of retry strategy type [%u]",
           pKinesisVideoClient->base.result, pKvsRetryStrategy->retryStrategyType);
-    pKvsRetryStrategy->executeRetryStrategyFn(pKvsRetryStrategy->pRetryStrategy, &retryWaitTime);
+
+    pKvsRetryStrategyCallbacks->executeRetryStrategyFn(pKvsRetryStrategy, &retryWaitTime);
     *stateTransitionWaitTime = retryWaitTime;
 
 CleanUp:
