@@ -183,9 +183,13 @@ TEST_F(ExponentialBackoffUtilsTest, testExponentialBackoffBlockingWait_Unbounded
     };
 
     UINT64 retryWaitTimeToVerify;
+    UINT32 actualRetryCount = 0;
     for (int retryCount = 0; retryCount < 7; retryCount++) {
         retryWaitTimeToVerify = 0;
         EXPECT_EQ(STATUS_SUCCESS, getExponentialBackoffRetryStrategyWaitTime(&kvsRetryStrategy, &retryWaitTimeToVerify));
+        EXPECT_EQ(STATUS_SUCCESS, getExponentialBackoffRetryCount(&kvsRetryStrategy, &actualRetryCount));
+
+        EXPECT_EQ(retryCount + 1, actualRetryCount);
         validateExponentialBackoffWaitTime(
                 pExponentialBackoffRetryStrategyState,
                 retryWaitTimeToVerify,
@@ -240,9 +244,13 @@ TEST_F(ExponentialBackoffUtilsTest, testExponentialBackoffBlockingWait_Bounded)
     };
 
     UINT64 retryWaitTimeToVerify;
+    UINT32 actualRetryCount = 0;
     for (int retryCount = 0; retryCount < maxTestRetryCount; retryCount++) {
         retryWaitTimeToVerify = 0;
         EXPECT_EQ(STATUS_SUCCESS, getExponentialBackoffRetryStrategyWaitTime(&kvsRetryStrategy, &retryWaitTimeToVerify));
+        EXPECT_EQ(STATUS_SUCCESS, getExponentialBackoffRetryCount(&kvsRetryStrategy, &actualRetryCount));
+
+        EXPECT_EQ(retryCount + 1, actualRetryCount);
         validateExponentialBackoffWaitTime(
                 pExponentialBackoffRetryStrategyState,
                 retryWaitTimeToVerify,
@@ -293,9 +301,13 @@ TEST_F(ExponentialBackoffUtilsTest, testExponentialBackoffBlockingWait_FullJitte
     };
 
     UINT64 retryWaitTimeToVerify;
+    UINT32 actualRetryCount = 0;
     for (int retryCount = 0; retryCount < maxTestRetryCount; retryCount++) {
         retryWaitTimeToVerify = 0;
         EXPECT_EQ(STATUS_SUCCESS, getExponentialBackoffRetryStrategyWaitTime(&kvsRetryStrategy, &retryWaitTimeToVerify));
+        EXPECT_EQ(STATUS_SUCCESS, getExponentialBackoffRetryCount(&kvsRetryStrategy, &actualRetryCount));
+
+        EXPECT_EQ(retryCount + 1, actualRetryCount);
         validateExponentialBackoffWaitTime(
                 pExponentialBackoffRetryStrategyState,
                 retryWaitTimeToVerify,

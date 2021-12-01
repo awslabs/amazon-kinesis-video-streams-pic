@@ -216,18 +216,15 @@ STATUS getExponentialBackoffRetryStrategyWaitTime(PKvsRetryStrategy pKvsRetryStr
     PExponentialBackoffRetryStrategyConfig pRetryConfig = NULL;
     UINT64 currentSystemTime = 0, currentRetryWaitTime = 0, jitter = 0;
     STATUS retStatus = STATUS_SUCCESS;
+    BOOL retryStrategyLocked = FALSE;
 
-    // CAUTION: DO NOT use CHK/CHK_STATUS macros here. In the code below, we're acquiring mutex which is getting
-    // released in CleanUp section. Jump from here to CleanUp will result in releasing of the mutex which is not acquired.
-    if (pKvsRetryStrategy == NULL || retryWaitTime == NULL) {
-        return STATUS_NULL_ARG;
-    }
-
-    if (pKvsRetryStrategy->retryStrategyType != KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT) {
-        return STATUS_INVALID_ARG;
-    }
+    CHK(pKvsRetryStrategy != NULL && retryWaitTime != NULL, STATUS_NULL_ARG);
+    CHK(pKvsRetryStrategy->retryStrategyType == KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT, STATUS_INVALID_ARG);
 
     pRetryState = TO_EXPONENTIAL_BACKOFF_STATE(pKvsRetryStrategy->pRetryStrategy);
+
+    CHK(retryStrategyLocked == FALSE, STATUS_INTERNAL_ERROR);
+    retryStrategyLocked = TRUE;
     MUTEX_LOCK(pRetryState->retryStrategyLock);
 
     CHK_STATUS(validateAndUpdateExponentialBackoffStatus(pRetryState));
@@ -287,7 +284,10 @@ CleanUp:
         resetExponentialBackoffRetryState(pRetryState);
     }
 
-    MUTEX_UNLOCK(pRetryState->retryStrategyLock);
+    if (retryStrategyLocked) {
+        MUTEX_UNLOCK(pRetryState->retryStrategyLock);
+    }
+
     LEAVES();
     return retStatus;
 }
@@ -298,7 +298,7 @@ STATUS getExponentialBackoffRetryCount(PKvsRetryStrategy pKvsRetryStrategy, PUIN
     PExponentialBackoffRetryStrategyState pRetryState = NULL;
 
     CHK(pKvsRetryStrategy != NULL && pRetryCount != NULL, STATUS_NULL_ARG);
-    CHK(pKvsRetryStrategy->retryStrategyType != KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT, STATUS_INVALID_ARG);
+    CHK(pKvsRetryStrategy->retryStrategyType == KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT, STATUS_INVALID_ARG);
 
     pRetryState = TO_EXPONENTIAL_BACKOFF_STATE(pKvsRetryStrategy->pRetryStrategy);
     MUTEX_LOCK(pRetryState->retryStrategyLock);
