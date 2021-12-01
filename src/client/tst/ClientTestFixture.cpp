@@ -440,30 +440,33 @@ STATUS ClientTestBase::fragmentAckReceivedFunc(UINT64 customData,
     return STATUS_SUCCESS;
 }
 
-STATUS ClientTestBase::getClientRetryStrategyFn(CLIENT_HANDLE clientHandle) {
+STATUS ClientTestBase::createRetryStrategyFn(PKvsRetryStrategy pKvsRetryStrategy) {
     STATUS retStatus = STATUS_SUCCESS;
-    PKinesisVideoClient pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);
-    pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.createRetryStrategyFn = NULL;
-    pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.freeRetryStrategyFn = exponentialBackoffRetryStrategyFree;
-    pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.executeRetryStrategyFn = getExponentialBackoffRetryStrategyWaitTime;
-    pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.retryStrategyType = KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT;
+    PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState = NULL;
 
-    PRetryStrategy pRetryStrategy = NULL;
-    retStatus = exponentialBackoffRetryStrategyCreate(NULL, &pRetryStrategy);
-    if (retStatus != STATUS_SUCCESS) {
-        return retStatus;
-    }
+    CHK_STATUS(exponentialBackoffRetryStrategyCreate(pKvsRetryStrategy));
+    CHK(pKvsRetryStrategy->retryStrategyType == KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT, STATUS_INTERNAL_ERROR);
 
-    pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.pRetryStrategy = pRetryStrategy;
-    PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState = TO_EXPONENTIAL_BACKOFF_STATE(pRetryStrategy);
-    // Change retry wait time factor time from default 300ms to 20ms
-    pExponentialBackoffRetryStrategyState->exponentialBackoffRetryStrategyConfig.retryFactorTime = HUNDREDS_OF_NANOS_IN_A_MILLISECOND * 20;
-    // Change max retry wait time from default 10 seconds to 100ms
+    pExponentialBackoffRetryStrategyState = TO_EXPONENTIAL_BACKOFF_STATE(pKvsRetryStrategy->pRetryStrategy);
+
+    // Overwrite retry config to avoid slow long running tests
+    pExponentialBackoffRetryStrategyState->exponentialBackoffRetryStrategyConfig.retryFactorTime = HUNDREDS_OF_NANOS_IN_A_MILLISECOND * 5;
     pExponentialBackoffRetryStrategyState->exponentialBackoffRetryStrategyConfig.maxRetryWaitTime = HUNDREDS_OF_NANOS_IN_A_MILLISECOND * 100;
-    // Change default jitter from 300 to 2
-    pExponentialBackoffRetryStrategyState->exponentialBackoffRetryStrategyConfig.jitterFactor = 2;
 
+CleanUp:
     return STATUS_SUCCESS;
+}
+
+STATUS ClientTestBase::getCurrentRetryAttemptNumberFn(PKvsRetryStrategy pKvsRetryStrategy, PUINT32 pRetryCount) {
+    return getExponentialBackoffRetryCount(pKvsRetryStrategy, pRetryCount);
+}
+
+STATUS ClientTestBase::freeRetryStrategyFn(PKvsRetryStrategy pKvsRetryStrategy) {
+    return exponentialBackoffRetryStrategyFree(pKvsRetryStrategy);
+}
+
+STATUS ClientTestBase::executeRetryStrategyFn(PKvsRetryStrategy pKvsRetryStrategy, PUINT64 retryWaitTime) {
+    return getExponentialBackoffRetryStrategyWaitTime(pKvsRetryStrategy, retryWaitTime);
 }
 
 STATUS ClientTestBase::clientReadyFunc(UINT64 customData, CLIENT_HANDLE clientHandle)

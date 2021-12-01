@@ -416,7 +416,11 @@ class ClientTestBase : public ::testing::Test {
         mDeviceInfo.clientInfo.metricLoggingPeriod = 1 * HUNDREDS_OF_NANOS_IN_A_MINUTE;
         mDeviceInfo.clientInfo.automaticStreamingFlags = AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER;
         mDeviceInfo.clientInfo.reservedCallbackPeriod = INTERMITTENT_PRODUCER_PERIOD_DEFAULT;
-        mDeviceInfo.clientInfo.getKvsRetryStrategyFn = getClientRetryStrategyFn;
+
+        mDeviceInfo.clientInfo.kvsRetryStrategyCallbacks.createRetryStrategyFn = createRetryStrategyFn;
+        mDeviceInfo.clientInfo.kvsRetryStrategyCallbacks.getCurrentRetryAttemptNumberFn = getCurrentRetryAttemptNumberFn;
+        mDeviceInfo.clientInfo.kvsRetryStrategyCallbacks.freeRetryStrategyFn = freeRetryStrategyFn;
+        mDeviceInfo.clientInfo.kvsRetryStrategyCallbacks.executeRetryStrategyFn = executeRetryStrategyFn;
 
         // Initialize stream info
         mStreamInfo.version = STREAM_INFO_CURRENT_VERSION;
@@ -1051,7 +1055,10 @@ class ClientTestBase : public ::testing::Test {
 
     static STATUS fragmentAckReceivedFunc(UINT64, STREAM_HANDLE, UPLOAD_HANDLE, PFragmentAck);
 
-    static STATUS getClientRetryStrategyFn(CLIENT_HANDLE);
+    static STATUS createRetryStrategyFn(PKvsRetryStrategy);
+    static STATUS getCurrentRetryAttemptNumberFn(PKvsRetryStrategy, PUINT32);
+    static STATUS freeRetryStrategyFn(PKvsRetryStrategy);
+    static STATUS executeRetryStrategyFn(PKvsRetryStrategy, PUINT64);
 
     static STATUS clientShutdownFunc(UINT64, CLIENT_HANDLE);
     static STATUS streamShutdownFunc(UINT64, STREAM_HANDLE, BOOL);

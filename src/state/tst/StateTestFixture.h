@@ -30,8 +30,8 @@ typedef struct {
 } TestTransitions, *PTestTransitions;
 
 typedef struct {
-    UINT32 errorHandlerExecutionCount;
-} StateTransitionsTestErrorHandlerData;
+    UINT32 hookFunctionExecutionCountForNon200Response;
+} StateTransitionsHookFunctionMetadata;
 
 class StateTestBase : public ::testing::Test {
   public:
@@ -45,7 +45,7 @@ class StateTestBase : public ::testing::Test {
         mTestTransitions[4].nextState = TEST_STATE_5;
         mTestTransitions[5].nextState = TEST_STATE_0;
 
-        testErrorHandlerMetaData.errorHandlerExecutionCount = 0;
+        stateTransitionsHookFunctionMetadata.hookFunctionExecutionCountForNon200Response = 0;
     }
 
     UINT32 GetCurrentStateIndex()
@@ -71,7 +71,7 @@ class StateTestBase : public ::testing::Test {
     TestTransitions mTestTransitions[TEST_STATE_COUNT];
     PStateMachine mStateMachine;
 
-    StateTransitionsTestErrorHandlerData testErrorHandlerMetaData;
+    StateTransitionsHookFunctionMetadata stateTransitionsHookFunctionMetadata;
     UINT32 testServiceAPICallResult;
 
   protected:
