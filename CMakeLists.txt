@@ -52,7 +52,7 @@ if(ADDRESS_SANITIZER)
   enableSanitizer("address")
 endif()
 if(MEMORY_SANITIZER)
-  enableSanitizer("memory")
+  enableSanitizer("leak")
 endif()
 if(THREAD_SANITIZER)
   enableSanitizer("thread")
@@ -86,6 +86,7 @@ endif()
 
 set(KINESIS_VIDEO_PIC_SRC ${CMAKE_CURRENT_SOURCE_DIR})
 
+set(CMAKE_THREAD_LIBS_INIT "-lpthread")
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads)
 
