@@ -221,13 +221,13 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     // Copy the structures in their entirety
     MEMCPY(&pKinesisVideoClient->clientCallbacks, pClientCallbacks, SIZEOF(ClientCallbacks));
 
-    CHK_STATUS(configureClientWithRetryStrategy(pKinesisVideoClient));
-
     // Fix-up the defaults if needed
     // IMPORTANT!!! The calloc allocator will zero the memory which will also act as a
     // sentinel value in case of an earlier version of the structure
     // is used and the remaining fields are not copied
     fixupDeviceInfo(&pKinesisVideoClient->deviceInfo, pDeviceInfo);
+
+    CHK_STATUS(configureClientWithRetryStrategy(pKinesisVideoClient));
 
     // Fix-up the name of the device if not specified
     if (pKinesisVideoClient->deviceInfo.name[0] == '\0') {
