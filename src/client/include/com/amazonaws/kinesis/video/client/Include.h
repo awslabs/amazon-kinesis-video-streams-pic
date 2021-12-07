@@ -656,6 +656,12 @@ typedef enum {
 
     // Forbidden
     SERVICE_CALL_FORBIDDEN = 403,
+    
+    // Security Credentials Expired
+    SERVICE_CALL_SIGNATURE_EXPIRED = 10008,
+
+    // device time ahead of server
+    SERVICE_CALL_SIGNATURE_NOT_YET_CURRENT = 10009,
 
     // Device not provisioned
     SERVICE_CALL_DEVICE_NOT_PROVISIONED = 10004,
