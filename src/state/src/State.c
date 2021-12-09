@@ -170,7 +170,7 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
     }
 
     DLOGV("State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64 ", "
-          "Current local state retry count [%u], Max local state retry count [%u], State transition wait time [" PRIx64 "] ms",
+          "Current local state retry count [%u], Max local state retry count [%u], State transition wait time [%u] ms",
           pStateMachineImpl->context.pCurrentState->state,
           nextState,
           pStateMachineImpl->context.localStateRetryCount,
