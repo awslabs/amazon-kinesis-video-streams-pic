@@ -9,16 +9,20 @@ on:
       - master
 jobs:
   clang-format-check:
-    runs-on: macos-11
+    runs-on: ubuntu-latest
+    env:
+      CC: clang
     steps:
       - name: Clone repository
         uses: actions/checkout@v2
       - name: Install clang-format
         run: |
-          brew install clang-format
-          clang-format --version
+          sudo apt-get -q update
+          sudo apt-get -y install clang-format
+          mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TEST=TRUE
       - name: Run clang format check
         run: |
+          cd ..
           bash scripts/check-clang.sh
 
   mac-os-catalina-build-gcc:
