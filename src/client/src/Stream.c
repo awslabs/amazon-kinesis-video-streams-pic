@@ -710,13 +710,13 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     DLOGD("\tAverage Data Plane API latency (ms): %" PRIu64 " ", streamMetrics.dataApiCallLatency / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     // V2 stream information
-    DLOGD("\tCurrent elementary frame rate (fps): %f ", streamMetrics.elementaryFrameRate);
+    DLOGD("\tCurrent elementary frame rate (fps): %lf ", streamMetrics.elementaryFrameRate);
 
     // V3 stream information
     DLOGD("\tAPI Call Retry Count : %lu", streamMetrics.streamApiCallRetryCount);
 
     // V1 client information
-    DLOGD("\tTotal elementary frame rate (fps): %f ", clientMetrics.totalElementaryFrameRate);
+    DLOGD("\tTotal elementary frame rate (fps): %lf ", clientMetrics.totalElementaryFrameRate);
 
     // V2 client information
     DLOGD("\tAverage API call retry count for client: %lf", clientMetrics.clientAvgApiCallRetryCount);
