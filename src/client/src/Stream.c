@@ -713,7 +713,7 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     DLOGD("\tCurrent elementary frame rate (fps): %f ", streamMetrics.elementaryFrameRate);
 
     // V3 stream information
-    DLOGD("\tAPI Call Retry Count : %llu", streamMetrics.streamApiCallRetryCount);
+    DLOGD("\tAPI Call Retry Count : %lu", streamMetrics.streamApiCallRetryCount);
 
     // V1 client information
     DLOGD("\tTotal elementary frame rate (fps): %f ", clientMetrics.totalElementaryFrameRate);

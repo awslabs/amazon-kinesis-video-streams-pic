@@ -139,12 +139,13 @@ STATUS defaultStreamStateTransitionHook(
             pKvsRetryStrategy->pRetryStrategy != NULL &&
             pKvsRetryStrategyCallbacks->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
 
+
     if(pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn != NULL) {
         if((countStatus = pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn(pKvsRetryStrategy, &pKinesisVideoStream->diagnostics.streamApiCallRetryCount)) != STATUS_SUCCESS) {
             DLOGW("Failed to get retry count. Error code: %08x", countStatus);
         }
         else {
-            DLOGD("Stream state machine retry count: %lu ", pKinesisVideoStream->diagnostics.streamApiCallRetryCount);
+            DLOGD("Stream state machine retry count: %lu", pKinesisVideoStream->diagnostics.streamApiCallRetryCount);
         }
     }
 
