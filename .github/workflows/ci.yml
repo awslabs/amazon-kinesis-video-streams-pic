@@ -1,4 +1,4 @@
-name: WebRTC C SDK CI
+name: PIC CI
 
 on:
   push:
