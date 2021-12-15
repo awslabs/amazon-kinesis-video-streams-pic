@@ -114,6 +114,7 @@ STATUS defaultStreamStateTransitionHook(
         PUINT64 stateTransitionWaitTime) {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
+    STATUS countStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = NULL;
     PKinesisVideoClient pKinesisVideoClient = NULL;
     PKvsRetryStrategy pKvsRetryStrategy = NULL;
@@ -137,6 +138,16 @@ STATUS defaultStreamStateTransitionHook(
             pKvsRetryStrategy != NULL &&
             pKvsRetryStrategy->pRetryStrategy != NULL &&
             pKvsRetryStrategyCallbacks->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
+
+
+    if(pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn != NULL) {
+        if((countStatus = pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn(pKvsRetryStrategy, &pKinesisVideoStream->diagnostics.streamApiCallRetryCount)) != STATUS_SUCCESS) {
+            DLOGW("Failed to get retry count. Error code: %08x", countStatus);
+        }
+        else {
+            DLOGD("Stream state machine retry count: %lu", pKinesisVideoStream->diagnostics.streamApiCallRetryCount);
+        }
+    }
 
     DLOGD("\n KinesisVideoStream base result is [%u]. Executing KVS retry handler of retry strategy type [%u]",
           pKinesisVideoStream->base.result, pKvsRetryStrategy->retryStrategyType);

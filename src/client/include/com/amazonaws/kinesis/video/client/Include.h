@@ -456,8 +456,8 @@ extern "C" {
 #define SERVICE_CALL_CONTEXT_CURRENT_VERSION  0
 #define STREAM_DESCRIPTION_CURRENT_VERSION    1
 #define FRAGMENT_ACK_CURRENT_VERSION          0
-#define STREAM_METRICS_CURRENT_VERSION        2
-#define CLIENT_METRICS_CURRENT_VERSION        1
+#define STREAM_METRICS_CURRENT_VERSION        3
+#define CLIENT_METRICS_CURRENT_VERSION        2
 #define CLIENT_INFO_CURRENT_VERSION           2
 #define STREAM_EVENT_METADATA_CURRENT_VERSION 0
 
@@ -1221,6 +1221,9 @@ struct __ClientMetrics {
     // Version of the struct
     UINT32 version;
 
+    // API Call retry count for a client
+    DOUBLE clientAvgApiCallRetryCount;
+
     // Overall content store allocation size
     UINT64 contentStoreSize;
 
@@ -1341,6 +1344,9 @@ struct __StreamMetrics {
 
     // Current stream's elementary frame rate.
     DOUBLE elementaryFrameRate;
+
+    // V3 metrics following
+    UINT32 streamApiCallRetryCount;
 };
 
 typedef struct __StreamMetrics* PStreamMetrics;

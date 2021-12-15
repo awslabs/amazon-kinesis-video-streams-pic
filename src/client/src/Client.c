@@ -430,6 +430,7 @@ STATUS getKinesisVideoMetrics(CLIENT_HANDLE clientHandle, PClientMetrics pKinesi
     STATUS retStatus = STATUS_SUCCESS;
     UINT64 heapSize;
     UINT32 i, viewAllocationSize;
+    UINT32 totalClientRetryCount = 0;
     PKinesisVideoClient pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);
     BOOL releaseClientSemaphore = FALSE, locked = FALSE;
 
@@ -452,7 +453,7 @@ STATUS getKinesisVideoMetrics(CLIENT_HANDLE clientHandle, PClientMetrics pKinesi
     pKinesisVideoMetrics->totalContentViewsSize = 0;
     pKinesisVideoMetrics->totalTransferRate = 0;
     pKinesisVideoMetrics->totalFrameRate = 0;
-    //    pKinesisVideoMetrics->totalElementaryFrameRate = 0;
+    pKinesisVideoMetrics->totalElementaryFrameRate = 0;
 
     // Lock the client streams list lock because we're iterating over
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
@@ -462,6 +463,9 @@ STATUS getKinesisVideoMetrics(CLIENT_HANDLE clientHandle, PClientMetrics pKinesi
         if (NULL != pKinesisVideoClient->streams[i]) {
             CHK_STATUS(contentViewGetAllocationSize(pKinesisVideoClient->streams[i]->pView, &viewAllocationSize));
             switch (pKinesisVideoMetrics->version) {
+                case 2:
+                    totalClientRetryCount += pKinesisVideoClient->streams[i]->diagnostics.streamApiCallRetryCount;
+                    // explicit fall through since V2 would include V1 and V0 metrics as well
                 case 1:
                     pKinesisVideoMetrics->totalElementaryFrameRate += pKinesisVideoClient->streams[i]->diagnostics.elementaryFrameRate;
                     // explicit fall through since V1 would include V0 metrics as well
@@ -475,6 +479,8 @@ STATUS getKinesisVideoMetrics(CLIENT_HANDLE clientHandle, PClientMetrics pKinesi
             }
         }
     }
+
+    pKinesisVideoMetrics->clientAvgApiCallRetryCount = (DOUBLE) totalClientRetryCount / (DOUBLE) pKinesisVideoClient->deviceInfo.streamCount;
 
     // Unlock client streams list lock after iteration.
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
