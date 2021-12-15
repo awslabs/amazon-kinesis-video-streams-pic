@@ -144,7 +144,7 @@ STATUS defaultStreamStateTransitionHook(
             DLOGW("Failed to get retry count. Error code: %08x", countStatus);
         }
         else {
-            DLOGD("Client state machine retry count: %llu", pKinesisVideoStream->diagnostics.streamApiCallRetryCount);
+            DLOGD("Stream state machine retry count: %lu ", pKinesisVideoStream->diagnostics.streamApiCallRetryCount);
         }
     }
 
