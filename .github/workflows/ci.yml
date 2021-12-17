@@ -16,7 +16,6 @@ jobs:
       - name: Install clang-format
         run: |
           brew install clang-format@8
-          clang-format --version
       - name: Run clang format check
         run: |
           bash scripts/check-clang.sh
