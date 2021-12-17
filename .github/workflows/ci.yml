@@ -9,20 +9,16 @@ on:
       - master
 jobs:
   clang-format-check:
-    runs-on: ubuntu-latest
-    env:
-      CC: clang
+    runs-on: macos-11
     steps:
       - name: Clone repository
         uses: actions/checkout@v2
       - name: Install clang-format
         run: |
-          sudo apt-get -q update
-          sudo apt-get -y install clang-format
-          mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TEST=TRUE
+          brew install clang-format
+          clang-format --version
       - name: Run clang format check
         run: |
-          cd ..
           bash scripts/check-clang.sh
 
   mac-os-catalina-build-gcc:
@@ -104,6 +100,9 @@ jobs:
           cd build
           cmake .. -DBUILD_TEST=TRUE -DUNDEFINED_BEHAVIOR_SANITIZER=TRUE
           export AWS_KVS_LOG_LEVEL=7
+          export CPATH=/usr/local/include
+          export LIBRARY_PATH=/usr/local/lib
+          export LD_LIBRARY_PATH=/usr/local/lib
           make
           ulimit -c unlimited -S
           timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
@@ -176,5 +175,4 @@ jobs:
           arch: x86
       - name: Build and run
         run: |
-          .github/build_windows.bat
           cd build && ./kvspic_test.exe --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:PermutatedStreamInfo/StateTransitionFunctionalityTest.ControlPlaneServiceCallExhaustRetry*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedBeforeTime*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedAfterFirstPeriod*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateLastUpdateTimeOfStreamUpdated*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.MultiTrackVerifyNoInvocationsWithSingleTrackProducer*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateNoConsecutiveEOFR*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateErrorOnForceConsecutiveEOFR*"
