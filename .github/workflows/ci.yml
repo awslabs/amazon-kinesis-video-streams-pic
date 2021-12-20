@@ -176,7 +176,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DBUILD_TEST=TRUE --target INSTALL --config Release
+          cmake .. -DBUILD_TEST=TRUE --target INSTALL
           dir
           cd ..
           dir
