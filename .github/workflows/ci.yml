@@ -168,17 +168,14 @@ jobs:
     steps:
       - name: Clone repository
         uses: actions/checkout@v2
-      # - name: Setup MSVC 
-      #   uses: ilammy/msvc-dev-cmd@v1
-      #   with:
-      #     arch: x86
+      - name: Setup MSVC 
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
       - name: Build and run
         run: |
-          unset CC CC_FOR_BUILD CXX CXX_FOR_BUILD
-          call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
           mkdir build
           cd build
           cmake -G "NMake Makefiles" -DBUILD_TEST=TRUE ..
           nmake
           ./kvspic_test.exe --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:PermutatedStreamInfo/StateTransitionFunctionalityTest.ControlPlaneServiceCallExhaustRetry*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedBeforeTime*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedAfterFirstPeriod*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateLastUpdateTimeOfStreamUpdated*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.MultiTrackVerifyNoInvocationsWithSingleTrackProducer*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateNoConsecutiveEOFR*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateErrorOnForceConsecutiveEOFR*"
-        shell: powershell
