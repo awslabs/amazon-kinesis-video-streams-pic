@@ -176,7 +176,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 13" .. -DBUILD_TEST=TRUE
+          cmake -G "Visual Studio 17 2022" .. -DBUILD_TEST=TRUE
           cmake --build . --target INSTALL --config Release
           dir
           cd ..
