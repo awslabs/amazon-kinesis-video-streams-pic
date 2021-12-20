@@ -177,6 +177,5 @@ jobs:
           mkdir build
           cd build
           cmake .. -DBUILD_TEST=TRUE
-          dir
-          make Makefile
+          cmake --build . --target INSTALL --config Release
           ./kvspic_test.exe --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:PermutatedStreamInfo/StateTransitionFunctionalityTest.ControlPlaneServiceCallExhaustRetry*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedBeforeTime*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedAfterFirstPeriod*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateLastUpdateTimeOfStreamUpdated*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.MultiTrackVerifyNoInvocationsWithSingleTrackProducer*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateNoConsecutiveEOFR*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateErrorOnForceConsecutiveEOFR*"
