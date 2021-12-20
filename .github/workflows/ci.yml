@@ -170,8 +170,6 @@ jobs:
         uses: actions/checkout@v2
       - name: Setup MSVC 
         uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x86
       - name: Build and run
         run: |
           mkdir build
