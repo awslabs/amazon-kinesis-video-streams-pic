@@ -176,7 +176,8 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DBUILD_TEST=TRUE --target INSTALL
+          cmake -G"Visual Studio 12" .. -DBUILD_TEST=TRUE
+          cmake --build . --target INSTALL --config Release
           dir
           cd ..
           dir
