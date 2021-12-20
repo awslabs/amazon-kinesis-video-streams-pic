@@ -180,3 +180,4 @@ jobs:
           cmake -G "NMake Makefiles" -DBUILD_TEST=TRUE ..
           nmake
           ./kvspic_test.exe --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:PermutatedStreamInfo/StateTransitionFunctionalityTest.ControlPlaneServiceCallExhaustRetry*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedBeforeTime*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedAfterFirstPeriod*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateLastUpdateTimeOfStreamUpdated*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.MultiTrackVerifyNoInvocationsWithSingleTrackProducer*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateNoConsecutiveEOFR*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateErrorOnForceConsecutiveEOFR*"
+        shell: powershell
