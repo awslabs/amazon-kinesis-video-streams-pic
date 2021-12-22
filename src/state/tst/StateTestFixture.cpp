@@ -21,7 +21,7 @@ STATUS stateTransitionHook(UINT64 customData, PUINT64 returnData)
 
     StateTestBase* pTest = (StateTestBase*) customData;
     if (pTest->testServiceAPICallResult != SERVICE_CALL_RESULT_OK) {
-        pTest->testErrorHandlerMetaData.errorHandlerExecutionCount++;
+        pTest->stateTransitionsHookFunctionMetadata.hookFunctionExecutionCountForNon200Response++;
     }
 
 CleanUp:

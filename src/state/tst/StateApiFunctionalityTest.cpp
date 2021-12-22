@@ -21,9 +21,9 @@ TEST_F(StateApiFunctionalityTest, checkStateIterationFailure)
     }
 
     // Validate the retry
-    EXPECT_EQ(SERVICE_CALL_MAX_RETRY_COUNT + 10, pStateMachineImpl->context.retryCount);
+    EXPECT_EQ(SERVICE_CALL_MAX_RETRY_COUNT + 10, pStateMachineImpl->context.localStateRetryCount);
     EXPECT_EQ(STATUS_SUCCESS, resetStateMachineRetryCount(mStateMachine));
-    EXPECT_EQ(0, pStateMachineImpl->context.retryCount);
+    EXPECT_EQ(0, pStateMachineImpl->context.localStateRetryCount);
 
     // Step to next state
     mTestTransitions[0].nextState = TEST_STATE_1;
@@ -151,7 +151,7 @@ TEST_F(StateApiFunctionalityTest, checkStateErrorHandlerOnStateTransitions)
     PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) mStateMachine;
 
     // Verify that the state machine error handler has not been executed
-    EXPECT_EQ(0, this->testErrorHandlerMetaData.errorHandlerExecutionCount);
+    EXPECT_EQ(0, this->stateTransitionsHookFunctionMetadata.hookFunctionExecutionCountForNon200Response);
 
     // Mock a service API call response to be a timeout in state 0 before
     // transitioning to state 1. Verify that the error handler's business
@@ -162,10 +162,10 @@ TEST_F(StateApiFunctionalityTest, checkStateErrorHandlerOnStateTransitions)
     EXPECT_EQ(STATUS_SUCCESS, getStateMachineCurrentState(mStateMachine, &pStateMachineState));
     EXPECT_EQ(TEST_STATE_1, pStateMachineState->state);
     // Error handler execution count was correctly incremented
-    EXPECT_EQ(1, this->testErrorHandlerMetaData.errorHandlerExecutionCount);
+    EXPECT_EQ(1, this->stateTransitionsHookFunctionMetadata.hookFunctionExecutionCountForNon200Response);
     // State's local retry count should be zero since no retries are
     // happening within this state.
-    EXPECT_EQ(0, pStateMachineImpl->context.retryCount);
+    EXPECT_EQ(0, pStateMachineImpl->context.localStateRetryCount);
 
     // Mock a service API call response to be 200 OK in state 1 before
     // transitioning to state 2. Verify that the error handler's execution
@@ -176,10 +176,10 @@ TEST_F(StateApiFunctionalityTest, checkStateErrorHandlerOnStateTransitions)
     EXPECT_EQ(STATUS_SUCCESS, getStateMachineCurrentState(mStateMachine, &pStateMachineState));
     EXPECT_EQ(TEST_STATE_2, pStateMachineState->state);
     // Error handler execution count did not increment
-    EXPECT_EQ(1, this->testErrorHandlerMetaData.errorHandlerExecutionCount);
+    EXPECT_EQ(1, this->stateTransitionsHookFunctionMetadata.hookFunctionExecutionCountForNon200Response);
     // State's local retry count should be zero since no retries are
     // happening within this state.
-    EXPECT_EQ(0, pStateMachineImpl->context.retryCount);
+    EXPECT_EQ(0, pStateMachineImpl->context.localStateRetryCount);
 
     // Mock a service API call response to be a timeout in state 2 before
     // transitioning to state 3. Verify that the error handler's business
@@ -190,10 +190,10 @@ TEST_F(StateApiFunctionalityTest, checkStateErrorHandlerOnStateTransitions)
     EXPECT_EQ(STATUS_SUCCESS, getStateMachineCurrentState(mStateMachine, &pStateMachineState));
     EXPECT_EQ(TEST_STATE_3, pStateMachineState->state);
     // Error handler execution count was correctly incremented
-    EXPECT_EQ(2, this->testErrorHandlerMetaData.errorHandlerExecutionCount);
+    EXPECT_EQ(2, this->stateTransitionsHookFunctionMetadata.hookFunctionExecutionCountForNon200Response);
     // State's local retry count should be zero since no retries are
     // happening within this state.
-    EXPECT_EQ(0, pStateMachineImpl->context.retryCount);
+    EXPECT_EQ(0, pStateMachineImpl->context.localStateRetryCount);
 
     // Mock a service API call response to be a timeout in state 3 before
     // transitioning to state 3 (same state). Verify that the error was
@@ -204,10 +204,10 @@ TEST_F(StateApiFunctionalityTest, checkStateErrorHandlerOnStateTransitions)
     EXPECT_EQ(STATUS_SUCCESS, stepStateMachine(mStateMachine));
     EXPECT_EQ(STATUS_SUCCESS, getStateMachineCurrentState(mStateMachine, &pStateMachineState));
     EXPECT_EQ(TEST_STATE_3, pStateMachineState->state);
-    // Error handler execution count did not increment
-    EXPECT_EQ(2, this->testErrorHandlerMetaData.errorHandlerExecutionCount);
+    // Error handler execution count will increment because testServiceAPICallResult was non 200
+    EXPECT_EQ(3, this->stateTransitionsHookFunctionMetadata.hookFunctionExecutionCountForNon200Response);
     // State's local retry count should be 1 since we retried once within TEST_STATE_3
-    EXPECT_EQ(1, pStateMachineImpl->context.retryCount);
+    EXPECT_EQ(1, pStateMachineImpl->context.localStateRetryCount);
 
     // Mock a service API call response to be 200 OK in state 3 before
     // transitioning to state 2. Verify that the error handler's execution
@@ -217,11 +217,11 @@ TEST_F(StateApiFunctionalityTest, checkStateErrorHandlerOnStateTransitions)
     EXPECT_EQ(STATUS_SUCCESS, stepStateMachine(mStateMachine));
     EXPECT_EQ(STATUS_SUCCESS, getStateMachineCurrentState(mStateMachine, &pStateMachineState));
     EXPECT_EQ(TEST_STATE_2, pStateMachineState->state);
-    // Error handler execution count did not increment
-    EXPECT_EQ(2, this->testErrorHandlerMetaData.errorHandlerExecutionCount);
+    // Error handler execution count did not increment because testServiceAPICallResult was 200
+    EXPECT_EQ(3, this->stateTransitionsHookFunctionMetadata.hookFunctionExecutionCountForNon200Response);
     // State's local retry count should be zero since no retries are
     // happening within this state.
-    EXPECT_EQ(0, pStateMachineImpl->context.retryCount);
+    EXPECT_EQ(0, pStateMachineImpl->context.localStateRetryCount);
 
     // Mock a service API call response to be a timeout in state 2 before
     // transitioning to state 3. Verify that the error handler's business
@@ -231,9 +231,9 @@ TEST_F(StateApiFunctionalityTest, checkStateErrorHandlerOnStateTransitions)
     EXPECT_EQ(STATUS_SUCCESS, stepStateMachine(mStateMachine));
     EXPECT_EQ(STATUS_SUCCESS, getStateMachineCurrentState(mStateMachine, &pStateMachineState));
     EXPECT_EQ(TEST_STATE_3, pStateMachineState->state);
-    // Error handler execution count was correctly incremented
-    EXPECT_EQ(3, this->testErrorHandlerMetaData.errorHandlerExecutionCount);
+    // Error handler execution count will increment because testServiceAPICallResult was non 200
+    EXPECT_EQ(4, this->stateTransitionsHookFunctionMetadata.hookFunctionExecutionCountForNon200Response);
     // State's local retry count should be zero since no retries are
     // happening within this state.
-    EXPECT_EQ(0, pStateMachineImpl->context.retryCount);
+    EXPECT_EQ(0, pStateMachineImpl->context.localStateRetryCount);
 }

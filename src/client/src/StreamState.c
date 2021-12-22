@@ -114,9 +114,11 @@ STATUS defaultStreamStateTransitionHook(
         PUINT64 stateTransitionWaitTime) {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
+    STATUS countStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = NULL;
     PKinesisVideoClient pKinesisVideoClient = NULL;
     PKvsRetryStrategy pKvsRetryStrategy = NULL;
+    PKvsRetryStrategyCallbacks pKvsRetryStrategyCallbacks = NULL;
     UINT64 retryWaitTime = 0;
 
     pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -126,6 +128,7 @@ STATUS defaultStreamStateTransitionHook(
     CHK(pKinesisVideoClient != NULL, STATUS_NULL_ARG);
 
     pKvsRetryStrategy = &(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy);
+    pKvsRetryStrategyCallbacks = &(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategyCallbacks);
 
     // result > SERVICE_CALL_RESULT_OK covers case for -
     // result != SERVICE_CALL_RESULT_NOT_SET and != SERVICE_CALL_RESULT_OK
@@ -134,11 +137,22 @@ STATUS defaultStreamStateTransitionHook(
     CHK(pKinesisVideoStream->base.result > SERVICE_CALL_RESULT_OK &&
             pKvsRetryStrategy != NULL &&
             pKvsRetryStrategy->pRetryStrategy != NULL &&
-            pKvsRetryStrategy->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
+            pKvsRetryStrategyCallbacks->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
+
+
+    if(pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn != NULL) {
+        if((countStatus = pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn(pKvsRetryStrategy, &pKinesisVideoStream->diagnostics.streamApiCallRetryCount)) != STATUS_SUCCESS) {
+            DLOGW("Failed to get retry count. Error code: %08x", countStatus);
+        }
+        else {
+            DLOGD("Stream state machine retry count: %lu", pKinesisVideoStream->diagnostics.streamApiCallRetryCount);
+        }
+    }
 
     DLOGD("\n KinesisVideoStream base result is [%u]. Executing KVS retry handler of retry strategy type [%u]",
           pKinesisVideoStream->base.result, pKvsRetryStrategy->retryStrategyType);
-    pKvsRetryStrategy->executeRetryStrategyFn(pKvsRetryStrategy->pRetryStrategy, &retryWaitTime);
+
+    pKvsRetryStrategyCallbacks->executeRetryStrategyFn(pKvsRetryStrategy, &retryWaitTime);
     *stateTransitionWaitTime = retryWaitTime;
 
 CleanUp:

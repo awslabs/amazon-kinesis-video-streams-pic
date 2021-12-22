@@ -688,7 +688,7 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     DLOGD("\tCurrent transfer rate (bps): %" PRIu64 " (%" PRIu64 " Kbps)", streamMetrics.currentTransferRate * 8,
           streamMetrics.currentTransferRate * 8 / 1024);
 
-    // V1 information
+    // V1 stream information
     DLOGD("\tStream uptime in (ms): %" PRIu64 " ", streamMetrics.uptime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     DLOGD("\tTotal transferred bytes: %" PRIu64 " ", streamMetrics.transferredBytes);
     DLOGD("\tTotal number of streaming sessions: %" PRIu64 " ", streamMetrics.totalSessions);
@@ -710,10 +710,16 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     DLOGD("\tAverage Data Plane API latency (ms): %" PRIu64 " ", streamMetrics.dataApiCallLatency / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     // V2 stream information
-    DLOGD("\tCurrent elementary frame rate (fps): %f ", streamMetrics.elementaryFrameRate);
+    DLOGD("\tCurrent elementary frame rate (fps): %lf ", streamMetrics.elementaryFrameRate);
+
+    // V3 stream information
+    DLOGD("\tAPI Call Retry Count : %lu", streamMetrics.streamApiCallRetryCount);
 
     // V1 client information
-    DLOGD("\tTotal elementary frame rate (fps): %f ", clientMetrics.totalElementaryFrameRate);
+    DLOGD("\tTotal elementary frame rate (fps): %lf ", clientMetrics.totalElementaryFrameRate);
+
+    // V2 client information
+    DLOGD("\tAverage API call retry count for client: %lf", clientMetrics.clientAvgApiCallRetryCount);
 CleanUp:
 
     return retStatus;
@@ -1592,6 +1598,9 @@ STATUS getStreamMetrics(PKinesisVideoStream pKinesisVideoStream, PStreamMetrics 
     streamLocked = FALSE;
 
     switch (pStreamMetrics->version) {
+        case 3:
+            // Fill in data for V3 metrics
+            pStreamMetrics->streamApiCallRetryCount = pKinesisVideoStream->diagnostics.streamApiCallRetryCount;
         case 2:
             // Fill in data for V2 metrics
             pStreamMetrics->elementaryFrameRate = pKinesisVideoStream->diagnostics.elementaryFrameRate;

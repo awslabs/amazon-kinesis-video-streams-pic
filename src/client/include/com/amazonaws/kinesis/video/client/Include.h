@@ -456,8 +456,8 @@ extern "C" {
 #define SERVICE_CALL_CONTEXT_CURRENT_VERSION  0
 #define STREAM_DESCRIPTION_CURRENT_VERSION    1
 #define FRAGMENT_ACK_CURRENT_VERSION          0
-#define STREAM_METRICS_CURRENT_VERSION        2
-#define CLIENT_METRICS_CURRENT_VERSION        1
+#define STREAM_METRICS_CURRENT_VERSION        3
+#define CLIENT_METRICS_CURRENT_VERSION        2
 #define CLIENT_INFO_CURRENT_VERSION           2
 #define STREAM_EVENT_METADATA_CURRENT_VERSION 0
 
@@ -656,6 +656,12 @@ typedef enum {
 
     // Forbidden
     SERVICE_CALL_FORBIDDEN = 403,
+    
+    // Security Credentials Expired
+    SERVICE_CALL_SIGNATURE_EXPIRED = 10008,
+
+    // device time ahead of server
+    SERVICE_CALL_SIGNATURE_NOT_YET_CURRENT = 10009,
 
     // Device not provisioned
     SERVICE_CALL_DEVICE_NOT_PROVISIONED = 10004,
@@ -1171,8 +1177,8 @@ typedef struct __ClientInfo {
     // Retry strategy for the client and all the streams under it
     KvsRetryStrategy kvsRetryStrategy;
 
-    // Function pointer for application to provide a custom retry strategy
-    GetKvsRetryStrategyFn getKvsRetryStrategyFn;
+    // Function pointers for application to provide a custom retry strategy
+    KvsRetryStrategyCallbacks kvsRetryStrategyCallbacks;
 } ClientInfo, *PClientInfo;
 
 /**
@@ -1214,6 +1220,9 @@ typedef struct __ClientMetrics ClientMetrics;
 struct __ClientMetrics {
     // Version of the struct
     UINT32 version;
+
+    // API Call retry count for a client
+    DOUBLE clientAvgApiCallRetryCount;
 
     // Overall content store allocation size
     UINT64 contentStoreSize;
@@ -1335,6 +1344,9 @@ struct __StreamMetrics {
 
     // Current stream's elementary frame rate.
     DOUBLE elementaryFrameRate;
+
+    // V3 metrics following
+    UINT32 streamApiCallRetryCount;
 };
 
 typedef struct __StreamMetrics* PStreamMetrics;

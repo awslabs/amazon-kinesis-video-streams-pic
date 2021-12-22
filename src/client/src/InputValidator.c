@@ -308,6 +308,7 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
         pClientInfo->logMetric = pOrigClientInfo->logMetric;
         pClientInfo->automaticStreamingFlags = AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER;
         pClientInfo->reservedCallbackPeriod = INTERMITTENT_PRODUCER_PERIOD_SENTINEL_VALUE;
+        pClientInfo->kvsRetryStrategyCallbacks = pOrigClientInfo->kvsRetryStrategyCallbacks;
 
         switch (pOrigClientInfo->version) {
             case 2:

@@ -97,6 +97,9 @@ extern "C" {
  */
 typedef struct __KinesisVideoStreamDiagnostics KinesisVideoStreamDiagnostics;
 struct __KinesisVideoStreamDiagnostics {
+    // API Call retry count for a stream
+    UINT32 streamApiCallRetryCount;
+
     // Current FPS value
     DOUBLE currentFrameRate;
 
