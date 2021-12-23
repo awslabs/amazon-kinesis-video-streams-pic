@@ -33,11 +33,12 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          unset AWS_SESSION_TOKEN
       - name: Clone repository
         uses: actions/checkout@v2
       - name: Build repository
         run: |
-          unset AWS_SESSION_TOKEN
           mkdir build
           cd build
           sh -c 'cmake .. -DBUILD_TEST=TRUE;cmake .. -DBUILD_TEST=TRUE'
