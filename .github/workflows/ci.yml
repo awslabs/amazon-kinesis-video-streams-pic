@@ -37,6 +37,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Build repository
         run: |
+          unset AWS_SESSION_TOKEN
           mkdir build
           cd build
           sh -c 'cmake .. -DBUILD_TEST=TRUE;cmake .. -DBUILD_TEST=TRUE'
