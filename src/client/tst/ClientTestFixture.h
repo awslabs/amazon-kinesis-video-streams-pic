@@ -1,6 +1,7 @@
 #define TEST_DEVICE_NAME         ((PCHAR) "Test device name")
 #define MAX_TEST_STREAM_COUNT    10
 #define TEST_DEVICE_STORAGE_SIZE ((UINT64) 10 * 1024 * 1024)
+#define TEST_DEVICE_STORAGE_LARGE_SIZE ((UINT64) 100 * 1024 * 1024)
 
 #define TEST_CLIENT_MAGIC_NUMBER 0x12345678ULL
 
@@ -113,6 +114,7 @@
 #include "src/client/src/Include_i.h"
 #include "src/client/src/Stream.h"
 #include "src/mkvgen/src/Include_i.h"
+#include "src/view/src/Include_i.h"
 
 #include "MockConsumer.h"
 #include "MockProducer.h"
@@ -403,7 +405,7 @@ class ClientTestBase : public ::testing::Test {
         mDeviceInfo.storageInfo.version = STORAGE_INFO_CURRENT_VERSION;
         mDeviceInfo.storageInfo.rootDirectory[0] = '\0';
         STRNCPY(mDeviceInfo.clientId, TEST_CLIENT_ID, MAX_CLIENT_ID_STRING_LENGTH);
-        mDeviceInfo.storageInfo.spillRatio = 0;
+        mDeviceInfo.storageInfo.spillRatio = 20;
         mDeviceInfo.storageInfo.storageType = DEVICE_STORAGE_TYPE_IN_MEM;
         mDeviceInfo.storageInfo.storageSize = TEST_DEVICE_STORAGE_SIZE;
         mDeviceInfo.clientInfo.version = CLIENT_INFO_CURRENT_VERSION;
@@ -737,7 +739,7 @@ class ClientTestBase : public ::testing::Test {
         return NULL;
     }
 
-    void initScenarioTestMembers()
+    void initScenarioTestMembers(UINT64 storageSize)
     {
         // Assumes initTestMembers() has been called first
         // setup attributes
@@ -751,11 +753,12 @@ class ClientTestBase : public ::testing::Test {
         // Use absoluteFragmentTimes for easier mock ack timestamp calculation.
         mStreamInfo.streamCaps.absoluteFragmentTimes = TRUE;
         mStreamInfo.streamCaps.recoverOnError = TRUE;
-        // Increase memory size
-        mDeviceInfo.storageInfo.storageSize = ((UINT64) 100 * 1024 * 1024);
+
+        // Reset storage size
+        mDeviceInfo.storageInfo.storageSize = storageSize;
     }
 
-    STATUS CreateScenarioTestClient()
+    STATUS CreateScenarioTestClient(UINT64 storageSize = TEST_DEVICE_STORAGE_LARGE_SIZE)
     {
         // Set the random number generator seed for reproducibility
         SRAND(12345);
@@ -769,10 +772,11 @@ class ClientTestBase : public ::testing::Test {
             ATOMIC_STORE_BOOL(&mClientShutdown, FALSE);
             ATOMIC_STORE_BOOL(&mStreamShutdown, FALSE);
             ATOMIC_STORE_BOOL(&mResetStream, FALSE);
+            ATOMIC_STORE(&mDescribeStreamFuncCount, 0);
             EXPECT_EQ(STATUS_SUCCESS, status);
         }
 
-        initScenarioTestMembers();
+        initScenarioTestMembers(storageSize);
 
         // Create the client
         status = createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &mClientHandle);

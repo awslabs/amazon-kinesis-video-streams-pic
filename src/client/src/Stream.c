@@ -189,6 +189,13 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     }
     pKinesisVideoStream->streamInfo.streamCaps.replayDuration = MIN(pStreamInfo->streamCaps.bufferDuration, pStreamInfo->streamCaps.replayDuration);
 
+    // Initialize the fragment aggregator after the fix-up of the buffer duration
+    pKinesisVideoStream->fragmentAggregator.allocationHandle = INVALID_ALLOCATION_HANDLE_VALUE;
+    pKinesisVideoStream->fragmentAggregator.pAllocation = NULL;
+    pKinesisVideoStream->fragmentAggregator.currentSize = 0;
+    pKinesisVideoStream->fragmentAggregator.allocationSize = 0;
+    pKinesisVideoStream->fragmentAggregator.aggregateFragment = FRAGMENT_ACCUMULATOR_MODE(pKinesisVideoStream);
+
     // Set the tags pointer to point after the KinesisVideoStream struct
     pKinesisVideoStream->streamInfo.tags = (PTag)((PBYTE)(pKinesisVideoStream + 1));
 
@@ -226,7 +233,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     pCurPnt = (PBYTE)(pKinesisVideoStream->streamInfo.streamCaps.trackInfoList + pKinesisVideoStream->streamInfo.streamCaps.trackInfoCount);
 
     // Calculate the max items in the view
-    maxViewItems = calculateViewItemCount(&pKinesisVideoStream->streamInfo);
+    maxViewItems = calculateViewItemCount(pKinesisVideoStream);
 
     // Create the view
     CHK_STATUS(createContentView(maxViewItems, pKinesisVideoStream->streamInfo.streamCaps.bufferDuration, viewItemRemoved,
@@ -343,6 +350,13 @@ STATUS freeStream(PKinesisVideoStream pKinesisVideoStream)
 
     // Lock the stream
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+
+    // Unmap any outstanding fragment aggregator buffers
+    if (pKinesisVideoStream->fragmentAggregator.aggregateFragment &&
+        IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle) &&
+        pKinesisVideoStream->fragmentAggregator.pAllocation != NULL) {
+        flushFragmentAggregator(pKinesisVideoStream);
+    }
 
     // Release the underlying objects
     freeContentView(pKinesisVideoStream->pView);
@@ -740,6 +754,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     PUploadHandleInfo pUploadHandleInfo;
     UINT64 windowDuration, currentDuration;
     PTrackInfo pTrackInfo = NULL;
+    FRAGMENT_AGGREGATION_MODE aggregationMode;
 
     CHK(pKinesisVideoStream != NULL && pFrame != NULL, STATUS_NULL_ARG);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
@@ -799,6 +814,14 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     if (pKinesisVideoStream->resetGeneratorOnKeyFrame && CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)) {
         CHK_STATUS(mkvgenResetGenerator(pKinesisVideoStream->pMkvGenerator));
         pKinesisVideoStream->resetGeneratorOnKeyFrame = FALSE;
+
+        // Flush the aggregator if needed
+        if (pKinesisVideoStream->fragmentAggregator.aggregateFragment &&
+            pKinesisVideoStream->fragmentAggregator.pAllocation != NULL &&
+            IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle) &&
+            pKinesisVideoStream->fragmentAggregator.pViewItem != NULL) {
+            flushFragmentAggregator(pKinesisVideoStream);
+        }
     }
 
     // Check if the frames should be skipped and whether the skip flag needs to be reset
@@ -810,6 +833,21 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             pKinesisVideoStream->diagnostics.skippedFrames++;
             CHK(FALSE, retStatus); // skip processing the frame
         }
+    }
+
+    // Check if we need to "end" the fragment in the fragment aggregator mode
+    if (pKinesisVideoStream->fragmentAggregator.aggregateFragment &&
+        IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle) &&
+        pKinesisVideoStream->fragmentAggregator.pAllocation != NULL &&
+        (CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags) || CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags))) {
+        // Resize and Unmap the allocation and reset the aggregator content under the client lock
+        pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
+        clientLocked = TRUE;
+
+        flushFragmentAggregator(pKinesisVideoStream);
+
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
+        clientLocked = FALSE;
     }
 
     // Package and store the frame.
@@ -847,10 +885,13 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // Overall frame allocation size
     overallSize = packagedSize + packagedMetadataSize;
 
+    // A quick check for max fragment size for the frame itself
+    CHK(overallSize < MAX_FRAGMENT_SIZE, STATUS_MAX_FRAGMENT_SIZE_REACHED);
+
     pKinesisVideoStream->maxFrameSizeSeen = MAX(pKinesisVideoStream->maxFrameSizeSeen, overallSize);
 
     // Might need to block on the availability in the OFFLINE mode
-    CHK_STATUS(handleAvailability(pKinesisVideoStream, overallSize, &allocHandle));
+    CHK_STATUS(handleAvailability(pKinesisVideoStream, overallSize, &allocHandle, &aggregationMode));
 
     if (IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
         // offline streaming mode can block so we need to reset the currentTime just in case
@@ -864,11 +905,15 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // Ensure we have space and if not then bail
     CHK(IS_VALID_ALLOCATION_HANDLE(allocHandle), STATUS_STORE_OUT_OF_MEMORY);
 
-    // Map the storage
-    CHK_STATUS(heapMap(pKinesisVideoClient->pHeap, allocHandle, (PVOID*) &pAlloc, &allocSize));
+    if (aggregationMode == FRAGMENT_AGGREGATION_MODE_NONE) {
+        // Map the storage
+        CHK_STATUS(heapMap(pKinesisVideoClient->pHeap, allocHandle, (PVOID *) &pAlloc, &allocSize));
 
-    // Validate we had allocated enough storage just in case
-    CHK(overallSize <= allocSize, STATUS_ALLOCATION_SIZE_SMALLER_THAN_REQUESTED);
+        // Validate we had allocated enough storage just in case
+        CHK(overallSize <= allocSize, STATUS_ALLOCATION_SIZE_SMALLER_THAN_REQUESTED);
+    } else {
+        pAlloc = pKinesisVideoStream->fragmentAggregator.pAllocation + pKinesisVideoStream->fragmentAggregator.currentSize;
+    }
 
     // Check if we are packaging special EoFr
     if (CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
@@ -909,8 +954,12 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         }
     }
 
-    // Unmap the storage for the frame
-    CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, ((PVOID) pAlloc)));
+    // Unmap the storage for the frame if in a non-aggregated mode
+    if (aggregationMode == FRAGMENT_AGGREGATION_MODE_NONE) {
+        CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, ((PVOID) pAlloc)));
+    } else {
+        pKinesisVideoStream->fragmentAggregator.currentSize += overallSize;
+    }
 
     // Check for storage pressures. No need for offline mode as the media pipeline will be blocked when there
     // is not enough storage
@@ -962,6 +1011,12 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             break;
         case MKV_STATE_START_BLOCK:
             break;
+
+        default:
+            // Some static code analysis tools trigger the absence of the default clause
+            // which in this case is not an issue due to the enum type. Adding for forward
+            // compatibility in case if a new state is added
+            CHK(FALSE, STATUS_INTERNAL_ERROR);
     }
 
     if (CHECK_ITEM_FRAGMENT_START(itemFlags) && pKinesisVideoClient->deviceInfo.clientInfo.logMetric) {
@@ -1004,9 +1059,36 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // NOTE: The size of the actual data might be smaller than the allocated size due to the fact that
     // calculating the packaged metadata and frame might have preserved the MKV header twice as the calculation
     // of the size doesn't mutate the state of the generator. We will use the actual packaged size.
-    CHK_STATUS(contentViewAddItem(pKinesisVideoStream->pView, encodedFrameInfo.clusterDts + encodedFrameInfo.frameDts,
-                                  encodedFrameInfo.clusterPts + encodedFrameInfo.framePts, encodedFrameInfo.duration, allocHandle,
-                                  encodedFrameInfo.dataOffset, overallSize, itemFlags));
+
+    // NOTE: In non-fragment-aggregation mode, we will simply add the content view. However, in case we just
+    // started the aggregation, we will add the content view with the allocation handle of the new aggregator
+    // and in case we are adding to an ongoing fragment then we will just update the information in the
+    // stored view item that is used to represent a single aggregated fragment so far.
+    switch (aggregationMode) {
+        case FRAGMENT_AGGREGATION_MODE_NONE:
+            CHK_STATUS(contentViewAddItem(pKinesisVideoStream->pView, encodedFrameInfo.clusterDts + encodedFrameInfo.frameDts,
+                                          encodedFrameInfo.clusterPts + encodedFrameInfo.framePts, encodedFrameInfo.duration,
+                                          allocHandle,
+                                          encodedFrameInfo.dataOffset, overallSize, itemFlags));
+            break;
+
+        case FRAGMENT_AGGREGATION_MODE_START:
+            // First, add the view item and then retrieve the latest to be updated as we add the frames to the fragment
+            CHK_STATUS(contentViewAddItem(pKinesisVideoStream->pView, encodedFrameInfo.clusterDts + encodedFrameInfo.frameDts,
+                                          encodedFrameInfo.clusterPts + encodedFrameInfo.framePts, encodedFrameInfo.duration,
+                                          pKinesisVideoStream->fragmentAggregator.allocationHandle,
+                                          encodedFrameInfo.dataOffset, overallSize, itemFlags));
+
+            // Get the head view item which will be used to aggregate the entire fragment under the same view item
+            CHK_STATUS(contentViewGetHead(pKinesisVideoStream->pView, &pKinesisVideoStream->fragmentAggregator.pViewItem));
+            break;
+
+        case FRAGMENT_AGGREGATION_MODE_ONGOING:
+            // Update the content view item which is the ongoing view item for the entire fragment
+            pKinesisVideoStream->fragmentAggregator.pViewItem->duration += pFrame->duration;
+            pKinesisVideoStream->fragmentAggregator.pViewItem->length += overallSize;
+            break;
+    }
 
     // From now on we don't need to free the allocation as it's in the view already and will be collected
     freeOnError = FALSE;
@@ -1396,6 +1478,20 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             clientLocked = TRUE;
 
             // Fill the rest of the buffer of the current view item first
+
+            // Need to handle an edge case here with the fragment aggregator.
+            // In case the aggregation was ON and suddenly the application stopped producing frames and
+            // the network catches up.
+            // We will need to flush the aggregator first.
+            // The main issue here is that if the producer continues with a P-frame then those might get skipped.
+            if (pKinesisVideoStream->fragmentAggregator.aggregateFragment &&
+                pKinesisVideoStream->fragmentAggregator.pAllocation != NULL &&
+                IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle) &&
+                pKinesisVideoStream->fragmentAggregator.pViewItem != NULL &&
+                pKinesisVideoStream->fragmentAggregator.pViewItem->index == pKinesisVideoStream->curViewItem.viewItem.index) {
+                flushFragmentAggregator(pKinesisVideoStream);
+            }
+
             // Map the storage
             CHK_STATUS(heapMap(pKinesisVideoClient->pHeap, pKinesisVideoStream->curViewItem.viewItem.handle, (PVOID*) &pAlloc, &allocSize));
             CHK(allocSize < MAX_UINT32 && (UINT32) allocSize >= pKinesisVideoStream->curViewItem.viewItem.length, STATUS_INVALID_ALLOCATION_SIZE);
@@ -1650,7 +1746,7 @@ CleanUp:
  * The caller thread will be blocked in the OFFLINE mode.
  * The operation will return interrupted error in case the stream is terminated.
  */
-STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allocationSize, PALLOCATION_HANDLE pAllocationHandle)
+STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allocationSize, PALLOCATION_HANDLE pAllocationHandle, PFRAGMENT_AGGREGATION_MODE pAggregationMode)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -1658,7 +1754,7 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
 
     while (TRUE) {
         // Check if we have enough space to proceed - the stream should be locked
-        CHK_STATUS(checkForAvailability(pKinesisVideoStream, allocationSize, pAllocationHandle));
+        CHK_STATUS(checkForAvailability(pKinesisVideoStream, allocationSize, pAllocationHandle, pAggregationMode));
 
         // Early return if available
         CHK(!IS_VALID_ALLOCATION_HANDLE(*pAllocationHandle), STATUS_SUCCESS);
@@ -1696,13 +1792,13 @@ CleanUp:
  *
  * All the parameters are assumed to have been sanitized.
  */
-STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allocationSize, PALLOCATION_HANDLE pAllocationHandle)
+STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allocationSize, PALLOCATION_HANDLE pAllocationHandle, PFRAGMENT_AGGREGATION_MODE pAggregationMode)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
     BOOL clientLocked = FALSE, availability = FALSE;
-    UINT64 heapSize, availableHeapSize;
+    UINT64 heapSize, availableHeapSize, duration, overallSize;
 
     // Set to invalid whether we failed to allocate or we don't have content view availability
     *pAllocationHandle = INVALID_ALLOCATION_HANDLE_VALUE;
@@ -1735,6 +1831,75 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
 
     // Early return if storage space is unavailable.
     CHK(availableHeapSize >= allocationSize, STATUS_SUCCESS);
+
+    // Check for aggregation
+    if (pKinesisVideoStream->fragmentAggregator.aggregateFragment) {
+        // Get the availability
+        CHK_STATUS(contentViewGetWindowDuration(pKinesisVideoStream->pView, &duration, NULL));
+
+        // Check if it's greater than MIN aggregation duration and in which case we need to aggregate
+        if (duration >= MIN_CONTENT_DURATION_FOR_FRAGMENT_ACCUMULATOR) {
+            // Check if we need to allocate/re-allocate
+            if (!IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle)) {
+                overallSize = FRAGMENT_AGGREGATION_ALLOCATION_FACTOR * allocationSize;
+                retStatus = heapAlloc(pKinesisVideoClient->pHeap, overallSize, &pKinesisVideoStream->fragmentAggregator.allocationHandle);
+                CHK(retStatus == STATUS_SUCCESS || retStatus == STATUS_NOT_ENOUGH_MEMORY, retStatus);
+                retStatus = STATUS_SUCCESS;
+
+                // Reset the tracking info before attempting to allocate
+                pKinesisVideoStream->fragmentAggregator.allocationSize = overallSize;
+                pKinesisVideoStream->fragmentAggregator.pViewItem = NULL;
+                pKinesisVideoStream->fragmentAggregator.pAllocation = NULL;
+                pKinesisVideoStream->fragmentAggregator.currentSize = 0;
+
+                // If we have not enough memory we return success
+                CHK(IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle), retStatus);
+
+                // Need to map and keep it mapped in the duration of the aggregation
+                CHK_STATUS(heapMap(pKinesisVideoClient->pHeap,
+                                   pKinesisVideoStream->fragmentAggregator.allocationHandle,
+                                   (PVOID*) &pKinesisVideoStream->fragmentAggregator.pAllocation,
+                                   &overallSize));
+
+                *pAggregationMode = FRAGMENT_AGGREGATION_MODE_START;
+            } else if (allocationSize > pKinesisVideoStream->fragmentAggregator.allocationSize - pKinesisVideoStream->fragmentAggregator.currentSize) {
+                // Need to re-allocate to increase the size
+                CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, pKinesisVideoStream->fragmentAggregator.pAllocation));
+
+                // Resize the allocation and map back
+                overallSize = FRAGMENT_AGGREGATION_ALLOCATION_RESIZE_FACTOR * pKinesisVideoStream->fragmentAggregator.allocationSize;
+                CHK_STATUS(heapSetAllocSize(pKinesisVideoClient->pHeap, &pKinesisVideoStream->fragmentAggregator.allocationHandle, overallSize));
+                CHK(IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle), retStatus);
+                pKinesisVideoStream->fragmentAggregator.allocationSize = overallSize;
+
+                // Update the allocation handle in the view as it might change during resizing
+                pKinesisVideoStream->fragmentAggregator.pViewItem->handle = pKinesisVideoStream->fragmentAggregator.allocationHandle;
+
+                CHK_STATUS(heapMap(pKinesisVideoClient->pHeap,
+                                   pKinesisVideoStream->fragmentAggregator.allocationHandle,
+                                   (PVOID*) &pKinesisVideoStream->fragmentAggregator.pAllocation,
+                                   &overallSize));
+
+                *pAggregationMode = FRAGMENT_AGGREGATION_MODE_ONGOING;
+            } else {
+                *pAggregationMode = FRAGMENT_AGGREGATION_MODE_ONGOING;
+            }
+
+            *pAllocationHandle = pKinesisVideoStream->fragmentAggregator.allocationHandle;
+
+            // Early return
+            CHK(FALSE, retStatus);
+        } else {
+            // Flush/close any outstanding aggregation
+            // Unmap any outstanding fragment aggregator buffers
+            if (IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle) &&
+                pKinesisVideoStream->fragmentAggregator.pAllocation != NULL) {
+                flushFragmentAggregator(pKinesisVideoStream);
+            }
+        }
+    }
+
+    *pAggregationMode = FRAGMENT_AGGREGATION_MODE_NONE;
 
     // Get the heap size. Do not need to check status. If heapAlloc failed then pAllocationHandle would remain invalid.
     retStatus = heapAlloc(pKinesisVideoClient->pHeap, allocationSize, pAllocationHandle);
@@ -1967,6 +2132,15 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
     CHK_STATUS(contentViewGetCurrentIndex(pKinesisVideoStream->pView, &curIndex));
     CHK_STATUS(contentViewGetItemAt(pKinesisVideoStream->pView, curIndex, &pViewItem));
 
+    // Flush the aggregator if needed
+    if (pKinesisVideoStream->fragmentAggregator.aggregateFragment &&
+        pKinesisVideoStream->fragmentAggregator.pAllocation != NULL &&
+        IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle) &&
+        pKinesisVideoStream->fragmentAggregator.pViewItem != NULL &&
+        pKinesisVideoStream->fragmentAggregator.pViewItem->index == pViewItem->index) {
+        flushFragmentAggregator(pKinesisVideoStream);
+    }
+
     // Get the required size for the header
     CHK_STATUS(mkvgenGenerateHeader(pKinesisVideoStream->pMkvGenerator, NULL, &headerSize, &streamStartTs));
 
@@ -2070,6 +2244,15 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
 
     // Get the view item corresponding to the current item
     CHK_STATUS(contentViewGetItemAt(pKinesisVideoStream->pView, pKinesisVideoStream->curViewItem.viewItem.index, &pViewItem));
+
+    // Flush the aggregator
+    if (pKinesisVideoStream->fragmentAggregator.aggregateFragment &&
+        pKinesisVideoStream->fragmentAggregator.pAllocation != NULL &&
+        IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->fragmentAggregator.allocationHandle) &&
+        pKinesisVideoStream->fragmentAggregator.pViewItem != NULL &&
+        pKinesisVideoStream->fragmentAggregator.pViewItem->index == pViewItem->index) {
+        flushFragmentAggregator(pKinesisVideoStream);
+    }
 
     // As we are removing the MKV header, the resulting allocation size will be actually smaller
     // We will simply copy/shift the data, including the MKV tags if any and the cluster header
@@ -2327,19 +2510,35 @@ VOID deleteStreamUploadInfo(PKinesisVideoStream pKinesisVideoStream, PUploadHand
  * This function will calculate either for frames or fragments
  *
  */
-UINT32 calculateViewItemCount(PStreamInfo pStreamInfo)
+UINT32 calculateViewItemCount(PKinesisVideoStream pKinesisVideoStream)
 {
     UINT32 viewItemCount = 0;
-    switch (pStreamInfo->streamCaps.streamingType) {
+    switch (pKinesisVideoStream->streamInfo.streamCaps.streamingType) {
         case STREAMING_TYPE_REALTIME:
         case STREAMING_TYPE_OFFLINE:
-            // Calculate the number of frames for the duration of the buffer.
-            viewItemCount = pStreamInfo->streamCaps.frameRate * ((UINT32)(pStreamInfo->streamCaps.bufferDuration / HUNDREDS_OF_NANOS_IN_A_SECOND));
+            // Calculate the number of frames for the duration of the buffer in non-aggregated case
+            if (!pKinesisVideoStream->fragmentAggregator.aggregateFragment) {
+                viewItemCount = pKinesisVideoStream->streamInfo.streamCaps.frameRate *
+                                ((UINT32) (pKinesisVideoStream->streamInfo.streamCaps.bufferDuration /
+                                           HUNDREDS_OF_NANOS_IN_A_SECOND));
+            } else {
+                // Use the min aggregation duration for per-frame item count calculation and
+                // add the fragment aggregated item count to it.
+                viewItemCount = pKinesisVideoStream->streamInfo.streamCaps.frameRate *
+                                ((UINT32) (MIN_CONTENT_DURATION_FOR_FRAGMENT_ACCUMULATOR /
+                                           HUNDREDS_OF_NANOS_IN_A_SECOND));
+
+                // Assume averaging 1 fragment per second
+                viewItemCount += (pKinesisVideoStream->streamInfo.streamCaps.bufferDuration - MIN_CONTENT_DURATION_FOR_FRAGMENT_ACCUMULATOR) /
+                        HUNDREDS_OF_NANOS_IN_A_SECOND;
+            }
+
             break;
 
         case STREAMING_TYPE_NEAR_REALTIME:
             // Calculate the number of the fragments in the buffer.
-            viewItemCount = (UINT32)(pStreamInfo->streamCaps.bufferDuration / pStreamInfo->streamCaps.fragmentDuration);
+            viewItemCount = (UINT32)(pKinesisVideoStream->streamInfo.streamCaps.bufferDuration /
+                    pKinesisVideoStream->streamInfo.streamCaps.fragmentDuration);
             break;
     }
 
@@ -3373,4 +3572,29 @@ CleanUp:
 
     CHK_LOG_ERR(retStatus);
     SAFE_MEMFREE(hexEncodedCpd);
+}
+
+STATUS flushFragmentAggregator(PKinesisVideoStream pKinesisVideoStream)
+{
+    STATUS retStatus = STATUS_SUCCESS, savedStatus;
+    PKinesisVideoClient pKinesisVideoClient = NULL;
+
+    CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+    pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+
+    CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, pKinesisVideoStream->fragmentAggregator.pAllocation));
+    CHK_STATUS(heapSetAllocSize(pKinesisVideoClient->pHeap, &pKinesisVideoStream->fragmentAggregator.allocationHandle, pKinesisVideoStream->fragmentAggregator.currentSize));
+
+    // Update the view item handle as it might change during resizing
+    pKinesisVideoStream->fragmentAggregator.pViewItem->handle = pKinesisVideoStream->fragmentAggregator.allocationHandle;
+
+    pKinesisVideoStream->fragmentAggregator.pAllocation = NULL;
+    pKinesisVideoStream->fragmentAggregator.allocationHandle = INVALID_ALLOCATION_HANDLE_VALUE;
+    pKinesisVideoStream->fragmentAggregator.currentSize = 0;
+    pKinesisVideoStream->fragmentAggregator.allocationSize = 0;
+    pKinesisVideoStream->fragmentAggregator.pViewItem = NULL;
+
+CleanUp:
+
+    return retStatus;
 }

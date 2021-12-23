@@ -185,6 +185,7 @@ extern "C" {
 #define STATUS_PUTMEDIA_LAST_PERSIST_ACK_NOT_RECEIVED            STATUS_CLIENT_BASE + 0x00000088
 #define STATUS_NON_ALIGNED_HEAP_WITH_IN_CONTENT_STORE_ALLOCATORS STATUS_CLIENT_BASE + 0x00000089
 #define STATUS_MULTIPLE_CONSECUTIVE_EOFR                         STATUS_CLIENT_BASE + 0x0000008a
+#define STATUS_MAX_FRAGMENT_SIZE_REACHED                         STATUS_CLIENT_BASE + 0x0000008b
 
 #define IS_RECOVERABLE_ERROR(error)                                                                                                                  \
     ((error) == STATUS_SERVICE_CALL_RESOURCE_NOT_FOUND_ERROR || (error) == STATUS_SERVICE_CALL_RESOURCE_IN_USE_ERROR ||                              \
@@ -250,9 +251,26 @@ extern "C" {
 #define MIN_STORAGE_ALLOCATION_SIZE MIN_HEAP_SIZE
 
 /**
- * Max storage allocation size = 10GB
+ * Max storage allocation size = 10TB
  */
-#define MAX_STORAGE_ALLOCATION_SIZE (10LLU * 1024 * 1024 * 1024)
+#define MAX_STORAGE_ALLOCATION_SIZE (10LLU * 1024 * 1024 * 1024 * 1024)
+
+/**
+ * Max fragment size. The backend defines 50MB limit on the size of the fragment
+ * and we will use this value as max size for temporary storage for fragment accumulator
+ * which is used ONLY for hybrid file backed content store case
+ */
+#define MAX_FRAGMENT_SIZE (50 * 1024 * 1024)
+
+/**
+ * Minimum storage size required in order to allow for fragment accumulation
+ */
+#define MIN_STORAGE_SIZE_FOR_FRAGMENT_ACCUMULATOR (256 * 1024 * 1024)
+
+/**
+ * Minimum content duration after which we allow for fragment accumulation
+ */
+#define MIN_CONTENT_DURATION_FOR_FRAGMENT_ACCUMULATOR (10 * HUNDREDS_OF_NANOS_IN_A_MINUTE)
 
 /**
  * Max number of fragment metadatas in the segment
