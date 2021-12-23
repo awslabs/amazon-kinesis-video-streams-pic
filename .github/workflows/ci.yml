@@ -29,6 +29,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
       - name: Clone repository
         uses: actions/checkout@v2
       - name: Build repository
