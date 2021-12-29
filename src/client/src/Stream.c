@@ -837,6 +837,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         CHK_STATUS(appendValidatedMetadata(pKinesisVideoStream, pSerializedMetadata));
 
         // Package the not-applied metadata as the frame bits
+        DLOGE("@@@@@@@@@ %d", __LINE__);
         CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, TRUE, NULL, &packagedSize));
     } else {
         // Get the size of the packaged frame
@@ -850,6 +851,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         // as tags are level 1 and will break MKV clusters.
         if (generatorState == MKV_STATE_START_STREAM || generatorState == MKV_STATE_START_CLUSTER) {
             // Calculate the size of the metadata first
+        DLOGE("@@@@@@@@@ %d", __LINE__);
             CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, FALSE, NULL, &packagedMetadataSize));
         }
     }
@@ -883,6 +885,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // Check if we are packaging special EoFr
     if (CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
         // Store the metadata at the beginning of the allocation
+        DLOGE("@@@@@@@@@ %d", __LINE__);
         CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, TRUE, pAlloc, &packagedSize));
 
         // Synthesize the encodedFrameInfo
@@ -914,6 +917,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
                     packagedSize - encodedFrameInfo.dataOffset);
 
             // Metadata will be packaged after the MKV header but before the cluster
+        DLOGE("@@@@@@@@@ %d", __LINE__);
             CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, FALSE, pAlloc + encodedFrameInfo.dataOffset,
                                              &packagedMetadataSize));
         }
