@@ -93,6 +93,44 @@ CleanUp:
     return retStatus;
 }
 
+STATUS getCurrentTimeClockSkew(STREAM_HANDLE streamHandle, UINT64 apiCall, PUINT64 currentTimeOffset) {
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    PKinesisVideoStream pKinesisVideoStream = fromStreamHandle(streamHandle);
+    PKinesisVideoClient pKinesisVideoClient;
+
+    CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
+
+    pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+
+    CHK(pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+
+    CHK_STATUS(hashTableGet(pKinesisVideoClient->pClockSkewMap, apiCall, currentTimeOffset));
+
+CleanUp:
+    LEAVES();
+    return retStatus;
+}
+
+STATUS setCurrentTimeClockSkew(STREAM_HANDLE streamHandle, UINT64 apiCall, UINT64 currentTimeOffset) {
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    PKinesisVideoStream pKinesisVideoStream = fromStreamHandle(streamHandle);
+    PKinesisVideoClient pKinesisVideoClient;
+
+    CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
+
+    pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+
+    CHK(pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+
+    CHK_STATUS(hashTablePut(pKinesisVideoClient->pClockSkewMap, apiCall, currentTimeOffset));
+
+CleanUp:
+    LEAVES();
+    return retStatus;
+}
+
 STATUS setupDefaultKvsRetryStrategyParameters(PKinesisVideoClient pKinesisVideoClient) {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -295,6 +333,8 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
                                           (UINT64) pKinesisVideoClient, &pKinesisVideoClient->timerId));
         }
     }
+
+    CHK_STATUS(hashTableCreateWithParams(CLIENT_CLOCKSKEW_HASH_TABLE_BUCKET_COUNT, CLIENT_CLOCKSKEW_HASH_TABLE_BUCKET_LENGTH, &pKinesisVideoClient->pClockSkewMap));
 
     // Set the call result to unknown to start
     pKinesisVideoClient->base.result = SERVICE_CALL_RESULT_NOT_SET;
@@ -1686,6 +1726,9 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
 
     // Free retry strategy
     freeClientRetryStrategy(pKinesisVideoClient);
+
+    // free clock skew hash table
+    hashTableFree(pKinesisVideoClient->pClockSkewMap);
 
     // Release the heap
     if (pKinesisVideoClient->pHeap) {

@@ -445,6 +445,12 @@ extern "C" {
 #define STREAM_SHUTDOWN_SEMAPHORE_TIMEOUT (1 * HUNDREDS_OF_NANOS_IN_A_SECOND)
 
 /**
+ * Default client clockskew (api --> clockskew) hash table bucket count/length
+ */
+#define CLIENT_CLOCKSKEW_HASH_TABLE_BUCKET_LENGTH 2
+#define CLIENT_CLOCKSKEW_HASH_TABLE_BUCKET_COUNT  MIN_HASH_BUCKET_COUNT // 16
+
+/**
  * Current versions for the public structs
  */
 #define DEVICE_INFO_CURRENT_VERSION           1
@@ -2426,6 +2432,28 @@ PUBLIC_API STATUS kinesisVideoStreamDefaultStreamShutdown(UINT64 customData, STR
  * @return - STATUS Mapped status
  */
 PUBLIC_API STATUS serviceCallResultCheck(SERVICE_CALL_RESULT);
+
+
+/**
+ * Retrieves the current time offset as set by a client for a particular API
+ * @param STREAM_HANDLE - IN - stream contains back pointer to client which contains the map we need to access
+ * @param UINT64 - IN - key for hash map, a client defined unique identifier for a particular API
+ * @param PUINT64 - OUT - offset value stored in hashmap for current time
+ *
+ * @return  - STATUS - whether we were able to successfully retrieve the current time offset
+ */
+PUBLIC_API STATUS getCurrentTimeClockSkew(STREAM_HANDLE, UINT64, PUINT64);
+
+/**
+ * Sets the current time offset, called by a client, for a particular API
+ * @param STREAM_HANDLE - IN - stream contains back pointer to client which contains the map we need to access
+ * @param UINT64 - IN - key for hash map, a client defined unique identifier for a particular API
+ * @param UINT64 - IN - offset value to store in hashmap for current time
+ *
+ * @return - STATUS - whether we are able to successfully store the current time offset
+ */
+PUBLIC_API STATUS setCurrentTimeClockSkew(STREAM_HANDLE, UINT64, UINT64);
+
 
 #ifdef __cplusplus
 }

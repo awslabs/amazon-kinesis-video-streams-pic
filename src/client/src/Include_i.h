@@ -280,11 +280,15 @@ typedef struct __KinesisVideoClient {
     // ID for timer created to wake and check if streams have incoming data
     UINT32 timerId;
 
+    // Hash Map for API call to clock skew offset
+    PHashTable pClockSkewMap;
+
     // Stored function pointers to reset on exit
     memAlloc storedMemAlloc;
     memAlignAlloc storedMemAlignAlloc;
     memCalloc storedMemCalloc;
     memFree storedMemFree;
+
 } KinesisVideoClient, *PKinesisVideoClient;
 
 /**
