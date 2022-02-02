@@ -170,6 +170,7 @@ jobs:
       - name: Build and run
         run: |
           .github/build_windows.bat
+          cd build
           pwd
           dir
           
