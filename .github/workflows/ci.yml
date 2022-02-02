@@ -120,7 +120,6 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install clang-7
       - name: Build repository
-        continue-on-error: true
         run: |
           mkdir build
           cd build
