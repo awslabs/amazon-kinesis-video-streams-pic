@@ -267,7 +267,17 @@ extern "C" {
 /**
  * Maximal size of the metadata queue for a fragment
  */
-#define MAX_FRAGMENT_METADATA_COUNT 10
+#define MAX_FRAGMENT_METADATA_COUNT 25
+
+/**
+ * Maximum amount of the "tags" element metadata for a fragment
+ */
+#define MAX_FRAGMENT_METADATA_TAGS 10
+
+/**
+ * Max name/value pairs for custom event metadata
+ */
+#define MAX_EVENT_CUSTOM_PAIRS 5
 
 /**
  * Max length of the fragment sequence number
@@ -437,18 +447,19 @@ extern "C" {
 /**
  * Current versions for the public structs
  */
-#define DEVICE_INFO_CURRENT_VERSION          1
-#define CALLBACKS_CURRENT_VERSION            0
-#define STREAM_INFO_CURRENT_VERSION          2
-#define SEGMENT_INFO_CURRENT_VERSION         0
-#define STORAGE_INFO_CURRENT_VERSION         0
-#define AUTH_INFO_CURRENT_VERSION            0
-#define SERVICE_CALL_CONTEXT_CURRENT_VERSION 0
-#define STREAM_DESCRIPTION_CURRENT_VERSION   1
-#define FRAGMENT_ACK_CURRENT_VERSION         0
-#define STREAM_METRICS_CURRENT_VERSION       2
-#define CLIENT_METRICS_CURRENT_VERSION       1
-#define CLIENT_INFO_CURRENT_VERSION          2
+#define DEVICE_INFO_CURRENT_VERSION           1
+#define CALLBACKS_CURRENT_VERSION             0
+#define STREAM_INFO_CURRENT_VERSION           2
+#define SEGMENT_INFO_CURRENT_VERSION          0
+#define STORAGE_INFO_CURRENT_VERSION          0
+#define AUTH_INFO_CURRENT_VERSION             0
+#define SERVICE_CALL_CONTEXT_CURRENT_VERSION  0
+#define STREAM_DESCRIPTION_CURRENT_VERSION    1
+#define FRAGMENT_ACK_CURRENT_VERSION          0
+#define STREAM_METRICS_CURRENT_VERSION        3
+#define CLIENT_METRICS_CURRENT_VERSION        2
+#define CLIENT_INFO_CURRENT_VERSION           2
+#define STREAM_EVENT_METADATA_CURRENT_VERSION 0
 
 /**
  * Definition of the client handle
@@ -549,7 +560,8 @@ typedef enum {
     AUDIO_CODEC_ID_AAC,
     AUDIO_CODEC_ID_PCM_ALAW,
     AUDIO_CODEC_ID_PCM_MULAW,
-} AUDIO_CODEC_ID, *PAUDIO_CODEC_ID;
+} AUDIO_CODEC_ID,
+    *PAUDIO_CODEC_ID;
 
 /**
  * Video codec id
@@ -557,7 +569,8 @@ typedef enum {
 typedef enum {
     VIDEO_CODEC_ID_H264,
     VIDEO_CODEC_ID_H265,
-} VIDEO_CODEC_ID, *PVIDEO_CODEC_ID;
+} VIDEO_CODEC_ID,
+    *PVIDEO_CODEC_ID;
 
 #define GET_STREAMING_TYPE_STR(st)                                                                                                                   \
     ((st) == STREAMING_TYPE_REALTIME ? (PCHAR) "STREAMING_TYPE_REALTIME"                                                                             \
@@ -643,6 +656,12 @@ typedef enum {
 
     // Forbidden
     SERVICE_CALL_FORBIDDEN = 403,
+    
+    // Security Credentials Expired
+    SERVICE_CALL_SIGNATURE_EXPIRED = 10008,
+
+    // device time ahead of server
+    SERVICE_CALL_SIGNATURE_NOT_YET_CURRENT = 10009,
 
     // Device not provisioned
     SERVICE_CALL_DEVICE_NOT_PROVISIONED = 10004,
@@ -929,6 +948,27 @@ typedef enum {
 } CONTENT_STORE_PRESSURE_POLICY;
 
 /**
+ * Macros checking for the stream event types
+ */
+#define CHECK_STREAM_EVENT_TYPE_IMAGE_GENERATION(f) (((f) &STREAM_EVENT_TYPE_IMAGE_GENERATION) != STREAM_EVENT_TYPE_NONE)
+#define CHECK_STREAM_EVENT_TYPE_NOTIFICATION(f)     (((f) &STREAM_EVENT_TYPE_NOTIFICATION) != STREAM_EVENT_TYPE_NONE)
+#define CHECK_STREAM_EVENT_TYPE_LAST(f)             (((f) &STREAM_EVENT_TYPE_LAST) != STREAM_EVENT_TYPE_NONE)
+
+typedef enum {
+
+    // KVS Stream events (bit flags)a
+    STREAM_EVENT_TYPE_NONE = 0,
+
+    STREAM_EVENT_TYPE_IMAGE_GENERATION = (1 << 0),
+
+    STREAM_EVENT_TYPE_NOTIFICATION = (1 << 1),
+
+    // used to iterative purposes, always keep last.
+    STREAM_EVENT_TYPE_LAST = (1 << 2),
+
+} STREAM_EVENT_TYPE;
+
+/**
  * Stream capabilities declaration
  */
 typedef struct __StreamCaps StreamCaps;
@@ -1081,6 +1121,21 @@ struct __StorageInfo {
 typedef struct __StorageInfo* PStorageInfo;
 
 /**
+ * Function to create a retry strategy to be used for the client and streams
+ * on detecting errors from service API calls. The retry strategy is a part of
+ * client struct.
+ *
+ * NOTE: This is an optional callback. If not specified, the SDK will use
+ * default retry strategy. Unless there is no specific use case, it is
+ * recommended to leave this callback NULL and let SDK handle the retries.
+ *
+ * @param 1 CLIENT_HANDLE - IN - The client handle.
+ *
+ * @return Status of the callback
+ */
+typedef STATUS (*GetKvsRetryStrategyFn)(CLIENT_HANDLE);
+
+/**
  * Client Info
  */
 typedef struct __ClientInfo {
@@ -1118,6 +1173,12 @@ typedef struct __ClientInfo {
     // period (in hundreds of nanos) at which callback will be fired to check stream
     // clients should set this value to 0.
     UINT64 reservedCallbackPeriod;
+
+    // Retry strategy for the client and all the streams under it
+    KvsRetryStrategy kvsRetryStrategy;
+
+    // Function pointers for application to provide a custom retry strategy
+    KvsRetryStrategyCallbacks kvsRetryStrategyCallbacks;
 } ClientInfo, *PClientInfo;
 
 /**
@@ -1159,6 +1220,9 @@ typedef struct __ClientMetrics ClientMetrics;
 struct __ClientMetrics {
     // Version of the struct
     UINT32 version;
+
+    // API Call retry count for a client
+    DOUBLE clientAvgApiCallRetryCount;
 
     // Overall content store allocation size
     UINT64 contentStoreSize;
@@ -1280,6 +1344,9 @@ struct __StreamMetrics {
 
     // Current stream's elementary frame rate.
     DOUBLE elementaryFrameRate;
+
+    // V3 metrics following
+    UINT32 streamApiCallRetryCount;
 };
 
 typedef struct __StreamMetrics* PStreamMetrics;
@@ -1414,6 +1481,24 @@ struct __ServiceCallContext {
 };
 
 typedef struct __ServiceCallContext* PServiceCallContext;
+
+typedef struct __StreamEventMetadata StreamEventMetadata;
+struct __StreamEventMetadata {
+    // Version of the struct
+    UINT32 version;
+
+    // optional s3 prefix
+    PCHAR imagePrefix;
+
+    // optional optimization, stating how many pairs to be appended
+    UINT8 numberOfPairs;
+
+    // optional custom data name/value pairs
+    PCHAR names[MAX_EVENT_CUSTOM_PAIRS];
+    PCHAR values[MAX_EVENT_CUSTOM_PAIRS];
+};
+
+typedef struct __StreamEventMetadata* PStreamEventMetadata;
 
 ////////////////////////////////////////////////////
 // General callbacks definitions
@@ -2060,6 +2145,22 @@ PUBLIC_API STATUS getKinesisVideoStreamData(STREAM_HANDLE, UPLOAD_HANDLE, PBYTE,
  * @return Status of the function call.
  */
 PUBLIC_API STATUS putKinesisVideoFragmentMetadata(STREAM_HANDLE, PCHAR, PCHAR, BOOL);
+
+/**
+ * Inserts a KVS event(s) accompanied by optional metadata (key/value string pairs) into the stream.
+ * Multiple events can be submitted at once by using bitwise OR of event types, or multiple calls of this
+ * function with different unique events.
+ *
+ * @param 1 STREAM_HANDLE - the stream handle.
+ * @param 2 UINT32 - the type of event(s), a value from STREAM_EVENT_TYPE enum. If
+ *                   if you want to submit multiple events in one call it is suggested to use bit-wise
+ *                   OR combination from STREAM_EVENT_TYPE enum.
+ * @param 3 PStreamEventMetadata - pointer to struct with optional metadata. This metadata will be applied
+ *                                 to all events included in THIS function call.
+ *
+ * @return Status of the function call.
+ */
+PUBLIC_API STATUS putKinesisVideoEventMetadata(STREAM_HANDLE, UINT32, PStreamEventMetadata);
 
 ////////////////////////////////////////////////////
 // Diagnostics functions

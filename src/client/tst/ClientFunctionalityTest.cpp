@@ -55,7 +55,7 @@ TEST_P(ClientFunctionalityTest, CreateSyncAndFree)
 
 TEST_P(ClientFunctionalityTest, CreateAndFree)
 {
-    // Free the existing client
+    //Free the existing client
     if (IS_VALID_CLIENT_HANDLE(mClientHandle)) {
         EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&mClientHandle));
     }

@@ -65,6 +65,8 @@ extern "C" {
 #define STATUS_UTIL_TAGS_COUNT_NON_ZERO_TAGS_NULL    STATUS_UTILS_BASE + 0x00000013
 #define STATUS_UTIL_INVALID_TAG_NAME_LEN             STATUS_UTILS_BASE + 0x00000014
 #define STATUS_UTIL_INVALID_TAG_VALUE_LEN            STATUS_UTILS_BASE + 0x00000015
+#define STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE     STATUS_UTILS_BASE + 0x0000002a
+#define STATUS_EXPONENTIAL_BACKOFF_RETRIES_EXHAUSTED STATUS_UTILS_BASE + 0x0000002b
 
 /**
  * Base64 encode/decode functionality
@@ -631,6 +633,11 @@ PUBLIC_API STATUS stackQueueIteratorNext(PStackQueueIterator);
  * Gets the data
  */
 PUBLIC_API STATUS stackQueueIteratorGetItem(StackQueueIterator, PUINT64);
+
+/**
+ * Inserts item into queue after given index
+ */
+PUBLIC_API STATUS stackQueueEnqueueAfterIndex(PStackQueue, UINT32, UINT64);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // Hash table functionality
@@ -1452,6 +1459,344 @@ PUBLIC_API STATUS freeFileLogger();
     createFileLogger(FILE_LOGGER_STRING_BUFFER_SIZE, FILE_LOGGER_LOG_FILE_COUNT, (PCHAR) FILE_LOGGER_LOG_FILE_DIRECTORY_PATH, TRUE, TRUE, NULL);
 
 #define RELEASE_FILE_LOGGER() freeFileLogger();
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// KVS retry strategies
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Retry configuration type
+ */
+typedef enum {
+    KVS_RETRY_STRATEGY_DISABLED                 = 0x00,
+    KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT = 0x01
+} KVS_RETRY_STRATEGY_TYPE;
+
+// Opaque pointers to hold retry strategy state and configuration
+// depending on the underlying implementation
+typedef PUINT64 PRetryStrategy;
+typedef PUINT64 PRetryStrategyConfig;
+
+/**
+ * A generic retry strategy
+ */
+struct __KvsRetryStrategy {
+    // Pointer to metadata/state/details for the retry strategy.
+    // The actual data type is abstracted and will be inferred by
+    // the RetryHandlerFn
+    PRetryStrategy pRetryStrategy;
+    // Optional configuration used to build the retry strategy. Once the retry strategy is created,
+    // any changes to the config will be useless.
+    PRetryStrategyConfig pRetryStrategyConfig;
+    // Retry strategy type as defined in the above enum
+    KVS_RETRY_STRATEGY_TYPE retryStrategyType;
+};
+
+typedef struct __KvsRetryStrategy KvsRetryStrategy;
+typedef struct __KvsRetryStrategy* PKvsRetryStrategy;
+
+/**
+ * Handler to create retry strategy
+ *
+ * @param 1 PKvsRetryStrategy - IN - KvsRetryStrategy passed by the caller.
+ * @param 1 PKvsRetryStrategy - OUT - pRetryStrategy field of KvsRetryStrategy struct will be populated.
+ *
+ * @return Status of the callback
+ */
+typedef STATUS (*CreateRetryStrategyFn)(PKvsRetryStrategy);
+
+/**
+ * Handler to get retry count
+ *
+ * @param 1 PKvsRetryStrategy - IN - KvsRetryStrategy passed by the caller.
+ * @param 2 PUINT32 - OUT - retry count value
+ *
+ * @return Status of the callback
+ */
+typedef STATUS (*GetCurrentRetryAttemptNumberFn) (PKvsRetryStrategy, PUINT32);
+
+/**
+ * Handler to release resources associated with a retry strategy
+ *
+ * @param 1 PKvsRetryStrategy - KvsRetryStrategy passed by the caller.
+ *
+ * @return Status of the callback
+ */
+typedef STATUS (*FreeRetryStrategyFn)(PKvsRetryStrategy);
+
+/**
+ * Handler to execute retry strategy
+ *
+ * @param 1 PKvsRetryStrategy - IN - KvsRetryStrategy passed by the caller.
+ * @param 2 PUINT64 - OUT - wait time value computed by ExecuteRetryStrategyFn
+ *
+ * @return Status of the callback
+ */
+typedef STATUS (*ExecuteRetryStrategyFn)(PKvsRetryStrategy, PUINT64);
+
+struct __KvsRetryStrategyCallbacks {
+    // Pointer to the function to create new retry strategy
+    CreateRetryStrategyFn createRetryStrategyFn;
+    // Get retry count
+    GetCurrentRetryAttemptNumberFn getCurrentRetryAttemptNumberFn;
+    // Pointer to the function to release allocated resources
+    // associated with the retry strategy
+    FreeRetryStrategyFn freeRetryStrategyFn;
+    // Pointer to the actual handler for the given retry strategy
+    ExecuteRetryStrategyFn executeRetryStrategyFn;
+};
+
+typedef struct __KvsRetryStrategyCallbacks KvsRetryStrategyCallbacks;
+typedef struct __KvsRetryStrategyCallbacks* PKvsRetryStrategyCallbacks;
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// APIs for exponential backoff retry strategy
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Indicates infinite exponential retries
+ */
+#define KVS_INFINITE_EXPONENTIAL_RETRIES 0
+
+/**
+ * Factor for computing the exponential backoff wait time
+ * The larger the value, the slower the retries will be.
+ */
+#define MIN_KVS_RETRY_TIME_FACTOR_MILLISECONDS                       50
+#define LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS                    1000
+#define DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS                  LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS
+
+/**
+ * Factor determining the curve of exponential wait time
+ */
+#define DEFAULT_KVS_EXPONENTIAL_FACTOR                              2
+
+/**
+ * Maximum exponential wait time. Once the exponential wait time
+ * curve reaches this value, it stays at this value. This is
+ * required to put a reasonable upper bound on wait time.
+ * required to put a reasonable upper bound on wait time. If not provided
+ * in the config, we'll use the default value
+ */
+#define MIN_KVS_MAX_WAIT_TIME_MILLISECONDS                      10000
+#define LIMIT_KVS_MAX_WAIT_TIME_MILLISECONDS                    25000
+#define DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS                  16000
+
+/**
+ * Maximum time between two consecutive calls to exponentialBackoffBlockingWait
+ * after which the retry count will be reset to initial state. This is needed
+ * to restart the exponential wait time from base value if
+ */
+#define MIN_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS          90000
+#define LIMIT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS       120000
+#define DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS     MIN_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS
+
+/**
+ * Factor to get a random jitter. Jitter values [0, 300).
+ * Only applicable for Fixed jitter variant
+ */
+#define MIN_KVS_JITTER_FACTOR_MILLISECONDS                           50
+#define LIMIT_KVS_JITTER_FACTOR_MILLISECONDS                        600
+#define DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS                      300
+
+typedef enum {
+    BACKOFF_NOT_STARTED     = (UINT16) 0x01,
+    BACKOFF_IN_PROGRESS     = (UINT16) 0x02,
+    BACKOFF_TERMINATED      = (UINT16) 0x03
+} ExponentialBackoffStatus;
+
+typedef enum {
+    FULL_JITTER     = (UINT16) 0x01,
+    FIXED_JITTER    = (UINT16) 0x02,
+    NO_JITTER       = (UINT16) 0x03,
+    } ExponentialBackoffJitterType;
+
+typedef struct __ExponentialBackoffRetryStrategyConfig {
+    // Max retries after which an error will be returned
+    // to the application. For infinite retries, set this
+    // to KVS_INFINITE_EXPONENTIAL_RETRIES.
+    UINT32  maxRetryCount;
+    // Maximum retry wait time. Once the retry wait time
+    // reaches this value, subsequent retries will wait for
+    // maxRetryWaitTime (plus jitter).
+    UINT64  maxRetryWaitTime;
+    // Factor for computing the exponential backoff wait time
+    UINT64  retryFactorTime;
+    // The minimum time between two consecutive retries
+    // after which retry state will be reset i.e. retries
+    // will start from initial retry state.
+    UINT64  minTimeToResetRetryState;
+    // Jitter type indicating how much jitter to be added
+    // Default will be FULL_JITTER
+    ExponentialBackoffJitterType jitterType;
+    // Factor determining random jitter value.
+    // Jitter will be between [0, jitterFactor)
+    // This parameter is only valid for jitter type FIXED_JITTER
+    UINT32  jitterFactor;
+} ExponentialBackoffRetryStrategyConfig, *PExponentialBackoffRetryStrategyConfig;
+
+#define TO_EXPONENTIAL_BACKOFF_STATE(ptr)  ((PExponentialBackoffRetryStrategyState)(ptr))
+#define TO_EXPONENTIAL_BACKOFF_CONFIG(ptr) ((PExponentialBackoffRetryStrategyConfig)(ptr))
+
+
+typedef struct {
+    ExponentialBackoffRetryStrategyConfig exponentialBackoffRetryStrategyConfig;
+    ExponentialBackoffStatus status;
+    UINT32 currentRetryCount;
+    // The system time at which last retry happened
+    UINT64 lastRetrySystemTime;
+    // The actual wait time for last retry
+    UINT64 lastRetryWaitTime;
+    // Lock to update operations
+    MUTEX retryStrategyLock;
+} ExponentialBackoffRetryStrategyState, *PExponentialBackoffRetryStrategyState;
+
+/************************************************************************
+ With default exponential values, the wait times will look like following -
+    ************************************
+    * Retry Count *      Wait time     *
+    * **********************************
+    *     1       *   1000ms + jitter  *
+    *     2       *   2000ms + jitter  *
+    *     3       *   4000ms + jitter  *
+    *     4       *   8000ms + jitter  *
+    *     5       *  16000ms + jitter  *
+    *     6       *  16000ms + jitter  *
+    *     7       *  16000ms + jitter  *
+    *     8       *  16000ms + jitter  *
+    ************************************
+ for FULL_JITTER variant, jitter = random number between [0, wait time)
+ for FIXED_JITTER variant, jitter = random number between [0, DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS)
+************************************************************************/
+static const ExponentialBackoffRetryStrategyConfig DEFAULT_EXPONENTIAL_BACKOFF_CONFIGURATION = {
+        KVS_INFINITE_EXPONENTIAL_RETRIES, /* max retry count */
+        DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS, /* max retry wait time */
+        DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS, /* factor determining exponential curve */
+        DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS, /* minimum time to reset retry state */
+        FULL_JITTER, /* use FULL_JITTER variant */
+        0 /* jitter value unused for full jitter variant */
+};
+
+/**************************************************************************************************
+Direct API usage example:
+
+ void sample_configureExponentialBackoffRetryStrategy() {
+
+     KvsRetryStrategy kvsRetryStrategy = {NULL, NULL, 0};
+
+     //
+     // [Optional] Configure with some specific exponential backoff configuration?
+     //     ExponentialBackoffRetryStrategyConfig someExponentialBackoffRetryStrategyConfig;
+     //     kvsRetryStrategy.pRetryStrategyConfig = &someExponentialBackoffRetryStrategyConfig;
+     // Note: This config will be deep copied while creating exponential backoff retry strategy. So its okay
+     //        if you pass address of a local struct.
+     //
+
+     CHK_STATUS(exponentialBackoffRetryStrategyCreate(&kvsRetryStrategy));
+     CHK_STATUS(kvsRetryStrategy.pRetryStrategy != NULL);
+     CHK_STATUS(kvsRetryStrategy.retryStrategyType == KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT);
+
+     while (...) {
+         CHK_STATUS(exponentialBackoffBlockingWait(&kvsRetryStrategy));
+        // some business logic which includes service API call(s)
+     }
+
+     CHK_STATUS(exponentialBackoffStateFree(&kvsRetryStrategy));
+ }
+
+**************************************************************************************************/
+
+/**
+ * @brief Initializes exponential backoff state with provided configuration
+ * This should be called once before calling exponentialBackoffBlockingWait/getExponentialBackoffRetryStrategyWaitTime.
+ * If unsure about the configuration parameters, it is recommended to initialize
+ * the state using initializeExponentialBackoffStateWithDefaultConfig API
+ *
+ * THREAD SAFE.
+ *
+ * @param 1 PKvsRetryStrategy - OUT - pRetryStrategy field of KvsRetryStrategy struct will be populated.
+ *                                    If PKvsRetryStrategy->PRetryStrategyConfig not provided, default config will be used
+ * @return Status of the function call.
+ */
+PUBLIC_API STATUS exponentialBackoffRetryStrategyCreate(PKvsRetryStrategy);
+
+/**
+ * @brief
+ * Computes and returns the next exponential backoff wait time
+ *
+ * THREAD SAFE.
+ *
+ * Note: This API may return STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE error code if ExponentialBackoffState
+ * is not configured correctly or is corrupted. In such case, the application should re-create
+ * ExponentialBackoffState using the exponentialBackoffStateCreate OR exponentialBackoffStateWithDefaultConfigCreate
+ * API and then call exponentialBackoffBlockingWait
+ *
+ * @param 1 PKvsRetryStrategy - IN - Opaque Exponential backoff retry strategy
+ * @return Status of the function call.
+ */
+PUBLIC_API STATUS getExponentialBackoffRetryStrategyWaitTime(PKvsRetryStrategy, PUINT64);
+
+/**
+ * @brief
+ * Computes next exponential backoff wait time and blocks the current thread for that
+ * much time. This is identical to getExponentialBackoffRetryStrategyWaitTime API
+ * but it waits for the actual wait time before returning. To not block the current
+ * thread, use getExponentialBackoffRetryStrategyWaitTime API.
+ *
+ * THREAD SAFE.
+ *
+ * Note: This API may return STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE error code if ExponentialBackoffState
+ * is not configured correctly or is corrupted. In such case, the application should re-create
+ * ExponentialBackoffState using the exponentialBackoffStateCreate OR exponentialBackoffStateWithDefaultConfigCreate
+ * API and then call exponentialBackoffBlockingWait
+ *
+ * @param 1 PKvsRetryStrategy - IN - Opaque Exponential backoff retry strategy
+ * @return Status of the function call.
+ */
+PUBLIC_API STATUS exponentialBackoffRetryStrategyBlockingWait(PKvsRetryStrategy);
+
+/**
+ * @brief Returns updated exponential backoff retry count when PRetryStrategy object is passed
+ *
+ * THREAD SAFE.
+ *
+ * @param 1 PKvsRetryStrategy - IN - Opaque Exponential backoff retry strategy for which retry state is maintained
+ * @param 2 PUINT32 - OUT - Retry count
+ * @return Status of the function call.
+ */
+PUBLIC_API STATUS getExponentialBackoffRetryCount(PKvsRetryStrategy, PUINT32);
+/**
+ * @brief Frees ExponentialBackoffState and its corresponding ExponentialBackoffConfig struct
+ *
+ * THREAD SAFE.
+ *
+ * @param 1 PKvsRetryStrategy - IN - Opaque Exponential backoff retry strategy.
+ *                              pRetryStrategy field within PKvsRetryStrategy will be released.
+ * @return Status of the function call.
+ */
+PUBLIC_API STATUS exponentialBackoffRetryStrategyFree(PKvsRetryStrategy);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// Math Utility APIs
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Computes power
+ * Returns error when the base or exponent values are not within limits.
+ * Acceptable values:
+ *  base: [0, 5], exponent: [0, 27]
+ *  base: [6, 100], exponent: [0, 9]
+ *  base: [101, 1000], exponent: [0, 6]
+ *
+ * @param - UINT32 - IN - Base.
+ * @param - UINT32 - IN - Exponent.
+ * @param - PUINT64 - OUT - Result.
+ *
+ * @return - STATUS code of the execution.
+ *
+ */
+PUBLIC_API STATUS computePower(UINT64, UINT64, PUINT64);
 
 #ifdef __cplusplus
 }

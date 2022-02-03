@@ -85,10 +85,21 @@ extern "C" {
     ((s) == STATUS_SUCCESS || (s) == STATUS_NO_MORE_DATA_AVAILABLE || (s) == STATUS_AWAITING_PERSISTED_ACK || (s) == STATUS_END_OF_STREAM)
 
 /**
+ * Streaming event strings
+ */
+
+#define KVSEVENT_IMAGE_GENERATION_STRING "AWS_KINESISVIDEO_IMAGE_GENERATION"
+#define KVSEVENT_IMAGE_PREFIX_STRING     "AWS_KINESISVIDEO_IMAGE_PREFIX"
+#define KVSEVENT_NOTIFICATION_STRING     "AWS_KINESISVIDEO_NOTIFICATION"
+
+/**
  * Kinesis Video stream diagnostics information accumulator
  */
 typedef struct __KinesisVideoStreamDiagnostics KinesisVideoStreamDiagnostics;
 struct __KinesisVideoStreamDiagnostics {
+    // API Call retry count for a stream
+    UINT32 streamApiCallRetryCount;
+
     // Current FPS value
     DOUBLE currentFrameRate;
 
@@ -256,6 +267,7 @@ typedef enum {
 
 } UPLOAD_HANDLE_STATE;
 
+#define CHECK_UPLOAD_CONNECTION_STATE_IN_USE(f) (((f) &UPLOAD_CONNECTION_STATE_IN_USE) != UPLOAD_CONNECTION_STATE_NONE)
 /**
  * Upload connection state enum type definition
  */
@@ -446,9 +458,16 @@ struct __SerializedMetadata {
     // Whether the metadata has been already "applied". This makes sense only for persistent metadata.
     BOOL applied;
 
+    // An event type indicating how the data may be serialized,
+    STREAM_EVENT_TYPE event;
+
+    // Highest parent needed to be made by mkvgen for this data
+    MKV_TREE_TYPE parent;
+
     // The actual strings are stored following the structure
 };
 typedef struct __SerializedMetadata* PSerializedMetadata;
+typedef struct __SerializedMetadata** PPSerializedMetadata;
 
 ////////////////////////////////////////////////////
 // Internal functionality
@@ -535,6 +554,19 @@ STATUS putFrame(PKinesisVideoStream, PFrame);
  * @return Status of the function call.
  */
 STATUS putFragmentMetadata(PKinesisVideoStream, PCHAR, PCHAR, BOOL);
+
+/**
+ * Puts an event metadata into the stream.
+ *
+ * The event will be appended to an existing event TAGS in the MKV, or appended to the end of the MKV.
+ *
+ * @param 1 PKinesisVideoStream - Kinesis Video stream object.
+ * @param 2 UINT32 - value from enum STREAM_EVENT_TYPE
+ * @param 3 PStreamEventMetadata - (optional) event metadata struct
+ *
+ * @return Status of the function call.
+ */
+STATUS putEventMetadata(PKinesisVideoStream, UINT32, PStreamEventMetadata);
 
 /**
  * Sets a new CPD for the given track. The API should be called before the first frame is produced.
@@ -719,14 +751,26 @@ STATUS packageNotSentMetadata(PKinesisVideoStream);
  * Appends validated metadata name/value to the queue
  *
  * @param 1 - IN - KVS object
- * @param 2 - IN - Metadata name
- * @param 3 - IN - Metadata value
- * @param 4 - IN - Whether persistent
- * @param 5 - IN - Packaged size of the metadata
+ * @param 2 - IN - Metadata object
  *
  * @return Status code of the operation
  */
-STATUS appendValidatedMetadata(PKinesisVideoStream, PCHAR, PCHAR, BOOL, UINT32);
+STATUS appendValidatedMetadata(PKinesisVideoStream, PSerializedMetadata);
+
+/**
+ * Creates serialized metadata structure
+ *
+ * @param 1 - IN - Metadata name
+ * @param 2 - IN - Metadata value
+ * @param 3 - IN - Whether persistent
+ * @param 4 - IN - Packaged size of the metadata
+ * @param 5 - IN - KVS stream event
+ * @param 6 - IN - Top MKV element of metadata structure
+ * @param 7 - OUT - newly created metadata object
+ *
+ * @return Status code of the operation
+ */
+STATUS createSerializedMetadata(PCHAR, PCHAR, BOOL, UINT32, STREAM_EVENT_TYPE, MKV_TREE_TYPE, PPSerializedMetadata);
 
 /**
  * Notifies of stream listeners about the stream closed.
@@ -816,6 +860,8 @@ STATUS executePutStreamState(UINT64, UINT64);
 STATUS executeStreamingStreamState(UINT64, UINT64);
 STATUS executeStoppedStreamState(UINT64, UINT64);
 STATUS executeTagStreamState(UINT64, UINT64);
+
+STATUS defaultStreamStateTransitionHook(UINT64, PUINT64);
 
 #ifdef __cplusplus
 }

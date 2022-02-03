@@ -440,6 +440,35 @@ STATUS ClientTestBase::fragmentAckReceivedFunc(UINT64 customData,
     return STATUS_SUCCESS;
 }
 
+STATUS ClientTestBase::createRetryStrategyFn(PKvsRetryStrategy pKvsRetryStrategy) {
+    STATUS retStatus = STATUS_SUCCESS;
+    PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState = NULL;
+
+    CHK_STATUS(exponentialBackoffRetryStrategyCreate(pKvsRetryStrategy));
+    CHK(pKvsRetryStrategy->retryStrategyType == KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT, STATUS_INTERNAL_ERROR);
+
+    pExponentialBackoffRetryStrategyState = TO_EXPONENTIAL_BACKOFF_STATE(pKvsRetryStrategy->pRetryStrategy);
+
+    // Overwrite retry config to avoid slow long running tests
+    pExponentialBackoffRetryStrategyState->exponentialBackoffRetryStrategyConfig.retryFactorTime = HUNDREDS_OF_NANOS_IN_A_MILLISECOND * 5;
+    pExponentialBackoffRetryStrategyState->exponentialBackoffRetryStrategyConfig.maxRetryWaitTime = HUNDREDS_OF_NANOS_IN_A_MILLISECOND * 100;
+
+CleanUp:
+    return STATUS_SUCCESS;
+}
+
+STATUS ClientTestBase::getCurrentRetryAttemptNumberFn(PKvsRetryStrategy pKvsRetryStrategy, PUINT32 pRetryCount) {
+    return getExponentialBackoffRetryCount(pKvsRetryStrategy, pRetryCount);
+}
+
+STATUS ClientTestBase::freeRetryStrategyFn(PKvsRetryStrategy pKvsRetryStrategy) {
+    return exponentialBackoffRetryStrategyFree(pKvsRetryStrategy);
+}
+
+STATUS ClientTestBase::executeRetryStrategyFn(PKvsRetryStrategy pKvsRetryStrategy, PUINT64 retryWaitTime) {
+    return getExponentialBackoffRetryStrategyWaitTime(pKvsRetryStrategy, retryWaitTime);
+}
+
 STATUS ClientTestBase::clientReadyFunc(UINT64 customData, CLIENT_HANDLE clientHandle)
 {
     DLOGV("TID 0x%016llx clientReadyFunc called.", GETTID());

@@ -578,7 +578,7 @@ STATUS mkvgenGenerateTag(PMkvGenerator pMkvGenerator, PBYTE pBuffer, PCHAR tagNa
     bufferSize -= encodedLen;
     pCurrentPnt += encodedLen;
 
-    // Copy the name
+    // Copy the value
     MEMCPY(pCurrentPnt, tagValue, tagValueLen);
 
     // Reduce the size of the buffer
@@ -615,6 +615,195 @@ CleanUp:
         // Set the size and the state before return
         *pSize = packagedSize;
     }
+
+    LEAVES();
+    return retStatus;
+}
+
+/**
+ * Packages MKV tags/tag/simple element chain
+ */
+STATUS mkvgenGenerateTagsChain(PBYTE pBuffer, PCHAR tagName, PCHAR tagValue, PUINT32 pSize, MKV_TREE_TYPE parent)
+{
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    UINT32 bufferSize, encodedLen, packagedSize = 0, tagNameLen, tagValueLen, totalOffset = 0;
+    UINT64 encodedElementLength;
+    PBYTE pCurrentPnt = pBuffer;
+    PBYTE pStartPnt = pBuffer;
+
+    // Check the input params
+    CHK(pSize != NULL && tagName != NULL && tagValue != NULL, STATUS_NULL_ARG);
+    CHK((tagNameLen = (UINT32) STRNLEN(tagName, MKV_MAX_TAG_NAME_LEN + 1)) <= MKV_MAX_TAG_NAME_LEN && tagNameLen > 0,
+        STATUS_MKV_INVALID_TAG_NAME_LENGTH);
+    CHK((tagValueLen = (UINT32) STRNLEN(tagValue, MKV_MAX_TAG_VALUE_LEN + 1)) <= MKV_MAX_TAG_VALUE_LEN, STATUS_MKV_INVALID_TAG_VALUE_LENGTH);
+    CHK(parent < MKV_TREE_LAST, STATUS_MKV_INVALID_PARENT_TYPE);
+
+    // Calculate the necessary size
+
+    // Get the overhead when packaging MKV
+    // The missing break statements are on purpose
+    switch (parent) {
+        case MKV_TREE_TAGS:
+            packagedSize += MKV_TAGS_ELEMENT_SIZE_OFFSET + MKV_GENERIC_ELEMENT_OFFSET;
+
+        case MKV_TREE_TAG:
+            packagedSize += MKV_GENERIC_ELEMENT_SIZE_OFFSET + MKV_GENERIC_ELEMENT_OFFSET;
+
+        case MKV_TREE_SIMPLE:
+            packagedSize += MKV_GENERIC_ELEMENT_SIZE_OFFSET + MKV_GENERIC_ELEMENT_OFFSET;
+            break;
+
+        default:
+            DLOGE("This should be unreachable");
+            CHK(FALSE, STATUS_MKV_INVALID_PARENT_TYPE);
+            break;
+    }
+    packagedSize += MKV_TAG_NAME_BITS_SIZE + MKV_TAG_STRING_BITS_SIZE + tagNameLen + tagValueLen;
+
+    // Check if we are asked for size only and early return if so
+    CHK(pBuffer != NULL, STATUS_SUCCESS);
+
+    // Preliminary check for the buffer size
+    CHK(*pSize >= packagedSize, STATUS_NOT_ENOUGH_MEMORY);
+
+    // Start with the full buffer
+    bufferSize = *pSize;
+
+    // Check the size and copy the structure first
+    switch (parent) {
+        case MKV_TREE_TAGS:
+            encodedLen = MKV_TAGS_BITS_SIZE;
+            CHK(bufferSize >= encodedLen, STATUS_NOT_ENOUGH_MEMORY);
+            MEMCPY(pCurrentPnt, MKV_TAGS_BITS, encodedLen);
+            break;
+
+        case MKV_TREE_TAG:
+            encodedLen = MKV_TAG_BITS_SIZE;
+            CHK(bufferSize >= encodedLen, STATUS_NOT_ENOUGH_MEMORY);
+            MEMCPY(pCurrentPnt, MKV_TAG_BITS, encodedLen);
+            break;
+
+        case MKV_TREE_SIMPLE:
+            encodedLen = MKV_TAG_SIMPLE_BITS_SIZE;
+            CHK(bufferSize >= encodedLen, STATUS_NOT_ENOUGH_MEMORY);
+            MEMCPY(pCurrentPnt, MKV_TAG_SIMPLE_BITS, encodedLen);
+            break;
+
+        default:
+            DLOGE("This should be unreachable");
+            CHK(FALSE, STATUS_MKV_INVALID_PARENT_TYPE);
+            break;
+    }
+
+    // encodedLen set in previous switch statement
+    bufferSize -= encodedLen;
+    pCurrentPnt += encodedLen;
+
+    // Copy the tag name
+    encodedLen = MKV_TAG_NAME_BITS_SIZE;
+    CHK(bufferSize >= encodedLen + tagNameLen, STATUS_NOT_ENOUGH_MEMORY);
+    MEMCPY(pCurrentPnt, MKV_TAG_NAME_BITS, encodedLen);
+    bufferSize -= encodedLen;
+    pCurrentPnt += encodedLen;
+
+    // Copy the name
+    MEMCPY(pCurrentPnt, tagName, tagNameLen);
+
+    // Reduce the size of the buffer
+    bufferSize -= tagNameLen;
+    pCurrentPnt += tagNameLen;
+
+    // Copy the tag string value
+    encodedLen = MKV_TAG_STRING_BITS_SIZE;
+    CHK(bufferSize >= encodedLen + tagValueLen, STATUS_NOT_ENOUGH_MEMORY);
+    MEMCPY(pCurrentPnt, MKV_TAG_STRING_BITS, encodedLen);
+    bufferSize -= encodedLen;
+    pCurrentPnt += encodedLen;
+
+    // Copy the value
+    MEMCPY(pCurrentPnt, tagValue, tagValueLen);
+
+    // Reduce the size of the buffer
+    bufferSize -= tagValueLen;
+    pCurrentPnt += tagValueLen;
+
+    // Fix-up the tags element size
+    /*
+     * Options will be:
+     *     TAGS + TAG + SIMPLE
+     *     TAG + SIMPLE
+     *     SIMPLE
+     *
+     * missing break statements are on purpose, to allow higher tier elements to fall through and serialize
+     * the required lower tier elements.
+     */
+    switch (parent) {
+        case MKV_TREE_TAGS:
+            totalOffset += MKV_TAGS_ELEMENT_SIZE_OFFSET;
+            encodedElementLength = 0x100000000000000ULL | (UINT64)(packagedSize - (totalOffset + MKV_GENERIC_ELEMENT_OFFSET));
+            PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + totalOffset), encodedElementLength);
+            totalOffset += MKV_GENERIC_ELEMENT_OFFSET;
+
+        case MKV_TREE_TAG:
+            totalOffset += MKV_GENERIC_ELEMENT_SIZE_OFFSET;
+            encodedElementLength = 0x100000000000000ULL | (UINT64)(packagedSize - (totalOffset + MKV_GENERIC_ELEMENT_OFFSET));
+            PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + totalOffset), encodedElementLength);
+            totalOffset += MKV_GENERIC_ELEMENT_OFFSET;
+
+        case MKV_TREE_SIMPLE:
+            totalOffset += MKV_GENERIC_ELEMENT_SIZE_OFFSET;
+            encodedElementLength = 0x100000000000000ULL | (UINT64)(packagedSize - (totalOffset + MKV_GENERIC_ELEMENT_OFFSET));
+            PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + totalOffset), encodedElementLength);
+            totalOffset += MKV_GENERIC_ELEMENT_OFFSET;
+            break;
+        default:
+            DLOGE("This should be unreachable");
+            CHK(FALSE, STATUS_MKV_INVALID_PARENT_TYPE);
+            break;
+    }
+
+    // Fix-up the tag name element size
+    totalOffset += MKV_GENERIC_ELEMENT_SIZE_OFFSET;
+    encodedElementLength = 0x100000000000000ULL | (UINT64)(tagNameLen);
+    PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + totalOffset), encodedElementLength);
+
+    // Fix-up the tag string element size
+    totalOffset += tagNameLen + MKV_TAG_NAME_BITS_SIZE;
+    encodedElementLength = 0x100000000000000ULL | (UINT64)(tagValueLen);
+    PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pStartPnt + totalOffset), encodedElementLength);
+
+    // Validate the size
+    CHK(packagedSize == (UINT32)(pCurrentPnt - pBuffer), STATUS_INTERNAL_ERROR);
+
+CleanUp:
+
+    if (STATUS_SUCCEEDED(retStatus)) {
+        // Set the size and the state before return
+        *pSize = packagedSize;
+    }
+
+    LEAVES();
+    return retStatus;
+}
+
+STATUS mkvgenIncreaseTagsTagSize(PBYTE pBuffer, UINT32 sizeIncrease)
+{
+    ENTERS();
+    UINT64 encodedElementLength;
+    STATUS retStatus = STATUS_SUCCESS;
+
+    CHK(pBuffer != NULL, STATUS_INVALID_ARG);
+
+    encodedElementLength = GET_UNALIGNED_BIG_ENDIAN((PINT64)(pBuffer + MKV_TAGS_ELEMENT_SIZE_OFFSET));
+    encodedElementLength += (UINT64) sizeIncrease;
+    PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pBuffer + MKV_TAGS_ELEMENT_SIZE_OFFSET), encodedElementLength);
+
+    encodedElementLength = GET_UNALIGNED_BIG_ENDIAN((PINT64)(pBuffer + MKV_TAG_ELEMENT_SIZE_OFFSET));
+    encodedElementLength += (UINT64) sizeIncrease;
+    PUT_UNALIGNED_BIG_ENDIAN((PINT64)(pBuffer + MKV_TAG_ELEMENT_SIZE_OFFSET), encodedElementLength);
+
+CleanUp:
 
     LEAVES();
     return retStatus;

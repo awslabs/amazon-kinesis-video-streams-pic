@@ -29,8 +29,13 @@ extern "C" {
 typedef struct __StateMachineContext StateMachineContext;
 struct __StateMachineContext {
     PStateMachineState pCurrentState;
-    UINT32 retryCount;
-    UINT64 time;
+    // Current retry count for a given state.
+    // This is incremented only for retries happening within the same state. Once the
+    // state transitions to a different state, localRetryCount is reset to 0.
+    UINT32 localStateRetryCount;
+    // Wait time before transitioning to next state.
+    // Next state could be the same state OR a different state
+    UINT64 stateTransitionWaitTime;
 };
 typedef struct __StateMachineContext* PStateMachineContext;
 
