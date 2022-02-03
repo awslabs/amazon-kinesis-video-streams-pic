@@ -747,7 +747,8 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     UINT64 windowDuration, currentDuration;
     PTrackInfo pTrackInfo = NULL;
     PSerializedMetadata pSerializedMetadata = NULL;
-    PFrameOrderCoordinator pFrameOrderCoordinator = pKinesisVideoStream->pFrameOrderCoordinator;
+
+    PFrameOrderCoordinator pFrameOrderCoordinator;
 
     CHK(pKinesisVideoStream != NULL && pFrame != NULL, STATUS_NULL_ARG);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
