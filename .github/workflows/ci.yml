@@ -167,6 +167,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Build and run
         run: |
+          $env:AWS_KVS_LOG_LEVEL=1
           .github/build_windows.bat
           D:\a\amazon-kinesis-video-streams-pic\amazon-kinesis-video-streams-pic\build\kvspic_test.exe --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:PermutatedStreamInfo/StateTransitionFunctionalityTest.ControlPlaneServiceCallExhaustRetry*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedBeforeTime*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedAfterFirstPeriod*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateLastUpdateTimeOfStreamUpdated*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.MultiTrackVerifyNoInvocationsWithSingleTrackProducer*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateNoConsecutiveEOFR*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateErrorOnForceConsecutiveEOFR*"
 
