@@ -160,15 +160,36 @@ jobs:
   #         make
   #         ulimit -c unlimited -S
   #         timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-  windows-msvc:
+  # windows-msvc:
+  #   runs-on: windows-2019
+  #   steps:
+  #     - name: Clone repository
+  #       uses: actions/checkout@v2
+  #     - name: Setup MSVC 
+  #       uses: ilammy/msvc-dev-cmd@v1
+  #       with:
+  #         arch: x86
+  #     - name: Disable Windows Defender
+  #       run: |
+  #         powershell -Command Set-MpPreference -DisableArchiveScanning 1
+  #         powershell -Command Set-MpPreference -DisableRealtimeMonitoring 1
+  #         powershell -Command Set-MpPreference -DisableBehaviorMonitoring 1
+  #     - name: Build and run
+  #       run: |
+  #         .github/build_windows.bat
+  #         & "D:\a\amazon-kinesis-video-streams-pic\amazon-kinesis-video-streams-pic\build\kvspic_test.exe" --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:PermutatedStreamInfo/StateTransitionFunctionalityTest.ControlPlaneServiceCallExhaustRetry*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedBeforeTime*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedAfterFirstPeriod*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateLastUpdateTimeOfStreamUpdated*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.MultiTrackVerifyNoInvocationsWithSingleTrackProducer*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateNoConsecutiveEOFR*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateErrorOnForceConsecutiveEOFR*"
+
+  windows-msvc-docker:
     runs-on: windows-2019
+    container: 
+      image: windows:1809
     steps:
       - name: Clone repository
         uses: actions/checkout@v2
       - name: Setup MSVC 
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: x86
+          arch: x64
       - name: Disable Windows Defender
         run: |
           powershell -Command Set-MpPreference -DisableArchiveScanning 1
