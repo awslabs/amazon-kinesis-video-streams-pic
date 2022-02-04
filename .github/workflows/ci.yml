@@ -171,9 +171,9 @@ jobs:
           arch: x86
       - name: Disable Windows Defender
         run: |
-          powershell -Command Set-MpPreference -DisableArchiveScanning $True
-          powershell -Command Set-MpPreference -DisableRealtimeMonitoring $True
-          powershell -Command Set-MpPreference -DisableBehaviorMonitoring $True
+          powershell -Command Set-MpPreference -DisableArchiveScanning 1
+          powershell -Command Set-MpPreference -DisableRealtimeMonitoring 1
+          powershell -Command Set-MpPreference -DisableBehaviorMonitoring 1
       - name: Build and run
         run: |
           .github/build_windows.bat
