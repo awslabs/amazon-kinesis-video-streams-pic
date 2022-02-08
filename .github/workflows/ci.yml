@@ -11,7 +11,7 @@ on:
       - master
 jobs:
   clang-format-check:
-    runs-on: macos-10.15
+    runs-on: macos-latest
     steps:
       - name: Clone repository
         uses: actions/checkout@v2
@@ -22,7 +22,7 @@ jobs:
         run: |
           bash scripts/check-clang.sh
   mac-os-catalina-build-gcc:
-    runs-on: macos-10.15
+    runs-on: macos-latest
     env:
       CC: gcc-11
       CXX: g++-11
@@ -37,10 +37,7 @@ jobs:
           export AWS_KVS_LOG_LEVEL=7
           ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"  
   mac-os-catalina-build-clang:
-    runs-on: macos-10.15
-    env:
-      CC: clang
-      CXX: clang++
+    runs-on: macos-latest
     steps:
       - name: Clone repository
         uses: actions/checkout@v2
