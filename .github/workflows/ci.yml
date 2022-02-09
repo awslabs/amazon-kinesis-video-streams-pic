@@ -190,4 +190,7 @@ jobs:
           export CC=arm-linux-gnueabi-gcc CXX=arm-linux-gnueabi-g++
           cmake .. -DBUILD_TEST=TRUE
           make
+          export AWS_KVS_LOG_LEVEL=7
+          ulimit -c unlimited -S
+          timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
           
