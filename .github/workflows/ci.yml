@@ -159,17 +159,16 @@ jobs:
           make
           ulimit -c unlimited -S
           timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-  # windows-msvc:
-  #   runs-on: windows-2019
-  #   steps:
-  #     - name: Clone repository
-  #       uses: actions/checkout@v2
-  #     - name: Build and run
-  #       run: |
-  #         $env:AWS_KVS_LOG_LEVEL=7
-  #         .github/build_windows.bat
-  #         D:\a\amazon-kinesis-video-streams-pic\amazon-kinesis-video-streams-pic\build\kvspic_test.exe --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:PermutatedStreamInfo/StateTransitionFunctionalityTest.ControlPlaneServiceCallExhaustRetry*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedBeforeTime*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedAfterFirstPeriod*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateLastUpdateTimeOfStreamUpdated*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.MultiTrackVerifyNoInvocationsWithSingleTrackProducer*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateNoConsecutiveEOFR*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateErrorOnForceConsecutiveEOFR*:*StreamStateTransitionsTest*:*PermutatedStreamInfo/StateTransitionFunctionalityTest.StreamTerminatedAndGoToGetEndpointState*:*PermutatedStreamInfo/StateTransitionFunctionalityTest.StreamTerminatedAndGoToDescribeState*:*PermutatedStreamInfo/StateTransitionFunctionalityTest*"
-
+windows-msvc:
+    runs-on: windows-2022
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Build and run
+        run: |
+          $env:AWS_KVS_LOG_LEVEL=7
+          .github/build_windows.bat
+          D:\a\amazon-kinesis-video-streams-pic\amazon-kinesis-video-streams-pic\build\kvspic_test.exe --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:PermutatedStreamInfo/StateTransitionFunctionalityTest.ControlPlaneServiceCallExhaustRetry*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedBeforeTime*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedAfterFirstPeriod*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateLastUpdateTimeOfStreamUpdated*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.MultiTrackVerifyNoInvocationsWithSingleTrackProducer*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateNoConsecutiveEOFR*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateErrorOnForceConsecutiveEOFR*:*StreamStateTransitionsTest*:*PermutatedStreamInfo/StateTransitionFunctionalityTest.StreamTerminatedAndGoToGetEndpointState*:*PermutatedStreamInfo/StateTransitionFunctionalityTest.StreamTerminatedAndGoToDescribeState*:*PermutatedStreamInfo/StateTransitionFunctionalityTest*"
   arm-cross-compilation:
     runs-on: ubuntu-18.04
     steps:
