@@ -159,7 +159,7 @@ jobs:
           make
           ulimit -c unlimited -S
           timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-windows-msvc:
+  windows-msvc:
     runs-on: windows-2022
     steps:
       - name: Clone repository
