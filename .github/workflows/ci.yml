@@ -169,7 +169,7 @@ jobs:
   windows-msvc:
     runs-on: windows-2022
     env:
-      AWS_KVS_LOG_LEVEL: 2
+      AWS_KVS_LOG_LEVEL: 7
     steps:
       - name: Clone repository
         uses: actions/checkout@v2
