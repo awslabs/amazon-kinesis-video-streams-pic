@@ -161,8 +161,6 @@ jobs:
           sudo apt-get -y install gdb
       - name: Build repository
         run: |
-          echo $CC
-          echo $CXX
           mkdir build && cd build
           cmake .. -DBUILD_TEST=TRUE
           make
