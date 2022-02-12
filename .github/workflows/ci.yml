@@ -137,6 +137,8 @@ jobs:
         run: |
           apt-get update
           apt-get -y install sudo
+          sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main"
+          sudo apt-get update
           sudo apt-get -y install clang-7.0
       - name: Build repository
         run: |
