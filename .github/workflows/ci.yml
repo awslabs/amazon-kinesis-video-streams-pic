@@ -124,7 +124,7 @@ jobs:
   thread-sanitizer:
     runs-on: ubuntu-18.04
     container:
-      image: ubuntu-16.04
+      image: ubuntu:16.04
     env:
       CC: clang-7
       CXX: clang++-7
