@@ -126,13 +126,18 @@ jobs:
     container:
       image: ubuntu:16.04
     env:
-      CC: clang
-      CXX: clang++
+      CC: clang-7
+      CXX: clang++-7
       AWS_KVS_LOG_LEVEL: 2
       TSAN_OPTIONS: halt_on_error=1:suppressions=../src/utils/tst/suppressions/TSAN.supp
     steps:
       - name: Clone repository
         uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get -y install sudo
+          sudo apt-get -y install clang-7
       - name: Build repository
         run: |
           mkdir build && cd build
