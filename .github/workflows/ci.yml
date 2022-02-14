@@ -125,16 +125,12 @@ jobs:
     runs-on: ubuntu-18.04
     env:
       TSAN_OPTIONS: halt_on_error=1:suppressions=../src/utils/tst/suppressions/TSAN.supp
-      CC: clang-7
-      CXX: clang++-7
+      CC: clang
+      CXX: clang++
       AWS_KVS_LOG_LEVEL: 2
     steps:
       - name: Clone repository
         uses: actions/checkout@v2
-      - name: Install dependencies
-        run:  |
-          sudo apt-get update
-          sudo apt-get -y install clang-7
       - name: Build repository
         run: |
           mkdir build
