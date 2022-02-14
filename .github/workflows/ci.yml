@@ -123,32 +123,54 @@ jobs:
   #         timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   thread-sanitizer:
     runs-on: ubuntu-18.04
-    container:
-      image: ubuntu:16.04
     env:
+      TSAN_OPTIONS: halt_on_error=1:suppressions=../src/utils/tst/suppressions/TSAN.supp
       CC: clang-7
       CXX: clang++-7
       AWS_KVS_LOG_LEVEL: 2
-      TSAN_OPTIONS: halt_on_error=1:suppressions=../src/utils/tst/suppressions/TSAN.supp
     steps:
       - name: Clone repository
         uses: actions/checkout@v2
       - name: Install dependencies
-        run: |
-          apt-get update
-          apt-get -y install sudo
-          sudo apt-get install -y apt-transport-https ca-certificates
-          sudo apt install -y software-properties-common
-          sudo apt-get update
-          sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main"
+        run:  |
           sudo apt-get update
           sudo apt-get -y install clang-7.0
       - name: Build repository
         run: |
-          mkdir build && cd build
+          mkdir build
+          cd build
           cmake .. -DBUILD_TEST=TRUE -DTHREAD_SANITIZER=TRUE
           make
-          ./kvspic_test --gtest_break_on_failure --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:ThreadFunctionalityTest.ThreadCreateAndCancel"
+          AWS_KVS_LOG_LEVEL=7 ./kvspic_test --gtest_break_on_failure --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:ThreadFunctionalityTest.ThreadCreateAndCancel"
+
+  # thread-sanitizer:
+  #   runs-on: ubuntu-18.04
+  #   container:
+  #     image: ubuntu:16.04
+  #   env:
+  #     CC: clang-7
+  #     CXX: clang++-7
+  #     AWS_KVS_LOG_LEVEL: 2
+  #     TSAN_OPTIONS: halt_on_error=1:suppressions=../src/utils/tst/suppressions/TSAN.supp
+  #   steps:
+  #     - name: Clone repository
+  #       uses: actions/checkout@v2
+  #     - name: Install dependencies
+  #       run: |
+  #         apt-get update
+  #         apt-get -y install sudo
+  #         sudo apt-get install -y apt-transport-https ca-certificates
+  #         sudo apt install -y software-properties-common
+  #         sudo apt-get update
+  #         sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main"
+  #         sudo apt-get update
+  #         sudo apt-get -y install clang-7.0
+  #     - name: Build repository
+  #       run: |
+  #         mkdir build && cd build
+  #         cmake .. -DBUILD_TEST=TRUE -DTHREAD_SANITIZER=TRUE
+  #         make
+  #         ./kvspic_test --gtest_break_on_failure --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:ThreadFunctionalityTest.ThreadCreateAndCancel"
   # linux-gcc-4_4:
   #   runs-on: ubuntu-18.04
   #   env:
