@@ -134,7 +134,7 @@ jobs:
       - name: Install dependencies
         run:  |
           sudo apt-get update
-          sudo apt-get -y install clang-7.0
+          sudo apt-get -y install clang-7
       - name: Build repository
         run: |
           mkdir build
