@@ -908,7 +908,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         CHK_STATUS(mkvgenPackageFrame(pKinesisVideoStream->pMkvGenerator, pFrame, pTrackInfo, pAlloc, &packagedSize, &encodedFrameInfo));
 
         // Package the metadata if specified
-        if (packagedMetadataSize != 0 && !justStartedStreaming) {
+        if (packagedMetadataSize != 0 && generatorState != MKV_STATE_START_STREAM) {
             // Move the packaged bits out first to make room for the metadata
             // NOTE: need to use MEMMOVE due to the overlapping ranges
             MEMMOVE(pAlloc + encodedFrameInfo.dataOffset + packagedMetadataSize, pAlloc + encodedFrameInfo.dataOffset,
