@@ -801,6 +801,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         // Step the state machine once to get out of the Ready state
         CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
         justStartedStreaming = TRUE;
+        DLOGE("@@@@@@@@@@@@@@@@@@@@@@@@@@ %d", __LINE__);
     }
 
     // if we need to reset the generator on the next key frame (during the rotation only)
@@ -914,6 +915,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
                     packagedSize - encodedFrameInfo.dataOffset);
 
             // Metadata will be packaged after the MKV header but before the cluster
+        DLOGE("@@@@@@@@@@@@@@@@@@@@@@@@@@ %d", __LINE__);
             CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, FALSE, pAlloc + encodedFrameInfo.dataOffset,
                                              &packagedMetadataSize));
         }
