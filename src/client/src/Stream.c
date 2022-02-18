@@ -919,6 +919,9 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, FALSE, pAlloc + encodedFrameInfo.dataOffset,
                                              &packagedMetadataSize));
         }
+        else {
+            DLOGE("@@@@@@@@@@@@@@@@@@@@@@@@@@ %d", __LINE__);
+        }
     }
 
     // Unmap the storage for the frame
