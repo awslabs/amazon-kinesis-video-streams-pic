@@ -919,7 +919,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, FALSE, pAlloc + encodedFrameInfo.dataOffset,
                                              &packagedMetadataSize));
         }
-        else {
+        else if (generatorState == MKV_STATE_START_STREAM && packagedMetadataSize != 0){
             DLOGE("@@@@@@@@@@@@@@@@@@@@@@@@@@ %d", __LINE__);
         }
     }
