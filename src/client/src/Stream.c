@@ -1887,8 +1887,11 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
     }
 
     //@TODO if(pKinesisVideoStream->pMkvGenerator->streamState
+        DLOGE("$$$$$$$$$$$$$$$$$$$$$$$$$$ %d", __LINE__);
     CHK_STATUS(mkvgenHasStreamStarted(pKinesisVideoStream->pMkvGenerator, &streamStarted));
+        DLOGE("$$$$$$$$$$$$$$$$$$$$$$$$$$ %d", __LINE__);
     CHK(streamStarted == FALSE, STATUS_NULL_ARG);
+        DLOGE("$$$$$$$$$$$$$$$$$$$$$$$$$$ %d", __LINE__);
 
     // Validate if the customer is not attempting to add an internal metadata
     if (hasMetadata) {
