@@ -737,7 +737,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     UINT64 remainingSize = 0, remainingDuration = 0, thresholdPercent = 0, duration = 0, viewByteSize = 0, allocSize = 0;
     PBYTE pAlloc = NULL;
     UINT32 trackIndex, packagedSize = 0, packagedMetadataSize = 0, overallSize = 0, itemFlags = ITEM_FLAG_NONE;
-    BOOL streamLocked = FALSE, clientLocked = FALSE, freeOnError = TRUE, justStartedStreaming = FALSE;
+    BOOL streamLocked = FALSE, clientLocked = FALSE, freeOnError = TRUE;
     EncodedFrameInfo encodedFrameInfo;
     MKV_STREAM_STATE generatorState = MKV_STATE_START_BLOCK;
     UINT64 currentTime = INVALID_TIMESTAMP_VALUE;
@@ -800,7 +800,6 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     if (pKinesisVideoStream->streamState == STREAM_STATE_NEW && pKinesisVideoStream->streamReady) {
         // Step the state machine once to get out of the Ready state
         CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
-        justStartedStreaming = TRUE;
         DLOGE("@@@@@@@@@@@@@@@@@@@@@@@@@@ %d", __LINE__);
     }
 
@@ -908,7 +907,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         CHK_STATUS(mkvgenPackageFrame(pKinesisVideoStream->pMkvGenerator, pFrame, pTrackInfo, pAlloc, &packagedSize, &encodedFrameInfo));
 
         // Package the metadata if specified
-        if (packagedMetadataSize != 0 && generatorState != MKV_STATE_START_STREAM) {
+        if (packagedMetadataSize != 0) {
             // Move the packaged bits out first to make room for the metadata
             // NOTE: need to use MEMMOVE due to the overlapping ranges
             MEMMOVE(pAlloc + encodedFrameInfo.dataOffset + packagedMetadataSize, pAlloc + encodedFrameInfo.dataOffset,
@@ -918,9 +917,6 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         DLOGE("@@@@@@@@@@@@@@@@@@@@@@@@@@ %d", __LINE__);
             CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, FALSE, pAlloc + encodedFrameInfo.dataOffset,
                                              &packagedMetadataSize));
-        }
-        else if (generatorState == MKV_STATE_START_STREAM && packagedMetadataSize != 0){
-            DLOGE("@@@@@@@@@@@@@@@@@@@@@@@@@@ %d", __LINE__);
         }
     }
 
@@ -1863,7 +1859,7 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = NULL;
-    BOOL streamLocked = FALSE, hasMetadata = pMetadata == NULL ? FALSE : TRUE, creatingNodes = FALSE;
+    BOOL streamLocked = FALSE, hasMetadata = pMetadata == NULL ? FALSE : TRUE, creatingNodes = FALSE, streamStarted = FALSE;
     UINT8 iter = 0;
     UINT32 packagedSize = 0, totalPackagedSize = 0, metadataQueueSize;
     UINT32 packagedSizes[MAX_FRAGMENT_METADATA_COUNT] = {0};
@@ -1889,6 +1885,10 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
                                            STREAM_STATE_READY | STREAM_STATE_PUT_STREAM | STREAM_STATE_TAG_STREAM | STREAM_STATE_STREAMING |
                                                STREAM_STATE_GET_ENDPOINT | STREAM_STATE_GET_TOKEN | STREAM_STATE_STOPPED));
     }
+
+    //@TODO if(pKinesisVideoStream->pMkvGenerator->streamState
+    CHK_STATUS(mkvgenHasStreamStarted(pKinesisVideoStream->pMkvGenerator, &streamStarted));
+    CHK(streamStarted == FALSE, STATUS_NULL_ARG);
 
     // Validate if the customer is not attempting to add an internal metadata
     if (hasMetadata) {
@@ -1977,6 +1977,10 @@ CleanUp:
     }
     if (streamLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+    }
+    if(streamStarted == FALSE)
+    {
+        DLOGE("$$$$$$$$$$$$$$$$$$$$$$$$$$ %d", __LINE__);
     }
 
     LEAVES();
