@@ -1892,7 +1892,7 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
     //@TODO if(pKinesisVideoStream->pMkvGenerator->streamState
     CHK_STATUS(mkvgenHasStreamStarted(pKinesisVideoStream->pMkvGenerator, &streamStarted));
         //want stream to have started
-    CHK(streamStarted != FALSE, STATUS_NULL_ARG);
+    CHK(streamStarted != FALSE, STATUS_STREAM_NOT_STARTED);
 
     // Validate if the customer is not attempting to add an internal metadata
     if (hasMetadata) {
