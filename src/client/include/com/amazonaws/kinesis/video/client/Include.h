@@ -185,6 +185,8 @@ extern "C" {
 #define STATUS_PUTMEDIA_LAST_PERSIST_ACK_NOT_RECEIVED            STATUS_CLIENT_BASE + 0x00000088
 #define STATUS_NON_ALIGNED_HEAP_WITH_IN_CONTENT_STORE_ALLOCATORS STATUS_CLIENT_BASE + 0x00000089
 #define STATUS_MULTIPLE_CONSECUTIVE_EOFR                         STATUS_CLIENT_BASE + 0x0000008a
+#define STATUS_DUPLICATE_STREAM_EVENT_TYPE                       STATUS_CLIENT_BASE + 0x0000008b
+#define STATUS_STREAM_NOT_STARTED                                STATUS_CLIENT_BASE + 0x0000008c
 
 #define IS_RECOVERABLE_ERROR(error)                                                                                                                  \
     ((error) == STATUS_SERVICE_CALL_RESOURCE_NOT_FOUND_ERROR || (error) == STATUS_SERVICE_CALL_RESOURCE_IN_USE_ERROR ||                              \
