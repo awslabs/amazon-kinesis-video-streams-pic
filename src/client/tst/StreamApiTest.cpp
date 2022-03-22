@@ -411,6 +411,7 @@ TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Name)
     CHAR tagName[MKV_MAX_TAG_NAME_LEN + 2] = {0};
     CHAR tagValue[MKV_MAX_TAG_VALUE_LEN + 2] = {0};
     Frame frame;
+    UINT64 timestamp = 100;
     BYTE tempBuffer[1000];
 
     Meta.names[0] = tagName;
@@ -422,7 +423,9 @@ TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Name)
     ReadyStream();
     EXPECT_EQ(STATUS_STREAM_NOT_STARTED, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
-    frame.duration = TEST_LONG_FRAME_DURATION/2;
+    frame.duration = TEST_LONG_FRAME_DURATION;
+    frame.decodingTs = timestamp;
+    frame.presentationTs = timestamp;
     frame.size = SIZEOF(tempBuffer);
     frame.frameData = tempBuffer;
     frame.trackId = TEST_TRACKID;
