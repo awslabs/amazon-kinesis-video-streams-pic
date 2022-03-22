@@ -213,6 +213,9 @@ struct __MetadataTracker {
 
     // Storage for the packaged metadata.
     PBYTE data;
+
+    //Tracking events (bit shifted)
+    UINT32 events;
 };
 typedef struct __MetadataTracker* PMetadataTracker;
 
