@@ -1889,7 +1889,6 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
                                                STREAM_STATE_GET_ENDPOINT | STREAM_STATE_GET_TOKEN | STREAM_STATE_STOPPED));
     }
 
-    //@TODO if(pKinesisVideoStream->pMkvGenerator->streamState
     CHK_STATUS(mkvgenHasStreamStarted(pKinesisVideoStream->pMkvGenerator, &streamStarted));
     // want stream to have started
     CHK(streamStarted != FALSE, STATUS_STREAM_NOT_STARTED);

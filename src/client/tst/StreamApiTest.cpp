@@ -422,7 +422,7 @@ TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Name)
     ReadyStream();
     EXPECT_EQ(STATUS_STREAM_NOT_STARTED, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
-    frame.duration = TEST_LONG_FRAME_DURATION;
+    frame.duration = TEST_LONG_FRAME_DURATION/2;
     frame.size = SIZEOF(tempBuffer);
     frame.frameData = tempBuffer;
     frame.trackId = TEST_TRACKID;
