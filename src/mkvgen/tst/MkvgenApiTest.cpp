@@ -525,6 +525,30 @@ TEST_F(MkvgenApiTest, mkvgenGenerateTagsChain_MaxStringsCheck)
     MEMFREE(tagsChainAPIBuffer);
 }
 
+TEST_F(MkvgenApiTest, mkvgenIncreaseTagsTagSize_FunctionalityTest)
+{
+    UINT32 size = 1000, randomSize = 0, encodedSize = 0;
+    PBYTE tagsMkvHolder = (PBYTE) MEMCALLOC(1, size);
+    srand(GETTIME());
+
+    EXPECT_EQ(STATUS_INVALID_ARG, mkvgenIncreaseTagsTagSize(NULL, 0));
+
+    /*** RANDOMIZATION TESTING ***/
+    randomSize = rand()%(0x000fffffffffffff); //UINT64, first byte is occupied,
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTagsChain(tagsMkvHolder, "TEST_NAME", "TEST_VALUE", &size, MKV_TREE_TAGS));
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenIncreaseTagsTagSize(tagsMkvHolder, randomSize));
+
+    //grab size, and verify it increase by the expected amount.
+    encodedSize = GET_UNALIGNED_BIG_ENDIAN((PUINT64)(tagsMkvHolder + MKV_TAGS_ELEMENT_SIZE_OFFSET));
+    EXPECT_EQ(encodedSize, randomSize + size - MKV_TAG_ELEMENT_OFFSET);
+
+    //check TAG size as well.
+    encodedSize = GET_UNALIGNED_BIG_ENDIAN((PUINT64)(tagsMkvHolder + MKV_TAG_ELEMENT_SIZE_OFFSET));
+    EXPECT_EQ(encodedSize, randomSize + size - MKV_SIMPLE_TAG_ELEMENT_OFFSET);
+
+    SAFE_MEMFREE(tagsMkvHolder);
+}
+
 TEST_F(MkvgenApiTest, mkvgenContentType_GetContentType)
 {
     EXPECT_EQ(MKV_CONTENT_TYPE_NONE, mkvgenGetContentTypeFromContentTypeString(NULL));

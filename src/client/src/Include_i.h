@@ -463,7 +463,12 @@ STATUS executeCreateClientState(UINT64, UINT64);
 STATUS executeTagClientState(UINT64, UINT64);
 STATUS executeReadyClientState(UINT64, UINT64);
 
+STATUS defaultClientStateTransitionHook(UINT64, PUINT64);
+
 STATUS checkIntermittentProducerCallback(UINT32, UINT64, UINT64);
+
+STATUS freeClientRetryStrategy(PKinesisVideoClient);
+STATUS configureClientWithRetryStrategy(PKinesisVideoClient);
 
 #ifdef __cplusplus
 }

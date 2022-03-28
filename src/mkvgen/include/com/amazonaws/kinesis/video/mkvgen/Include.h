@@ -550,6 +550,17 @@ PUBLIC_API STATUS mkvgenGenerateTag(PMkvGenerator, PBYTE, PCHAR, PCHAR, PUINT32)
  * @return - STATUS code of the execution
  */
 PUBLIC_API STATUS mkvgenGenerateTagsChain(PBYTE, PCHAR, PCHAR, PUINT32, MKV_TREE_TYPE);
+
+/**
+ * Edits the sizes of an existings TAGS and TAG element in a buffer.
+ *
+ * @PBYTE - Buffer to hold the packaged bits
+ * @PUINT32 - Number of bytes to add to the size
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS mkvgenIncreaseTagsTagSize(PBYTE, UINT32);
+
 /**
  * Packages a frame into an MKV fragment
  *

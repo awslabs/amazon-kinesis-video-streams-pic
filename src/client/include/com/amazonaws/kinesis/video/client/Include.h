@@ -456,8 +456,8 @@ extern "C" {
 #define SERVICE_CALL_CONTEXT_CURRENT_VERSION  0
 #define STREAM_DESCRIPTION_CURRENT_VERSION    1
 #define FRAGMENT_ACK_CURRENT_VERSION          0
-#define STREAM_METRICS_CURRENT_VERSION        2
-#define CLIENT_METRICS_CURRENT_VERSION        1
+#define STREAM_METRICS_CURRENT_VERSION        3
+#define CLIENT_METRICS_CURRENT_VERSION        2
 #define CLIENT_INFO_CURRENT_VERSION           2
 #define STREAM_EVENT_METADATA_CURRENT_VERSION 0
 
@@ -656,6 +656,12 @@ typedef enum {
 
     // Forbidden
     SERVICE_CALL_FORBIDDEN = 403,
+    
+    // Security Credentials Expired
+    SERVICE_CALL_SIGNATURE_EXPIRED = 10008,
+
+    // device time ahead of server
+    SERVICE_CALL_SIGNATURE_NOT_YET_CURRENT = 10009,
 
     // Device not provisioned
     SERVICE_CALL_DEVICE_NOT_PROVISIONED = 10004,
@@ -1115,6 +1121,21 @@ struct __StorageInfo {
 typedef struct __StorageInfo* PStorageInfo;
 
 /**
+ * Function to create a retry strategy to be used for the client and streams
+ * on detecting errors from service API calls. The retry strategy is a part of
+ * client struct.
+ *
+ * NOTE: This is an optional callback. If not specified, the SDK will use
+ * default retry strategy. Unless there is no specific use case, it is
+ * recommended to leave this callback NULL and let SDK handle the retries.
+ *
+ * @param 1 CLIENT_HANDLE - IN - The client handle.
+ *
+ * @return Status of the callback
+ */
+typedef STATUS (*GetKvsRetryStrategyFn)(CLIENT_HANDLE);
+
+/**
  * Client Info
  */
 typedef struct __ClientInfo {
@@ -1152,6 +1173,12 @@ typedef struct __ClientInfo {
     // period (in hundreds of nanos) at which callback will be fired to check stream
     // clients should set this value to 0.
     UINT64 reservedCallbackPeriod;
+
+    // Retry strategy for the client and all the streams under it
+    KvsRetryStrategy kvsRetryStrategy;
+
+    // Function pointers for application to provide a custom retry strategy
+    KvsRetryStrategyCallbacks kvsRetryStrategyCallbacks;
 } ClientInfo, *PClientInfo;
 
 /**
@@ -1193,6 +1220,9 @@ typedef struct __ClientMetrics ClientMetrics;
 struct __ClientMetrics {
     // Version of the struct
     UINT32 version;
+
+    // API Call retry count for a client
+    DOUBLE clientAvgApiCallRetryCount;
 
     // Overall content store allocation size
     UINT64 contentStoreSize;
@@ -1314,6 +1344,9 @@ struct __StreamMetrics {
 
     // Current stream's elementary frame rate.
     DOUBLE elementaryFrameRate;
+
+    // V3 metrics following
+    UINT32 streamApiCallRetryCount;
 };
 
 typedef struct __StreamMetrics* PStreamMetrics;

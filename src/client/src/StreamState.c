@@ -9,30 +9,97 @@
  * Static definitions of the states
  */
 StateMachineState STREAM_STATE_MACHINE_STATES[] = {
-    {STREAM_STATE_NEW, STREAM_STATE_NONE | STREAM_STATE_NEW | STREAM_STATE_STOPPED, fromNewStreamState, executeNewStreamState,
-     INFINITE_RETRY_COUNT_SENTINEL, STATUS_INVALID_STREAM_READY_STATE},
-    {STREAM_STATE_DESCRIBE, STREAM_STATE_NEW | STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_PUT_STREAM, fromDescribeStreamState,
-     executeDescribeStreamState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_DESCRIBE_STREAM_CALL_FAILED},
-    {STREAM_STATE_CREATE, STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE, fromCreateStreamState, executeCreateStreamState, SERVICE_CALL_MAX_RETRY_COUNT,
-     STATUS_CREATE_STREAM_CALL_FAILED},
-    {STREAM_STATE_TAG_STREAM, STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE | STREAM_STATE_TAG_STREAM, fromTagStreamState, executeTagStreamState,
-     SERVICE_CALL_MAX_RETRY_COUNT, STATUS_TAG_STREAM_CALL_FAILED},
-    {STREAM_STATE_GET_ENDPOINT,
-     STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE | STREAM_STATE_GET_ENDPOINT | STREAM_STATE_TAG_STREAM |
-         STREAM_STATE_PUT_STREAM,
-     fromGetEndpointStreamState, executeGetEndpointStreamState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_GET_STREAMING_ENDPOINT_CALL_FAILED},
-    {STREAM_STATE_GET_TOKEN, STREAM_STATE_STOPPED | STREAM_STATE_GET_ENDPOINT | STREAM_STATE_GET_TOKEN | STREAM_STATE_PUT_STREAM,
-     fromGetTokenStreamState, executeGetTokenStreamState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_GET_STREAMING_TOKEN_CALL_FAILED},
-    {STREAM_STATE_READY, STREAM_STATE_STOPPED | STREAM_STATE_GET_TOKEN | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING,
-     fromReadyStreamState, executeReadyStreamState, SERVICE_CALL_MAX_RETRY_COUNT, STATUS_STREAM_READY_CALLBACK_FAILED},
-    {STREAM_STATE_PUT_STREAM, STREAM_STATE_READY | STREAM_STATE_PUT_STREAM, fromPutStreamState, executePutStreamState, INFINITE_RETRY_COUNT_SENTINEL,
-     STATUS_PUT_STREAM_CALL_FAILED},
-    {STREAM_STATE_STREAMING, STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING, fromStreamingStreamState, executeStreamingStreamState,
-     INFINITE_RETRY_COUNT_SENTINEL, STATUS_PUT_STREAM_CALL_FAILED},
-    {STREAM_STATE_STOPPED,
-     STREAM_STATE_STOPPED | STREAM_STATE_CREATE | STREAM_STATE_DESCRIBE | STREAM_STATE_TAG_STREAM | STREAM_STATE_GET_ENDPOINT |
-         STREAM_STATE_GET_TOKEN | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING | STREAM_STATE_NEW,
-     fromStoppedStreamState, executeStoppedStreamState, INFINITE_RETRY_COUNT_SENTINEL, STATUS_PUT_STREAM_CALL_FAILED},
+    {
+        STREAM_STATE_NEW,
+        STREAM_STATE_NONE | STREAM_STATE_NEW | STREAM_STATE_STOPPED,
+        fromNewStreamState,
+        executeNewStreamState,
+        defaultStreamStateTransitionHook,
+        INFINITE_RETRY_COUNT_SENTINEL,
+        STATUS_INVALID_STREAM_READY_STATE
+    },
+    {
+        STREAM_STATE_DESCRIBE,
+        STREAM_STATE_NEW | STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_PUT_STREAM,
+        fromDescribeStreamState,
+        executeDescribeStreamState,
+        defaultStreamStateTransitionHook,
+        SERVICE_CALL_MAX_RETRY_COUNT,
+        STATUS_DESCRIBE_STREAM_CALL_FAILED
+    },
+    {
+        STREAM_STATE_CREATE,
+        STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE,
+        fromCreateStreamState,
+        executeCreateStreamState,
+        defaultStreamStateTransitionHook,
+        SERVICE_CALL_MAX_RETRY_COUNT,
+        STATUS_CREATE_STREAM_CALL_FAILED
+    },
+    {
+        STREAM_STATE_TAG_STREAM,
+        STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE | STREAM_STATE_TAG_STREAM,
+        fromTagStreamState,
+        executeTagStreamState,
+        defaultStreamStateTransitionHook,
+        SERVICE_CALL_MAX_RETRY_COUNT,
+        STATUS_TAG_STREAM_CALL_FAILED
+    },
+    {
+        STREAM_STATE_GET_ENDPOINT,
+        STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE | STREAM_STATE_GET_ENDPOINT | STREAM_STATE_TAG_STREAM,
+        fromGetEndpointStreamState,
+        executeGetEndpointStreamState,
+        defaultStreamStateTransitionHook,
+        SERVICE_CALL_MAX_RETRY_COUNT,
+        STATUS_GET_STREAMING_ENDPOINT_CALL_FAILED
+    },
+    {
+        STREAM_STATE_GET_TOKEN,
+        STREAM_STATE_STOPPED | STREAM_STATE_GET_ENDPOINT | STREAM_STATE_GET_TOKEN | STREAM_STATE_PUT_STREAM,
+        fromGetTokenStreamState,
+        executeGetTokenStreamState,
+        defaultStreamStateTransitionHook,
+        SERVICE_CALL_MAX_RETRY_COUNT,
+        STATUS_GET_STREAMING_TOKEN_CALL_FAILED
+    },
+    {
+        STREAM_STATE_READY,
+        STREAM_STATE_STOPPED | STREAM_STATE_GET_TOKEN | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING,
+        fromReadyStreamState,
+        executeReadyStreamState,
+        defaultStreamStateTransitionHook,
+        SERVICE_CALL_MAX_RETRY_COUNT,
+        STATUS_STREAM_READY_CALLBACK_FAILED
+    },
+    {
+        STREAM_STATE_PUT_STREAM,
+        STREAM_STATE_READY | STREAM_STATE_PUT_STREAM,
+        fromPutStreamState,
+        executePutStreamState,
+        defaultStreamStateTransitionHook,
+        INFINITE_RETRY_COUNT_SENTINEL,
+        STATUS_PUT_STREAM_CALL_FAILED
+    },
+    {
+        STREAM_STATE_STREAMING,
+        STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING,
+        fromStreamingStreamState,
+        executeStreamingStreamState,
+        defaultStreamStateTransitionHook,
+        INFINITE_RETRY_COUNT_SENTINEL,
+        STATUS_PUT_STREAM_CALL_FAILED
+    },
+    {
+        STREAM_STATE_STOPPED,
+        STREAM_STATE_STOPPED | STREAM_STATE_CREATE | STREAM_STATE_DESCRIBE | STREAM_STATE_TAG_STREAM | STREAM_STATE_GET_ENDPOINT |
+        STREAM_STATE_GET_TOKEN | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING | STREAM_STATE_NEW,
+        fromStoppedStreamState,
+        executeStoppedStreamState,
+        defaultStreamStateTransitionHook,
+        INFINITE_RETRY_COUNT_SENTINEL,
+        STATUS_PUT_STREAM_CALL_FAILED
+    }
 };
 
 UINT32 STREAM_STATE_MACHINE_STATE_COUNT = SIZEOF(STREAM_STATE_MACHINE_STATES) / SIZEOF(StateMachineState);
@@ -40,6 +107,60 @@ UINT32 STREAM_STATE_MACHINE_STATE_COUNT = SIZEOF(STREAM_STATE_MACHINE_STATES) / 
 ///////////////////////////////////////////////////////////////////////////
 // State machine callback functions
 ///////////////////////////////////////////////////////////////////////////
+
+
+STATUS defaultStreamStateTransitionHook(
+        UINT64 customData /* customData should be PKinesisVideoClient */,
+        PUINT64 stateTransitionWaitTime) {
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    STATUS countStatus = STATUS_SUCCESS;
+    PKinesisVideoStream pKinesisVideoStream = NULL;
+    PKinesisVideoClient pKinesisVideoClient = NULL;
+    PKvsRetryStrategy pKvsRetryStrategy = NULL;
+    PKvsRetryStrategyCallbacks pKvsRetryStrategyCallbacks = NULL;
+    UINT64 retryWaitTime = 0;
+
+    pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
+    CHK(pKinesisVideoStream != NULL && stateTransitionWaitTime != NULL, STATUS_NULL_ARG);
+
+    pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+    CHK(pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+
+    pKvsRetryStrategy = &(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy);
+    pKvsRetryStrategyCallbacks = &(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategyCallbacks);
+
+    // result > SERVICE_CALL_RESULT_OK covers case for -
+    // result != SERVICE_CALL_RESULT_NOT_SET and != SERVICE_CALL_RESULT_OK
+    // If we support any other 2xx service call results, the condition
+    // should change to (pKinesisVideoStream->base.result > 299 && ...)
+    CHK(pKinesisVideoStream->base.result > SERVICE_CALL_RESULT_OK &&
+            pKvsRetryStrategy != NULL &&
+            pKvsRetryStrategy->pRetryStrategy != NULL &&
+            pKvsRetryStrategyCallbacks->executeRetryStrategyFn != NULL, STATUS_SUCCESS);
+
+
+    if(pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn != NULL) {
+        if((countStatus = pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn(pKvsRetryStrategy, &pKinesisVideoStream->diagnostics.streamApiCallRetryCount)) != STATUS_SUCCESS) {
+            DLOGW("Failed to get retry count. Error code: %08x", countStatus);
+        }
+        else {
+            DLOGD("Stream state machine retry count: %lu", pKinesisVideoStream->diagnostics.streamApiCallRetryCount);
+        }
+    }
+
+    DLOGD("\n KinesisVideoStream base result is [%u]. Executing KVS retry handler of retry strategy type [%u]",
+          pKinesisVideoStream->base.result, pKvsRetryStrategy->retryStrategyType);
+
+    pKvsRetryStrategyCallbacks->executeRetryStrategyFn(pKvsRetryStrategy, &retryWaitTime);
+    *stateTransitionWaitTime = retryWaitTime;
+
+CleanUp:
+
+    LEAVES();
+    return retStatus;
+}
+
 STATUS fromNewStreamState(UINT64 customData, PUINT64 pState)
 {
     ENTERS();

@@ -440,7 +440,7 @@ CleanUp:
 }
 
 /**
- * Stops the stream
+ * stops the stream
  */
 STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
 {
@@ -550,7 +550,7 @@ CleanUp:
 }
 
 /**
- * Synchronously Stops the stream
+ * Synchronously stops the stream
  */
 STATUS stopStreamSync(PKinesisVideoStream pKinesisVideoStream)
 {
@@ -688,7 +688,7 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     DLOGD("\tCurrent transfer rate (bps): %" PRIu64 " (%" PRIu64 " Kbps)", streamMetrics.currentTransferRate * 8,
           streamMetrics.currentTransferRate * 8 / 1024);
 
-    // V1 information
+    // V1 stream information
     DLOGD("\tStream uptime in (ms): %" PRIu64 " ", streamMetrics.uptime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     DLOGD("\tTotal transferred bytes: %" PRIu64 " ", streamMetrics.transferredBytes);
     DLOGD("\tTotal number of streaming sessions: %" PRIu64 " ", streamMetrics.totalSessions);
@@ -710,10 +710,16 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     DLOGD("\tAverage Data Plane API latency (ms): %" PRIu64 " ", streamMetrics.dataApiCallLatency / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     // V2 stream information
-    DLOGD("\tCurrent elementary frame rate (fps): %f ", streamMetrics.elementaryFrameRate);
+    DLOGD("\tCurrent elementary frame rate (fps): %lf ", streamMetrics.elementaryFrameRate);
+
+    // V3 stream information
+    DLOGD("\tAPI Call Retry Count : %lu", streamMetrics.streamApiCallRetryCount);
 
     // V1 client information
-    DLOGD("\tTotal elementary frame rate (fps): %f ", clientMetrics.totalElementaryFrameRate);
+    DLOGD("\tTotal elementary frame rate (fps): %lf ", clientMetrics.totalElementaryFrameRate);
+
+    // V2 client information
+    DLOGD("\tAverage API call retry count for client: %lf", clientMetrics.clientAvgApiCallRetryCount);
 CleanUp:
 
     return retStatus;
@@ -731,7 +737,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     UINT64 remainingSize = 0, remainingDuration = 0, thresholdPercent = 0, duration = 0, viewByteSize = 0, allocSize = 0;
     PBYTE pAlloc = NULL;
     UINT32 trackIndex, packagedSize = 0, packagedMetadataSize = 0, overallSize = 0, itemFlags = ITEM_FLAG_NONE;
-    BOOL streamLocked = FALSE, clientLocked = FALSE, freeOnError = TRUE;
+    BOOL streamLocked = FALSE, clientLocked = FALSE, freeOnError = TRUE, justStartedStreaming = FALSE;
     EncodedFrameInfo encodedFrameInfo;
     MKV_STREAM_STATE generatorState = MKV_STATE_START_BLOCK;
     UINT64 currentTime = INVALID_TIMESTAMP_VALUE;
@@ -794,6 +800,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     if (pKinesisVideoStream->streamState == STREAM_STATE_NEW && pKinesisVideoStream->streamReady) {
         // Step the state machine once to get out of the Ready state
         CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+        justStartedStreaming = TRUE;
     }
 
     // if we need to reset the generator on the next key frame (during the rotation only)
@@ -900,7 +907,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         CHK_STATUS(mkvgenPackageFrame(pKinesisVideoStream->pMkvGenerator, pFrame, pTrackInfo, pAlloc, &packagedSize, &encodedFrameInfo));
 
         // Package the metadata if specified
-        if (packagedMetadataSize != 0) {
+        if (packagedMetadataSize != 0 && !justStartedStreaming) {
             // Move the packaged bits out first to make room for the metadata
             // NOTE: need to use MEMMOVE due to the overlapping ranges
             MEMMOVE(pAlloc + encodedFrameInfo.dataOffset + packagedMetadataSize, pAlloc + encodedFrameInfo.dataOffset,
@@ -1591,6 +1598,9 @@ STATUS getStreamMetrics(PKinesisVideoStream pKinesisVideoStream, PStreamMetrics 
     streamLocked = FALSE;
 
     switch (pStreamMetrics->version) {
+        case 3:
+            // Fill in data for V3 metrics
+            pStreamMetrics->streamApiCallRetryCount = pKinesisVideoStream->diagnostics.streamApiCallRetryCount;
         case 2:
             // Fill in data for V2 metrics
             pStreamMetrics->elementaryFrameRate = pKinesisVideoStream->diagnostics.elementaryFrameRate;
@@ -2930,10 +2940,11 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
-    UINT32 packagedSize = 0, metadataCount = 0, metadataSize = 0, overallSize = 0, i;
+    UINT32 packagedSize = 0, metadataCount = 0, metadataSize = 0, overallSize = 0, simpleSizes = 0, i;
+    PBYTE tagsStart;
     UINT64 item;
     PSerializedMetadata pSerializedMetadata = NULL;
-    BOOL firstTimeCheck = TRUE;
+    BOOL firstTimeCheck = TRUE, tagsFound = FALSE;
 
     // NOTE: Assuming the locking is already done.
     // We will calculate the size and return the size only if buffer is NULL
@@ -2975,8 +2986,21 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
         pSerializedMetadata = (PSerializedMetadata) item;
         if (!(pSerializedMetadata->applied && notSentOnly)) {
             metadataSize = overallSize;
+            if (pSerializedMetadata->parent == MKV_TREE_TAGS) {
+                if (tagsFound) {
+                    CHK_STATUS(mkvgenIncreaseTagsTagSize(tagsStart, simpleSizes));
+                }
+                tagsFound = TRUE;
+                simpleSizes = 0;
+                tagsStart = pBuffer + packagedSize;
+            }
+
             CHK_STATUS(mkvgenGenerateTagsChain(pBuffer + packagedSize, pSerializedMetadata->name, pSerializedMetadata->value, &metadataSize,
                                                pSerializedMetadata->parent));
+
+            if (pSerializedMetadata->parent == MKV_TREE_SIMPLE) {
+                simpleSizes += metadataSize;
+            }
 
             // Account for the sizes
             packagedSize += metadataSize;
@@ -2989,11 +3013,13 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
         // If we have a persistent metadata then enqueue it back
         if (pSerializedMetadata->persistent) {
             CHK_STATUS(stackQueueEnqueue(pKinesisVideoStream->pMetadataQueue, item));
-            pSerializedMetadata = NULL;
         } else {
             // Delete the allocation otherwise
             SAFE_MEMFREE(pSerializedMetadata);
         }
+    }
+    if (tagsFound) {
+        CHK_STATUS(mkvgenIncreaseTagsTagSize(tagsStart, simpleSizes));
     }
 
 CleanUp:
@@ -3102,9 +3128,10 @@ STATUS packageNotSentMetadata(PKinesisVideoStream pKinesisVideoStream)
     STATUS retStatus = STATUS_SUCCESS;
     StackQueueIterator iterator;
     UINT64 data;
-    UINT32 overallSize = 0, packagedSize = 0, allocSize = 0, metadataCount = 0;
-    PBYTE pBuffer = NULL;
+    UINT32 overallSize = 0, packagedSize = 0, allocSize = 0, metadataCount = 0, simpleSizes = 0;
+    PBYTE pBuffer = NULL, tagsStart = NULL;
     PSerializedMetadata pSerializedMetadata = NULL;
+    BOOL tagsFound = FALSE;
 
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
 
@@ -3138,8 +3165,23 @@ STATUS packageNotSentMetadata(PKinesisVideoStream pKinesisVideoStream)
 
         if (!pSerializedMetadata->applied) {
             packagedSize = allocSize;
+            if (pSerializedMetadata->parent == MKV_TREE_TAGS) {
+                if (tagsFound) {
+                    CHK_STATUS(mkvgenIncreaseTagsTagSize(tagsStart, simpleSizes));
+                }
+                tagsFound = TRUE;
+                simpleSizes = 0;
+                tagsStart = pBuffer + overallSize;
+            } else if (pSerializedMetadata->parent != MKV_TREE_SIMPLE) {
+                // if the tag is neither
+                tagsFound = FALSE;
+            }
             CHK_STATUS(mkvgenGenerateTagsChain(pBuffer + overallSize, pSerializedMetadata->name, pSerializedMetadata->value, &packagedSize,
                                                pSerializedMetadata->parent));
+
+            if (pSerializedMetadata->parent == MKV_TREE_SIMPLE) {
+                simpleSizes += packagedSize;
+            }
 
             allocSize -= packagedSize;
             overallSize += packagedSize;
@@ -3147,6 +3189,9 @@ STATUS packageNotSentMetadata(PKinesisVideoStream pKinesisVideoStream)
 
         // The item is the allocation so free it
         MEMFREE(pSerializedMetadata);
+    }
+    if (tagsFound) {
+        CHK_STATUS(mkvgenIncreaseTagsTagSize(tagsStart, simpleSizes));
     }
 
     pKinesisVideoStream->metadataTracker.send = TRUE;
@@ -3480,7 +3525,7 @@ VOID logStreamInfo(PStreamInfo pStreamInfo)
     if (pStreamInfo == NULL) {
         return;
     }
-
+    LOG_GIT_HASH();
     DLOGD("Kinesis Video Stream Info");
     DLOGD("\tStream name: %s ", pStreamInfo->name);
     DLOGD("\tStreaming type: %s ", GET_STREAMING_TYPE_STR(pStreamInfo->streamCaps.streamingType));
