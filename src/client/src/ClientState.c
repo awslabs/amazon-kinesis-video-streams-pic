@@ -56,7 +56,7 @@ StateMachineState CLIENT_STATE_MACHINE_STATES[] = {
     },
     {
         CLIENT_STATE_TAG_CLIENT,
-        CLIENT_STATE_CREATE | CLIENT_STATE_TAG_CLIENT,
+        CLIENT_STATE_CREATE | CLIENT_STATE_TAG_CLIENT | CLIENT_STATE_READY,
         fromTagClientState,
         executeTagClientState,
         defaultClientStateTransitionHook,
