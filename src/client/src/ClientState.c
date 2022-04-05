@@ -149,7 +149,7 @@ STATUS fromNewClientState(UINT64 customData, PUINT64 pState)
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = CLIENT_FROM_CUSTOM_DATA(customData);
-    UINT64 state;
+    UINT64 state = CLIENT_STATE_NEW;
 
     CHK(pKinesisVideoClient != NULL && pState != NULL, STATUS_NULL_ARG);
 
