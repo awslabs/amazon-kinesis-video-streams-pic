@@ -473,6 +473,8 @@ typedef UINT64 (*GetCurrentTimeFunc)(UINT64);
 // Public functions
 ////////////////////////////////////////////////////
 
+
+PUBLIC_API STATUS mkvgenHasStreamStarted(PMkvGenerator, PBOOL);
 /**
  * Create the MkvGenerator object
  *
