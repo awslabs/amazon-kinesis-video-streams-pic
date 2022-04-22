@@ -488,12 +488,12 @@ STATUS getKinesisVideoMetrics(CLIENT_HANDLE clientHandle, PClientMetrics pKinesi
 
 CleanUp:
 
-    if (releaseClientSemaphore) {
-        semaphoreRelease(pKinesisVideoClient->base.shutdownSemaphore);
-    }
-
     if (locked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
+    }
+
+    if (releaseClientSemaphore) {
+        semaphoreRelease(pKinesisVideoClient->base.shutdownSemaphore);
     }
 
     CHK_LOG_ERR(retStatus);
