@@ -748,6 +748,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     UINT64 windowDuration, currentDuration;
     PTrackInfo pTrackInfo = NULL;
     PSerializedMetadata pSerializedMetadata = NULL;
+    PFrameOrderCoordinator pFrameOrderCoordinator = pKinesisVideoStream->pFrameOrderCoordinator;
 
     CHK(pKinesisVideoStream != NULL && pFrame != NULL, STATUS_NULL_ARG);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
@@ -988,9 +989,20 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
             streamLocked = FALSE;
 
+            // unlock frame order coordinator
+            if (pFrameOrderCoordinator != NULL) {
+                pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
+            }
+
             if (STATUS_FAILED(logStreamMetric(pKinesisVideoStream))) {
                 DLOGW("Failed to log stream metric with error 0x%08x", retStatus);
             }
+
+            // lock frame order coordinator
+            if (pFrameOrderCoordinator != NULL) {
+                pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
+            }
+
             // lock the stream
             pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
             streamLocked = TRUE;
