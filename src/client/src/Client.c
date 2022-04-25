@@ -861,13 +861,16 @@ STATUS putKinesisVideoFrame(STREAM_HANDLE streamHandle, PFrame pFrame)
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
-    PKinesisVideoClient pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+    PKinesisVideoClient pKinesisVideoClient = NULL;
     BOOL releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
     BOOL putFrameLocked = FALSE;
 
     DLOGS("Putting frame into an Kinesis Video stream.");
 
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL && pFrame != NULL, STATUS_NULL_ARG);
+
+    // Set the client after we've verified it's not null
+    pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     // Shutdown sequencer
     CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore, INFINITE_TIME_VALUE));
