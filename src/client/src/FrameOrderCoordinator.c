@@ -243,6 +243,7 @@ CleanUp:
 
 STATUS frameOrderCoordinatorPutFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pUserFrame)
 {
+    ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = NULL;
     PFrame pFrame;
@@ -329,6 +330,7 @@ CleanUp:
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
     }
 
+    LEAVES();
     return retStatus;
 }
 
