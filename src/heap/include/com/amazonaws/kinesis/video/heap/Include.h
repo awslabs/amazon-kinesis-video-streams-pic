@@ -16,7 +16,7 @@ extern "C" {
 /**
  * We define minimal heap size as 1 MB
  */
-#define MIN_HEAP_SIZE ((UINT64) 1 * 1024 * 1024)
+#define MIN_HEAP_SIZE ((UINT64) .25 * 1024 * 1024)
 
 /**
  * We define maximal heap size as 1TB
