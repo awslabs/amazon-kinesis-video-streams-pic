@@ -492,19 +492,24 @@ STATUS contentViewCheckAvailability(PContentView pContentView, PBOOL pWindowAvai
 
     CHK(pContentView != NULL && pWindowAvailability != NULL, STATUS_NULL_ARG);
 
+    DLOGV("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^: %d", __LINE__);
+    
     // If the tail and head are the same then there must be availability
     if (pRollingView->head != pRollingView->tail) {
+        DLOGV("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^: %d", __LINE__);
         pHead = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->head - 1);
         pTail = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail);
 
         // Check for the item count and duration limits
         if (pRollingView->head - pRollingView->tail >= pRollingView->itemBufferCount ||
             pHead->ackTimestamp + pHead->duration - pTail->ackTimestamp >= pRollingView->bufferDuration) {
+            DLOGV("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^: %d", __LINE__);
             windowAvailability = FALSE;
         }
     }
 
     if (pWindowAvailability != NULL) {
+        DLOGV("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^: %d", __LINE__);
         *pWindowAvailability = windowAvailability;
     }
 
@@ -606,57 +611,69 @@ STATUS contentViewTrimTailItems(PContentView pContentView)
 
     // Check the input params
     CHK(pContentView != NULL, STATUS_NULL_ARG);
+    DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
 
     pTail = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail);
     // if current is greater than tail, it means the application has consumed a view item by calling contentViewGetNext
     if (pRollingView->current > pRollingView->tail) {
+        DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
         currentStreamingItem = pRollingView->current - 1;
     } else {
         // otherwise no view item has ever been consumed, thus any view item dropped were never sent. currentStreamingItem
         // remains MAX_UINT64 which wont trigger any view item retaining logic.
+        DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
         viewItemDropped = TRUE;
     }
     switch (pRollingView->bufferOverflowStrategy) {
         case CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM:
 
+            DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
             // if tail is the currentStreamingItem, dont drop tail, drop the view item after tail.
             if (pRollingView->tail == currentStreamingItem) {
                 pRollingView->tail++;
                 pTail = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail);
+                DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
             }
 
             // Callback if it's specified, also dont drop currently streaming item to avoid corrupting data.
             if (pRollingView->removeCallbackFunc != NULL) {
                 // NOTE: The call is prompt - shouldn't block
                 pRollingView->removeCallbackFunc(pContentView, pRollingView->customData, pTail, TRUE);
+
+                DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
             }
 
             pRollingView->tail++;
             break;
 
         case CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START:
-
+            DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
             do {
                 // Callback if it's specified
                 if (pRollingView->removeCallbackFunc != NULL) {
                     // also dont drop currently streaming item to avoid corrupting data.
+                    DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
                     if (pRollingView->tail != currentStreamingItem) {
                         // NOTE: The call is prompt - shouldn't block
                         pRollingView->removeCallbackFunc(pContentView, pRollingView->customData, pTail, viewItemDropped);
                         dropFrameCount++;
+                        DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
                     } else {
                         // we have passed the current streaming item. View items dropped beyond this point
                         // were never sent.
                         viewItemDropped = TRUE;
+                        DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
                     }
                 }
                 pRollingView->tail++;
                 pTail = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->tail);
+                DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
 
                 // Stop looping when
                 // - pRollingView->tail == pRollingView->head which means there is no more view item
                 // - when a new fragment start is reached AND some frames have been dropped.
             } while (pRollingView->tail != pRollingView->head && (dropFrameCount == 0 || !CHECK_ITEM_FRAGMENT_START(pTail->flags)));
+            DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
             if (pRollingView->tail == pRollingView->head) {
                 DLOGW("ContentView is not big enough to contain a single fragment.");
             }
@@ -665,12 +682,15 @@ STATUS contentViewTrimTailItems(PContentView pContentView)
 
     // If tail rolled pass current, then reset current to tail.
     if (pRollingView->current <= pRollingView->tail) {
+        DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
         pRollingView->current = pRollingView->tail;
+        DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
 
         // If currentStreamingItem isn't sentinel and tail has rolled pass the currentStreamingItem, prepend
         // currentStreamingItem to tail and make it the new tail. This item will be freed automatically when it either
         // fall out of window or in later trim tail event (persisted ack received)
         if (currentStreamingItem != MAX_UINT64 && currentStreamingItem < pRollingView->tail) {
+            DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
             pRollingView->tail--;
             pRollingView->current = pRollingView->tail + 1;
             pCurrentViewItem = GET_VIEW_ITEM_FROM_INDEX(pRollingView, currentStreamingItem);
@@ -681,6 +701,7 @@ STATUS contentViewTrimTailItems(PContentView pContentView)
             pTail->handle = pCurrentViewItem->handle;
             pTail->length = pCurrentViewItem->length;
             pTail->index = pRollingView->tail;
+            DLOGV("~~~~~~~~~~~~~~~~~~~~~~~: %d", __LINE__);
         }
     }
 
