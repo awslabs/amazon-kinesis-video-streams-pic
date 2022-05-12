@@ -1780,13 +1780,13 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
 
     // Set to invalid whether we failed to allocate or we don't have content view availability
     *pAllocationHandle = INVALID_ALLOCATION_HANDLE_VALUE;
-    DLOGV("%%%%%%%%%%%%%%%%%%%%%%%%%%%: %d", __LINE__);
+    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
     // check view availability only if in offline mode
     if (IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
         // Check to see if we have availability in the content view. This will set the availability
         CHK_STATUS(contentViewCheckAvailability(pKinesisVideoStream->pView, &availability));
-        DLOGV("%%%%%%%%%%%%%%%%%%%%%%%%%%%: %d", __LINE__);
+        DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
         // Early return if no view availability
         CHK(availability, STATUS_SUCCESS);
@@ -1795,43 +1795,43 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
     // Lock the client
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     clientLocked = TRUE;
-    DLOGV("%%%%%%%%%%%%%%%%%%%%%%%%%%%: %d", __LINE__);
+    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
     // Get the heap size
     CHK_STATUS(heapGetSize(pKinesisVideoClient->pHeap, &heapSize));
-    DLOGV("%%%%%%%%%%%%%%%%%%%%%%%%%%%: %d", __LINE__);
+    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
     // Check for underflow
     CHK(pKinesisVideoClient->deviceInfo.storageInfo.storageSize >
             heapSize + MAX_ALLOCATION_OVERHEAD_SIZE + pKinesisVideoStream->maxFrameSizeSeen * FRAME_ALLOC_FRAGMENTATION_FACTOR,
         STATUS_SUCCESS);
-    DLOGV("%%%%%%%%%%%%%%%%%%%%%%%%%%%: %d", __LINE__);
+    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
     // Check if we have enough space available. Adding maxFrameSizeSeen to handle fragmentation as well as when curl thread needs to alloc space for
     // sending data.
     availableHeapSize = pKinesisVideoClient->deviceInfo.storageInfo.storageSize - heapSize - MAX_ALLOCATION_OVERHEAD_SIZE -
         (UINT64)(pKinesisVideoStream->maxFrameSizeSeen * FRAME_ALLOC_FRAGMENTATION_FACTOR);
 
-    DLOGV("%%%%%%%%%%%%%%%%%%%%%%%%%%%: %d", __LINE__);
+    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
     // Early return if storage space is unavailable.
     CHK(availableHeapSize >= allocationSize, STATUS_SUCCESS);
 
-    DLOGV("%%%%%%%%%%%%%%%%%%%%%%%%%%%: %d", __LINE__);
+    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
     // Get the heap size. Do not need to check status. If heapAlloc failed then pAllocationHandle would remain invalid.
     retStatus = heapAlloc(pKinesisVideoClient->pHeap, allocationSize, pAllocationHandle);
-    DLOGV("%%%%%%%%%%%%%%%%%%%%%%%%%%%: %d", __LINE__);
+    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
     CHK(retStatus == STATUS_SUCCESS || retStatus == STATUS_NOT_ENOUGH_MEMORY, retStatus);
     retStatus = STATUS_SUCCESS;
 
-    DLOGV("%%%%%%%%%%%%%%%%%%%%%%%%%%%: %d", __LINE__);
+    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
     // Unlock the client
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     clientLocked = FALSE;
 
-    DLOGV("%%%%%%%%%%%%%%%%%%%%%%%%%%%: %d", __LINE__);
+    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 CleanUp:
 
     // Unlock the client if locked.
