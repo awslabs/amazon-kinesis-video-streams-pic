@@ -170,11 +170,23 @@ STATUS heapAlloc(PHeap pHeap, UINT64 size, PALLOCATION_HANDLE pHandle)
     STATUS retStatus = STATUS_SUCCESS;
     PBaseHeap pBase = (PBaseHeap) pHeap;
 
+    DLOGV("ooooooooooooo: %d", __LINE__);
+
     CHK(pBase != NULL && pHandle != NULL, STATUS_NULL_ARG);
+
+    DLOGV("ooooooooooooo: %d", __LINE__);
+
     CHK(size != 0, STATUS_INVALID_ARG);
 
-    DLOGS("Allocating %" PRIu64 " bytes", size);
+    DLOGV("ooooooooooooo: %d", __LINE__);
+
+    DLOGV("Allocating %" PRIu64 " bytes", size);
+
+    DLOGV("ooooooooooooo: %d", __LINE__);
+
     CHK_STATUS(pBase->heapAllocFn(pHeap, size, pHandle));
+
+    DLOGV("ooooooooooooo: %d", __LINE__);
 
 CleanUp:
     LEAVES();
