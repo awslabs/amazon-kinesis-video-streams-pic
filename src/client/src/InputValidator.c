@@ -420,7 +420,9 @@ VOID fixupStreamInfo(PStreamInfo pStreamInfo)
 
             // Explicit fall-through
         case 1:
+            printf("in fixup:%d\n", pStreamInfo->streamCaps.storePressurePolicy);
             pStreamInfo->streamCaps.storePressurePolicy = CONTENT_STORE_PRESSURE_POLICY_OOM;
+            printf("after fixing up:%d\n", pStreamInfo->streamCaps.storePressurePolicy);
             pStreamInfo->streamCaps.viewOverflowPolicy = CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM;
             break;
 
