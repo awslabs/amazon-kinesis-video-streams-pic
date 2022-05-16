@@ -164,6 +164,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     // Copy the structures in their entirety
     MEMCPY(&pKinesisVideoStream->streamInfo, pStreamInfo, SIZEOF(StreamInfo));
     printf("store policy before fixup: %d\n", pStreamInfo->streamCaps.storePressurePolicy);
+    printf("stream info version: %d\n",pStreamInfo->version);
     fixupStreamInfo(&pKinesisVideoStream->streamInfo);
     printf("store policy after fixup: %d\n", pStreamInfo->streamCaps.storePressurePolicy);
 
