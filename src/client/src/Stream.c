@@ -1822,6 +1822,7 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
     // Get the heap size. Do not need to check status. If heapAlloc failed then pAllocationHandle would remain invalid.
     retStatus = heapAlloc(pKinesisVideoClient->pHeap, allocationSize, pAllocationHandle);
     DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
+    DLOGV("$$$$$$$$$$$$$$$$$$$: RETSTATUS: %d", retStatus);
     CHK(retStatus == STATUS_SUCCESS || retStatus == STATUS_NOT_ENOUGH_MEMORY, retStatus);
     retStatus = STATUS_SUCCESS;
 
