@@ -899,6 +899,8 @@ CleanUp:
     if (pKinesisVideoClient != NULL) {
         // We will notify the fragment ACK received callback even if the processing failed
         if (pKinesisVideoClient->clientCallbacks.fragmentAckReceivedFn != NULL) {
+            DLOGW("TID 0x%016" PRIx64 " Calling PIC for fragmentAckRecieved ", GETTID());
+
             pKinesisVideoClient->clientCallbacks.fragmentAckReceivedFn(pKinesisVideoClient->clientCallbacks.customData,
                                                                        TO_STREAM_HANDLE(pKinesisVideoStream), uploadHandle, pFragmentAck);
         }

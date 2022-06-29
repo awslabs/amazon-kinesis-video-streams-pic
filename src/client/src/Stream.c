@@ -731,6 +731,8 @@ CleanUp:
 STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 {
     ENTERS();
+    DLOGW("TID 0x%016" PRIx64 " Calling PIC putFrame ", GETTID());
+    
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = NULL;
     ALLOCATION_HANDLE allocHandle = INVALID_ALLOCATION_HANDLE_VALUE;
