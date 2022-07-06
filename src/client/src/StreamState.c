@@ -20,7 +20,7 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
     },
     {
         STREAM_STATE_DESCRIBE,
-        STREAM_STATE_NEW | STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE,
+        STREAM_STATE_NEW | STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_PUT_STREAM,
         fromDescribeStreamState,
         executeDescribeStreamState,
         defaultStreamStateTransitionHook,
@@ -29,7 +29,7 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
     },
     {
         STREAM_STATE_CREATE,
-        STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE,
+        STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE,
         fromCreateStreamState,
         executeCreateStreamState,
         defaultStreamStateTransitionHook,
@@ -38,7 +38,7 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
     },
     {
         STREAM_STATE_TAG_STREAM,
-        STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE | STREAM_STATE_TAG_STREAM,
+        STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE | STREAM_STATE_TAG_STREAM,
         fromTagStreamState,
         executeTagStreamState,
         defaultStreamStateTransitionHook,
@@ -56,7 +56,7 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
     },
     {
         STREAM_STATE_GET_TOKEN,
-        STREAM_STATE_STOPPED | STREAM_STATE_GET_ENDPOINT | STREAM_STATE_GET_TOKEN,
+        STREAM_STATE_STOPPED | STREAM_STATE_GET_ENDPOINT | STREAM_STATE_GET_TOKEN | STREAM_STATE_PUT_STREAM,
         fromGetTokenStreamState,
         executeGetTokenStreamState,
         defaultStreamStateTransitionHook,
@@ -74,7 +74,7 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
     },
     {
         STREAM_STATE_PUT_STREAM,
-        STREAM_STATE_STOPPED | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM,
+        STREAM_STATE_READY | STREAM_STATE_PUT_STREAM,
         fromPutStreamState,
         executePutStreamState,
         defaultStreamStateTransitionHook,
@@ -83,7 +83,7 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
     },
     {
         STREAM_STATE_STREAMING,
-        STREAM_STATE_STOPPED | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING,
+        STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING,
         fromStreamingStreamState,
         executeStreamingStreamState,
         defaultStreamStateTransitionHook,
@@ -93,7 +93,7 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
     {
         STREAM_STATE_STOPPED,
         STREAM_STATE_STOPPED | STREAM_STATE_CREATE | STREAM_STATE_DESCRIBE | STREAM_STATE_TAG_STREAM | STREAM_STATE_GET_ENDPOINT |
-        STREAM_STATE_GET_TOKEN | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING,
+        STREAM_STATE_GET_TOKEN | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING | STREAM_STATE_NEW,
         fromStoppedStreamState,
         executeStoppedStreamState,
         defaultStreamStateTransitionHook,
@@ -166,7 +166,7 @@ STATUS fromNewStreamState(UINT64 customData, PUINT64 pState)
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
-    UINT64 state;
+    UINT64 state = STREAM_STATE_NEW;
 
     CHK(pKinesisVideoStream != NULL && pState != NULL, STATUS_NULL_ARG);
 
@@ -555,7 +555,6 @@ STATUS fromStoppedStreamState(UINT64 customData, PUINT64 pState)
         default:
             // Default state in any other case
             retStatus = STATUS_SUCCESS;
-
             break;
     }
 
@@ -574,7 +573,7 @@ STATUS fromReadyStreamState(UINT64 customData, PUINT64 pState)
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
-    UINT64 state;
+    UINT64 state = STREAM_STATE_READY;
 
     CHK(pKinesisVideoStream != NULL && pState != NULL, STATUS_NULL_ARG);
 
@@ -601,15 +600,13 @@ STATUS executeGetEndpointStreamState(UINT64 customData, UINT64 time)
     PKinesisVideoClient pKinesisVideoClient = NULL;
     PStateMachineState pState = NULL;
 
-
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
 
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     // Step the client state machine first
     if (STATUS_FAILED(retStatus = stepClientStateMachine(pKinesisVideoClient))) {
-
-        if(retStatus == STATUS_CLIENT_AUTH_CALL_FAILED) {
+        if (retStatus == STATUS_CLIENT_AUTH_CALL_FAILED) {
             // reset client state machine to READY state
 
             // Get the accepted state

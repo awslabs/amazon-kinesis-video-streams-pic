@@ -50,6 +50,7 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
 
     if (STATUS_SUCCEEDED(retStatus)) {
+        pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.putFrameLock);
         // Lock the client streams list lock
         pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
 
@@ -84,6 +85,7 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
             }
         }
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.putFrameLock);
     }
 
 CleanUp:
@@ -276,6 +278,9 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     // Create lock for streams list
     pKinesisVideoClient->base.streamListLock =
         pKinesisVideoClient->clientCallbacks.createMutexFn(pKinesisVideoClient->clientCallbacks.customData, TRUE);
+
+    // Create the putFrame lock
+    pKinesisVideoClient->base.putFrameLock = pKinesisVideoClient->clientCallbacks.createMutexFn(pKinesisVideoClient->clientCallbacks.customData, TRUE);
 
     // Create the state machine and step it
     CHK_STATUS(createStateMachine(CLIENT_STATE_MACHINE_STATES, CLIENT_STATE_MACHINE_STATE_COUNT, TO_CUSTOM_DATA(pKinesisVideoClient),
@@ -488,12 +493,12 @@ STATUS getKinesisVideoMetrics(CLIENT_HANDLE clientHandle, PClientMetrics pKinesi
 
 CleanUp:
 
-    if (releaseClientSemaphore) {
-        semaphoreRelease(pKinesisVideoClient->base.shutdownSemaphore);
-    }
-
     if (locked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
+    }
+
+    if (releaseClientSemaphore) {
+        semaphoreRelease(pKinesisVideoClient->base.shutdownSemaphore);
     }
 
     CHK_LOG_ERR(retStatus);
@@ -856,11 +861,16 @@ STATUS putKinesisVideoFrame(STREAM_HANDLE streamHandle, PFrame pFrame)
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
+    PKinesisVideoClient pKinesisVideoClient = NULL;
     BOOL releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
+    BOOL putFrameLocked = FALSE;
 
     DLOGS("Putting frame into an Kinesis Video stream.");
 
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL && pFrame != NULL, STATUS_NULL_ARG);
+
+    // Set the client after we've verified it's not null
+    pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     // Shutdown sequencer
     CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore, INFINITE_TIME_VALUE));
@@ -872,10 +882,18 @@ STATUS putKinesisVideoFrame(STREAM_HANDLE streamHandle, PFrame pFrame)
     DLOGV("debug frame info pts: %" PRIu64 ", dts: %" PRIu64 ", duration: %" PRIu64 ", size: %u, trackId: %" PRIu64 ", isKey %d",
           pFrame->presentationTs, pFrame->decodingTs, pFrame->duration, pFrame->size, pFrame->trackId, CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags));
 
+    // Acquire putFrame Lock
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.putFrameLock);
+    putFrameLocked = TRUE;
+
     // Process and store the result
     CHK_STATUS(frameOrderCoordinatorPutFrame(pKinesisVideoStream, pFrame));
 
 CleanUp:
+
+    if (putFrameLocked) {
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.putFrameLock);
+    }
 
     if (STATUS_FAILED(retStatus) && pFrame != NULL) {
         DLOGW("Failed to submit frame to Kinesis Video client. "
@@ -1663,6 +1681,10 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
 
     if (IS_VALID_MUTEX_VALUE(pKinesisVideoClient->base.lock)) {
         pKinesisVideoClient->clientCallbacks.freeMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
+    }
+
+    if (IS_VALID_MUTEX_VALUE(pKinesisVideoClient->base.putFrameLock)) {
+        pKinesisVideoClient->clientCallbacks.freeMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.putFrameLock);
     }
 
     if (IS_VALID_SEMAPHORE_HANDLE(pKinesisVideoClient->base.shutdownSemaphore)) {
