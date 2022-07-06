@@ -288,7 +288,7 @@ typedef enum {
 /**
  * The representation of the Frame
  */
-typedef struct {
+typedef struct __Frame {
     UINT32 version;
 
     // Id of the frame

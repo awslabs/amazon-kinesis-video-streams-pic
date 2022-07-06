@@ -1,0 +1,216 @@
+name: PIC CI
+
+on:
+  push:
+    branches: 
+      - develop
+      - master
+  pull_request:
+    branches:
+      - develop
+      - master
+jobs:
+  clang-format-check:
+    runs-on: macos-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Install clang-format
+        run: |
+          brew install clang-format@8
+      - name: Run clang format check
+        run: |
+          bash scripts/check-clang.sh
+  mac-os-build-gcc:
+    runs-on: macos-10.15
+    env:
+      CC: gcc-11
+      CXX: g++-11
+      AWS_KVS_LOG_LEVEL: 2
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Build repository
+        run: |
+          mkdir build && cd build
+          sh -c 'cmake .. -DBUILD_TEST=TRUE;cmake .. -DBUILD_TEST=TRUE'
+          make
+          ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"  
+  mac-os-build-clang:
+    runs-on: macos-latest
+    env:
+      AWS_KVS_LOG_LEVEL: 2
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Build repository
+        run: |
+          mkdir build && cd build
+          sh -c 'cmake .. -DBUILD_TEST=TRUE -DCOMPILER_WARNINGS=TRUE;cmake .. -DBUILD_TEST=TRUE -DCOMPILER_WARNINGS=TRUE'
+          make
+          ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+  linux-gcc-code-coverage:
+    runs-on: ubuntu-18.04
+    env:
+      AWS_KVS_LOG_LEVEL: 2
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Build repository
+        run: |
+          mkdir build && cd build
+          cmake .. -DCODE_COVERAGE=TRUE -DBUILD_TEST=TRUE
+          make
+          ulimit -c unlimited -S
+          timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+      - name: Code coverage
+        run: |
+          for test_file in $(find CMakeFiles/kvspic.dir CMakeFiles/kvspicClient.dir CMakeFiles/kvspicState.dir CMakeFiles/kvspicUtils.dir -name '*.gcno'); do gcov $test_file; done
+          bash <(curl -s https://codecov.io/bash)
+  address-sanitizer:
+    runs-on: ubuntu-latest
+    env:
+      AWS_KVS_LOG_LEVEL: 2
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Build repository
+        run: |
+          mkdir build && cd build
+          cmake .. -DBUILD_TEST=TRUE -DADDRESS_SANITIZER=TRUE
+          make
+          ulimit -c unlimited -S
+          timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+  undefined-behavior-sanitizer:
+    runs-on: ubuntu-latest
+    env:
+      CC: clang-7
+      CXX: clang++-7
+      UBSAN_OPTIONS: halt_on_error=1:suppressions=../src/utils/tst/suppressions/UBSAN.supp
+      AWS_KVS_LOG_LEVEL: 2
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install clang-7
+      - name: Build repository
+        run: |
+          mkdir build && cd build
+          cmake .. -DBUILD_TEST=TRUE -DUNDEFINED_BEHAVIOR_SANITIZER=TRUE
+          make
+          ulimit -c unlimited -S
+          timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+  # memory-sanitizer:
+  #   runs-on: ubuntu-18.04
+  #   env:
+  #     CC: clang-7
+  #     CXX: clang++-7
+  #     AWS_KVS_LOG_LEVEL: 2
+  #   steps:
+  #     - name: Clone repository
+  #       uses: actions/checkout@v2
+  #     - name: Install dependencies
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get -y install clang-7
+  #     - name: Build repository
+  #       run: |
+  #         mkdir build && cd build
+  #         cmake .. -DBUILD_TEST=TRUE -DMEMORY_SANITIZER=TRUE
+  #         make
+  #         ulimit -c unlimited -S
+  #         timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+  # thread-sanitizer:
+  #   runs-on: ubuntu-18.04
+  #   env:
+  #     CC: clang-7
+  #     CXX: clang++-7
+  #     AWS_KVS_LOG_LEVEL: 2
+  #     TSAN_OPTIONS: halt_on_error=1:suppressions=../src/utils/tst/suppressions/TSAN.supp
+  #   steps:
+  #     - name: Clone repository
+  #       uses: actions/checkout@v2
+  #     - name: Install dependencies
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get -y install clang-7
+  #     - name: Build repository
+  #       run: |
+  #         mkdir build && cd build
+  #         cmake .. -DBUILD_TEST=TRUE -DTHREAD_SANITIZER=TRUE
+  #         make
+  #         ./kvspic_test --gtest_break_on_failure --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:ThreadFunctionalityTest.ThreadCreateAndCancel"
+  linux-gcc-4_4:
+    runs-on: ubuntu-18.04
+    env:
+      AWS_KVS_LOG_LEVEL: 2
+      CC: gcc-4.4
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Install deps
+        run: |
+          sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ trusty main'
+          sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ trusty universe'
+          sudo apt-get -q update
+          sudo apt-get -y install gcc-4.4
+          sudo apt-get -y install gdb
+      - name: Build repository
+        run: |
+          mkdir build && cd build
+          cmake .. -DBUILD_TEST=TRUE
+          make
+          ulimit -c unlimited -S
+          timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+  windows-msvc:
+    runs-on: windows-2022
+    env:
+      AWS_KVS_LOG_LEVEL: 7
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Build and run
+        run: |
+          .github/build_windows.bat
+          D:\a\amazon-kinesis-video-streams-pic\amazon-kinesis-video-streams-pic\build\kvspic_test.exe --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:PermutatedStreamInfo/StateTransitionFunctionalityTest.ControlPlaneServiceCallExhaustRetry*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedBeforeTime*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedAfterFirstPeriod*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateLastUpdateTimeOfStreamUpdated*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.MultiTrackVerifyNoInvocationsWithSingleTrackProducer*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateNoConsecutiveEOFR*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateErrorOnForceConsecutiveEOFR*:*StreamStateTransitionsTest*:*PermutatedStreamInfo/StateTransitionFunctionalityTest.StreamTerminatedAndGoToGetEndpointState*:*PermutatedStreamInfo/StateTransitionFunctionalityTest.StreamTerminatedAndGoToDescribeState*:*PermutatedStreamInfo/StateTransitionFunctionalityTest*"
+  arm64-cross-compilation:
+    runs-on: ubuntu-latest
+    env:
+      CC: aarch64-linux-gnu-gcc
+      CXX: aarch64-linux-gnu-g++
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt-get -y install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Build Repository
+        run: |
+          sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
+          mkdir build && cd build
+          cmake .. -DBUILD_TEST=TRUE
+          make
+  arm32-cross-compilation:
+    runs-on: ubuntu-latest
+    env:
+      CC: arm-linux-gnueabi-gcc
+      CXX: arm-linux-gnueabi-g++
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt-get -y install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi binutils-arm-linux-gnueabi
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Build Repository
+        run: |
+          sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
+          mkdir build && cd build
+          cmake .. -DBUILD_TEST=TRUE
+          make
+          

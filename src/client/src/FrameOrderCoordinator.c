@@ -96,7 +96,7 @@ STATUS audioVideoFrameTimestampComparator(PFrameOrderTrackData pFrameOrderTrackD
 {
     PStreamInfo pStreamInfo = (PStreamInfo) customData;
     UINT64 mkvTimestamp1, mkvTimestamp2, item;
-    BOOL firstFrameFirst;
+    BOOL firstFrameFirst = FALSE;
     PFrame pFirst, pSecond, pSwap;
     STATUS retStatus = STATUS_SUCCESS;
 
@@ -159,7 +159,7 @@ STATUS getEarliestTrack(PFrameOrderCoordinator pFrameOrderCoordinator, PFrameOrd
     STATUS retStatus = STATUS_SUCCESS;
     UINT32 minIndex = 0, i;
     PFrameOrderTrackData pPutFrameTrackData = NULL;
-    BOOL firstFrameFirst;
+    BOOL firstFrameFirst = FALSE;
 
     CHK(pFrameOrderCoordinator != NULL && ppEarliestPutFrameTrackData != NULL, STATUS_NULL_ARG);
     CHK(pFrameOrderCoordinator->trackWithFrame > 0, retStatus);
@@ -243,6 +243,7 @@ CleanUp:
 
 STATUS frameOrderCoordinatorPutFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pUserFrame)
 {
+    ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = NULL;
     PFrame pFrame;
@@ -329,6 +330,7 @@ CleanUp:
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
     }
 
+    LEAVES();
     return retStatus;
 }
 
