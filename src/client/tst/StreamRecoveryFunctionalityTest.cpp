@@ -1263,5 +1263,89 @@ TEST_P(StreamRecoveryFunctionalityTest, FragmentMetadataStartStreamFailRecovery)
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 }
 
+TEST_P(StreamRecoveryFunctionalityTest, EventMetadataStartStreamFailRecovery) {
+    std::vector<UPLOAD_HANDLE> currentUploadHandles;
+    MockConsumer *mockConsumer = nullptr;
+    BOOL gotStreamData = FALSE, submittedAck, firstChunk = TRUE;
+    UINT64 currentTime, stopTime;
+    TID thread;
+    STATUS retStatus = STATUS_SUCCESS;
+    BYTE dataBuf[TEST_DEFAULT_PRODUCER_CONFIG_FRAME_SIZE + 1000];
+    BYTE storedDataBuf[SIZEOF(dataBuf)];
+    UINT32 i, ackReceived = 0, dataBufSize = SIZEOF(dataBuf), retrievedSize,
+            storedRetrievedSize, overhead, numFragments = 1;
+    UPLOAD_HANDLE errorHandle;
+    PKinesisVideoStream pKinesisVideoStream;
+    PStreamMkvGenerator pStreamMkvGenerator;
+
+    PASS_TEST_FOR_OFFLINE_ZERO_REPLAY_DURATION();
+
+    // reduce the frame size so that it generates fragments faster
+    mMockProducerConfig.mFrameSizeByte = 500;
+
+    // reduce the frame size so that it generates fragments faster
+    CreateScenarioTestClient();
+
+    CreateStreamSync();
+    MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
+
+    // Start with some metadata - important that it's before frames
+    // We expect this to fail because we do not allow putting this metadata before stream is started
+    EXPECT_EQ(STATUS_STREAM_NOT_STARTED, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, NULL));
+
+    // put all frames for the first few fragments
+    for (i = 0; i < numFragments * mMockProducerConfig.mKeyFrameInterval; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame());
+    }
+
+    mStreamingSession.getActiveUploadHandles(currentUploadHandles);
+    EXPECT_EQ(1, currentUploadHandles.size());
+
+    // stream out everything currently in buffer
+    do {
+        currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
+
+        mStreamingSession.getActiveUploadHandles(currentUploadHandles);
+        UPLOAD_HANDLE uploadHandle = currentUploadHandles[0];
+        mockConsumer = mStreamingSession.getConsumer(uploadHandle);
+        retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData, &retrievedSize);
+        VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
+
+        // Store the first chunk for later comparison
+        if (firstChunk) {
+            storedRetrievedSize = MIN(dataBufSize, retrievedSize);
+            MEMCPY(storedDataBuf, mockConsumer->mDataBuffer, storedRetrievedSize);
+            firstChunk = FALSE;
+        }
+    } while (retStatus != STATUS_NO_MORE_DATA_AVAILABLE);
+
+    // submit an error ACK and ensure we roll back
+    mStreamingSession.getActiveUploadHandles(currentUploadHandles);
+    EXPECT_EQ(1, currentUploadHandles.size());
+    mockConsumer = mStreamingSession.getConsumer(currentUploadHandles[0]);
+    EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitConnectionError(SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT));
+    errorHandle = mockConsumer->mUploadHandle;
+
+    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+
+    mockProducer.putFrame();
+    EXPECT_EQ(2, ATOMIC_LOAD(&mPutStreamFuncCount));
+
+    // Should have two
+    mStreamingSession.getActiveUploadHandles(currentUploadHandles);
+    EXPECT_EQ(1, currentUploadHandles.size());
+    EXPECT_NE(errorHandle, currentUploadHandles[0]);
+
+    // Get the data with the new handle
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle,
+                                                        currentUploadHandles[0], dataBuf,
+                                                        dataBufSize, &retrievedSize));
+    EXPECT_EQ(storedRetrievedSize, retrievedSize);
+
+    EXPECT_EQ(0, MEMCMP(dataBuf, storedDataBuf, storedRetrievedSize));
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
+}
+
 INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, StreamRecoveryFunctionalityTest,
                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
