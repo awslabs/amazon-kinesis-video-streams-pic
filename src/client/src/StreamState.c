@@ -813,7 +813,7 @@ STATUS executePutStreamState(UINT64 customData, UINT64 time)
         // Call API
         CHK_STATUS(pKinesisVideoClient->clientCallbacks.putStreamFn(
             pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->streamInfo.name, (PCHAR) MKV_CONTAINER_TYPE_STRING,
-            pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData),
+            GETTIME(),
             pKinesisVideoStream->streamInfo.streamCaps.absoluteFragmentTimes, pKinesisVideoStream->streamInfo.streamCaps.fragmentAcks,
             pKinesisVideoStream->streamingEndpoint, &pKinesisVideoStream->base.serviceCallContext));
 
