@@ -20,7 +20,7 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
     },
     {
         STREAM_STATE_DESCRIBE,
-        STREAM_STATE_NEW | STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE,
+        STREAM_STATE_NEW | STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_PUT_STREAM,
         fromDescribeStreamState,
         executeDescribeStreamState,
         defaultStreamStateTransitionHook,
@@ -29,7 +29,7 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
     },
     {
         STREAM_STATE_CREATE,
-        STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE,
+        STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE,
         fromCreateStreamState,
         executeCreateStreamState,
         defaultStreamStateTransitionHook,
@@ -38,7 +38,7 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
     },
     {
         STREAM_STATE_TAG_STREAM,
-        STREAM_STATE_STOPPED | STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE | STREAM_STATE_TAG_STREAM,
+        STREAM_STATE_DESCRIBE | STREAM_STATE_CREATE | STREAM_STATE_TAG_STREAM,
         fromTagStreamState,
         executeTagStreamState,
         defaultStreamStateTransitionHook,
@@ -56,7 +56,7 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
     },
     {
         STREAM_STATE_GET_TOKEN,
-        STREAM_STATE_STOPPED | STREAM_STATE_GET_ENDPOINT | STREAM_STATE_GET_TOKEN,
+        STREAM_STATE_STOPPED | STREAM_STATE_GET_ENDPOINT | STREAM_STATE_GET_TOKEN | STREAM_STATE_PUT_STREAM,
         fromGetTokenStreamState,
         executeGetTokenStreamState,
         defaultStreamStateTransitionHook,
@@ -74,7 +74,7 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
     },
     {
         STREAM_STATE_PUT_STREAM,
-        STREAM_STATE_STOPPED | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM,
+        STREAM_STATE_READY | STREAM_STATE_PUT_STREAM,
         fromPutStreamState,
         executePutStreamState,
         defaultStreamStateTransitionHook,
@@ -83,7 +83,7 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
     },
     {
         STREAM_STATE_STREAMING,
-        STREAM_STATE_STOPPED | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING,
+        STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING,
         fromStreamingStreamState,
         executeStreamingStreamState,
         defaultStreamStateTransitionHook,
@@ -93,7 +93,7 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
     {
         STREAM_STATE_STOPPED,
         STREAM_STATE_STOPPED | STREAM_STATE_CREATE | STREAM_STATE_DESCRIBE | STREAM_STATE_TAG_STREAM | STREAM_STATE_GET_ENDPOINT |
-        STREAM_STATE_GET_TOKEN | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING,
+        STREAM_STATE_GET_TOKEN | STREAM_STATE_READY | STREAM_STATE_PUT_STREAM | STREAM_STATE_STREAMING | STREAM_STATE_NEW,
         fromStoppedStreamState,
         executeStoppedStreamState,
         defaultStreamStateTransitionHook,
