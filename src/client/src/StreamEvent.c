@@ -823,6 +823,7 @@ STATUS streamFragmentAckEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HA
         // Use the current from the view.
         // If the current is greater than head which is the case when the networking pulls fast enough
         // then we will use the head instead.
+        DLOGD("@@@@@@@@@@@@: %d %llu", __LINE__, pFragmentAck->timestamp);
         CHK_STATUS(contentViewGetCurrentIndex(pKinesisVideoStream->pView, &curIndex));
         CHK_STATUS(contentViewGetHead(pKinesisVideoStream->pView, &pViewItem));
 
@@ -831,6 +832,7 @@ STATUS streamFragmentAckEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HA
         }
 
         timestamp = pViewItem->ackTimestamp;
+        DLOGD("@@@@@@@@@@@@: %d %llu", __LINE__, timestamp);
 
         // If we already have an persisted ACK, no need to go farther back
         errorSkipStart =
@@ -838,8 +840,9 @@ STATUS streamFragmentAckEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HA
     } else {
         // Calculate the timestamp based on the ACK.
         // Convert the timestamp
+        DLOGD("$$$$$$$$$$$$$: %d %llu", __LINE__, pFragmentAck->timestamp);
         CHK_STATUS(mkvgenTimecodeToTimestamp(pKinesisVideoStream->pMkvGenerator, pFragmentAck->timestamp, &timestamp));
-
+        DLOGD("$$$$$$$$$$$$$: %d %llu", __LINE__, timestamp);
         // In case we have a relative cluster timestamp stream we need to adjust for the stream start.
         // The stream start timestamp is extracted from the stream session map.
         if (!pKinesisVideoStream->streamInfo.streamCaps.absoluteFragmentTimes && IS_VALID_TIMESTAMP(pUploadHandleInfo->timestamp)) {
@@ -850,9 +853,12 @@ STATUS streamFragmentAckEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HA
         // No skipping farther than the given timestamp
         errorSkipStart = timestamp;
     }
+    DLOGD("^^^^^^^^^^^^^: %d %llu", __LINE__, timestamp);
 
     // Quick check if we have the timestamp in the view window and if not then bail out early
     CHK_STATUS(contentViewTimestampInRange(pKinesisVideoStream->pView, timestamp, TRUE, &inView));
+
+    DLOGD("##########: %d %d", __LINE__, inView);
 
     // NOTE: IMPORTANT: For the Error Ack case we will still need to process the ACK. The side-effect of
     // processing the Error Ack is the connection termination which is needed as the higher-level clients like

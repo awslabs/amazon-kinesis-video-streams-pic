@@ -860,56 +860,49 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 
     pKinesisVideoStream->maxFrameSizeSeen = MAX(pKinesisVideoStream->maxFrameSizeSeen, overallSize);
 
-    DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
 
     // Might need to block on the availability in the OFFLINE mode
     CHK_STATUS(handleAvailability(pKinesisVideoStream, overallSize, &allocHandle));
 
-    DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
     if (IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
         // offline streaming mode can block so we need to reset the currentTime just in case
         currentTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
     }
-    DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
 
     // Lock the client
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     clientLocked = TRUE;
 
-    DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
 
     // Ensure we have space and if not then bail
     CHK(IS_VALID_ALLOCATION_HANDLE(allocHandle), STATUS_STORE_OUT_OF_MEMORY);
 
-    DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
 
     // Map the storage
     CHK_STATUS(heapMap(pKinesisVideoClient->pHeap, allocHandle, (PVOID*) &pAlloc, &allocSize));
 
-    DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
     // Validate we had allocated enough storage just in case
     CHK(overallSize <= allocSize, STATUS_ALLOCATION_SIZE_SMALLER_THAN_REQUESTED);
 
-    DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
     // Check if we are packaging special EoFr
     if (CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
         // Store the metadata at the beginning of the allocation
         CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, TRUE, pAlloc, &packagedSize));
 
-        DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+
         // Synthesize the encodedFrameInfo
         CHK_STATUS(mkvgenGetCurrentTimestamps(pKinesisVideoStream->pMkvGenerator, &encodedFrameInfo.streamStartTs, &encodedFrameInfo.clusterPts,
                                               &encodedFrameInfo.clusterDts));
-        DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+
         encodedFrameInfo.dataOffset = 0;
         encodedFrameInfo.streamState = MKV_STATE_START_BLOCK;
-        DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+
         // Pre-set the item flags to differentiate EoFr in EoS case
         SET_ITEM_FRAGMENT_END(itemFlags);
 
         // Synthesize the frame timestamps based on the last content view entry
         CHK_STATUS(contentViewGetHead(pKinesisVideoStream->pView, &pViewItem));
-        DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+
         encodedFrameInfo.frameDts = pViewItem->timestamp + pViewItem->duration - encodedFrameInfo.clusterDts;
         encodedFrameInfo.framePts = pViewItem->ackTimestamp + pViewItem->duration - encodedFrameInfo.clusterPts;
         encodedFrameInfo.duration = 0;
@@ -917,13 +910,13 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         // Set the EoFr flag so we won't append not-sent metadata/EOS on StreamStop
         pKinesisVideoStream->eofrFrame = TRUE;
     } else {
-        DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+
         // Actually package the bits in the storage
         CHK_STATUS(mkvgenPackageFrame(pKinesisVideoStream->pMkvGenerator, pFrame, pTrackInfo, pAlloc, &packagedSize, &encodedFrameInfo));
 
         // Package the metadata if specified
         if (packagedMetadataSize != 0 && !justStartedStreaming) {
-            DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+    
             // Move the packaged bits out first to make room for the metadata
             // NOTE: need to use MEMMOVE due to the overlapping ranges
             MEMMOVE(pAlloc + encodedFrameInfo.dataOffset + packagedMetadataSize, pAlloc + encodedFrameInfo.dataOffset,
@@ -937,40 +930,39 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 
     // Unmap the storage for the frame
     CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, ((PVOID) pAlloc)));
-    DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
     // Check for storage pressures. No need for offline mode as the media pipeline will be blocked when there
     // is not enough storage
     if (!IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
         remainingSize = pKinesisVideoClient->pHeap->heapLimit - pKinesisVideoClient->pHeap->heapSize;
         thresholdPercent = (UINT32)(((DOUBLE) remainingSize / pKinesisVideoClient->pHeap->heapLimit) * 100);
-        DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+
         if (thresholdPercent <= STORAGE_PRESSURE_NOTIFICATION_THRESHOLD) {
             pKinesisVideoStream->diagnostics.storagePressures++;
-            DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+    
             if (pKinesisVideoClient->clientCallbacks.storageOverflowPressureFn != NULL) {
-                DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+        
                 // Notify the client app about buffer pressure
                 CHK_STATUS(
                     pKinesisVideoClient->clientCallbacks.storageOverflowPressureFn(pKinesisVideoClient->clientCallbacks.customData, remainingSize));
             }
         }
-        DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+
 
         // No need to report buffer duration overflow in offline since the putFrame thread will be blocked.
         // Only report buffer duration overflow if retention is non-zero, since if retention is zero, there will be no
         // persisted ack and buffer will drop off tail all the time.
         if (pKinesisVideoStream->streamInfo.retention != RETENTION_PERIOD_SENTINEL &&
             pKinesisVideoClient->clientCallbacks.bufferDurationOverflowPressureFn != NULL) {
-            DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+    
             CHK_STATUS(contentViewGetWindowDuration(pKinesisVideoStream->pView, &currentDuration, &windowDuration));
 
             // Check for buffer duration pressure. Note that streamCaps.bufferDuration will never be 0.
             remainingDuration = pKinesisVideoStream->streamInfo.streamCaps.bufferDuration - windowDuration;
             thresholdPercent = (UINT32)(((DOUBLE) remainingDuration / pKinesisVideoStream->streamInfo.streamCaps.bufferDuration) * 100);
-            DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+    
             if (thresholdPercent <= BUFFER_DURATION_PRESSURE_NOTIFICATION_THRESHOLD) {
                 pKinesisVideoStream->diagnostics.bufferPressures++;
-                DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+        
                 // Notify the client app about buffer pressure
                 CHK_STATUS(pKinesisVideoClient->clientCallbacks.bufferDurationOverflowPressureFn(
                     pKinesisVideoClient->clientCallbacks.customData, TO_STREAM_HANDLE(pKinesisVideoStream), remainingDuration));
@@ -981,12 +973,12 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // Generate the view flags
     switch (generatorState) {
         case MKV_STATE_START_STREAM:
-            DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+    
             SET_ITEM_STREAM_START(itemFlags);
             SET_ITEM_STREAM_START_DEBUG(itemFlags);
             // fall-through
         case MKV_STATE_START_CLUSTER:
-            DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+    
             SET_ITEM_FRAGMENT_START(itemFlags);
 
             // Clear the EoFr flag
@@ -1002,7 +994,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             : pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
 
         if (currentTime >= pKinesisVideoStream->diagnostics.nextLoggingTime) {
-            DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+    
             // unlock the client
             pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
             clientLocked = FALSE;
@@ -1013,18 +1005,18 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 
             // unlock frame order coordinator
             if (pFrameOrderCoordinator != NULL) {
-                DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+        
                 pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
             }
 
             if (STATUS_FAILED(logStreamMetric(pKinesisVideoStream))) {
-                DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+        
                 DLOGW("Failed to log stream metric with error 0x%08x", retStatus);
             }
 
             // lock frame order coordinator
             if (pFrameOrderCoordinator != NULL) {
-                DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+        
                 pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
             }
 
@@ -1040,7 +1032,6 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         // Update the next log time
         pKinesisVideoStream->diagnostics.nextLoggingTime = currentTime + pKinesisVideoClient->deviceInfo.clientInfo.metricLoggingPeriod;
     }
-    DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
     // Put the frame into the view.
     // NOTE: For the timestamp we will specify the cluster timestamp + frame timestamp which
     // will be useful later to find the start of the fragment corresponding to the ACK timecode.
@@ -1056,11 +1047,10 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
                                   encodedFrameInfo.dataOffset, overallSize, itemFlags));
 
     // From now on we don't need to free the allocation as it's in the view already and will be collected
-    DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
     freeOnError = FALSE;
 
     if (CHECK_ITEM_STREAM_START(itemFlags)) {
-        DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+
         // Store the stream start timestamp for ACK timecode adjustment for relative cluster timecode streams
         pKinesisVideoStream->newSessionTimestamp = encodedFrameInfo.streamStartTs;
         CHK_STATUS(contentViewGetHead(pKinesisVideoStream->pView, &pViewItem));
@@ -1073,12 +1063,12 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     if (pKinesisVideoStream->streamInfo.streamCaps.maxLatency != STREAM_LATENCY_PRESSURE_CHECK_SENTINEL &&
         pKinesisVideoClient->clientCallbacks.streamLatencyPressureFn != NULL) {
         // Get the window duration from the view
-        DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+
         CHK_STATUS(contentViewGetWindowDuration(pKinesisVideoStream->pView, &duration, NULL));
-        DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+
         // Check for the breach and invoke the user provided callback
         if (duration > pKinesisVideoStream->streamInfo.streamCaps.maxLatency) {
-            DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+    
             pKinesisVideoStream->diagnostics.latencyPressures++;
 
             CHK_STATUS(pKinesisVideoClient->clientCallbacks.streamLatencyPressureFn(pKinesisVideoClient->clientCallbacks.customData,
@@ -1089,7 +1079,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // Notify about data is available
     pUploadHandleInfo = getStreamUploadInfoWithState(pKinesisVideoStream, UPLOAD_HANDLE_STATE_READY | UPLOAD_HANDLE_STATE_STREAMING);
     if (NULL != pUploadHandleInfo && IS_VALID_UPLOAD_HANDLE(pUploadHandleInfo->handle)) {
-        DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+
         // Get the duration and the size
         CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
 
@@ -1102,20 +1092,20 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // Recalculate frame rate if enabled
     if (pKinesisVideoStream->streamInfo.streamCaps.recalculateMetrics) {
         // Calculate the current frame rate only after the first iteration
-        DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+
         currentTime = IS_VALID_TIMESTAMP(currentTime)
             ? currentTime
             : pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
 
         if (pTrackInfo != NULL && pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO) {
-            DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+    
             if (!CHECK_ITEM_STREAM_START(itemFlags)) {
                 // Calculate the delta time in seconds
                 deltaInSeconds = (DOUBLE)(currentTime - pKinesisVideoStream->diagnostics.lastFrameRateTimestamp) / HUNDREDS_OF_NANOS_IN_A_SECOND;
-                DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+        
                 if (deltaInSeconds != 0) {
                     frameRate = 1 / deltaInSeconds;
-                    DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+            
                     // Update the current frame rate
                     pKinesisVideoStream->diagnostics.currentFrameRate =
                         EMA_ACCUMULATOR_GET_NEXT(pKinesisVideoStream->diagnostics.currentFrameRate, frameRate);
@@ -1125,7 +1115,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
                 deltaInSeconds =
                     (DOUBLE)(pFrame->presentationTs - pKinesisVideoStream->diagnostics.previousFrameRatePts) / HUNDREDS_OF_NANOS_IN_A_SECOND;
                 if (deltaInSeconds != 0) {
-                    DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+            
                     pKinesisVideoStream->diagnostics.elementaryFrameRate = 1 / deltaInSeconds;
                 }
             }
@@ -1134,15 +1124,15 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             // Store the last frame timestamp
             pKinesisVideoStream->diagnostics.lastFrameRateTimestamp = currentTime;
         }
-        DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+
     }
 
     // Only update the timestamp on success
     if (pKinesisVideoStream->eofrFrame) {
-        DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+
         pKinesisVideoStream->lastPutFrameTimestamp = INVALID_TIMESTAMP_VALUE;
     } else {
-        DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
+
         pKinesisVideoStream->lastPutFrameTimestamp = currentTime;
     }
     // Unlock the client as we no longer need it locked
@@ -1151,7 +1141,6 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 
     // Unlock the stream (even though it will be unlocked in  cleanup)
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
-    DLOGV("@@@@@@@@@@@@@@: %d", __LINE__);
     streamLocked = FALSE;
 
 CleanUp:
@@ -1723,37 +1712,31 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
     while (TRUE) {
         // Check if we have enough space to proceed - the stream should be locked
 
-        DLOGV("################: %d", __LINE__);
         CHK_STATUS(checkForAvailability(pKinesisVideoStream, allocationSize, pAllocationHandle));
 
-        DLOGV("################: %d", __LINE__);
         // Early return if available
         CHK(!IS_VALID_ALLOCATION_HANDLE(*pAllocationHandle), STATUS_SUCCESS);
-        DLOGV("################: %d", __LINE__);
 
         // if no space available, wait only if in OFFLINE mode or if we are going to evict the tail frames
         CHK(pKinesisVideoStream->streamInfo.streamCaps.storePressurePolicy == CONTENT_STORE_PRESSURE_POLICY_DROP_TAIL_ITEM ||
                 IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType),
             STATUS_SUCCESS);
 
-        DLOGV("################: %d", __LINE__);
         if (IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
-            DLOGV("################: %d", __LINE__);
+
             // Long path which will await for the availability notification or cancellation
             CHK_STATUS(pKinesisVideoClient->clientCallbacks.waitConditionVariableFn(
                 pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->bufferAvailabilityCondition, pKinesisVideoStream->base.lock,
                 pKinesisVideoClient->deviceInfo.clientInfo.offlineBufferAvailabilityTimeout));
         } else {
-            DLOGV("################: %d", __LINE__);
+
             // Need to evict the tail frames by trimming the tail
             CHK_STATUS(contentViewTrimTailItems(pKinesisVideoStream->pView));
-            DLOGV("################: %d", __LINE__);
+
         }
 
         // Check for the stream termination
-        DLOGV("################: %d", __LINE__);
         CHK(!pKinesisVideoStream->streamStopped && !pKinesisVideoStream->base.shutdown, STATUS_BLOCKING_PUT_INTERRUPTED_STREAM_TERMINATED);
-        DLOGV("################: %d", __LINE__);
     }
 
 CleanUp:
@@ -1780,13 +1763,11 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
 
     // Set to invalid whether we failed to allocate or we don't have content view availability
     *pAllocationHandle = INVALID_ALLOCATION_HANDLE_VALUE;
-    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
     // check view availability only if in offline mode
     if (IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
         // Check to see if we have availability in the content view. This will set the availability
         CHK_STATUS(contentViewCheckAvailability(pKinesisVideoStream->pView, &availability));
-        DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
         // Early return if no view availability
         CHK(availability, STATUS_SUCCESS);
@@ -1795,44 +1776,36 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
     // Lock the client
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     clientLocked = TRUE;
-    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
     // Get the heap size
     CHK_STATUS(heapGetSize(pKinesisVideoClient->pHeap, &heapSize));
-    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
     // Check for underflow
     CHK(pKinesisVideoClient->deviceInfo.storageInfo.storageSize >
             heapSize + MAX_ALLOCATION_OVERHEAD_SIZE + pKinesisVideoStream->maxFrameSizeSeen * FRAME_ALLOC_FRAGMENTATION_FACTOR,
         STATUS_SUCCESS);
-    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
     // Check if we have enough space available. Adding maxFrameSizeSeen to handle fragmentation as well as when curl thread needs to alloc space for
     // sending data.
     availableHeapSize = pKinesisVideoClient->deviceInfo.storageInfo.storageSize - heapSize - MAX_ALLOCATION_OVERHEAD_SIZE -
         (UINT64)(pKinesisVideoStream->maxFrameSizeSeen * FRAME_ALLOC_FRAGMENTATION_FACTOR);
 
-    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
     // Early return if storage space is unavailable.
     CHK(availableHeapSize >= allocationSize, STATUS_SUCCESS);
 
-    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
     // Get the heap size. Do not need to check status. If heapAlloc failed then pAllocationHandle would remain invalid.
     retStatus = heapAlloc(pKinesisVideoClient->pHeap, allocationSize, pAllocationHandle);
-    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
     DLOGV("$$$$$$$$$$$$$$$$$$$: RETSTATUS: %d", retStatus == STATUS_NOT_ENOUGH_MEMORY);
     CHK(retStatus == STATUS_SUCCESS || retStatus == STATUS_NOT_ENOUGH_MEMORY, retStatus);
     retStatus = STATUS_SUCCESS;
 
-    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 
     // Unlock the client
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     clientLocked = FALSE;
 
-    DLOGV("$$$$$$$$$$$$$$$$$$$: %d", __LINE__);
 CleanUp:
 
     // Unlock the client if locked.
