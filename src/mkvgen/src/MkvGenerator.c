@@ -891,7 +891,7 @@ STATUS mkvgenValidateFrame(PStreamMkvGenerator pStreamMkvGenerator, PFrame pFram
     dts = TIMESTAMP_TO_MKV_TIMECODE(dts, pStreamMkvGenerator->timecodeScale);
     duration = TIMESTAMP_TO_MKV_TIMECODE(duration, pStreamMkvGenerator->timecodeScale);
 
-    CHK(pts >= pStreamMkvGenerator->lastClusterPts && dts >= pStreamMkvGenerator->lastClusterDts, STATUS_MKV_INVALID_FRAME_TIMESTAMP);
+    CHK(pts > pStreamMkvGenerator->lastClusterPts && dts > pStreamMkvGenerator->lastClusterDts, STATUS_MKV_INVALID_FRAME_TIMESTAMP);
 
     // Evaluate the current state
     streamState = mkvgenGetStreamState(pStreamMkvGenerator, pFrame->flags, pts);
