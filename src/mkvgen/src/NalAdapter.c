@@ -208,6 +208,11 @@ STATUS adaptH264CpdNalsFromAnnexBToAvcc(PBYTE pCpd, UINT32 cpdSize, PBYTE pAdapt
     CHK_STATUS(adaptFrameNalsFromAnnexBToAvcc(pCpd, cpdSize, FALSE, pAdaptedBits, &adaptedRawSize));
 
     // Retrieve the SPS and PPS
+
+    printf("In getVideoWidthAndHeightFromH264Sps\n");
+            for(int i = 0; i < adaptedRawSize; i++) {
+                printf("%d ",(int)pAdaptedBits[i]);
+            }
     CHK_STATUS(getH264SpsPpsNalusFromAvccNalus(pAdaptedBits, adaptedRawSize, &pSps, &spsSize, &pPps, &ppsSize));
     CHK(pSps != NULL, STATUS_MKV_MISSING_SPS_FROM_H264_CPD);
     CHK(pPps != NULL, STATUS_MKV_MISSING_PPS_FROM_H264_CPD);

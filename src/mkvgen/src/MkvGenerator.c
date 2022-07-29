@@ -23,6 +23,8 @@ STATUS createMkvGenerator(PCHAR contentType, UINT32 behaviorFlags, UINT64 timeco
     BOOL adaptAnnexB = FALSE, adaptAvcc = FALSE, adaptCpdAnnexB = FALSE;
     PTrackInfo pSrcTrackInfo, pDstTrackInfo;
 
+    printf("behaviorFlags:%d\n", behaviorFlags);
+
     // Check the input params
     CHK(ppMkvGenerator != NULL, STATUS_NULL_ARG);
 
@@ -406,6 +408,7 @@ STATUS mkvgenSetCodecPrivateData(PMkvGenerator pMkvGenerator, UINT64 trackId, UI
     CHK(codecPrivateDataSize <= MKV_MAX_CODEC_PRIVATE_LEN, STATUS_MKV_INVALID_CODEC_PRIVATE_LENGTH);
     CHK(codecPrivateDataSize == 0 || codecPrivateData != NULL, STATUS_MKV_CODEC_PRIVATE_NULL);
 
+    printf("in mkvgenSetCodecPrivateData 1\n");
     // Find the right track
     CHK_STATUS(mkvgenGetTrackInfo(pStreamMkvGenerator->trackInfoList, pStreamMkvGenerator->trackInfoCount, trackId, &pTrackInfo, &trackIndex));
 
@@ -418,7 +421,7 @@ STATUS mkvgenSetCodecPrivateData(PMkvGenerator pMkvGenerator, UINT64 trackId, UI
 
     // See if we need to do anything
     CHK(codecPrivateDataSize != 0, retStatus);
-
+    printf("in mkvgenSetCodecPrivateData 2\n");
     CHK_STATUS(mkvgenAdaptCodecPrivateData(pStreamMkvGenerator, pTrackInfo->trackType, pTrackInfo->codecId, codecPrivateDataSize, codecPrivateData,
                                            &pTrackInfo->codecPrivateDataSize, &pTrackInfo->codecPrivateData, &pTrackInfo->trackCustomData));
 
@@ -876,15 +879,19 @@ STATUS mkvgenValidateFrame(PStreamMkvGenerator pStreamMkvGenerator, PFrame pFram
     if (pStreamMkvGenerator->streamTimestamps) {
         dts = pFrame->decodingTs;
         pts = pFrame->presentationTs;
+        printf("Here: %llu, %llu\n", dts, pts);
     } else {
         pts = dts = pStreamMkvGenerator->getTimeFn(pStreamMkvGenerator->customData);
     }
 
     duration = pFrame->duration;
+    printf("Duration:%llu\n", duration);
 
     // Ensure we have sane values
     CHK(dts <= MAX_TIMESTAMP_VALUE && pts <= MAX_TIMESTAMP_VALUE, STATUS_MKV_MAX_FRAME_TIMECODE);
+    printf("Fine 1\n");
     CHK(duration <= MAX_TIMESTAMP_VALUE, STATUS_MKV_MAX_FRAME_TIMECODE);
+    printf("Fine 2\n");
 
     // Adjust to timescale - slight chance of an overflow if we didn't check for sane values
     pts = TIMESTAMP_TO_MKV_TIMECODE(pts, pStreamMkvGenerator->timecodeScale);
@@ -1865,6 +1872,7 @@ STATUS mkvgenAdaptCodecPrivateData(PStreamMkvGenerator pMkvGenerator, MKV_TRACK_
     // Check if the CPD needs to be adapted
     if (trackType == MKV_TRACK_INFO_TYPE_VIDEO && pMkvGenerator->adaptCpdNals) {
         if ((pMkvGenerator->contentType & MKV_CONTENT_TYPE_H264) != MKV_CONTENT_TYPE_NONE) {
+            printf("Adapt nal\n");
             CHK_STATUS(adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, NULL, &adaptedCodecPrivateDataSize));
         } else if ((pMkvGenerator->contentType & MKV_CONTENT_TYPE_H265) != MKV_CONTENT_TYPE_NONE) {
             CHK_STATUS(adaptH265CpdNalsFromAnnexBToHvcc(cpd, cpdSize, NULL, &adaptedCodecPrivateDataSize));
@@ -1877,11 +1885,13 @@ STATUS mkvgenAdaptCodecPrivateData(PStreamMkvGenerator pMkvGenerator, MKV_TRACK_
 
     if (trackType == MKV_TRACK_INFO_TYPE_VIDEO && pMkvGenerator->adaptCpdNals) {
         if ((pMkvGenerator->contentType & MKV_CONTENT_TYPE_H264) != MKV_CONTENT_TYPE_NONE) {
+            printf("Adapt nal 2\n");
             CHK_STATUS(adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, pCpd, &adaptedCodecPrivateDataSize));
         } else if ((pMkvGenerator->contentType & MKV_CONTENT_TYPE_H265) != MKV_CONTENT_TYPE_NONE) {
             CHK_STATUS(adaptH265CpdNalsFromAnnexBToHvcc(cpd, cpdSize, pCpd, &adaptedCodecPrivateDataSize));
         }
     } else {
+        printf("else dont Adapt nal\n");
         MEMCPY(pCpd, cpd, adaptedCodecPrivateDataSize);
     }
 
@@ -1898,6 +1908,7 @@ STATUS mkvgenAdaptCodecPrivateData(PStreamMkvGenerator pMkvGenerator, MKV_TRACK_
                 // the first NALu is the SPS. We will not skip over possible SEI or AUD NALus
                 retStatus = getVideoWidthAndHeightFromH264Sps(pCpd, adaptedCodecPrivateDataSize, &pData->trackVideoConfig.videoWidth,
                                                               &pData->trackVideoConfig.videoHeight);
+                printf("retstatus:%08x\n", retStatus);
 
             } else if ((pMkvGenerator->contentType & MKV_CONTENT_TYPE_H265) != MKV_CONTENT_TYPE_NONE) {
                 // Important: The assumption here is that if this is not in HvCC format and it's in Annex-B or RAW then

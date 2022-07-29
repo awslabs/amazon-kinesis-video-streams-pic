@@ -812,6 +812,10 @@ STATUS getH264SpsPpsNalusFromAvccNalus(PBYTE pAvccNalus, UINT32 nalusSize, PBYTE
     BYTE naluHeader;
     BOOL iterate = TRUE;
 
+    printf("\n");
+    if(ppSps == NULL) {
+        printf("Null sps\n");
+    }
     CHK(pAvccNalus != NULL && ppSps != NULL && pSpsSize != NULL && ppPps != NULL && pPpsSize != NULL, STATUS_NULL_ARG);
 
     while (iterate && (PBYTE)(pCurPtr + 1) < pAvccNalus + nalusSize) {
