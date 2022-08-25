@@ -193,7 +193,6 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     // NOTE: The calloc will Zero the fields
     allocationSize = SIZEOF(KinesisVideoClient) + pDeviceInfo->streamCount * SIZEOF(PKinesisVideoStream) + tagsSize;
     pKinesisVideoClient = (PKinesisVideoClient) MEMCALLOC(1, allocationSize);
-    DLOGI("Memory issues\n");
     CHK(pKinesisVideoClient != NULL, STATUS_NOT_ENOUGH_MEMORY);
 
     // Set the basics
@@ -1969,7 +1968,7 @@ STATUS setContentStoreAllocator(PKinesisVideoClient pKinesisVideoClient)
     // Need to set the global static to point to the client so the instrumented allocators will find the heap
     gKinesisVideoClient = pKinesisVideoClient;
 
-    DLOGI("Kinesis Video Client value: %08x", gKinesisVideoClient);
+    printf("Kinesis Video Client value: %08x\n", gKinesisVideoClient);
 
     // Store the function pointers
     pKinesisVideoClient->totalAllocationSize = 0;
