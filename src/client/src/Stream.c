@@ -1699,6 +1699,7 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
             CHK_STATUS(pKinesisVideoClient->clientCallbacks.waitConditionVariableFn(
                 pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->bufferAvailabilityCondition, pKinesisVideoStream->base.lock,
                 pKinesisVideoClient->deviceInfo.clientInfo.offlineBufferAvailabilityTimeout));
+            printf("Timed out awaiting buffer availability");
         } else {
             // Need to evict the tail frames by trimming the tail
             CHK_STATUS(contentViewTrimTailItems(pKinesisVideoStream->pView));
@@ -1711,6 +1712,7 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
 CleanUp:
 
     LEAVES();
+    printf("Handle availability failed\n");
     return retStatus;
 }
 
