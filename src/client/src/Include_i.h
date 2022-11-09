@@ -288,6 +288,8 @@ typedef struct __KinesisVideoClient {
     memAlignAlloc storedMemAlignAlloc;
     memCalloc storedMemCalloc;
     memFree storedMemFree;
+
+    BOOL allowToCreateNonExistentStream;
 } KinesisVideoClient, *PKinesisVideoClient;
 
 /**

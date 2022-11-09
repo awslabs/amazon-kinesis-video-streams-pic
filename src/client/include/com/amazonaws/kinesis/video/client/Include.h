@@ -1061,6 +1061,9 @@ struct __StreamCaps {
 
     // Content view overflow handling policy
     CONTENT_VIEW_OVERFLOW_POLICY viewOverflowPolicy;
+
+    // Allow stream creation
+    BOOL allowStreamCreation;
 };
 
 typedef struct __StreamCaps* PStreamCaps;
