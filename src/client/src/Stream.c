@@ -112,6 +112,8 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     pKinesisVideoStream->streamReady = FALSE;
     pKinesisVideoStream->streamClosed = FALSE;
 
+    pKinesisVideoStream->allowToCreate = pStreamInfo->streamCaps.allowStreamCreation;
+
     // Set the stream start timestamps and index
     pKinesisVideoStream->newSessionTimestamp = INVALID_TIMESTAMP_VALUE;
     pKinesisVideoStream->newSessionIndex = INVALID_VIEW_INDEX_VALUE;

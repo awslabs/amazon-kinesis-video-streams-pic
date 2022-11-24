@@ -1005,6 +1005,8 @@ struct __StreamCaps {
     // Whether to recover after an error occurred
     BOOL recoverOnError;
 
+    BOOL allowStreamCreation;
+
     // Specify the NALs adaptation flags as defined in NAL_ADAPTATION_FLAGS enumeration
     // The adaptation will be applied to all tracks
     UINT32 nalAdaptationFlags;

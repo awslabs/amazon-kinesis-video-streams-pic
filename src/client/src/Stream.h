@@ -413,6 +413,8 @@ struct __KinesisVideoStream {
     // Whether to set the non-key frames as "SKIP" when we have a not-yet-completed errored fragment
     BOOL skipNonKeyFrames;
 
+    BOOL allowToCreate;
+
     // Time after which should reset the generator with the next key frame
     UINT64 resetGeneratorTime;
 
