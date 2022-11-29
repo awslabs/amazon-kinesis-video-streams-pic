@@ -242,5 +242,5 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamStopSyncErrorAckWhileStr
     EXPECT_EQ(0, ATOMIC_LOAD(&mDroppedFrameReportFuncCount));
 }
 
-INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, StreamStoppingFunctionalityTest,
+INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, StreamStoppingFunctionalityTest,
                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));

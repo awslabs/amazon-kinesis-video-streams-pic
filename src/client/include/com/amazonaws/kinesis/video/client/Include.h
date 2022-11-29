@@ -451,7 +451,7 @@ extern "C" {
  */
 #define DEVICE_INFO_CURRENT_VERSION           1
 #define CALLBACKS_CURRENT_VERSION             0
-#define STREAM_INFO_CURRENT_VERSION           2
+#define STREAM_INFO_CURRENT_VERSION           3
 #define SEGMENT_INFO_CURRENT_VERSION          0
 #define STORAGE_INFO_CURRENT_VERSION          0
 #define AUTH_INFO_CURRENT_VERSION             0
@@ -1063,6 +1063,10 @@ struct __StreamCaps {
 
     // Content view overflow handling policy
     CONTENT_VIEW_OVERFLOW_POLICY viewOverflowPolicy;
+
+    // ------------------------------ V2 compat -----------------------
+    // Enable / Disable stream creation if describe call fails
+    BOOL allowStreamCreation;
 };
 
 typedef struct __StreamCaps* PStreamCaps;

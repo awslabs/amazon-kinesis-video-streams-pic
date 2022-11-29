@@ -130,5 +130,5 @@ TEST_P(IntermittentProducerFunctionalityTest, RepeatedCreateSyncStopSyncFree)
 }
 
 
-INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, IntermittentProducerFunctionalityTest,
+INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, IntermittentProducerFunctionalityTest,
                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));

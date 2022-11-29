@@ -331,5 +331,5 @@ TEST_P(StreamFunctionalityTest, StreamDescription_V0_Test)
     EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN, SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 }
 
-INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, StreamFunctionalityTest,
+INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, StreamFunctionalityTest,
                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
