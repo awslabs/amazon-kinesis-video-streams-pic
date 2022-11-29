@@ -168,5 +168,5 @@ TEST_P(HybridFileHeapTest, hybridFileCreateHeapMemHeapSmall)
                                              &pHeap)));
 }
 
-INSTANTIATE_TEST_CASE_P(PermutatedHeapType, HybridFileHeapTest,
+INSTANTIATE_TEST_SUITE_P(PermutatedHeapType, HybridFileHeapTest,
                         Values(FLAGS_USE_AIV_HEAP, FLAGS_USE_SYSTEM_HEAP));

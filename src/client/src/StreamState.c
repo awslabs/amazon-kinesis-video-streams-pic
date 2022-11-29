@@ -270,8 +270,13 @@ STATUS fromDescribeStreamState(UINT64 customData, PUINT64 pState)
                 break;
 
             case SERVICE_CALL_RESOURCE_NOT_FOUND:
-                // Move to the create state as no streams have been found
-                state = STREAM_STATE_CREATE;
+                // Move to the create state if the application allows it
+                if(pKinesisVideoStream->allowStreamCreation) {
+                    state = STREAM_STATE_CREATE;
+                }
+                else {
+                    state = STREAM_STATE_STOPPED;
+                }
                 break;
 
             default:
@@ -870,7 +875,6 @@ STATUS executeStoppedStreamState(UINT64 customData, UINT64 time)
 
     // Also store the connection stopping result
     pKinesisVideoStream->connectionDroppedResult = pKinesisVideoStream->base.result;
-
     // Check if we want to prime the state machine based on whether we have any more content to send
     // currently and if the error is a timeout.
     if (SERVICE_CALL_RESULT_IS_A_TIMEOUT(pKinesisVideoStream->connectionDroppedResult)) {

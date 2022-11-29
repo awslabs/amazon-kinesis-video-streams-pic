@@ -166,6 +166,8 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     MEMCPY(&pKinesisVideoStream->streamInfo, pStreamInfo, SIZEOF(StreamInfo));
     fixupStreamInfo(&pKinesisVideoStream->streamInfo);
 
+    pKinesisVideoStream->allowStreamCreation = pStreamInfo->streamCaps.allowStreamCreation;
+
     // Fix-up the stream name if not specified
     if (pKinesisVideoStream->streamInfo.name[0] == '\0') {
         STRCPY(pKinesisVideoStream->streamInfo.name, tempStreamName);
@@ -3573,16 +3575,17 @@ VOID logStreamInfo(PStreamInfo pStreamInfo)
     DLOGD("\tMax latency (100ns): %" PRIu64, pStreamInfo->streamCaps.maxLatency);
     DLOGD("\tFragment duration (100ns): %" PRIu64, pStreamInfo->streamCaps.fragmentDuration);
     DLOGD("\tKey frame fragmentation: %s", pStreamInfo->streamCaps.keyFrameFragmentation ? "Yes" : "No");
-    DLOGD("\tUse frame timecode: %s", pStreamInfo->streamCaps.frameTimecodes ? "Yes" : "No");
-    DLOGD("\tAbsolute frame timecode: %s", pStreamInfo->streamCaps.absoluteFragmentTimes ? "Yes" : "No");
+    DLOGD("\tUse frame timecodes: %s", pStreamInfo->streamCaps.frameTimecodes ? "Yes" : "No");
+    DLOGD("\tAbsolute frame timecodes: %s", pStreamInfo->streamCaps.absoluteFragmentTimes ? "Yes" : "No");
     DLOGD("\tNal adaptation flags: %u", pStreamInfo->streamCaps.nalAdaptationFlags);
-    DLOGD("\tAverage bandwith (bps): %u", pStreamInfo->streamCaps.avgBandwidthBps);
+    DLOGD("\tAverage bandwidth (bps): %u", pStreamInfo->streamCaps.avgBandwidthBps);
     DLOGD("\tFramerate: %u", pStreamInfo->streamCaps.frameRate);
     DLOGD("\tBuffer duration (100ns): %" PRIu64, pStreamInfo->streamCaps.bufferDuration);
     DLOGD("\tReplay duration (100ns): %" PRIu64, pStreamInfo->streamCaps.replayDuration);
     DLOGD("\tConnection Staleness duration (100ns): %" PRIu64, pStreamInfo->streamCaps.connectionStalenessDuration);
     DLOGD("\tStore Pressure Policy: %u", pStreamInfo->streamCaps.storePressurePolicy);
     DLOGD("\tView Overflow Policy: %u", pStreamInfo->streamCaps.viewOverflowPolicy);
+    DLOGD("\tAllow stream creation: %s", pStreamInfo->streamCaps.allowStreamCreation ? "Yes" : "No");
 
     if (pStreamInfo->streamCaps.segmentUuid != NULL) {
         hasSegmentUUID = TRUE;

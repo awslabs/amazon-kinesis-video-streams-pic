@@ -85,8 +85,8 @@ jobs:
   undefined-behavior-sanitizer:
     runs-on: ubuntu-latest
     env:
-      CC: clang-7
-      CXX: clang++-7
+      CC: clang
+      CXX: clang++
       UBSAN_OPTIONS: halt_on_error=1:suppressions=../src/utils/tst/suppressions/UBSAN.supp
       AWS_KVS_LOG_LEVEL: 2
     steps:
@@ -95,7 +95,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get -y install clang-7
+          sudo apt-get -y install clang
       - name: Build repository
         run: |
           mkdir build && cd build
