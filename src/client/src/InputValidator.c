@@ -422,10 +422,12 @@ VOID fixupStreamInfo(PStreamInfo pStreamInfo)
         case 1:
             pStreamInfo->streamCaps.storePressurePolicy = CONTENT_STORE_PRESSURE_POLICY_OOM;
             pStreamInfo->streamCaps.viewOverflowPolicy = CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM;
-            break;
 
         case 2:
-            // No-op - the latest version
+            pStreamInfo->streamCaps.allowStreamCreation = TRUE;
+            break;
+        case 3:
+            // No-op - the latest versionn
             break;
     }
 

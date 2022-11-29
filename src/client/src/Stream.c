@@ -112,8 +112,6 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     pKinesisVideoStream->streamReady = FALSE;
     pKinesisVideoStream->streamClosed = FALSE;
 
-    pKinesisVideoStream->allowToCreate = pStreamInfo->streamCaps.allowStreamCreation;
-
     // Set the stream start timestamps and index
     pKinesisVideoStream->newSessionTimestamp = INVALID_TIMESTAMP_VALUE;
     pKinesisVideoStream->newSessionIndex = INVALID_VIEW_INDEX_VALUE;
@@ -167,6 +165,8 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     // Copy the structures in their entirety
     MEMCPY(&pKinesisVideoStream->streamInfo, pStreamInfo, SIZEOF(StreamInfo));
     fixupStreamInfo(&pKinesisVideoStream->streamInfo);
+
+    pKinesisVideoStream->allowToCreate = pStreamInfo->streamCaps.allowStreamCreation;
 
     // Fix-up the stream name if not specified
     if (pKinesisVideoStream->streamInfo.name[0] == '\0') {
@@ -3580,6 +3580,7 @@ VOID logStreamInfo(PStreamInfo pStreamInfo)
     DLOGD("\tConnection Staleness duration (100ns): %" PRIu64, pStreamInfo->streamCaps.connectionStalenessDuration);
     DLOGD("\tStore Pressure Policy: %u", pStreamInfo->streamCaps.storePressurePolicy);
     DLOGD("\tView Overflow Policy: %u", pStreamInfo->streamCaps.viewOverflowPolicy);
+    DLOGD("\tAllow stream creation: %u", pStreamInfo->streamCaps.allowStreamCreation);
 
     if (pStreamInfo->streamCaps.segmentUuid != NULL) {
         hasSegmentUUID = TRUE;
