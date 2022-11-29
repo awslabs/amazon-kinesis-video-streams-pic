@@ -166,7 +166,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     MEMCPY(&pKinesisVideoStream->streamInfo, pStreamInfo, SIZEOF(StreamInfo));
     fixupStreamInfo(&pKinesisVideoStream->streamInfo);
 
-    pKinesisVideoStream->allowToCreate = pStreamInfo->streamCaps.allowStreamCreation;
+    pKinesisVideoStream->allowStreamCreation = pStreamInfo->streamCaps.allowStreamCreation;
 
     // Fix-up the stream name if not specified
     if (pKinesisVideoStream->streamInfo.name[0] == '\0') {

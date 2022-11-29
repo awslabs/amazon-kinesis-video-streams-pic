@@ -269,7 +269,7 @@ STATUS fromDescribeStreamState(UINT64 customData, PUINT64 pState)
 
             case SERVICE_CALL_RESOURCE_NOT_FOUND:
                 // Move to the create state if the application allows it
-                if(pKinesisVideoStream->allowToCreate) {
+                if(pKinesisVideoStream->allowStreamCreation) {
                     state = STREAM_STATE_CREATE;
                 }
                 else {
