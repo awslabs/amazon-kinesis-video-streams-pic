@@ -304,5 +304,5 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsTerminatedUploadHandle) {
     EXPECT_EQ(0, ATOMIC_LOAD(&mStreamErrorReportFuncCount));
 }
 
-INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, AcksFunctionalityTest,
+INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, AcksFunctionalityTest,
                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));

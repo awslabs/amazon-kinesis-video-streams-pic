@@ -282,5 +282,5 @@ TEST_P(ViewDropPolicyFunctionalityTest, consumedViewItemStayRetained)
     EXPECT_NE(FIRST_FRAME_ALLOCATION_HANDLE, pViewItem->handle);
 }
 
-INSTANTIATE_TEST_CASE_P(PermutatedDropPolicy, ViewDropPolicyFunctionalityTest,
+INSTANTIATE_TEST_SUITE_P(PermutatedDropPolicy, ViewDropPolicyFunctionalityTest,
                         Values(CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM, CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START));
