@@ -302,6 +302,7 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
         pClientInfo->version = pOrigClientInfo->version;
         pClientInfo->createClientTimeout = pOrigClientInfo->createClientTimeout;
         pClientInfo->createStreamTimeout = pOrigClientInfo->createStreamTimeout;
+        printf("Fixup timeout: %d", pOrigClientInfo->stopStreamTimeout);
         pClientInfo->stopStreamTimeout = pOrigClientInfo->stopStreamTimeout;
         pClientInfo->offlineBufferAvailabilityTimeout = pOrigClientInfo->offlineBufferAvailabilityTimeout;
         pClientInfo->loggerLogLevel = pOrigClientInfo->loggerLogLevel;
