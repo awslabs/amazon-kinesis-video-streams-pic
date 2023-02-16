@@ -21,6 +21,9 @@ extern "C" {
 // thread stack size to use when running on constrained device like raspberry pi
 #define THREAD_STACK_SIZE_ON_CONSTRAINED_DEVICE (512 * 1024)
 
+// 16MB stack size
+#define THREAD_STACK_SIZE_16MB (16 * 1024 * 1024)
+
 // Check for whitespace
 #define IS_WHITE_SPACE(ch) (((ch) == ' ') || ((ch) == '\t') || ((ch) == '\r') || ((ch) == '\n') || ((ch) == '\v') || ((ch) == '\f'))
 
