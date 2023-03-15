@@ -40,7 +40,6 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
     Frame eofr = EOFR_FRAME_INITIALIZER;
 
     CHK(pKinesisVideoClient, STATUS_NULL_ARG);
-    CHK(!pCurrStream->streamStopped, retStatus);
 
     // These values are set in another thread (so we need a lock)
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
