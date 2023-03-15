@@ -70,9 +70,7 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
                 // Check if last PutFrame is older than max timeout, if so, send EoFR, if not, do nothing
                 // Ignoring currentTime it COULD be smaller than pCurrStream->lastPutFrametimestamp
                 // Due to this method entering but waiting on stream lock from putFrame call
-                CHK(!pCurrStream->streamStopped, retStatus);
-
-                if (IS_VALID_TIMESTAMP(pCurrStream->lastPutFrameTimestamp) && currentTime > pCurrStream->lastPutFrameTimestamp &&
+                if (!pCurrStream->streamStopped && IS_VALID_TIMESTAMP(pCurrStream->lastPutFrameTimestamp) && currentTime > pCurrStream->lastPutFrameTimestamp &&
                     (currentTime - pCurrStream->lastPutFrameTimestamp) > INTERMITTENT_PRODUCER_MAX_TIMEOUT) {
                     if (!STATUS_SUCCEEDED(retStatus = putKinesisVideoFrame(TO_STREAM_HANDLE(pCurrStream), &eofr))) {
                         DLOGW("Failed to submit auto eofr with 0x%08x, for stream name: %s", retStatus, pCurrStream->streamInfo.name);
