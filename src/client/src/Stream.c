@@ -339,6 +339,7 @@ STATUS freeStream(PKinesisVideoStream pKinesisVideoStream)
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
     CHK(pKinesisVideoClient != NULL, STATUS_CLIENT_FREED_BEFORE_STREAM);
 
+    DLOGD("[%s] Freeing stream", pKinesisVideoStream->streamInfo.name);
     // Shutdown the processing
     CHK_STATUS_CONTINUE(shutdownStream(pKinesisVideoStream, FALSE));
 
@@ -400,6 +401,8 @@ STATUS freeStream(PKinesisVideoStream pKinesisVideoStream)
         semaphoreFree(&pKinesisVideoStream->base.shutdownSemaphore);
     }
 
+    DLOGD("[%s] Completed freeing stream", pKinesisVideoStream->streamInfo.name);
+
     // Release the object
     MEMFREE(pKinesisVideoStream);
 
@@ -459,7 +462,7 @@ STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
 
     retStatus = frameOrderCoordinatorFlush(pKinesisVideoStream);
     if (STATUS_FAILED(retStatus)) {
-        DLOGE("frameOrderCoordinatorFlush failed with 0x%08x", retStatus);
+        DLOGE("[%s] frameOrderCoordinatorFlush failed with 0x%08x", pKinesisVideoStream->streamInfo.name, retStatus);
         retStatus = STATUS_SUCCESS;
     }
 
@@ -562,6 +565,8 @@ STATUS stopStreamSync(PKinesisVideoStream pKinesisVideoStream)
 
     CHK_STATUS(stopStream(pKinesisVideoStream));
 
+    CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     // Lock the stream
@@ -570,17 +575,17 @@ STATUS stopStreamSync(PKinesisVideoStream pKinesisVideoStream)
 
     do {
         if (pKinesisVideoStream->streamClosed) {
-            DLOGV("Kinesis Video Stream is Closed.");
+            DLOGV("[%s] Kinesis Video Stream is Closed.", pKinesisVideoStream->streamInfo.name);
             break;
         }
 
         if (pKinesisVideoStream->base.shutdown) {
-            DLOGW("Kinesis Video Stream is being shut down.");
+            DLOGW("[%s] Kinesis Video Stream is being shut down.", pKinesisVideoStream->streamInfo.name);
             break;
         }
 
         // Need to await for the Stream Stopped state before returning
-        DLOGV("Awaiting for the stop stream to complete...");
+        DLOGV("[%s] Awaiting for the stop stream to complete...", pKinesisVideoStream->streamInfo.name);
 
         // Blocking path
         // Wait may return without any data available due to a spurious wake up.
@@ -594,7 +599,7 @@ STATUS stopStreamSync(PKinesisVideoStream pKinesisVideoStream)
 CleanUp:
 
     if (retStatus == STATUS_OPERATION_TIMED_OUT) {
-        DLOGE("Failed to stop Kinesis Video Stream - timed out.");
+        DLOGE("[%s] Failed to stop Kinesis Video Stream - timed out.", pKinesisVideoStream->streamInfo.name);
     }
 
     // release stream lock
@@ -675,7 +680,7 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     CHK_STATUS(getKinesisVideoMetrics(TO_CLIENT_HANDLE(pKinesisVideoClient), &clientMetrics));
     CHK_STATUS(getKinesisVideoStreamMetrics(TO_STREAM_HANDLE(pKinesisVideoStream), &streamMetrics));
 
-    DLOGD("Kinesis Video client and stream metrics:");
+    DLOGD("Kinesis Video client and stream metrics for stream %s", pKinesisVideoStream->streamInfo.name);
     DLOGD("\tOverall storage byte size: %" PRIu64 " ", clientMetrics.contentStoreSize);
     DLOGD("\tAvailable storage byte size: %" PRIu64 " ", clientMetrics.contentStoreAvailableSize);
     DLOGD("\tAllocated storage byte size: %" PRIu64 " ", clientMetrics.contentStoreAllocatedSize);
@@ -999,7 +1004,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             }
 
             if (STATUS_FAILED(logStreamMetric(pKinesisVideoStream))) {
-                DLOGW("Failed to log stream metric with error 0x%08x", retStatus);
+                DLOGW("[%s] Failed to log stream metric with error 0x%08x", pKinesisVideoStream->streamInfo.name, retStatus);
             }
 
             // lock frame order coordinator
@@ -1257,16 +1262,16 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             // Set the state to terminated and early return with the EOS with the right handle
             pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
 
-            DLOGI("Indicating an EOS after last persisted ACK is received for stream upload handle %" PRIu64, uploadHandle);
+            DLOGI("[%s] Indicating an EOS after last persisted ACK is received for stream upload handle %" PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
             CHK(FALSE, STATUS_END_OF_STREAM);
 
         case UPLOAD_HANDLE_STATE_TERMINATED:
             // This path get invoked if a connection get terminated by calling reset connection
-            DLOGW("Indicating an end-of-stream for a terminated stream upload handle %" PRIu64, uploadHandle);
+            DLOGW("[%s] Indicating an end-of-stream for a terminated stream upload handle %", PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
             CHK(FALSE, STATUS_END_OF_STREAM);
 
         case UPLOAD_HANDLE_STATE_ERROR:
-            DLOGW("Indicating an abort for a errored stream upload handle %" PRIu64, uploadHandle);
+            DLOGW("[%s] Indicating an abort for a errored stream upload handle %", PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
             CHK(FALSE, STATUS_UPLOAD_HANDLE_ABORTED);
         default:
             // no-op for other UPLOAD_HANDLE states
@@ -1314,7 +1319,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
                     }
 
                     pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_AWAITING_ACK;
-                    DLOGI("Handle %" PRIu64 " waiting for last persisted ack with ts %" PRIu64, pUploadHandleInfo->handle,
+                    DLOGI("[%s] Handle %" PRIu64 " waiting for last persisted ack with ts %" PRIu64, pKinesisVideoStream->streamInfo.name, pUploadHandleInfo->handle,
                           pUploadHandleInfo->lastFragmentTs);
 
                     // Will terminate later after the ACK is received
@@ -1650,7 +1655,7 @@ STATUS getStreamMetrics(PKinesisVideoStream pKinesisVideoStream, PStreamMetrics 
             pStreamMetrics->currentTransferRate = pKinesisVideoStream->diagnostics.currentTransferRate;
             break;
         default:
-            DLOGW("Invalid stream metric struct version. Nothing to populate");
+            DLOGW("[%s] Invalid stream metric struct version. Nothing to populate", pKinesisVideoStream->streamInfo.name);
             break;
     }
 
@@ -2719,7 +2724,7 @@ CleanUp:
 
     // Set the current back if we had modified it
     if (setCurrentBack && STATUS_FAILED((setViewStatus = contentViewSetCurrentIndex(pKinesisVideoStream->pView, curItemIndex)))) {
-        DLOGW("Failed to set the current back to index %" PRIu64 " with status 0x%08x", curItemIndex, setViewStatus);
+        DLOGW("[%s] Failed to set the current back to index %" PRIu64 " with status 0x%08x", pKinesisVideoStream->streamInfo.name, curItemIndex, setViewStatus);
     }
 
     LEAVES();
