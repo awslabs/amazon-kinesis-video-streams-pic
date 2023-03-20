@@ -324,7 +324,7 @@ extern "C" {
 /**
  * Service call default timeout - 5 seconds
  */
-#define SERVICE_CALL_DEFAULT_TIMEOUT (5 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+#define SERVICE_CALL_DEFAULT_TIMEOUT (10 * HUNDREDS_OF_NANOS_IN_A_SECOND)
 
 /**
  * Service call infinite timeout for streaming
