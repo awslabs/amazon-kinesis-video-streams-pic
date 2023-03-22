@@ -1001,9 +1001,9 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
                 DLOGW("Failed to log stream metric with error 0x%08x", retStatus);
             }
 
-            if (pFrameOrderCoordinator != NULL) {
-                pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
-            }
+//            if (pFrameOrderCoordinator != NULL) {
+//                pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
+//            }
 
             // lock the stream
             pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
