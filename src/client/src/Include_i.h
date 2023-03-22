@@ -52,6 +52,8 @@ struct __KinesisVideoBase {
     // Lock needed to create/free a stream + iterating over a stream
     MUTEX streamListLock;
 
+    MUTEX putFrameLock;
+
     // Conditional variable for Ready state
     CVAR ready;
 
