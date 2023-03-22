@@ -886,6 +886,7 @@ CleanUp:
 
     if (putFrameLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.putFrameLock);
+        putFrameLocked = FALSE;
     }
 
     if (STATUS_FAILED(retStatus) && pFrame != NULL) {
