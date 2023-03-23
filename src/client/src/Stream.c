@@ -530,6 +530,7 @@ STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
     // Check if we need to call stream closed callback
     if (!notSent && viewByteSize == 0 && sessionCount == 0 && // If we have active handle, then eventually one of the handle will call streamClosedFn
         !pKinesisVideoStream->metadataTracker.send && !pKinesisVideoStream->eosTracker.send) {
+        DLOGD("Not sent...notifying");
         CHK_STATUS(notifyStreamClosed(pKinesisVideoStream, pUploadHandleInfo == NULL ? INVALID_UPLOAD_HANDLE_VALUE : pUploadHandleInfo->handle));
     }
 
@@ -595,6 +596,7 @@ STATUS stopStreamSync(PKinesisVideoStream pKinesisVideoStream)
         CHK_STATUS(pKinesisVideoClient->clientCallbacks.waitConditionVariableFn(
             pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->streamClosedCondition, pKinesisVideoStream->base.lock,
             pKinesisVideoClient->deviceInfo.clientInfo.stopStreamTimeout));
+        DLOGD("Woke up");
 
     } while (TRUE);
 
@@ -652,6 +654,7 @@ STATUS shutdownStream(PKinesisVideoStream pKinesisVideoStream, BOOL resetStream)
     }
 
     if (IS_VALID_CVAR_VALUE(pKinesisVideoStream->streamClosedCondition)) {
+        DLOGD("Shutting down");
         pKinesisVideoClient->clientCallbacks.broadcastConditionVariableFn(pKinesisVideoClient->clientCallbacks.customData,
                                                                           pKinesisVideoStream->streamClosedCondition);
     }
@@ -807,6 +810,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     }
 
     // NOTE: If the connection has been reset we need to start from a new header
+    DLOGD("Stream state: 0x%08x....%d for %s", pKinesisVideoStream->streamState, pKinesisVideoStream->streamReady, pKinesisVideoStream->streamInfo.name);
     if (pKinesisVideoStream->streamState == STREAM_STATE_NEW && pKinesisVideoStream->streamReady) {
         // Step the state machine once to get out of the Ready state
         CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
@@ -815,7 +819,9 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 
     // if we need to reset the generator on the next key frame (during the rotation only)
     if (pKinesisVideoStream->resetGeneratorOnKeyFrame && CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)) {
+        DLOGD("Resetting generator starting for %s", pKinesisVideoStream->streamInfo.name);
         CHK_STATUS(mkvgenResetGenerator(pKinesisVideoStream->pMkvGenerator));
+        DLOGD("Resetting generator done for %s", pKinesisVideoStream->streamInfo.name);
         pKinesisVideoStream->resetGeneratorOnKeyFrame = FALSE;
     }
 
@@ -841,17 +847,20 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // the cluster storage up-front which might be more hassle than needed.
 
     if (CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
+        DLOGD("End of fragment...serializing for %s", pKinesisVideoStream->streamInfo.name);
         // We will append the EoFr tag and package the tags
         CHK_STATUS(createSerializedMetadata((PCHAR) EOFR_METADATA_NAME, (PCHAR) "", FALSE, pKinesisVideoStream->eosTracker.size,
                                             STREAM_EVENT_TYPE_NONE, MKV_TREE_TAGS, &pSerializedMetadata));
+        DLOGD("End of fragment...serialized for %s", pKinesisVideoStream->streamInfo.name);
         CHK_STATUS(appendValidatedMetadata(pKinesisVideoStream, pSerializedMetadata));
-
+        DLOGD("End of fragment...appending for %s", pKinesisVideoStream->streamInfo.name);
         // Package the not-applied metadata as the frame bits
         CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, TRUE, NULL, &packagedSize));
+        DLOGD("End of fragment...packaging for %s", pKinesisVideoStream->streamInfo.name);
     } else {
         // Get the size of the packaged frame
         CHK_STATUS(mkvgenPackageFrame(pKinesisVideoStream->pMkvGenerator, pFrame, pTrackInfo, NULL, &packagedSize, &encodedFrameInfo));
-
+        DLOGD("Not end of fragment...packaging for %s", pKinesisVideoStream->streamInfo.name);
         // Preserve the current stream state as it might change after we apply the metadata
         generatorState = encodedFrameInfo.streamState;
 
@@ -861,9 +870,11 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         if (generatorState == MKV_STATE_START_STREAM || generatorState == MKV_STATE_START_CLUSTER) {
             // Calculate the size of the metadata first
             CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, FALSE, NULL, &packagedMetadataSize));
+            DLOGD("Not end of fragment...packaging metadata for %s", pKinesisVideoStream->streamInfo.name);
         }
     }
 
+    DLOGD("Meta data size: %d for %s", packagedMetadataSize, pKinesisVideoStream->streamInfo.name);
     // Overall frame allocation size
     overallSize = packagedSize + packagedMetadataSize;
 
@@ -892,6 +903,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 
     // Check if we are packaging special EoFr
     if (CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
+        DLOGD("End of fragment reached: %d for %s", pFrame->index, pKinesisVideoStream->streamInfo.name);
         // Store the metadata at the beginning of the allocation
         CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, TRUE, pAlloc, &packagedSize));
 
@@ -915,9 +927,10 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     } else {
         // Actually package the bits in the storage
         CHK_STATUS(mkvgenPackageFrame(pKinesisVideoStream->pMkvGenerator, pFrame, pTrackInfo, pAlloc, &packagedSize, &encodedFrameInfo));
-
+        DLOGD("packaging mkv frame %d for %s", pFrame->index, pKinesisVideoStream->streamInfo.name);
         // Package the metadata if specified
         if (packagedMetadataSize != 0 && !justStartedStreaming) {
+            DLOGD("Pushing metadata: %d for ", pFrame->index, pKinesisVideoStream->streamInfo.name);
             // Move the packaged bits out first to make room for the metadata
             // NOTE: need to use MEMMOVE due to the overlapping ranges
             MEMMOVE(pAlloc + encodedFrameInfo.dataOffset + packagedMetadataSize, pAlloc + encodedFrameInfo.dataOffset,
@@ -1126,7 +1139,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     streamLocked = FALSE;
 
 CleanUp:
-
+    DLOGD("Put frame status 0x%08x", retStatus);
     // We need to see whether we need to remove the allocation on error. Otherwise, we will leak
     if (STATUS_FAILED(retStatus) && IS_VALID_ALLOCATION_HANDLE(allocHandle) && freeOnError) {
         // Lock the client if it's not locked
@@ -1515,6 +1528,7 @@ CleanUp:
 
             // If there is no more data to send and current handle is the last one, wrap up by calling streamClosedFn.
             if (viewByteSize == 0 && uploadHandleCount == 1) {
+                DLOGD("Upload handle count is 1...notifying");
                 CHK_STATUS(notifyStreamClosed(pKinesisVideoStream, uploadHandle));
             }
         }
@@ -3397,7 +3411,7 @@ STATUS notifyStreamClosed(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE
 
     // Set the indicator of the finished stream
     pKinesisVideoStream->streamClosed = TRUE;
-
+    DLOGD("Notified stream closed");
     // Signal the stopped condition variable
     CHK_STATUS(pKinesisVideoClient->clientCallbacks.signalConditionVariableFn(pKinesisVideoClient->clientCallbacks.customData,
                                                                               pKinesisVideoStream->streamClosedCondition));
