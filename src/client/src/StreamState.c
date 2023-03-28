@@ -220,7 +220,9 @@ STATUS executeDescribeStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
-    pKinesisVideoStream->base.serviceCallContext.timeout = SERVICE_CALL_DEFAULT_TIMEOUT;
+    pKinesisVideoStream->base.serviceCallContext.timeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout;
+    pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
+
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
     // Reset the call result
@@ -630,7 +632,9 @@ STATUS executeGetEndpointStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
-    pKinesisVideoStream->base.serviceCallContext.timeout = SERVICE_CALL_DEFAULT_TIMEOUT;
+    pKinesisVideoStream->base.serviceCallContext.timeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout;
+    pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
+
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
     // Reset the call result
@@ -664,7 +668,9 @@ STATUS executeGetTokenStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
-    pKinesisVideoStream->base.serviceCallContext.timeout = SERVICE_CALL_DEFAULT_TIMEOUT;
+    pKinesisVideoStream->base.serviceCallContext.timeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout;
+    pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
+
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
     // Reset the call result
@@ -698,7 +704,9 @@ STATUS executeCreateStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
-    pKinesisVideoStream->base.serviceCallContext.timeout = SERVICE_CALL_DEFAULT_TIMEOUT;
+    pKinesisVideoStream->base.serviceCallContext.timeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout;
+    pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
+
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
     // Reset the call result
@@ -734,7 +742,9 @@ STATUS executeTagStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
-    pKinesisVideoStream->base.serviceCallContext.timeout = SERVICE_CALL_DEFAULT_TIMEOUT;
+    pKinesisVideoStream->base.serviceCallContext.timeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout;
+    pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
+
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
     // Reset the call result
@@ -808,6 +818,8 @@ STATUS executePutStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
     // Infinite wait for streaming
     pKinesisVideoStream->base.serviceCallContext.timeout = SERVICE_CALL_INFINITE_TIMEOUT;
+    pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
+
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
     // We need to call the put stream API the first time
