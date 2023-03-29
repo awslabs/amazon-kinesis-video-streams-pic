@@ -199,7 +199,7 @@ TEST_F(ClientApiFunctionalityTest, createClientCreateStream_Iterate)
 
         // Create a few streams and don't delete immediately
         for (UINT32 i = 0; i < ARRAY_SIZE(streams); i++) {
-            SPRINTF(mStreamInfo.name, "TestStream_%d", i);
+            SNPRINTF(mStreamInfo.name, MAX_STREAM_NAME_LEN + 1, "TestStream_%d", i);
             EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoStreamSync(mClientHandle, &mStreamInfo, &mStreamHandle));
             EXPECT_TRUE(IS_VALID_STREAM_HANDLE(mStreamHandle));
         }
@@ -216,7 +216,7 @@ TEST_F(ClientApiFunctionalityTest, createClientCreateStream_Iterate)
 
         // Create a few streams and don't delete immediately
         for (UINT32 i = 0; i < ARRAY_SIZE(streams); i++) {
-            SPRINTF(mStreamInfo.name, "TestStream_%d", i);
+            SNPRINTF(mStreamInfo.name, MAX_STREAM_NAME_LEN + 1, "TestStream_%d", i);
             EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoStreamSync(mClientHandle, &mStreamInfo, &streams[i]));
             EXPECT_TRUE(IS_VALID_STREAM_HANDLE(streams[i]));
         }

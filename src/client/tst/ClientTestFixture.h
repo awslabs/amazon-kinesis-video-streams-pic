@@ -596,7 +596,6 @@ class ClientTestBase : public ::testing::Test {
 
         // Set the random number generator seed for reproducibility
         SRAND(12345);
-
         // Create the client
         STATUS status = createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &mClientHandle);
 

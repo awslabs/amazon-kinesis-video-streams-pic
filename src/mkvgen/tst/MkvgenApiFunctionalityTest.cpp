@@ -115,7 +115,7 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvFromJpegAsH2
                                                  2 * HUNDREDS_OF_NANOS_IN_A_SECOND, MKV_TEST_SEGMENT_UUID, &mTrackInfo,
                                                  mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator));
     for (i = 0, index = 0; i < 100; i++) {
-        SPRINTF(fileName, (PCHAR) "samples" FPATHSEPARATOR_STR "gif%03d.jpg", i);
+        SNPRINTF(fileName, MAX_PATH_LEN, (PCHAR) "samples" FPATHSEPARATOR_STR "gif%03d.jpg", i);
         fileSize = MKV_TEST_BUFFER_SIZE;
 
         if (STATUS_FAILED(readFile(fileName, TRUE, NULL, &fileSize))) {
@@ -141,8 +141,8 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvFromJpegAsH2
     // Add tags
     for (i = 0; i < MKV_TEST_TAG_COUNT; i++) {
         packagedSize = size;
-        SPRINTF(tagName, "testTag_%d", i);
-        SPRINTF(tagVal, "testTag_%d_Value", i);
+        SNPRINTF(tagName, MKV_MAX_TAG_NAME_LEN, "testTag_%d", i);
+        SNPRINTF(tagVal, MKV_MAX_TAG_VALUE_LEN, "testTag_%d_Value", i);
         EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mkvGenerator,
                                                     mkvBuffer + index,
                                                     tagName,
