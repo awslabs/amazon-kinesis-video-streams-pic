@@ -14,8 +14,8 @@ TEST_F(TagsFunctionalityTest, basisTagsFunctionality)
         tags[i].name = (PCHAR) MEMALLOC((MAX_TAG_NAME_LEN + 2) * SIZEOF(CHAR));
         tags[i].value = (PCHAR) MEMALLOC((MAX_TAG_VALUE_LEN + 2) * SIZEOF(CHAR));
 
-        SPRINTF(tags[i].name, "Tag Name %u", i);
-        SPRINTF(tags[i].value, "Tag Value %u", i);
+        SNPRINTF(tags[i].name, MAX_TAG_NAME_LEN + 2, "Tag Name %u", i);
+        SNPRINTF(tags[i].value, MAX_TAG_VALUE_LEN + 2, "Tag Value %u", i);
     }
 
     EXPECT_EQ(STATUS_SUCCESS, validateTags(0, NULL));
