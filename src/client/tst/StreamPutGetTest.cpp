@@ -1697,12 +1697,12 @@ TEST_F(StreamPutGetTest, putFrame_PutGetPersistentTagsStoreData)
 
         if ((frame.flags & FRAME_FLAG_KEY_FRAME) == FRAME_FLAG_KEY_FRAME) {
             // Modify the name of a tag
-            sprintf(tagValue, "persistentValue%d", frame.index);
+            SNPRINTF(tagValue, 1000, "persistentValue%d", frame.index);
             EXPECT_EQ(STATUS_SUCCESS, putFragmentMetadata(pKinesisVideoStream, (PCHAR) "persistentName", (PCHAR) tagValue, TRUE)) << i;
         }
 
         if (frame.index % 9 == 0) {
-            sprintf(tagValue, "tagValue%d", frame.index);
+            SNPRINTF(tagValue, 1000, "tagValue%d", frame.index);
             EXPECT_EQ(STATUS_SUCCESS, putFragmentMetadata(pKinesisVideoStream, (PCHAR) "tagName1", (PCHAR) "nonPersistentTagValue", FALSE)) << i;
             EXPECT_EQ(STATUS_SUCCESS, putFragmentMetadata(pKinesisVideoStream, (PCHAR) "tagName1", tagValue, TRUE)) << i;
 
