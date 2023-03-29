@@ -7,7 +7,7 @@ UINT64 gPresetTimeValue = 0;
 UINT32 gPutStreamFuncCount = 0;
 CHAR gStreamingToken[100];
 
-#define UPDATE_TEST_STREAMING_TOKEN(x) (sprintf(gStreamingToken, "%s%d", "StreamingToken_", (x)))
+#define UPDATE_TEST_STREAMING_TOKEN(x) (SNPRINTF(gStreamingToken, 100, "%s%d", "StreamingToken_", (x)))
 
 UINT64 getCurrentTimePreset(UINT64 customData)
 {
@@ -39,7 +39,7 @@ STATUS testPutStream(UINT64 customData,
 
     EXPECT_EQ(SERVICE_CALL_CONTEXT_CURRENT_VERSION, pCallbackContext->version);
     if (pCallbackContext->pAuthInfo != NULL) {
-        EXPECT_EQ(AUTH_INFO_CURRENT_VERSION, pCallbackContext->version);
+        EXPECT_EQ(AUTH_INFO_CURRENT_VERSION, pCallbackContext->pAuthInfo->version);
         if (pCallbackContext->pAuthInfo->type == AUTH_INFO_TYPE_STS) {
             EXPECT_EQ(0, STRCMP(gStreamingToken, (PCHAR) pCallbackContext->pAuthInfo->data));
         }

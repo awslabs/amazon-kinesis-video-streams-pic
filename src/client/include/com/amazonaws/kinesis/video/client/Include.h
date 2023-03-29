@@ -1150,8 +1150,6 @@ typedef struct __ClientInfo {
     // Version of the struct
     UINT32 version;
 
-    // ------------------------------- V0 compat ----------------------
-
     // Client sync creation timeout. 0 or INVALID_TIMESTAMP_VALUE = use default
     UINT64 createClientTimeout;
 
@@ -1170,12 +1168,12 @@ typedef struct __ClientInfo {
     // whether to log metric or not
     BOOL logMetric;
 
-    // ------------------------------- V1 compat ----------------------
+    // ------------------------------- V0 compat ----------------------
 
     // Time that allowed to be elapsed between the metric loggings if enabled
     UINT64 metricLoggingPeriod;
 
-    // ------------------------------ V2 compat --------------------------
+    // ------------------------------ V1 compat --------------------------
 
     // flag for automatic handling of intermittent producer
     AUTOMATIC_STREAMING_FLAGS automaticStreamingFlags;
@@ -1190,7 +1188,7 @@ typedef struct __ClientInfo {
     // Function pointers for application to provide a custom retry strategy
     KvsRetryStrategyCallbacks kvsRetryStrategyCallbacks;
 
-    // ------------------------------ V3 compat --------------------------
+    // ------------------------------ V2 compat --------------------------
     UINT64 serviceCallCompletionTimeout;
     UINT64 serviceCallConnectionTimeout;
 
@@ -1494,7 +1492,7 @@ struct __ServiceCallContext {
     // Authentication info
     PAuthInfo pAuthInfo;
 
-    // -------- V1 compat --------
+    // -------- V0 compat --------
     UINT64 connectionTimeout;
 };
 
