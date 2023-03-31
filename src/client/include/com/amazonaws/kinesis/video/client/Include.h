@@ -322,9 +322,15 @@ extern "C" {
 #define MIN_VIEW_BUFFER_DURATION (MAX(MIN_BUFFER_DURATION_IN_SECONDS * HUNDREDS_OF_NANOS_IN_A_SECOND, MIN_CONTENT_VIEW_BUFFER_DURATION))
 
 /**
- * Service call default timeout - 5 seconds
+ * Service call default connection timeout - 5 seconds
  */
-#define SERVICE_CALL_DEFAULT_TIMEOUT (5 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+#define SERVICE_CALL_DEFAULT_CONNECTION_TIMEOUT (5 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+
+/**
+ * Service call default completion timeout - 10 seconds. Needs to be more than connection timeout
+ */
+#define SERVICE_CALL_DEFAULT_TIMEOUT (10 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+
 
 /**
  * Service call infinite timeout for streaming
@@ -455,12 +461,12 @@ extern "C" {
 #define SEGMENT_INFO_CURRENT_VERSION          0
 #define STORAGE_INFO_CURRENT_VERSION          0
 #define AUTH_INFO_CURRENT_VERSION             0
-#define SERVICE_CALL_CONTEXT_CURRENT_VERSION  0
+#define SERVICE_CALL_CONTEXT_CURRENT_VERSION  1
 #define STREAM_DESCRIPTION_CURRENT_VERSION    1
 #define FRAGMENT_ACK_CURRENT_VERSION          0
 #define STREAM_METRICS_CURRENT_VERSION        3
 #define CLIENT_METRICS_CURRENT_VERSION        2
-#define CLIENT_INFO_CURRENT_VERSION           2
+#define CLIENT_INFO_CURRENT_VERSION           3
 #define STREAM_EVENT_METADATA_CURRENT_VERSION 0
 
 /**
@@ -1185,6 +1191,11 @@ typedef struct __ClientInfo {
 
     // Function pointers for application to provide a custom retry strategy
     KvsRetryStrategyCallbacks kvsRetryStrategyCallbacks;
+
+    // ------------------------------ V2 compat --------------------------
+    UINT64 serviceCallCompletionTimeout;
+    UINT64 serviceCallConnectionTimeout;
+
 } ClientInfo, *PClientInfo;
 
 /**
@@ -1484,6 +1495,9 @@ struct __ServiceCallContext {
 
     // Authentication info
     PAuthInfo pAuthInfo;
+
+    // -------- V0 compat --------
+    UINT64 connectionTimeout;
 };
 
 typedef struct __ServiceCallContext* PServiceCallContext;

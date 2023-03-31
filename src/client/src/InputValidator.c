@@ -308,9 +308,16 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
         pClientInfo->logMetric = pOrigClientInfo->logMetric;
         pClientInfo->automaticStreamingFlags = AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER;
         pClientInfo->reservedCallbackPeriod = INTERMITTENT_PRODUCER_PERIOD_SENTINEL_VALUE;
+        pClientInfo->serviceCallConnectionTimeout = SERVICE_CALL_DEFAULT_CONNECTION_TIMEOUT;
+        pClientInfo->serviceCallCompletionTimeout = SERVICE_CALL_DEFAULT_TIMEOUT;
         pClientInfo->kvsRetryStrategyCallbacks = pOrigClientInfo->kvsRetryStrategyCallbacks;
 
         switch (pOrigClientInfo->version) {
+            case 3:
+                pClientInfo->serviceCallCompletionTimeout = pOrigClientInfo->serviceCallCompletionTimeout;
+                pClientInfo->serviceCallConnectionTimeout = pOrigClientInfo->serviceCallConnectionTimeout;
+
+                // explicit fall through
             case 2:
                 // Copy individual fields and skip to V1
                 pClientInfo->automaticStreamingFlags = pOrigClientInfo->automaticStreamingFlags;
@@ -324,6 +331,24 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
             default:
                 DLOGW("Invalid ClientInfo version");
         }
+    }
+
+    if(pClientInfo->serviceCallConnectionTimeout > pClientInfo->serviceCallCompletionTimeout) {
+        DLOGW("Completion timeout should be more than connection timeout...setting to defaults");
+        pClientInfo->serviceCallConnectionTimeout = SERVICE_CALL_DEFAULT_CONNECTION_TIMEOUT;
+        pClientInfo->serviceCallCompletionTimeout = SERVICE_CALL_DEFAULT_TIMEOUT;
+    }
+
+    if(pClientInfo->serviceCallConnectionTimeout == 0 || !IS_VALID_TIMESTAMP(pClientInfo->serviceCallConnectionTimeout)) {
+        // Although curl sets default if the value is 0, the default is 300 seconds (5 minutes) which is very high
+        DLOGW("Connection timeout is invalid...setting to default");
+        pClientInfo->serviceCallConnectionTimeout = SERVICE_CALL_DEFAULT_CONNECTION_TIMEOUT;
+    }
+
+    if(pClientInfo->serviceCallCompletionTimeout == 0 || !IS_VALID_TIMESTAMP(pClientInfo->serviceCallCompletionTimeout)) {
+        DLOGW("Completion timeout is invalid...setting to default");
+        // If 0, it means there is no timeout on completion of the curl call which could be dangerous
+        pClientInfo->serviceCallCompletionTimeout = SERVICE_CALL_DEFAULT_TIMEOUT;
     }
 
     if (pClientInfo->reservedCallbackPeriod == INTERMITTENT_PRODUCER_PERIOD_SENTINEL_VALUE) {
