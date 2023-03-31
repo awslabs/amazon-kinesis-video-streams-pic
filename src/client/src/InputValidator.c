@@ -267,11 +267,14 @@ CleanUp:
 VOID fixupDeviceInfo(PDeviceInfo pClientDeviceInfo, PDeviceInfo pDeviceInfo)
 {
     PClientInfo pOrigClientInfo = NULL;
+    printf("timeouts at entry: %llu, %llu\n", pDeviceInfo->clientInfo.serviceCallConnectionTimeout, pDeviceInfo->clientInfo.serviceCallCompletionTimeout);
+
     switch (pDeviceInfo->version) {
         case 1:
             // Copy the individual fields for V1
             MEMCPY(pClientDeviceInfo->clientId, pDeviceInfo->clientId, MAX_CLIENT_ID_STRING_LENGTH + 1);
             pOrigClientInfo = &pDeviceInfo->clientInfo;
+            printf("timeouts in fixup device: %llu, %llu\n", pOrigClientInfo->serviceCallConnectionTimeout, pOrigClientInfo->serviceCallCompletionTimeout);
 
             // Explicit fall-through
         case 0:
@@ -288,7 +291,6 @@ VOID fixupDeviceInfo(PDeviceInfo pClientDeviceInfo, PDeviceInfo pDeviceInfo)
         default:
             DLOGW("Invalid DeviceInfo version");
     }
-
     fixupClientInfo(&pClientDeviceInfo->clientInfo, pOrigClientInfo);
 }
 
@@ -314,8 +316,11 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
 
         switch (pOrigClientInfo->version) {
             case 3:
+                printf("timeouts: %llu, %llu\n", pOrigClientInfo->serviceCallConnectionTimeout, pOrigClientInfo->serviceCallCompletionTimeout);
+
                 pClientInfo->serviceCallCompletionTimeout = pOrigClientInfo->serviceCallCompletionTimeout;
                 pClientInfo->serviceCallConnectionTimeout = pOrigClientInfo->serviceCallConnectionTimeout;
+                printf("after timeouts: %llu, %llu\n", pClientInfo->serviceCallConnectionTimeout, pClientInfo->serviceCallCompletionTimeout);
 
                 // explicit fall through
             case 2:
@@ -341,11 +346,12 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
 
     if(pClientInfo->serviceCallConnectionTimeout == 0 || !IS_VALID_TIMESTAMP(pClientInfo->serviceCallConnectionTimeout)) {
         // Although curl sets default if the value is 0, the default is 300 seconds (5 minutes) which is very high
-        DLOGW("Connection timeout should be non zero...setting to default");
+        DLOGW("Connection timeout is invalid...setting to default");
         pClientInfo->serviceCallConnectionTimeout = SERVICE_CALL_DEFAULT_CONNECTION_TIMEOUT;
     }
 
     if(pClientInfo->serviceCallCompletionTimeout == 0 || !IS_VALID_TIMESTAMP(pClientInfo->serviceCallCompletionTimeout)) {
+        DLOGW("Completion timeout is invalid...setting to default");
         // If 0, it means there is no timeout on completion of the curl call which could be dangerous
         pClientInfo->serviceCallCompletionTimeout = SERVICE_CALL_DEFAULT_TIMEOUT;
     }
