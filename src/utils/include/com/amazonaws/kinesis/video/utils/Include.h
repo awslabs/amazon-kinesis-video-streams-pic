@@ -995,8 +995,10 @@ BOOL checkBufferValues(PVOID, BYTE, SIZE_T);
  */
 PUBLIC_API STATUS generateTimestampStr(UINT64, PCHAR, PCHAR, UINT32, PUINT32);
 
+PUBLIC_API STATUS generateTimestampStrInMilliseconds(UINT64, PCHAR, PCHAR, UINT32, PUINT32);
+
 // yyyy-mm-dd HH:MM:SS
-#define MAX_TIMESTAMP_FORMAT_STR_LEN 19
+#define MAX_TIMESTAMP_FORMAT_STR_LEN    26
 
 // Max timestamp string length including null terminator
 #define MAX_TIMESTAMP_STR_LEN 17
@@ -1418,7 +1420,7 @@ PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
  * File based logger limit constants
  */
 #define MAX_FILE_LOGGER_STRING_BUFFER_SIZE (100 * 1024 * 1024)
-#define MIN_FILE_LOGGER_STRING_BUFFER_SIZE (10 * 1024)
+#define MIN_FILE_LOGGER_STRING_BUFFER_SIZE (1 * 1024)
 #define MAX_FILE_LOGGER_LOG_FILE_COUNT     (10 * 1024)
 
 /**

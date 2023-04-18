@@ -110,42 +110,44 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
             offset = 0; // shouldnt cause any change to gFileLogger->currentOffset
         }
 #else
-        va_start(valist, fmt);
-        offset = vsnprintf(gFileLogger->stringBuffer + gFileLogger->currentOffset, gFileLogger->stringBufferLen - gFileLogger->currentOffset,
-                           logFmtString, valist);
-        va_end(valist);
-
-        // If vsnprintf fills the stringBuffer then flush first and then vsnprintf again into the stringBuffer.
-        // This is because we dont know how long the log message is
-        if (offset > 0 && gFileLogger->currentOffset + offset >= gFileLogger->stringBufferLen) {
-            status = flushLogToFile();
-            if (STATUS_FAILED(status)) {
-                PRINTF("flush log to file failed with 0x%08x\n", status);
-            }
-
-            // even if flushLogToFile failed, currentOffset will still be reset to 0
+        if(level == LOG_LEVEL_PROFILE) {
             va_start(valist, fmt);
             offset = vsnprintf(gFileLogger->stringBuffer + gFileLogger->currentOffset, gFileLogger->stringBufferLen - gFileLogger->currentOffset,
                                logFmtString, valist);
             va_end(valist);
 
-            // if buffer is not big enough, vsnprintf returns number of characters (excluding the terminating null byte)
-            // which would have been written to the final string if enough space had been available, after writing
-            // gFileLogger->stringBufferLen - 1 bytes. Here we are truncating the log if its length is longer than stringBufferLen.
-            if (offset > gFileLogger->stringBufferLen) {
-                PRINTF("truncating log message as it can't fit into string buffer\n");
-                offset = (INT32) gFileLogger->stringBufferLen - 1;
-            }
-        }
+            // If vsnprintf fills the stringBuffer then flush first and then vsnprintf again into the stringBuffer.
+            // This is because we dont know how long the log message is
+            if (offset > 0 && gFileLogger->currentOffset + offset >= gFileLogger->stringBufferLen) {
+                status = flushLogToFile();
+                if (STATUS_FAILED(status)) {
+                    PRINTF("flush log to file failed with 0x%08x\n", status);
+                }
 
-        if (offset < 0) {
-            // something went wrong
-            PRINTF("vsnprintf failed\n");
-            offset = 0; // shouldn't cause any change to gFileLogger->currentOffset
-        }
+                // even if flushLogToFile failed, currentOffset will still be reset to 0
+                va_start(valist, fmt);
+                offset = vsnprintf(gFileLogger->stringBuffer + gFileLogger->currentOffset, gFileLogger->stringBufferLen - gFileLogger->currentOffset,
+                                   logFmtString, valist);
+                va_end(valist);
+
+                // if buffer is not big enough, vsnprintf returns number of characters (excluding the terminating null byte)
+                // which would have been written to the final string if enough space had been available, after writing
+                // gFileLogger->stringBufferLen - 1 bytes. Here we are truncating the log if its length is longer than stringBufferLen.
+                if (offset > gFileLogger->stringBufferLen) {
+                    PRINTF("truncating log message as it can't fit into string buffer\n");
+                    offset = (INT32) gFileLogger->stringBufferLen - 1;
+                }
+            }
+
+            if (offset < 0) {
+                // something went wrong
+                PRINTF("vsnprintf failed\n");
+                offset = 0; // shouldn't cause any change to gFileLogger->currentOffset
+            }
 #endif
 
-        gFileLogger->currentOffset += offset;
+            gFileLogger->currentOffset += offset;
+        }
 
         MUTEX_UNLOCK(gFileLogger->lock);
     }
