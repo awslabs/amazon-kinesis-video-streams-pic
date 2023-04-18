@@ -17,6 +17,8 @@ PCHAR getLogLevelStr(UINT32 loglevel)
             return LOG_LEVEL_ERROR_STR;
         case LOG_LEVEL_FATAL:
             return LOG_LEVEL_FATAL_STR;
+        case LOG_LEVEL_PROFILE:
+            return LOG_LEVEL_PROFILE_STR;
         default:
             return LOG_LEVEL_SILENT_STR;
     }

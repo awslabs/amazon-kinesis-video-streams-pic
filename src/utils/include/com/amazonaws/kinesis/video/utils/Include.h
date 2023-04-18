@@ -1418,7 +1418,7 @@ PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
  * File based logger limit constants
  */
 #define MAX_FILE_LOGGER_STRING_BUFFER_SIZE (100 * 1024 * 1024)
-#define MIN_FILE_LOGGER_STRING_BUFFER_SIZE (10 * 1024)
+#define MIN_FILE_LOGGER_STRING_BUFFER_SIZE (1 * 1024)
 #define MAX_FILE_LOGGER_LOG_FILE_COUNT     (10 * 1024)
 
 /**
