@@ -88,8 +88,9 @@ PUBLIC_API STATUS aesGenerateKey(PBYTE key) {
 CleanUp:
     if(STATUS_FAILED(retStatus)) {
         char buf[256] = {0};
+        int err = ERR_get_error();
         ERR_error_string(ERR_get_error(), buf);
-        printf("%s\n", buf);
+        printf("%d %s\n", err, buf);
     }
     return retStatus;
 }
@@ -100,8 +101,9 @@ PUBLIC_API STATUS aesGenerateIV(PBYTE iv) {
 CleanUp:
     if(STATUS_FAILED(retStatus)) {
         char buf[256] = {0};
+        int err = ERR_get_error();
         ERR_error_string(ERR_get_error(), buf);
-        printf("%s\n", buf);
+        printf("%d %s\n", err, buf);
     }
     return retStatus;
 }
