@@ -89,7 +89,7 @@ CleanUp:
     if(STATUS_FAILED(retStatus)) {
         char buf[256] = {0};
         ERR_error_string(ERR_get_error(), buf);
-        printf("%s\n". buf);
+        printf("%s\n", buf);
     }
     return retStatus;
 }
@@ -101,7 +101,7 @@ CleanUp:
     if(STATUS_FAILED(retStatus)) {
         char buf[256] = {0};
         ERR_error_string(ERR_get_error(), buf);
-        printf("%s\n". buf);
+        printf("%s\n", buf);
     }
     return retStatus;
 }
