@@ -86,6 +86,11 @@ PUBLIC_API STATUS aesGenerateKey(PBYTE key) {
     STATUS retStatus = STATUS_SUCCESS;
     CHK(RAND_bytes(key, EVP_MAX_KEY_LENGTH) != 1, STATUS_INVALID_ARG); 
 CleanUp:
+    if(STATUS_FAILED(retStatus)) {
+        char buf[256] = {0};
+        ERR_error_string(ERR_get_error(), buf);
+        printf("%s\n". buf);
+    }
     return retStatus;
 }
 
@@ -93,5 +98,10 @@ PUBLIC_API STATUS aesGenerateIV(PBYTE iv) {
     STATUS retStatus = STATUS_SUCCESS;
     CHK(RAND_bytes(iv, EVP_MAX_IV_LENGTH) != 1, STATUS_INVALID_ARG); 
 CleanUp:
+    if(STATUS_FAILED(retStatus)) {
+        char buf[256] = {0};
+        ERR_error_string(ERR_get_error(), buf);
+        printf("%s\n". buf);
+    }
     return retStatus;
 }
