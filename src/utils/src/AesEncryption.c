@@ -63,9 +63,10 @@ CleanUp:
     return retStatus;
 }
 
-PUBLIC_API STATUS aesCreateContext(EVP_CIPHER_CTX * ctx) {
+PUBLIC_API STATUS aesCreateContext(EVP_CIPHER_CTX ** ctx) {
     STATUS retStatus = STATUS_SUCCESS;
-    ctx = EVP_CIPHER_CTX_new();
+    CHK(ctx != NULL && *ctx != NULL, STATUS_NULL_ARG);
+    *ctx = EVP_CIPHER_CTX_new();
 CleanUp:
     return retStatus;
 }
