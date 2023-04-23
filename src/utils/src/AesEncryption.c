@@ -8,7 +8,7 @@
 PUBLIC_API STATUS aesCipherSizeNeeded(INT64 inputLength, PINT64 pCipherLength) {
     STATUS retStatus = STATUS_SUCCESS;
     CHK(pCipherLength != NULL, STATUS_NULL_ARG);
-    *pCipherLength = ((inputLength + EVP_CIPHER_block_size(EVP_idea_cbc()) - 1) / EVP_CIPHER_block_size(EVP_idea_cbc())) * EVP_CIPHER_block_size(EVP_idea_cbc());
+    *pCipherLength = ((inputLength + EVP_CIPHER_block_size(EVP_aes_256_cbc()) - 1) / EVP_CIPHER_block_size(EVP_aes_256_cbc())) * EVP_CIPHER_block_size(EVP_aes_256_cbc());
 CleanUp:
     return retStatus;
 }
@@ -34,7 +34,7 @@ PUBLIC_API STATUS aesEncrypt(EVP_CIPHER_CTX * ctx, PBYTE pInput, INT64 inputLeng
     CHK(EVP_EncryptFinal_ex(ctx, pOutput + *pOutputLength, pOutputLength) != 1, STATUS_INVALID_ARG);
 
     printf("%d\n", __LINE__);
-    EVP_CIPHER_CTX_free(ctx);
+    EVP_CIPHER_CTX_et(ctx);
     printf("%d\n", __LINE__);
 CleanUp:
     if(STATUS_FAILED(retStatus)) {
