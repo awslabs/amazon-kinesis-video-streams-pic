@@ -36,6 +36,12 @@ PUBLIC_API STATUS aesEncrypt(EVP_CIPHER_CTX * ctx, PBYTE pInput, INT64 inputLeng
     EVP_CIPHER_CTX_reset(ctx);
     printf("%d\n", __LINE__);
 CleanUp:
+    if(STATUS_FAILED(retStatus)) {
+        char buf[256] = {0};
+        int err = ERR_get_error();
+        ERR_error_string(ERR_get_error(), buf);
+        printf("%d %s\n", err, buf);
+    }
     return retStatus;
 }
 
@@ -60,6 +66,12 @@ PUBLIC_API STATUS aesDecrypt(EVP_CIPHER_CTX * ctx, PBYTE pInput, INT64 inputLeng
     printf("%d\n", __LINE__);
     EVP_CIPHER_CTX_reset(ctx);
 CleanUp:
+    if(STATUS_FAILED(retStatus)) {
+        char buf[256] = {0};
+        int err = ERR_get_error();
+        ERR_error_string(ERR_get_error(), buf);
+        printf("%d %s\n", err, buf);
+    }
     return retStatus;
 }
 
