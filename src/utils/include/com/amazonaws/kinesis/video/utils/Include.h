@@ -2004,6 +2004,24 @@ PUBLIC_API STATUS threadpoolTryAdd(PThreadpool, startRoutine, PVOID);
  */
 PUBLIC_API STATUS threadpoolPush(PThreadpool, startRoutine, PVOID);
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// AES encryption functionality
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PUBLIC_API STATUS aesCipherSizeNeeded(INT64, PINT64);
+
+PUBLIC_API STATUS aesEncrypt(EVP_CIPHER_CTX *, PBYTE, INT64, PBYTE, PBYTE, PBYTE, PINT64);
+
+PUBLIC_API STATUS aesDecrypt(EVP_CIPHER_CTX *, PBYTE, INT64, PBYTE, PBYTE, PBYTE, PINT64);
+
+PUBLIC_API STATUS aesCreateContext(EVP_CIPHER_CTX *);
+
+PUBLIC_API STATUS aesFreeContext(EVP_CIPHER_CTX **);
+
+PUBLIC_API STATUS aesGenerateKey(PBYTE);
+
+PUBLIC_API STATUS aesGenerateIV(PBYTE);
+
 #ifdef __cplusplus
 }
 #endif

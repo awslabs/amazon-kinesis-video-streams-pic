@@ -505,6 +505,9 @@ typedef INT_PTR SSIZE_T, *PSSIZE_T;
 #include <ctype.h>
 #include <time.h>
 
+#include <openssl/evp.h>
+#include <openssl/rand.h>
+
 #if !(defined _WIN32 || defined _WIN64)
 #include <unistd.h>
 #include <dirent.h>
