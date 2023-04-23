@@ -34,7 +34,7 @@ PUBLIC_API STATUS aesEncrypt(EVP_CIPHER_CTX * ctx, PBYTE pInput, INT64 inputLeng
     CHK(EVP_EncryptFinal_ex(ctx, pOutput + *pOutputLength, pOutputLength) != 1, STATUS_INVALID_ARG);
 
     printf("%d\n", __LINE__);
-    EVP_CIPHER_CTX_et(ctx);
+    EVP_CIPHER_CTX_free(ctx);
     printf("%d\n", __LINE__);
 CleanUp:
     if(STATUS_FAILED(retStatus)) {
