@@ -23,8 +23,9 @@ PUBLIC_API STATUS aesEncrypt(EVP_CIPHER_CTX * ctx, PBYTE pInput, INT64 inputLeng
     //CHK(EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, NULL, NULL) != 1, STATUS_INVALID_ARG);
 
     //EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, AES_256_IV_LENGTH, NULL);
+    ctx = EVP_CIPHER_CTX_new();
     printf("%d\n", __LINE__);
-    CHK(EVP_EncryptInit_ex2(ctx, EVP_aes_256_cbc(), NULL, key, initialVector) != 1, STATUS_INVALID_ARG);
+    CHK(EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, initialVector) != 1, STATUS_INVALID_ARG);
     printf("%d\n", __LINE__);
 
     CHK(EVP_EncryptUpdate(ctx, pOutput, pOutputLength, pInput, inputLength) != 1, STATUS_INVALID_ARG);
@@ -33,7 +34,7 @@ PUBLIC_API STATUS aesEncrypt(EVP_CIPHER_CTX * ctx, PBYTE pInput, INT64 inputLeng
     CHK(EVP_EncryptFinal_ex(ctx, pOutput + *pOutputLength, pOutputLength) != 1, STATUS_INVALID_ARG);
 
     printf("%d\n", __LINE__);
-    EVP_CIPHER_CTX_reset(ctx);
+    EVP_CIPHER_CTX_free(ctx);
     printf("%d\n", __LINE__);
 CleanUp:
     if(STATUS_FAILED(retStatus)) {
@@ -54,8 +55,9 @@ PUBLIC_API STATUS aesDecrypt(EVP_CIPHER_CTX * ctx, PBYTE pInput, INT64 inputLeng
     //CHK(EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, NULL, NULL) != 1, STATUS_INVALID_ARG);
 
     //EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, AES_256_IV_LENGTH, NULL);
+    ctx = EVP_CIPHER_CTX_new();
     printf("%d\n", __LINE__);
-    CHK(EVP_DecryptInit_ex2(ctx, EVP_aes_256_cbc(), NULL, key, initialVector) != 1, STATUS_INVALID_ARG);
+    CHK(EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, initialVector) != 1, STATUS_INVALID_ARG);
 
     printf("%d\n", __LINE__);
     CHK(EVP_DecryptUpdate(ctx, pOutput, pOutputLength, pInput, inputLength) != 1, STATUS_INVALID_ARG);
@@ -64,7 +66,7 @@ PUBLIC_API STATUS aesDecrypt(EVP_CIPHER_CTX * ctx, PBYTE pInput, INT64 inputLeng
     CHK(EVP_DecryptFinal_ex(ctx, pOutput + *pOutputLength, pOutputLength) != 1, STATUS_INVALID_ARG);
 
     printf("%d\n", __LINE__);
-    EVP_CIPHER_CTX_reset(ctx);
+    EVP_CIPHER_CTX_free(ctx);
 CleanUp:
     if(STATUS_FAILED(retStatus)) {
         char buf[256] = {0};
