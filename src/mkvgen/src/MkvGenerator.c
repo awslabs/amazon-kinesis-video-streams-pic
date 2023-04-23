@@ -252,11 +252,13 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
     // Get the overhead when packaging MKV
     overheadSize = mkvgenGetFrameOverhead(pStreamMkvGenerator, streamState);
 
+    //TODO skip nals adaption for E2EE
     // NAL adaptation should only be done for video frames
     nalsAdaptation = pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO ? pStreamMkvGenerator->nalsAdaptation : MKV_NALS_ADAPT_NONE;
 
     // Get the adapted size of the frame and add to the overall size
     CHK_STATUS(getAdaptedFrameSize(pFrame, nalsAdaptation, &adaptedFrameSize));
+    //TODO account for encrypted size here
     packagedSize = overheadSize + adaptedFrameSize;
 
     // Check if we are asked for size only and early return if so
@@ -1523,6 +1525,7 @@ STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 times
     // Copy the header and the frame data
     MEMCPY(pBuffer, MKV_SIMPLE_BLOCK_BITS, MKV_SIMPLE_BLOCK_BITS_SIZE);
 
+    //TODO add case for E2EE
     switch (nalsAdaptation) {
         case MKV_NALS_ADAPT_NONE:
             // Just copy the bits

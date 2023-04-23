@@ -7,3 +7,6 @@ cmake-build-release/
 open-source/
 outputs
 cmake-build-pic/
+tags
+*.swp
+*.swo
