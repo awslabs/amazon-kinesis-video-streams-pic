@@ -2553,7 +2553,8 @@ STATUS createPackager(PKinesisVideoStream pKinesisVideoStream, PMkvGenerator* pp
     UINT32 mkvGenFlags = MKV_GEN_FLAG_NONE |
         (pKinesisVideoStream->streamInfo.streamCaps.keyFrameFragmentation ? MKV_GEN_KEY_FRAME_PROCESSING : MKV_GEN_FLAG_NONE) |
         (pKinesisVideoStream->streamInfo.streamCaps.frameTimecodes ? MKV_GEN_IN_STREAM_TIME : MKV_GEN_FLAG_NONE) |
-        (pKinesisVideoStream->streamInfo.streamCaps.absoluteFragmentTimes ? MKV_GEN_ABSOLUTE_CLUSTER_TIME : MKV_GEN_FLAG_NONE);
+        (pKinesisVideoStream->streamInfo.streamCaps.absoluteFragmentTimes ? MKV_GEN_ABSOLUTE_CLUSTER_TIME : MKV_GEN_FLAG_NONE) |
+        (pKinesisVideoStream->streamInfo.streamCaps.e2ee ? MKV_GEN_E2EE : MKV_GEN_FLAG_NONE);
 
     PKinesisVideoClient pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 

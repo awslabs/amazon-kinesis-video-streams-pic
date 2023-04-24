@@ -1081,6 +1081,8 @@ struct __StreamCaps {
     // ------------------------------ V2 compat -----------------------
     // Enable / Disable stream creation if describe call fails
     BOOL allowStreamCreation;
+
+    BOOL e2ee;
 };
 
 typedef struct __StreamCaps* PStreamCaps;
