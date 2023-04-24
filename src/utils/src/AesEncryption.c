@@ -8,7 +8,7 @@
 PUBLIC_API STATUS aesCipherSizeNeeded(INT64 inputLength, PINT64 pCipherLength) {
     STATUS retStatus = STATUS_SUCCESS;
     CHK(pCipherLength != NULL, STATUS_NULL_ARG);
-    *pCipherLength = ((inputLength + EVP_CIPHER_block_size(EVP_aes_256_cbc()) - 1) / EVP_CIPHER_block_size(EVP_aes_256_cbc())) * EVP_CIPHER_block_size(EVP_aes_256_cbc());
+    *pCipherLength = ((inputLength + EVP_CIPHER_block_size(EVP_aes_256_cbc()) - 1));
 CleanUp:
     return retStatus;
 }
