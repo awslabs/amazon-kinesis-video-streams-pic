@@ -444,7 +444,7 @@ struct __KinesisVideoStream {
     // Last PutFrame timestamp
     UINT64 lastPutFrameTimestamp;
 
-    PE2EEDescription pE2EE;
+    E2EEDescription E2EE;
 };
 
 /**
