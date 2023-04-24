@@ -388,6 +388,9 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
     if(!pStreamMkvGenerator->endToEndEncryption) {
         CHK(packagedSize == (UINT32)(pCurrentPnt - pBuffer), STATUS_INTERNAL_ERROR);
     }
+    else {
+        DLOGE("packagedSize: %u vs %u\n", packagedSize, (UINT32)(pCurrentPnt - pBuffer));
+    }
 
 CleanUp:
 
