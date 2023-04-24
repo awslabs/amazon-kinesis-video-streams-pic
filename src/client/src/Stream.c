@@ -831,9 +831,11 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         }
     }
 
+#if 0
     if (pKinesisVideoStream->endToEndEncryption && CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)) {
         CHK_STATUS(aesGenerateIV(pKinesisVideoStream->pE2EE->iv));
     }
+#endif
 
     // Package and store the frame.
     // If the frame is a special End-of-Fragment indicator
@@ -855,7 +857,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, TRUE, NULL, &packagedSize));
     } else {
         // Get the size of the packaged frame
-        CHK_STATUS(mkvgenPackageFrame(pKinesisVideoStream->pMkvGenerator, pFrame, pTrackInfo, NULL, &packagedSize, &encodedFrameInfo, pKinesisVideoStream->pE2EE));
+        CHK_STATUS(mkvgenPackageFrame(pKinesisVideoStream->pMkvGenerator, pFrame, pTrackInfo, NULL, &packagedSize, &encodedFrameInfo, &(pKinesisVideoStream->E2EE)));
 
         // Preserve the current stream state as it might change after we apply the metadata
         generatorState = encodedFrameInfo.streamState;
@@ -919,7 +921,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         pKinesisVideoStream->eofrFrame = TRUE;
     } else {
         // Actually package the bits in the storage
-        CHK_STATUS(mkvgenPackageFrame(pKinesisVideoStream->pMkvGenerator, pFrame, pTrackInfo, pAlloc, &packagedSize, &encodedFrameInfo, pKinesisVideoStream->pE2EE));
+        CHK_STATUS(mkvgenPackageFrame(pKinesisVideoStream->pMkvGenerator, pFrame, pTrackInfo, pAlloc, &packagedSize, &encodedFrameInfo, &(pKinesisVideoStream->E2EE)));
 
         // Package the metadata if specified
         if (packagedMetadataSize != 0) {
@@ -3639,9 +3641,9 @@ CleanUp:
 
 STATUS createE2EEObjects(PKinesisVideoStream pStream) {
     STATUS retStatus = STATUS_SUCCESS;
-    CHK(pStream != NULL && pStream->pE2EE != NULL, STATUS_NULL_ARG);
-    CHK_STATUS(aesGenerateKey(pStream->pE2EE->key));
-    CHK_STATUS(aesGenerateIV(pStream->pE2EE->iv));
+    CHK(pStream != NULL, STATUS_NULL_ARG);
+    CHK_STATUS(aesGenerateKey(pStream->E2EE.key));
+    CHK_STATUS(aesGenerateIV(pStream->E2EE.iv));
 CleanUp:
 
     CHK_LOG_ERR(retStatus);
