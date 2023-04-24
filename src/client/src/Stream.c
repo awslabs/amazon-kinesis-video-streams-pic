@@ -877,8 +877,9 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     pKinesisVideoStream->maxFrameSizeSeen = MAX(pKinesisVideoStream->maxFrameSizeSeen, overallSize);
 
     // Might need to block on the availability in the OFFLINE mode
-    CHK_STATUS(handleAvailability(pKinesisVideoStream, overallSize, &allocHandle));
 
+    CHK_STATUS(handleAvailability(pKinesisVideoStream, overallSize, &allocHandle));
+    DLOGE("overallSize: %u\n", overallSize);
     if (IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
         // offline streaming mode can block so we need to reset the currentTime just in case
         currentTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
