@@ -16,6 +16,7 @@ CleanUp:
 PUBLIC_API STATUS aesEncrypt(PBYTE pInput, INT64 inputLength, PBYTE key, PBYTE initialVector, PBYTE pOutput, PINT64 pOutputLength) {
     STATUS retStatus = STATUS_SUCCESS;
     EVP_CIPHER_CTX * ctx;
+    INT64 writtenData = 0;
     printf("%d\n", __LINE__);
     CHK(pInput != NULL && key != NULL && initialVector != NULL && pOutput != NULL && pOutputLength != NULL, STATUS_NULL_ARG);
     printf("%d\n", __LINE__);
@@ -29,10 +30,14 @@ PUBLIC_API STATUS aesEncrypt(PBYTE pInput, INT64 inputLength, PBYTE key, PBYTE i
     CHK(EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, initialVector) == 1, STATUS_INVALID_ARG);
     printf("%d\n", __LINE__);
 
-    CHK(EVP_EncryptUpdate(ctx, pOutput, pOutputLength, pInput, inputLength) == 1, STATUS_INVALID_ARG);
+    CHK(EVP_EncryptUpdate(ctx, pOutput, &writtenData, pInput, inputLength) == 1, STATUS_INVALID_ARG);
     printf("%d\n", __LINE__);
 
-    CHK(EVP_EncryptFinal_ex(ctx, pOutput + *pOutputLength, pOutputLength) == 1, STATUS_INVALID_ARG);
+    *pOutputLength = writtenData;
+
+    CHK(EVP_EncryptFinal_ex(ctx, pOutput + writtenData, &writtenData) == 1, STATUS_INVALID_ARG);
+
+    *pOutputLength += writtenData;
 
     printf("%d\n", __LINE__);
     EVP_CIPHER_CTX_free(ctx);
