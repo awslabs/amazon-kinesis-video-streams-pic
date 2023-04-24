@@ -1572,6 +1572,7 @@ STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 times
                 pCurrent += EVP_MAX_IV_LENGTH;
             }
             CHK_STATUS(aesEncrypt(pFrame->frameData, (INT64)adaptedFrameSize, pE2EE->key, pE2EE->iv, pCurrent, &encryptedFrameSize));
+            adaptedFrameSize = encryptedFrameSize;
             if(CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)) {
                 adaptedFrameSize += EVP_MAX_IV_LENGTH + EVP_MAX_KEY_LENGTH;
             }
