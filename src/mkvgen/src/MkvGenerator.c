@@ -1564,15 +1564,15 @@ STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 times
                 adaptFrameNalsFromAnnexBToAvcc(pFrame->frameData, pFrame->size, FALSE, pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE, &adaptedFrameSize));
             break;
         case MKV_NALS_E2EE:
+            pCurrent = pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE;
             if(CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)) {
                 CHK_STATUS(aesGenerateIV(pE2EE->iv));
-                pCurrent = pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE;
                 MEMCPY(pCurrent, pE2EE->key, EVP_MAX_KEY_LENGTH);
                 pCurrent += EVP_MAX_KEY_LENGTH;
                 MEMCPY(pCurrent, pE2EE->iv, EVP_MAX_IV_LENGTH);
                 pCurrent += EVP_MAX_IV_LENGTH;
             }
-            CHK_STATUS(aesEncrypt(pFrame->frameData, adaptedFrameSize, pE2EE->key, pE2EE->iv, pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE, &adaptedFrameSize));
+            CHK_STATUS(aesEncrypt(pFrame->frameData, adaptedFrameSize, pE2EE->key, pE2EE->iv, pCurrent, &adaptedFrameSize));
             if(CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)) {
                 adaptedFrameSize += EVP_MAX_IV_LENGTH + EVP_MAX_KEY_LENGTH;
             }
