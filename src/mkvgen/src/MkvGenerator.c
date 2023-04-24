@@ -222,6 +222,7 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
     UINT32 bufferSize = 0, encodedLen = 0, packagedSize = 0, adaptedFrameSize = 0, overheadSize = 0, dataOffset = 0;
     // Evaluated presentation and decode timestamps
     UINT64 pts = 0, dts = 0, duration = 0;
+    INT64 encryptedFrameSize = 0;
     PBYTE pCurrentPnt = pBuffer;
     MKV_NALS_ADAPTATION nalsAdaptation;
 
@@ -266,7 +267,8 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
     CHK_STATUS(getAdaptedFrameSize(pFrame, nalsAdaptation, &adaptedFrameSize));
     //TODO account for encrypted size here
     if(pStreamMkvGenerator->endToEndEncryption) {
-        CHK_STATUS(aesCipherSizeNeeded(adaptedFrameSize, &adaptedFrameSize));
+        CHK_STATUS(aesCipherSizeNeeded(adaptedFrameSize, &encryptedFrameSize));
+        adaptedFrameSize = encryptedFrameSize;
         packagedSize = overheadSize + adaptedFrameSize;
         if(CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)) {
             packagedSize += EVP_MAX_IV_LENGTH + EVP_MAX_KEY_LENGTH;
@@ -383,6 +385,9 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
 
     // Validate the size
     CHK(packagedSize == (UINT32) (pCurrentPnt - pBuffer), STATUS_INTERNAL_ERROR);
+    if(!pStreamMkvGenerator->endToEndEncryption) {
+        CHK(packagedSize == (UINT32)(pCurrentPnt - pBuffer), STATUS_INTERNAL_ERROR);
+    }
 
 CleanUp:
 
