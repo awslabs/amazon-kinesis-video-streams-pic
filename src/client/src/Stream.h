@@ -415,6 +415,8 @@ struct __KinesisVideoStream {
 
     BOOL allowStreamCreation;
 
+    BOOL endToEndEncryption;
+
     // Time after which should reset the generator with the next key frame
     UINT64 resetGeneratorTime;
 
@@ -441,6 +443,8 @@ struct __KinesisVideoStream {
 
     // Last PutFrame timestamp
     UINT64 lastPutFrameTimestamp;
+
+    PE2EEDescription pE2EE;
 };
 
 /**
@@ -814,6 +818,8 @@ VOID logStreamInfo(PStreamInfo);
  * @return Status code of the operation
  */
 STATUS calculateCallLatency(PKinesisVideoStream, BOOL);
+
+STATUS createE2EEObjects(PKinesisVideoStream);
 
 ///////////////////////////////////////////////////////////////////////////
 // Service call event functions
