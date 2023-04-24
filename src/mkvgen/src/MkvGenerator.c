@@ -1526,6 +1526,7 @@ STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 times
     BYTE flags;
     UINT32 size, trackIndex;
     PBYTE pCurrent;
+    INT64 encryptedFrameSize = 0;
 
     CHK(pEncodedLen != NULL && pFrame != NULL, STATUS_NULL_ARG);
 
@@ -1570,7 +1571,7 @@ STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 times
                 MEMCPY(pCurrent, pE2EE->iv, EVP_MAX_IV_LENGTH);
                 pCurrent += EVP_MAX_IV_LENGTH;
             }
-            CHK_STATUS(aesEncrypt(pFrame->frameData, adaptedFrameSize, pE2EE->key, pE2EE->iv, pCurrent, &adaptedFrameSize));
+            CHK_STATUS(aesEncrypt(pFrame->frameData, (INT64)adaptedFrameSize, pE2EE->key, pE2EE->iv, pCurrent, &encryptedFrameSize));
             if(CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)) {
                 adaptedFrameSize += EVP_MAX_IV_LENGTH + EVP_MAX_KEY_LENGTH;
             }
