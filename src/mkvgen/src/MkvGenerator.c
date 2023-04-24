@@ -86,6 +86,7 @@ STATUS createMkvGenerator(PCHAR contentType, UINT32 behaviorFlags, UINT64 timeco
     pMkvGenerator->streamTimestamps = (behaviorFlags & MKV_GEN_IN_STREAM_TIME) != MKV_GEN_FLAG_NONE;
     pMkvGenerator->absoluteTimeClusters = (behaviorFlags & MKV_GEN_ABSOLUTE_CLUSTER_TIME) != MKV_GEN_FLAG_NONE;
     pMkvGenerator->adaptCpdNals = adaptCpdAnnexB;
+    pMkvGenerator->endToEndEncryption = (behaviorFlags & MKV_GEN_E2EE) != MKV_GEN_FLAG_NONE;
     pMkvGenerator->lastClusterPts = 0;
     pMkvGenerator->lastClusterDts = 0;
     pMkvGenerator->streamStartTimestamp = 0;
@@ -212,7 +213,7 @@ CleanUp:
  * Package frame in MKV format
  */
 STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo pTrackInfo, PBYTE pBuffer, PUINT32 pSize,
-                          PEncodedFrameInfo pEncodedFrameInfo)
+                          PEncodedFrameInfo pEncodedFrameInfo, PE2EEDescription pE2EE)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -253,13 +254,27 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
     overheadSize = mkvgenGetFrameOverhead(pStreamMkvGenerator, streamState);
 
     //TODO skip nals adaption for E2EE
-    // NAL adaptation should only be done for video frames
-    nalsAdaptation = pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO ? pStreamMkvGenerator->nalsAdaptation : MKV_NALS_ADAPT_NONE;
+    if(pStreamMkvGenerator->endToEndEncryption) {
+        nalsAdaptation = MKV_NALS_E2EE;
+    }
+    else {
+        // NAL adaptation should only be done for video frames
+        nalsAdaptation = pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO ? pStreamMkvGenerator->nalsAdaptation : MKV_NALS_ADAPT_NONE;
+    }
 
     // Get the adapted size of the frame and add to the overall size
     CHK_STATUS(getAdaptedFrameSize(pFrame, nalsAdaptation, &adaptedFrameSize));
     //TODO account for encrypted size here
-    packagedSize = overheadSize + adaptedFrameSize;
+    if(pStreamMkvGenerator->endToEndEncryption) {
+        CHK_STATUS(aesCipherSizeNeeded(adaptedFrameSize, &adaptedFrameSize));
+        packagedSize = overheadSize + adaptedFrameSize;
+        if(CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)) {
+            packagedSize += EVP_MAX_IV_LENGTH + EVP_MAX_KEY_LENGTH;
+        }
+    }
+    else {
+        packagedSize = overheadSize + adaptedFrameSize;
+    }
 
     // Check if we are asked for size only and early return if so
     CHK(pBuffer != NULL, STATUS_SUCCESS);
@@ -357,7 +372,7 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
 
             // Adjust the timestamp to the start of the cluster
             CHK_STATUS(mkvgenEbmlEncodeSimpleBlock(pCurrentPnt, bufferSize, (INT16) pts, pFrame, nalsAdaptation, adaptedFrameSize,
-                                                   pStreamMkvGenerator, &encodedLen));
+                                                   pStreamMkvGenerator, &encodedLen, pE2EE));
             bufferSize -= encodedLen;
             pCurrentPnt += encodedLen;
 
@@ -1506,12 +1521,13 @@ CleanUp:
  * EBML encodes a simple block
  */
 STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 timestamp, PFrame pFrame, MKV_NALS_ADAPTATION nalsAdaptation,
-                                   UINT32 adaptedFrameSize, PStreamMkvGenerator pStreamMkvGenerator, PUINT32 pEncodedLen)
+                                   UINT32 adaptedFrameSize, PStreamMkvGenerator pStreamMkvGenerator, PUINT32 pEncodedLen, PE2EEDescription pE2EE)
 {
     STATUS retStatus = STATUS_SUCCESS;
     UINT64 encodedLength;
     BYTE flags;
     UINT32 size, trackIndex;
+    PBYTE pCurrent;
 
     CHK(pEncodedLen != NULL && pFrame != NULL, STATUS_NULL_ARG);
 
@@ -1546,6 +1562,21 @@ STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 times
             // Adapt from Annex-B to Avcc nals. NOTE: The conversion is not 'in-place'
             CHK_STATUS(
                 adaptFrameNalsFromAnnexBToAvcc(pFrame->frameData, pFrame->size, FALSE, pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE, &adaptedFrameSize));
+            break;
+        case MKV_NALS_E2EE:
+            if(CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)) {
+                CHK_STATUS(aesGenerateIV(pE2EE->iv));
+                pCurrent = pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE;
+                MEMCPY(pCurrent, pE2EE->key, EVP_MAX_KEY_LENGTH);
+                pCurrent += EVP_MAX_KEY_LENGTH;
+                MEMCPY(pCurrent, pE2EE->iv, EVP_MAX_IV_LENGTH);
+                pCurrent += EVP_MAX_IV_LENGTH;
+            }
+            CHK_STATUS(aesEncrypt(pFrame->frameData, adaptedFrameSize, pE2EE->key, pE2EE->iv, pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE, &adaptedFrameSize));
+            if(CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)) {
+                adaptedFrameSize += EVP_MAX_IV_LENGTH + EVP_MAX_KEY_LENGTH;
+            }
+            break;
     }
 
     // Encode and fix-up the size - encode 8 bytes
@@ -1600,6 +1631,9 @@ STATUS getAdaptedFrameSize(PFrame pFrame, MKV_NALS_ADAPTATION nalsAdaptation, PU
         case MKV_NALS_ADAPT_ANNEXB:
             // Get the size after conversion
             CHK_STATUS(adaptFrameNalsFromAnnexBToAvcc(pFrame->frameData, pFrame->size, FALSE, NULL, &adaptedFrameSize));
+            break;
+        case MKV_NALS_E2EE:
+            CHK_STATUS(aesCipherSizeNeeded(pFrame->size, &adaptedFrameSize));
             break;
     }
 

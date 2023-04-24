@@ -284,6 +284,9 @@ typedef enum {
      * Whether to adapt Annex-B NALUs for the codec private data to Avcc format NALUs
      */
     MKV_GEN_ADAPT_ANNEXB_CPD_NALS = (1 << 5),
+
+    //TODO comments about this
+    MKV_GEN_E2EE = (1 << 6),
 } MKV_BEHAVIOR_FLAGS;
 
 /**
@@ -575,7 +578,7 @@ PUBLIC_API STATUS mkvgenIncreaseTagsTagSize(PBYTE, UINT32);
  *
  * @return - STATUS code of the execution
  */
-PUBLIC_API STATUS mkvgenPackageFrame(PMkvGenerator, PFrame, PTrackInfo, PBYTE, PUINT32, PEncodedFrameInfo);
+PUBLIC_API STATUS mkvgenPackageFrame(PMkvGenerator, PFrame, PTrackInfo, PBYTE, PUINT32, PEncodedFrameInfo, PE2EEDescription);
 
 /**
  * Converts an MKV timecode to a timestamp

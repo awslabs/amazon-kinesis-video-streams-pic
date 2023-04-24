@@ -2008,11 +2008,18 @@ PUBLIC_API STATUS threadpoolPush(PThreadpool, startRoutine, PVOID);
 // AES encryption functionality
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+typedef struct __E2EEDescription E2EEDescription;
+struct __E2EEDescription {
+    BYTE key[EVP_MAX_KEY_LENGTH];
+    BYTE iv[EVP_MAX_IV_LENGTH];
+};
+typedef struct __E2EEDescription* PE2EEDescription;
+
 PUBLIC_API STATUS aesCipherSizeNeeded(INT64, PINT64);
 
-PUBLIC_API STATUS aesEncrypt(EVP_CIPHER_CTX *, PBYTE, INT64, PBYTE, PBYTE, PBYTE, PINT64);
+PUBLIC_API STATUS aesEncrypt(PBYTE, INT64, PBYTE, PBYTE, PBYTE, PINT64);
 
-PUBLIC_API STATUS aesDecrypt(EVP_CIPHER_CTX *, PBYTE, INT64, PBYTE, PBYTE, PBYTE, PINT64);
+PUBLIC_API STATUS aesDecrypt(PBYTE, INT64, PBYTE, PBYTE, PBYTE, PINT64);
 
 PUBLIC_API STATUS aesCreateContext(EVP_CIPHER_CTX **);
 

@@ -353,6 +353,8 @@ typedef struct {
     // Whether to use absolute timestamps in clusters
     BOOL absoluteTimeClusters;
 
+    BOOL endToEndEncryption;
+
     // Timecode scale
     UINT64 timecodeScale;
 
@@ -549,7 +551,7 @@ STATUS mkvgenEbmlEncodeClusterInfo(PBYTE, UINT32, UINT64, PUINT32);
  * @PStreamMkvGenerator - The MKV generator
  * @PUINT32 - the returned encoded length of the number in bytes
  */
-STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE, UINT32, INT16, PFrame, MKV_NALS_ADAPTATION, UINT32, PStreamMkvGenerator, PUINT32);
+STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE, UINT32, INT16, PFrame, MKV_NALS_ADAPTATION, UINT32, PStreamMkvGenerator, PUINT32, PE2EEDescription);
 
 /**
  * Gets the size of a single mkv TrackEntry
