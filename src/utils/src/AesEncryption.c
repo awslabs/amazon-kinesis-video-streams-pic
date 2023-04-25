@@ -17,21 +17,16 @@ PUBLIC_API STATUS aesEncrypt(PBYTE pInput, INT64 inputLength, PBYTE key, PBYTE i
     STATUS retStatus = STATUS_SUCCESS;
     EVP_CIPHER_CTX * ctx;
     INT64 writtenData = 0;
-    printf("%d\n", __LINE__);
     CHK(pInput != NULL && key != NULL && initialVector != NULL && pOutput != NULL && pOutputLength != NULL, STATUS_NULL_ARG);
-    printf("%d\n", __LINE__);
     CHK(inputLength > 0, STATUS_INVALID_ARG);
 
     //CHK(EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, NULL, NULL) == 1, STATUS_INVALID_ARG);
 
     //EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, idea_IV_LENGTH, NULL);
     ctx = EVP_CIPHER_CTX_new();
-    printf("%d\n", __LINE__);
     CHK(EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, initialVector) == 1, STATUS_INVALID_ARG);
-    printf("%d\n", __LINE__);
 
     CHK(EVP_EncryptUpdate(ctx, pOutput, &writtenData, pInput, inputLength) == 1, STATUS_INVALID_ARG);
-    printf("%d\n", __LINE__);
 
     *pOutputLength = writtenData;
 
@@ -39,9 +34,7 @@ PUBLIC_API STATUS aesEncrypt(PBYTE pInput, INT64 inputLength, PBYTE key, PBYTE i
 
     *pOutputLength += writtenData;
 
-    printf("%d\n", __LINE__);
     EVP_CIPHER_CTX_free(ctx);
-    printf("%d\n", __LINE__);
 CleanUp:
     if(STATUS_FAILED(retStatus)) {
         char buf[256] = {0};
@@ -55,24 +48,18 @@ CleanUp:
 PUBLIC_API STATUS aesDecrypt(PBYTE pInput, INT64 inputLength, PBYTE key, PBYTE initialVector, PBYTE pOutput, PINT64 pOutputLength) {
     STATUS retStatus = STATUS_SUCCESS;
     EVP_CIPHER_CTX * ctx;
-    printf("%d\n", __LINE__);
     CHK(pInput != NULL && key != NULL && initialVector != NULL && pOutput != NULL && pOutputLength != NULL, STATUS_NULL_ARG);
-    printf("%d\n", __LINE__);
     CHK(inputLength > 0, STATUS_INVALID_ARG);
     //CHK(EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, NULL, NULL) == 1, STATUS_INVALID_ARG);
 
     //EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, idea_IV_LENGTH, NULL);
     ctx = EVP_CIPHER_CTX_new();
-    printf("%d\n", __LINE__);
     CHK(EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, initialVector) == 1, STATUS_INVALID_ARG);
 
-    printf("%d\n", __LINE__);
     CHK(EVP_DecryptUpdate(ctx, pOutput, pOutputLength, pInput, inputLength) == 1, STATUS_INVALID_ARG);
 
-    printf("%d\n", __LINE__);
     CHK(EVP_DecryptFinal_ex(ctx, pOutput + *pOutputLength, pOutputLength) == 1, STATUS_INVALID_ARG);
 
-    printf("%d\n", __LINE__);
     EVP_CIPHER_CTX_free(ctx);
 CleanUp:
     if(STATUS_FAILED(retStatus)) {
