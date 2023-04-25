@@ -1583,6 +1583,7 @@ STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 times
             if(CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags)) {
                 adaptedFrameSize += EVP_MAX_IV_LENGTH + EVP_MAX_KEY_LENGTH;
             }
+            *pEncodedLen = MKV_SIMPLE_BLOCK_BITS_SIZE + adaptedFrameSize;
             break;
     }
 
