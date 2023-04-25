@@ -389,6 +389,7 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
     }
     else {
         DLOGE("packagedSize: %u vs %u\n", packagedSize, (UINT32)(pCurrentPnt - pBuffer));
+        packagedSize = (UINT32)(pCurrentPnt - pBuffer);
     }
 
 CleanUp:
