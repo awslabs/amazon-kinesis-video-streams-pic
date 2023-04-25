@@ -48,6 +48,7 @@ CleanUp:
 PUBLIC_API STATUS aesDecrypt(PBYTE pInput, INT64 inputLength, PBYTE key, PBYTE initialVector, PBYTE pOutput, PINT64 pOutputLength) {
     STATUS retStatus = STATUS_SUCCESS;
     EVP_CIPHER_CTX * ctx;
+    INT64 writtenData = 0;
     CHK(pInput != NULL && key != NULL && initialVector != NULL && pOutput != NULL && pOutputLength != NULL, STATUS_NULL_ARG);
     CHK(inputLength > 0, STATUS_INVALID_ARG);
     //CHK(EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, NULL, NULL) == 1, STATUS_INVALID_ARG);
@@ -56,9 +57,11 @@ PUBLIC_API STATUS aesDecrypt(PBYTE pInput, INT64 inputLength, PBYTE key, PBYTE i
     ctx = EVP_CIPHER_CTX_new();
     CHK(EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, initialVector) == 1, STATUS_INVALID_ARG);
 
-    CHK(EVP_DecryptUpdate(ctx, pOutput, pOutputLength, pInput, inputLength) == 1, STATUS_INVALID_ARG);
+    CHK(EVP_DecryptUpdate(ctx, pOutput, &writtenData, pInput, inputLength) == 1, STATUS_INVALID_ARG);
+    *pOutputLength = writtenData;
 
-    CHK(EVP_DecryptFinal_ex(ctx, pOutput + *pOutputLength, pOutputLength) == 1, STATUS_INVALID_ARG);
+    CHK(EVP_DecryptFinal_ex(ctx, pOutput + writtenData, &writtenData) == 1, STATUS_INVALID_ARG);
+    *pOutputLength += writtenData;
 
     EVP_CIPHER_CTX_free(ctx);
 CleanUp:
