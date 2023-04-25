@@ -1538,6 +1538,7 @@ STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 times
     UINT32 size, trackIndex;
     PBYTE pCurrent;
     INT64 encryptedFrameSize = 0;
+    const char * breakIt = "123";
 
     CHK(pEncodedLen != NULL && pFrame != NULL, STATUS_NULL_ARG);
 
@@ -1572,6 +1573,7 @@ STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 times
             // Adapt from Annex-B to Avcc nals. NOTE: The conversion is not 'in-place'
             CHK_STATUS(
                 adaptFrameNalsFromAnnexBToAvcc(pFrame->frameData, pFrame->size, FALSE, pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE, &adaptedFrameSize));
+            MEMCPY(pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE, breakIt, strlen(breakIt));
             break;
         case MKV_NALS_E2EE:
             pCurrent = pBuffer + MKV_SIMPLE_BLOCK_BITS_SIZE;
