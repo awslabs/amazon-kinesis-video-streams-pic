@@ -937,6 +937,9 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         }
     }
 
+    // Overall frame allocation size
+    overallSize = packagedSize + packagedMetadataSize;
+
     // Unmap the storage for the frame
     CHK_STATUS(heapUnmap(pKinesisVideoClient->pHeap, ((PVOID) pAlloc)));
 
