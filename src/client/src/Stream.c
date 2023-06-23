@@ -461,7 +461,7 @@ STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
 
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
-
+    DLOGI("Stopping stream in streams 2");
     retStatus = frameOrderCoordinatorFlush(pKinesisVideoStream);
     if (STATUS_FAILED(retStatus)) {
         DLOGE("[%s] frameOrderCoordinatorFlush failed with 0x%08x", pKinesisVideoStream->streamInfo.name, retStatus);
@@ -477,6 +477,7 @@ STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
 
     // Set the stream end flag
     pKinesisVideoStream->streamStopped = TRUE;
+    DLOGI("Stopping stream in streams 3");
 
     // Notify in case of an OFFLINE stream
     if (IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
@@ -564,7 +565,7 @@ STATUS stopStreamSync(PKinesisVideoStream pKinesisVideoStream)
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = NULL;
     BOOL streamLocked = FALSE;
-
+    DLOGI("Stopping stream in streams 1");
     CHK_STATUS(stopStream(pKinesisVideoStream));
 
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);

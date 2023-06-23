@@ -55,7 +55,7 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
         pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
 
         currentTime = GETTIME();
-        for (i = 0; i < pKinesisVideoClient->deviceInfo.streamCount; i++) {
+        for (i = 0; i < pKinesisVideoClient->streamCount; i++) {
             if (NULL != pKinesisVideoClient->streams[i]) {
                 pCurrStream = pKinesisVideoClient->streams[i];
                 pFrameOrderCoordinator = pCurrStream->pFrameOrderCoordinator;
@@ -67,6 +67,7 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
                 }
                 // Lock the Stream
                 pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pCurrStream->base.lock);
+                DLOGD("Intermittent invocation for %s, %d", pCurrStream->streamInfo.name, pCurrStream->streamStopped);
                 // Check if last PutFrame is older than max timeout, if so, send EoFR, if not, do nothing
                 // Ignoring currentTime it COULD be smaller than pCurrStream->lastPutFrametimestamp
                 // Due to this method entering but waiting on stream lock from putFrame call
@@ -75,6 +76,8 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
                     if (!STATUS_SUCCEEDED(retStatus = putKinesisVideoFrame(TO_STREAM_HANDLE(pCurrStream), &eofr))) {
                         DLOGW("Failed to submit auto eofr with 0x%08x, for stream: %s", retStatus, pCurrStream->streamInfo.name);
                     }
+                } else {
+                    DLOGD("Intermittent invocation later");
                 }
 
                 // Unlock the Stream
@@ -82,6 +85,8 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
                 if (frameOrderCoordinatorLocked) {
                     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
                 }
+            } else {
+                DLOGD("Null streams...%d", i);
             }
         }
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
