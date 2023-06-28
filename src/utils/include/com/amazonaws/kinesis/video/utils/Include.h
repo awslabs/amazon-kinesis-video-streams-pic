@@ -1427,7 +1427,9 @@ PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
  * Default values used in the file logger
  */
 #define FILE_LOGGER_LOG_FILE_NAME           "kvsFileLog"
+#define FILE_LOGGER_PROFILE_LOG_FILE_NAME   "kvsFileLogProfile"
 #define FILE_LOGGER_LAST_INDEX_FILE_NAME    "kvsFileLogIndex"
+#define FILE_LOGGER_LAST_PROFILE_INDEX_FILE_NAME    "kvsFileProfileLogIndex"
 #define FILE_LOGGER_STRING_BUFFER_SIZE      (100 * 1024)
 #define FILE_LOGGER_LOG_FILE_COUNT          3
 #define FILE_LOGGER_LOG_FILE_DIRECTORY_PATH "./"
@@ -1445,6 +1447,8 @@ PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
  * @return - STATUS code of the execution
  */
 PUBLIC_API STATUS createFileLogger(UINT64, UINT64, PCHAR, BOOL, BOOL, logPrintFunc*);
+
+PUBLIC_API STATUS createFileLoggerWithProfiling(UINT64, UINT64, PCHAR, BOOL, BOOL, BOOL, logPrintFunc*);
 
 /**
  * Frees the static file logger object and resets the global logging function if it was
