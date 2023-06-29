@@ -1,7 +1,7 @@
 #include "UtilTestFixture.h"
 
-// length of time and log level string in log: "2019-11-09 19:11:16 VERBOSE "
-#define TIMESTRING_OFFSET               28
+// length of time and log level string in log: "2019-11-09 19:11:16.xxxxxx VERBOSE "
+#define TIMESTRING_OFFSET               35
 
 #ifdef _WIN32
 #define TEST_TEMP_DIR_PATH                                      (PCHAR) "C:\\Windows\\Temp\\"
@@ -343,6 +343,207 @@ TEST_F(FileLoggerTest, oldLogFileOverrittenByFlushTriggerredByFreeCallbacks)
     // skip over the timestamp string
     // use STRNCMP to not catch the newline at the end of fileBuffer
     EXPECT_EQ(0, STRNCMP(logMessage, fileBuffer + TIMESTRING_OFFSET, STRLEN(logMessage)));
+
+    MEMFREE(logMessage);
+    MEMFREE(fileBuffer);
+}
+
+TEST_F(FileLoggerTest, basicFilterFileLoggerUsage)
+{
+    UINT32 logMessageSize = MIN_FILE_LOGGER_STRING_BUFFER_SIZE / 2;
+    PCHAR logMessage = (PCHAR) MEMALLOC(logMessageSize + 1);
+    BOOL fileFound = FALSE;
+    logPrintFunc logFunc;
+    UINT64 currentFileIndex = 0;
+    PCHAR fileBuffer = (PCHAR) MEMALLOC(MIN_FILE_LOGGER_STRING_BUFFER_SIZE);
+    UINT64 fileBufferLen = MIN_FILE_LOGGER_STRING_BUFFER_SIZE;
+
+    MEMSET(logMessage, 'a', logMessageSize);
+    logMessage[logMessageSize] = '\0';
+
+    // make sure the files dont exist
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogIndex");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLog.0");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLog.1");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLog.2");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogFilter.0");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex");
+
+    // Test disabling all permitted levels and the filtered level - in short, no log files would be generated
+    createFileLoggerWithLevelFiltering(MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
+                                       5,
+                                       (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
+                                       FALSE,
+                                       FALSE,
+                                       FALSE, 0, &logFunc);
+
+    logFunc(LOG_LEVEL_VERBOSE, NULL, (PCHAR) "%s", logMessage);
+    logFunc(LOG_LEVEL_VERBOSE, NULL, (PCHAR) "%s", logMessage);
+    // Since filter is set to 0 and enableAllLevels is FALSE, no log file should have been created
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLog.0"), &fileFound));
+    EXPECT_EQ(FALSE, fileFound);
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogIndex"), &fileFound));
+    EXPECT_EQ(FALSE, fileFound);
+
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.0"), &fileFound));
+    EXPECT_EQ(FALSE, fileFound);
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex"), &fileFound));
+    EXPECT_EQ(FALSE, fileFound);
+
+    RELEASE_FILE_LOGGER();
+
+    // Test disabling all permitted levels and allow log files generated only for the filtered level
+    createFileLoggerWithLevelFiltering(MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
+                                       5,
+                                       (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
+                                       FALSE,
+                                       FALSE,
+                                       FALSE, LOG_LEVEL_WARN, &logFunc);
+
+    logFunc(LOG_LEVEL_WARN, NULL, (PCHAR) "%s", logMessage);
+
+    // Since filter is set to 1, we should see VERBOSE log and enableAllLevels is FALSE, no kvsFileLog.x log file should have been created
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLog.0"), &fileFound));
+    EXPECT_EQ(FALSE, fileFound);
+
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogIndex"), &fileFound));
+    EXPECT_EQ(FALSE, fileFound);
+
+    RELEASE_FILE_LOGGER(); // This ensures the file is closed before running other checks
+
+
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.0"), &fileFound));
+    EXPECT_EQ(TRUE, fileFound);
+
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex"), &fileFound));
+    EXPECT_EQ(TRUE, fileFound);
+
+    // skip over the timestamp string
+    // use STRNCMP to not catch the newline at the end of fileBuffer
+    EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.0"), TRUE, NULL, &fileBufferLen));
+    EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.0"), TRUE, (PBYTE) fileBuffer, &fileBufferLen));
+    fileBuffer[fileBufferLen] = '\0';
+
+    EXPECT_EQ(0, STRNCMP(logMessage, fileBuffer + TIMESTRING_OFFSET, STRLEN(logMessage)));
+
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogFilter.0");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex");
+
+    // Test enabling all permitted levels and the filtered level
+    createFileLoggerWithLevelFiltering(MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
+                                       5,
+                                       (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
+                                        FALSE,
+                                        FALSE,
+                                        TRUE, LOG_LEVEL_WARN, &logFunc);
+
+    logFunc(LOG_LEVEL_WARN, NULL, (PCHAR) "%s", logMessage);
+    logFunc(LOG_LEVEL_ERROR, NULL, (PCHAR) "%s", logMessage);
+
+    RELEASE_FILE_LOGGER();
+
+    // Since filter is set to 1, we should see VERBOSE log and enableAllLevels is FALSE, no kvsFileLog.x log file should have been created
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLog.0"), &fileFound));
+    EXPECT_EQ(TRUE, fileFound);
+
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogIndex"), &fileFound));
+    EXPECT_EQ(TRUE, fileFound);
+
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.0"), &fileFound));
+    EXPECT_EQ(TRUE, fileFound);
+
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex"), &fileFound));
+    EXPECT_EQ(TRUE, fileFound);
+
+    // skip over the timestamp string
+    // use STRNCMP to not catch the newline at the end of fileBuffer
+    EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.0"), TRUE, NULL, &fileBufferLen));
+    EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.0"), TRUE, (PBYTE) fileBuffer, &fileBufferLen));
+    fileBuffer[fileBufferLen] = '\0';
+
+    EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLog.0"), TRUE, NULL, &fileBufferLen));
+    EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLog.0"), TRUE, (PBYTE) fileBuffer, &fileBufferLen));
+    fileBuffer[fileBufferLen] = '\0';
+
+    EXPECT_EQ(0, STRNCMP(logMessage, fileBuffer + TIMESTRING_OFFSET, STRLEN(logMessage)));
+
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogIndex");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLog.0");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogFilter.0");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex");
+    MEMFREE(logMessage);
+    MEMFREE(fileBuffer);
+}
+
+
+TEST_F(FileLoggerTest, FileRotationFilterFileLoggerUsage)
+{
+    UINT32 logMessageSize = MIN_FILE_LOGGER_STRING_BUFFER_SIZE / 2;
+    PCHAR logMessage = (PCHAR) MEMALLOC(logMessageSize + 1);
+    BOOL fileFound = FALSE;
+    logPrintFunc logFunc;
+    UINT64 currentFileIndex = 0;
+    PCHAR fileBuffer = (PCHAR) MEMALLOC(MIN_FILE_LOGGER_STRING_BUFFER_SIZE);
+    UINT64 fileBufferLen = MIN_FILE_LOGGER_STRING_BUFFER_SIZE;
+
+    MEMSET(logMessage, 'a', logMessageSize - 1);
+
+    // make sure the files dont exist
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogFilter.0");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogFilter.1");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex");
+
+    // Test disabling all permitted levels and allow log files generated only for the filtered level
+    createFileLoggerWithLevelFiltering(MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
+                                       2,
+                                       (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
+                                       FALSE,
+                                       FALSE,
+                                       FALSE, LOG_LEVEL_WARN, &logFunc);
+
+    logFunc(LOG_LEVEL_WARN, NULL, (PCHAR) "%s", logMessage);
+    logMessage[logMessageSize] = '\0';
+    logFunc(LOG_LEVEL_WARN, NULL, (PCHAR) "%s", logMessage);
+
+    RELEASE_FILE_LOGGER();
+
+    // Since filter is set to 1, we should see VERBOSE log and enableAllLevels is FALSE, no kvsFileLog.x log file should have been created
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLog.0"), &fileFound));
+    EXPECT_EQ(FALSE, fileFound);
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogIndex"), &fileFound));
+    EXPECT_EQ(FALSE, fileFound);
+
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.0"), &fileFound));
+    EXPECT_EQ(TRUE, fileFound);
+
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.1"), &fileFound));
+    EXPECT_EQ(TRUE, fileFound);
+
+    EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex"), &fileFound));
+    EXPECT_EQ(TRUE, fileFound);
+
+    // skip over the timestamp string
+    // use STRNCMP to not catch the newline at the end of fileBuffer
+    EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.0"), TRUE, NULL, &fileBufferLen));
+    EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.0"), TRUE, (PBYTE) fileBuffer, &fileBufferLen));
+    fileBuffer[fileBufferLen] = '\0';
+
+    // skip over the timestamp string
+    // use STRNCMP to not catch the newline at the end of fileBuffer
+    EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.1"), TRUE, NULL, &fileBufferLen));
+    EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.1"), TRUE, (PBYTE) fileBuffer, &fileBufferLen));
+    fileBuffer[fileBufferLen] = '\0';
+
+    // use STRNCMP to not catch the newline at the end of fileBuffer
+    EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex"), TRUE, NULL, &fileBufferLen));
+    EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex"), TRUE, (PBYTE) fileBuffer, &fileBufferLen));
+    fileBuffer[fileBufferLen] = '\0';
+
+    EXPECT_EQ(0, STRNCMP("2", fileBuffer, STRLEN(logMessage)));
+
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogFilter.0");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogFilter.1");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex");
 
     MEMFREE(logMessage);
     MEMFREE(fileBuffer);

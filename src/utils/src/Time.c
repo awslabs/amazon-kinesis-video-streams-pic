@@ -3,25 +3,29 @@
 getTime globalGetTime = defaultGetTime;
 getTime globalGetRealTime = defaultGetTime;
 
-STATUS generateTimestampStrInMilliseconds(UINT64 timestamp, PCHAR formatStr, PCHAR pDestBuffer, UINT32 destBufferLen, PUINT32 pFormattedStrLen)
+STATUS generateTimestampStrInMilliseconds(PCHAR formatStr, PCHAR pDestBuffer, UINT32 destBufferLen, PUINT32 pFormattedStrLen)
 {
     STATUS retStatus = STATUS_SUCCESS;
     UINT32 formattedStrLen;
-    struct tm* timeinfo;
     UINT32 millisecondVal;
+    struct tm* timeinfo;
 
 #if defined _WIN32 || defined _WIN64
     FILETIME fileTime;
     GetSystemTimeAsFileTime(&fileTime);
     ULARGE_INTEGER uli;
+    struct tm timeinfoWindows;
 
-    uli.LowPart = ft.dwLowDateTime;
-    uli.HighPart = ft.dwHighDateTime;
+    uli.LowPart = fileTime.dwLowDateTime;
+    uli.HighPart = fileTime.dwHighDateTime;
+
 
     ULONGLONG windowsTime = uli.QuadPart - TIME_DIFF_UNIX_WINDOWS_TIME;
-    ULONGLONG unixTime = windowsTime / 10000; // convert to seconds
-    timeinfo = GMTIME((const time_t *)&unixTime);
-    millisecondVal = (UINT32) (windowsTime % 1000);
+    time_t unixTime = (time_t)(windowsTime / 10000000);  // Conversion to seconds
+    gmtime_s(&timeinfo, &unixTime);
+
+    millisecondVal = ((windowsTime / 10000) % 1000);  // Extract milliseconds
+
 
 #elif defined __MACH__ || defined __CYGWIN__
     struct timeval tv;
@@ -45,10 +49,11 @@ STATUS generateTimestampStrInMilliseconds(UINT64 timestamp, PCHAR formatStr, PCH
     formattedStrLen = 0;
     *pFormattedStrLen = 0;
 
-    formattedStrLen = (UINT32) STRFTIME(pDestBuffer, destBufferLen, formatStr, timeinfo);
+    formattedStrLen = (UINT32) STRFTIME(pDestBuffer, destBufferLen - MAX_MILLISECOND_PORTION_LENGTH, formatStr, timeinfo);
     CHK(formattedStrLen != 0, STATUS_STRFTIME_FALIED);
-    SPRINTF(pDestBuffer + STRLEN(pDestBuffer), ".%06d ", millisecondVal);
-    formattedStrLen = STRLEN(pDestBuffer);
+    // Total length is 8 plus terminating null character. Generated string would have utmost size - 1. Hence need to add 1 to max length
+    SNPRINTF(pDestBuffer + formattedStrLen, MAX_MILLISECOND_PORTION_LENGTH + 1, ".%06d ", millisecondVal);
+    formattedStrLen = (UINT32) STRLEN(pDestBuffer);
     pDestBuffer[formattedStrLen] = '\0';
     *pFormattedStrLen = formattedStrLen;
 

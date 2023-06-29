@@ -40,15 +40,15 @@ VOID addLogMetadata(PCHAR buffer, UINT32 bufferLen, PCHAR fmt, UINT32 logLevel)
 #endif
 
     /* if something fails in getting time, still print the log, just without timestamp */
-    retStatus = generateTimestampStrInMilliseconds(globalGetTime(), "%Y-%m-%d %H:%M:%S", timeString, (UINT32) ARRAY_SIZE(timeString), &timeStrLen);
+    retStatus = generateTimestampStrInMilliseconds("%Y-%m-%d %H:%M:%S", timeString, (UINT32) ARRAY_SIZE(timeString), &timeStrLen);
     if (STATUS_FAILED(retStatus)) {
         PRINTF("Fail to get time with status code is %08x\n", retStatus);
         timeString[0] = '\0';
     }
 
-    offset = (UINT32) SNPRINTF(buffer, bufferLen, "%s%-*s ", timeString, MAX_LOG_LEVEL_STRLEN, getLogLevelStr(logLevel));
+    offset = (UINT32) SNPRINTF(buffer, timeStrLen + MAX_LOG_LEVEL_STRLEN + 2, "%s%-*s ", timeString, MAX_LOG_LEVEL_STRLEN, getLogLevelStr(logLevel));
 #ifdef ENABLE_LOG_THREAD_ID
-    offset += SNPRINTF(buffer + offset, bufferLen - offset, "%s ", tidString);
+    offset += SNPRINTF(buffer + offset, ARRAY_SIZE(tidString), "%s ", tidString);
 #endif
     SNPRINTF(buffer + offset, bufferLen - offset, "%s\n", fmt);
 }
