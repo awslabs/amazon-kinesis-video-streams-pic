@@ -995,10 +995,19 @@ BOOL checkBufferValues(PVOID, BYTE, SIZE_T);
  */
 PUBLIC_API STATUS generateTimestampStr(UINT64, PCHAR, PCHAR, UINT32, PUINT32);
 
-PUBLIC_API STATUS generateTimestampStrInMilliseconds(UINT64, PCHAR, PCHAR, UINT32, PUINT32);
+/**
+ * @PCHAR   - IN - timestamp format string
+ * @PCHAR   - IN - buffer to hold the resulting string
+ * @UINT32  - IN - buffer size
+ * @PUINT32 - OUT - actual number of characters in the result string not including null terminator
+ * @return  - STATUS code of the execution
+ */
+PUBLIC_API STATUS generateTimestampStrInMilliseconds(PCHAR, PCHAR, UINT32, PUINT32);
 
 // yyyy-mm-dd HH:MM:SS
 #define MAX_TIMESTAMP_FORMAT_STR_LEN    26
+
+#define MAX_MILLISECOND_PORTION_LENGTH  7
 
 // Max timestamp string length including null terminator
 #define MAX_TIMESTAMP_STR_LEN 17
@@ -1420,16 +1429,16 @@ PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
  * File based logger limit constants
  */
 #define MAX_FILE_LOGGER_STRING_BUFFER_SIZE (100 * 1024 * 1024)
-#define MIN_FILE_LOGGER_STRING_BUFFER_SIZE (1 * 1024)
+#define MIN_FILE_LOGGER_STRING_BUFFER_SIZE (10 * 1024)
 #define MAX_FILE_LOGGER_LOG_FILE_COUNT     (10 * 1024)
 
 /**
  * Default values used in the file logger
  */
 #define FILE_LOGGER_LOG_FILE_NAME           "kvsFileLog"
-#define FILE_LOGGER_PROFILE_LOG_FILE_NAME   "kvsFileLogProfile"
+#define FILE_LOGGER_FILTER_LOG_FILE_NAME    "kvsFileLogFilter"
 #define FILE_LOGGER_LAST_INDEX_FILE_NAME    "kvsFileLogIndex"
-#define FILE_LOGGER_LAST_PROFILE_INDEX_FILE_NAME    "kvsFileProfileLogIndex"
+#define FILE_LOGGER_LAST_FILTER_INDEX_FILE_NAME    "kvsFileFilterLogIndex"
 #define FILE_LOGGER_STRING_BUFFER_SIZE      (100 * 1024)
 #define FILE_LOGGER_LOG_FILE_COUNT          3
 #define FILE_LOGGER_LOG_FILE_DIRECTORY_PATH "./"
@@ -1448,7 +1457,21 @@ PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
  */
 PUBLIC_API STATUS createFileLogger(UINT64, UINT64, PCHAR, BOOL, BOOL, logPrintFunc*);
 
-PUBLIC_API STATUS createFileLoggerWithProfiling(UINT64, UINT64, PCHAR, BOOL, BOOL, BOOL, logPrintFunc*);
+/**
+ * Creates a file based logger object and installs the global logger callback function
+ *
+ * @param - UINT64 - IN - Size of string buffer in file logger. When the string buffer is full the logger will flush everything into a new file
+ * @param - UINT64 - IN - Max number of log file. When exceeded, the oldest file will be deleted when new one is generated
+ * @param - PCHAR - IN - Directory in which the log file will be generated
+ * @param - BOOL - IN - Whether to print log to std out too
+ * @param - BOOL - IN - Whether to set global logger function pointer
+ * @param - BOOL - IN - Whether to enable logging other log levels into a file
+ * @param - UINT32 - IN - Log level that needs to be filtered into another file
+ * @param - logPrintFunc* - OUT/OPT - Optional function pointer to be returned to the caller that contains the main function for actual output
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS createFileLoggerWithLevelFiltering(UINT64, UINT64, PCHAR, BOOL, BOOL, BOOL, UINT32, logPrintFunc*);
 
 /**
  * Frees the static file logger object and resets the global logging function if it was

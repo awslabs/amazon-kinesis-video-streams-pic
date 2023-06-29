@@ -231,46 +231,51 @@ VOID instrumentedAllocatorsMemFree(PVOID);
  */
 #define KVS_COMMON_FILE_INDEX_BUFFER_SIZE 256
 
-/**
- * file logger declaration
- */
 typedef struct {
     // string buffer. once the buffer is full, its content will be flushed to file
     PCHAR stringBuffer;
-
-    PCHAR profileStringBuffer;
 
     // Size of the buffer in bytes
     // This will point to the end of the FileLogger to allow for single allocation and preserve the processor cache locality
     UINT64 stringBufferLen;
 
-    UINT64 stringProfileBufferLen;
-
-    // lock protecting the print operation
-    MUTEX lock;
-
     // bytes starting from beginning of stringBuffer that contains valid data
     UINT64 currentOffset;
-
-    UINT64 currentProfileOffset;
-
-    // directory to put the log file
-    CHAR logFileDir[MAX_PATH_LEN + 1];
 
     // file to store last log file index
     CHAR indexFilePath[MAX_PATH_LEN + 1];
 
-    CHAR indexpFilePath[MAX_PATH_LEN + 1];
+    // file to store log file name
+    CHAR logFile[MAX_PATH_LEN + 1];
+
+    // index for next log file
+    UINT64 currentFileIndex;
+} FileLoggerParameters, *PFileLoggerParameters;
+
+/**
+ * file logger declaration
+ */
+typedef struct {
+    FileLoggerParameters mainLogger;
+
+    FileLoggerParameters levelLogger;
+
+    // lock protecting the print operation
+    MUTEX lock;
+
+    // filter level
+    UINT32 filterLevel;
+
+    // directory to put the log file
+    CHAR logFileDir[MAX_PATH_LEN + 1];
 
     // max number of log file allowed
     UINT64 maxFileCount;
 
-    // index for next log file
-    UINT64 currentFileIndex;
-
-    UINT64 currentpFileIndex;
     // print log to stdout too
     BOOL printLog;
+
+    BOOL enableAllLevels;
 
     // file logger logPrint callback
     logPrintFunc fileLoggerLogPrintFn;
@@ -289,7 +294,7 @@ typedef struct {
  *
  * @return - STATUS of execution
  */
-STATUS flushLogToFile();
+STATUS flushLogToFile(PFileLoggerParameters);
 
 #ifdef __cplusplus
 }
