@@ -1007,7 +1007,7 @@ PUBLIC_API STATUS generateTimestampStrInMilliseconds(PCHAR, PCHAR, UINT32, PUINT
 // yyyy-mm-dd HH:MM:SS
 #define MAX_TIMESTAMP_FORMAT_STR_LEN    26
 
-#define MAX_MILLISECOND_PORTION_LENGTH  7
+#define MAX_MILLISECOND_PORTION_LENGTH  8
 
 // Max timestamp string length including null terminator
 #define MAX_TIMESTAMP_STR_LEN 17

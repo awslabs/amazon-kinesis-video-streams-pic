@@ -49,9 +49,9 @@ STATUS generateTimestampStrInMilliseconds(PCHAR formatStr, PCHAR pDestBuffer, UI
     formattedStrLen = 0;
     *pFormattedStrLen = 0;
 
-    formattedStrLen = (UINT32) STRFTIME(pDestBuffer, destBufferLen - MAX_MILLISECOND_PORTION_LENGTH -1, formatStr, timeinfo);
+    formattedStrLen = (UINT32) STRFTIME(pDestBuffer, destBufferLen - MAX_MILLISECOND_PORTION_LENGTH, formatStr, timeinfo);
     CHK(formattedStrLen != 0, STATUS_STRFTIME_FALIED);
-    SNPRINTF(pDestBuffer + formattedStrLen, MAX_MILLISECOND_PORTION_LENGTH + 1, ".%06d ", millisecondVal);
+    SNPRINTF(pDestBuffer + formattedStrLen, MAX_MILLISECOND_PORTION_LENGTH, ".%06d ", millisecondVal);
     formattedStrLen = (UINT32) STRLEN(pDestBuffer);
     pDestBuffer[formattedStrLen] = '\0';
     *pFormattedStrLen = formattedStrLen;
