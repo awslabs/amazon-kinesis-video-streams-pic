@@ -36,7 +36,7 @@ TEST_F(FileLoggerTest, basicFileLoggerUsage)
 
     MEMSET(logMessage, 'a', logMessageSize);
     logMessage[logMessageSize] = '\0';
-
+    std::cout<<"Here 4\n";
     // make sure the files dont exist
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogIndex");
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLog.0");
@@ -47,17 +47,21 @@ TEST_F(FileLoggerTest, basicFileLoggerUsage)
                      5,
                      (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
                      FALSE, TRUE, &logFunc);
-
+    std::cout<<"Here 5\n";
     logFunc(LOG_LEVEL_VERBOSE, NULL, (PCHAR) "%s", logMessage);
+    std::cout<<"Here 6\n";
     logFunc(LOG_LEVEL_VERBOSE, NULL, (PCHAR) "%s", logMessage);
+    std::cout<<"Here 7\n";
     // low log level logs have no effect
     EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLog.0"), &fileFound));
     EXPECT_EQ(FALSE, fileFound);
-
+    std::cout<<"Here 8\n";
     logFunc(LOG_LEVEL_ERROR, NULL, (PCHAR) "%s", logMessage);
+    std::cout<<"Here 10\n";
     // log should not have been flushed because we havent fill out string buffer
     EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLog.0"), &fileFound));
     EXPECT_EQ(FALSE, fileFound);
+    std::cout<<"Here 9\n";
     EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogIndex"), &fileFound));
     EXPECT_EQ(FALSE, fileFound); // index file should not be there
 
@@ -80,12 +84,12 @@ TEST_F(FileLoggerTest, basicFileLoggerUsage)
     fileIndexBuffer[fileIndexBufferSize] = '\0';
     STRTOUI64(fileIndexBuffer, NULL, 10, &currentFileIndex);
     EXPECT_EQ(2, currentFileIndex); // index should be 2 since we flushed twice.
-
+    std::cout<<"Here 3\n";
     RELEASE_FILE_LOGGER();
-
+    std::cout<<"Here 2\n";
     EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLog.2"), &fileFound));
     EXPECT_EQ(TRUE, fileFound); // remaining log get flushed when callbacks are freed.
-
+    std::cout<<"Here 1\n";
     MEMFREE(logMessage);
 }
 
@@ -547,4 +551,4 @@ TEST_F(FileLoggerTest, FileRotationFilterFileLoggerUsage)
 
     MEMFREE(logMessage);
     MEMFREE(fileBuffer);
-}
+ }

@@ -22,10 +22,12 @@ STATUS generateTimestampStrInMilliseconds(PCHAR formatStr, PCHAR pDestBuffer, UI
 
     ULONGLONG windowsTime = uli.QuadPart - TIME_DIFF_UNIX_WINDOWS_TIME;
     time_t unixTime = (time_t)(windowsTime / 10000000);  // Conversion to seconds
-    gmtime_s(&timeinfo, &unixTime);
+    gmtime_s(&timeinfoWindows, &unixTime);
+
+    *timeinfo = timeinfoWindows;
 
     millisecondVal = ((windowsTime / 10000) % 1000);  // Extract milliseconds
-
+    PRINTF("Millisecond val: %ld\n", millisecondVal);
 
 #elif defined __MACH__ || defined __CYGWIN__
     struct timeval tv;
@@ -50,11 +52,14 @@ STATUS generateTimestampStrInMilliseconds(PCHAR formatStr, PCHAR pDestBuffer, UI
     *pFormattedStrLen = 0;
 
     formattedStrLen = (UINT32) STRFTIME(pDestBuffer, destBufferLen - MAX_MILLISECOND_PORTION_LENGTH, formatStr, timeinfo);
+    PRINTF("Dest buffer val: %s\n", pDestBuffer);
     CHK(formattedStrLen != 0, STATUS_STRFTIME_FALIED);
     // Total length is 8 plus terminating null character. Generated string would have utmost size - 1. Hence need to add 1 to max length
     SNPRINTF(pDestBuffer + formattedStrLen, MAX_MILLISECOND_PORTION_LENGTH + 1, ".%06d ", millisecondVal);
+    PRINTF("Dest buffer val after: %s\n", pDestBuffer);
     formattedStrLen = (UINT32) STRLEN(pDestBuffer);
     pDestBuffer[formattedStrLen] = '\0';
+    PRINTF("Dest buffer val after 1: %s\n", pDestBuffer);
     *pFormattedStrLen = formattedStrLen;
 
 CleanUp:

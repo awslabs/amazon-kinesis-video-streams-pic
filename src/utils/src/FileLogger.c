@@ -64,10 +64,12 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
     va_list valist;
 
     UNUSED_PARAM(tag);
-
+    PRINTF("File logger 1\n");
     if (level >= GET_LOGGER_LOG_LEVEL() && gFileLogger != NULL) {
         MUTEX_LOCK(gFileLogger->lock);
+        PRINTF("File logger 2\n");
         addLogMetadata(logFmtString, (UINT32) ARRAY_SIZE(logFmtString), fmt, level);
+        PRINTF("File logger 3\n");
 
         if (gFileLogger->printLog) {
             va_start(valist, fmt);
@@ -78,6 +80,7 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
             levelLoggerParameters = &gFileLogger->levelLogger;
         }
         else if(gFileLogger->enableAllLevels && level != gFileLogger->filterLevel) {
+            PRINTF("File logger 4\n");
             levelLoggerParameters = &gFileLogger->mainLogger;
         }
 
@@ -92,19 +95,22 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
             // _vscprintf give the resulting string length
             offset = _vscprintf(logFmtString, valist);
             va_end(valist);
-
-            if (levelLoggerParameters->currentOffset + offset >= levelLoggerParameters->stringBufferLen) {
+            PRINTF("File logger 5\n");
+            if (offset > 0 && levelLoggerParameters->currentOffset + offset >= levelLoggerParameters->stringBufferLen) {
+                PRINTF("File logger 7\n");
                 status = flushLogToFile(levelLoggerParameters);
+                PRINTF("File logger 8\n");
                 if (STATUS_FAILED(status)) {
                     PRINTF("flush log to file failed with 0x%08x\n", status);
                 }
             }
-
+            PRINTF("File logger 9\n");
             // even if flushLogToFile failed, currentOffset will still be reset to 0
             // _vsnprintf truncates the string if it is larger than buffer
             va_start(valist, fmt);
             offset = _vsnprintf(levelLoggerParameters->stringBuffer + levelLoggerParameters->currentOffset, levelLoggerParameters->stringBufferLen - levelLoggerParameters->currentOffset,
                                 logFmtString, valist);
+            PRINTF("File logger 10..%d\n", offset);
             va_end(valist);
 
             // truncation happened
@@ -160,6 +166,7 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
                 gFileLogger->levelLogger = *levelLoggerParameters;
             }
             else if (gFileLogger->enableAllLevels && level != gFileLogger->filterLevel) {
+                PRINTF("File logger 11\n");
                 gFileLogger->mainLogger = *levelLoggerParameters;
             }
         }
