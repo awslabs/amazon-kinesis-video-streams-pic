@@ -13,21 +13,23 @@ STATUS generateTimestampStrInMilliseconds(PCHAR formatStr, PCHAR pDestBuffer, UI
 #if defined _WIN32 || defined _WIN64
     FILETIME fileTime;
     GetSystemTimeAsFileTime(&fileTime);
-    ULARGE_INTEGER uli;
-    struct tm timeinfoWindows;
 
+    // Convert the file time to 100-nanosecond intervals (since January 1, 1601)
+    ULARGE_INTEGER uli;
     uli.LowPart = fileTime.dwLowDateTime;
     uli.HighPart = fileTime.dwHighDateTime;
+    ULONGLONG fileTime100ns = uli.QuadPart;
 
+    // Convert to milliseconds
+    ULONGLONG milliseconds100ns = fileTime100ns / 10000;
 
-    ULONGLONG windowsTime = uli.QuadPart - TIME_DIFF_UNIX_WINDOWS_TIME;
-    time_t unixTime = (time_t)(windowsTime / 10000000);  // Conversion to seconds
-    gmtime_s(&timeinfoWindows, &unixTime);
+    // Convert milliseconds to time_t
+    time_t seconds = static_cast<time_t>(milliseconds100ns / 1000);
 
-    *timeinfo = timeinfoWindows;
+    // Convert time_t to UTC tm struct
+    timeinfo = gmtime(&seconds);
 
-    millisecondVal = ((windowsTime / 10000) % 1000);  // Extract milliseconds
-    PRINTF("Millisecond val: %ld\n", millisecondVal);
+    millisecondVal = milliseconds % 1000;
 
 #elif defined __MACH__ || defined __CYGWIN__
     struct timeval tv;
