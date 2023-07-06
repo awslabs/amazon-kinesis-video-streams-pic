@@ -24,12 +24,12 @@ STATUS generateTimestampStrInMilliseconds(PCHAR formatStr, PCHAR pDestBuffer, UI
     ULONGLONG milliseconds100ns = fileTime100ns / 10000;
 
     // Convert milliseconds to time_t
-    time_t seconds = static_cast<time_t>(milliseconds100ns / 1000);
+    time_t seconds = milliseconds100ns / 1000;
 
     // Convert time_t to UTC tm struct
-    timeinfo = gmtime(&seconds);
+    timeinfo = GMTIME(&seconds);
 
-    millisecondVal = milliseconds % 1000;
+    millisecondVal = milliseconds100ns % 1000;
 
 #elif defined __MACH__ || defined __CYGWIN__
     struct timeval tv;
