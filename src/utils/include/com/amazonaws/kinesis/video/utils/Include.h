@@ -986,9 +986,11 @@ BOOL checkBufferValues(PVOID, BYTE, SIZE_T);
 // Time functionality
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
- * @UINT64  - IN - timestamp in 100ns to be converted to string
- * @PCHAR   - IN - timestamp format string
- * @PCHAR   - IN - buffer to hold the resulting string
+ * This function generates the time string based on the timestamp format requested and the timestamp provided
+ * Example: generateTimestampStrInMilliseconds(1689093566, "%Y-%m-%d %H:%M:%S", timeString, (UINT32) ARRAY_SIZE(timeString), &timeStrLen);
+ * @UINT64  - IN - timestamp in 100ns to be converted to string. Sample timestamp input: 1689093566
+ * @PCHAR   - IN - timestamp format string. Sample time format input: %Y-%m-%d %H:%M:%S
+ * @PCHAR   - IN - buffer to hold the resulting string. Sample timestring output: 2023-07-11 16:37:07
  * @UINT32  - IN - buffer size
  * @PUINT32 - OUT - actual number of characters in the result string not including null terminator
  * @return  - STATUS code of the execution
@@ -996,8 +998,13 @@ BOOL checkBufferValues(PVOID, BYTE, SIZE_T);
 PUBLIC_API STATUS generateTimestampStr(UINT64, PCHAR, PCHAR, UINT32, PUINT32);
 
 /**
- * @PCHAR   - IN - timestamp format string
- * @PCHAR   - IN - buffer to hold the resulting string
+ * This function generates the millisecond portion of the timestamp and appends to the timestamp format supplied.
+ * The output is of the format: <Timestring-format>.ssssss where ssssss is the millisecond format
+ * Example: generateTimestampStrInMilliseconds("%Y-%m-%d %H:%M:%S", timeString, (UINT32) ARRAY_SIZE(timeString), &timeStrLen);
+ * Formats can be constructed using this: https://man7.org/linux/man-pages/man3/strftime.3.html
+ * @PCHAR   - IN - timestamp format string without milliseconds. Sample time format input: %Y-%m-%d %H:%M:%S
+ * @PCHAR   - IN - buffer to hold the resulting string. Sample timestring output: 2023-07-11 16:37:07.025527,
+ * where 025527 is the appended millisecond value
  * @UINT32  - IN - buffer size
  * @PUINT32 - OUT - actual number of characters in the result string not including null terminator
  * @return  - STATUS code of the execution

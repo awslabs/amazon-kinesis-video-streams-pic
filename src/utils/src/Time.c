@@ -10,6 +10,9 @@ STATUS generateTimestampStrInMilliseconds(PCHAR formatStr, PCHAR pDestBuffer, UI
     UINT32 millisecondVal;
     struct tm* timeinfo;
 
+    CHK(pDestBuffer != NULL && pFormattedStrLen != NULL, STATUS_NULL_ARG);
+    CHK(STRNLEN(formatStr, MAX_TIMESTAMP_FORMAT_STR_LEN + 1) <= MAX_TIMESTAMP_FORMAT_STR_LEN, STATUS_MAX_TIMESTAMP_FORMAT_STR_LEN_EXCEEDED);
+
 #if defined _WIN32 || defined _WIN64
     FILETIME fileTime;
     GetSystemTimeAsFileTime(&fileTime);
@@ -19,6 +22,7 @@ STATUS generateTimestampStrInMilliseconds(PCHAR formatStr, PCHAR pDestBuffer, UI
     uli.LowPart = fileTime.dwLowDateTime;
     uli.HighPart = fileTime.dwHighDateTime;
     ULONGLONG fileTime100ns = uli.QuadPart;
+    fileTime100ns -= TIME_DIFF_UNIX_WINDOWS_TIME;
 
     // Convert to milliseconds
     ULONGLONG milliseconds100ns = fileTime100ns / 10000;
@@ -47,21 +51,15 @@ STATUS generateTimestampStrInMilliseconds(PCHAR formatStr, PCHAR pDestBuffer, UI
     millisecondVal = nowTime.tv_nsec / DEFAULT_TIME_UNIT_IN_NANOS;  // Convert nanoseconds to milliseconds
 
 #endif
-    CHK(pDestBuffer != NULL, STATUS_NULL_ARG);
-    CHK(STRNLEN(formatStr, MAX_TIMESTAMP_FORMAT_STR_LEN + 1) <= MAX_TIMESTAMP_FORMAT_STR_LEN, STATUS_MAX_TIMESTAMP_FORMAT_STR_LEN_EXCEEDED);
-
     formattedStrLen = 0;
     *pFormattedStrLen = 0;
 
     formattedStrLen = (UINT32) STRFTIME(pDestBuffer, destBufferLen - MAX_MILLISECOND_PORTION_LENGTH, formatStr, timeinfo);
-    PRINTF("Dest buffer val: %s\n", pDestBuffer);
     CHK(formattedStrLen != 0, STATUS_STRFTIME_FALIED);
     // Total length is 8 plus terminating null character. Generated string would have utmost size - 1. Hence need to add 1 to max length
     SNPRINTF(pDestBuffer + formattedStrLen, MAX_MILLISECOND_PORTION_LENGTH + 1, ".%06d ", millisecondVal);
-    PRINTF("Dest buffer val after: %s\n", pDestBuffer);
     formattedStrLen = (UINT32) STRLEN(pDestBuffer);
     pDestBuffer[formattedStrLen] = '\0';
-    PRINTF("Dest buffer val after 1: %s\n", pDestBuffer);
     *pFormattedStrLen = formattedStrLen;
 
 CleanUp:
@@ -74,7 +72,7 @@ STATUS generateTimestampStr(UINT64 timestamp, PCHAR formatStr, PCHAR pDestBuffer
     STATUS retStatus = STATUS_SUCCESS;
     time_t timestampSeconds;
     UINT32 formattedStrLen;
-    CHK(pDestBuffer != NULL, STATUS_NULL_ARG);
+    CHK(pDestBuffer != NULL && pFormattedStrLen != NULL, STATUS_NULL_ARG);
     CHK(STRNLEN(formatStr, MAX_TIMESTAMP_FORMAT_STR_LEN + 1) <= MAX_TIMESTAMP_FORMAT_STR_LEN, STATUS_MAX_TIMESTAMP_FORMAT_STR_LEN_EXCEEDED);
 
     timestampSeconds = timestamp / HUNDREDS_OF_NANOS_IN_A_SECOND;
