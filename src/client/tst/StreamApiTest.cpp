@@ -410,6 +410,9 @@ TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Name)
 
     CHAR tagName[MKV_MAX_TAG_NAME_LEN + 2] = {0};
     CHAR tagValue[MKV_MAX_TAG_VALUE_LEN + 2] = {0};
+    Frame frame;
+    UINT64 timestamp = 100;
+    BYTE tempBuffer[1000];
 
     Meta.names[0] = tagName;
     Meta.values[0] = tagValue;
@@ -465,8 +468,8 @@ TEST_F(StreamApiTest, insertKinesisVideoTag_Non_Persistent_Count)
     ReadyStream();
 
     for (i = 0; i < MAX_FRAGMENT_METADATA_COUNT; i++) {
-        SPRINTF(tagName, "tagName_%d", i);
-        SPRINTF(tagValue, "tagValue_%d", i);
+        SNPRINTF(tagName, MKV_MAX_TAG_NAME_LEN + 1, "tagName_%d", i);
+        SNPRINTF(tagValue, MKV_MAX_TAG_VALUE_LEN + 1, "tagValue_%d", i);
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, tagName, tagValue, FALSE));
     }
 
@@ -484,8 +487,8 @@ TEST_F(StreamApiTest, insertKinesisVideoTag_Persistent_Count)
     ReadyStream();
 
     for (i = 0; i < MAX_FRAGMENT_METADATA_COUNT; i++) {
-        SPRINTF(tagName, "tagName_%d", i);
-        SPRINTF(tagValue, "tagValue_%d", i);
+        SNPRINTF(tagName, MKV_MAX_TAG_NAME_LEN + 1, "tagName_%d", i);
+        SNPRINTF(tagValue, MKV_MAX_TAG_VALUE_LEN + 1, "tagValue_%d", i);
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, tagName, tagValue, TRUE));
     }
 
@@ -503,8 +506,8 @@ TEST_F(StreamApiTest, insertKinesisVideoTag_Mixed_Count)
     ReadyStream();
 
     for (i = 0; i < MAX_FRAGMENT_METADATA_COUNT; i++) {
-        SPRINTF(tagName, "tagName_%d", i);
-        SPRINTF(tagValue, "tagValue_%d", i);
+        SNPRINTF(tagName, MKV_MAX_TAG_NAME_LEN + 1, "tagName_%d", i);
+        SNPRINTF(tagValue, MKV_MAX_TAG_VALUE_LEN + 1, "tagValue_%d", i);
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, tagName, tagValue, i % 2 == 0));
     }
 
