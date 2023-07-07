@@ -1798,6 +1798,56 @@ PUBLIC_API STATUS exponentialBackoffRetryStrategyFree(PKvsRetryStrategy);
  */
 PUBLIC_API STATUS computePower(UINT64, UINT64, PUINT64);
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// Threadsafe Blocking Queue APIs
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+typedef struct {
+    PStackQueue queue;
+    MUTEX       mutex;
+    SEMAPHORE_HANDLE semaphore;
+} SafeBlockingQueue, *PSafeBlockingQueue;
+
+/**
+ * Create a new thread safe blocking queue
+ */
+PUBLIC_API STATUS safeBlockingQueueCreate(PSafeBlockingQueue*);
+
+/**
+ * Frees and de-allocates the thread safe blocking queue
+ */
+PUBLIC_API STATUS safeBlockingQueueFree(PSafeBlockingQueue);
+
+/**
+ * Clears and de-allocates all the items
+ */
+PUBLIC_API STATUS safeBlockingQueueClear(PSafeBlockingQueue, BOOL);
+
+/**
+ * Gets the number of items in the stack/queue
+ */
+PUBLIC_API STATUS safeBlockingQueueGetCount(PSafeBlockingQueue, PUINT32);
+
+/**
+ * Removes the item at the given item
+ */
+PUBLIC_API STATUS safeBlockingQueueRemoveItem(PSafeBlockingQueue, UINT64);
+
+/**
+ * Whether the thread safe blocking queue is empty
+ */
+PUBLIC_API STATUS safeBlockingQueueIsEmpty(PSafeBlockingQueue, PBOOL);
+
+/**
+ * Enqueues an item in the queue
+ */
+PUBLIC_API STATUS safeBlockingQueueEnqueue(PSafeBlockingQueue, UINT64);
+
+/**
+ * Dequeues an item from the queue
+ */
+PUBLIC_API STATUS safeBlockingQueueDequeue(PSafeBlockingQueue, PUINT64);
+
 #ifdef __cplusplus
 }
 #endif
