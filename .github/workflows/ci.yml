@@ -35,7 +35,7 @@ jobs:
           mkdir build && cd build
           sh -c 'cmake .. -DBUILD_TEST=TRUE;cmake .. -DBUILD_TEST=TRUE'
           make
-          ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"  
+          ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   mac-os-build-clang:
     runs-on: macos-latest
     env:
