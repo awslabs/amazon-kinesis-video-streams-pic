@@ -284,6 +284,117 @@ TEST_F(ClientApiTest, createKinesisVideoClient_ValidateDeviceInfo)
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&clientHandle));
 }
 
+TEST_F(ClientApiTest, client_info_version_test)
+{
+    CLIENT_HANDLE clientHandle;
+    PKinesisVideoClient pKinesisVideoClient;
+
+    // Test with version 0
+    mDeviceInfo.clientInfo.version = 0;
+    EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle));
+    pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);
+
+    EXPECT_EQ(mDeviceInfo.clientInfo.createClientTimeout, pKinesisVideoClient->deviceInfo.clientInfo.createClientTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.stopStreamTimeout, pKinesisVideoClient->deviceInfo.clientInfo.stopStreamTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.offlineBufferAvailabilityTimeout, pKinesisVideoClient->deviceInfo.clientInfo.offlineBufferAvailabilityTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.loggerLogLevel, pKinesisVideoClient->deviceInfo.clientInfo.loggerLogLevel);
+    EXPECT_EQ(mDeviceInfo.clientInfo.logMetric, pKinesisVideoClient->deviceInfo.clientInfo.logMetric);
+    EXPECT_EQ(AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER, pKinesisVideoClient->deviceInfo.clientInfo.automaticStreamingFlags);
+    EXPECT_EQ(INTERMITTENT_PRODUCER_PERIOD_DEFAULT, pKinesisVideoClient->deviceInfo.clientInfo.reservedCallbackPeriod);
+    EXPECT_EQ(SERVICE_CALL_DEFAULT_CONNECTION_TIMEOUT, pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout);
+    EXPECT_EQ(SERVICE_CALL_DEFAULT_TIMEOUT, pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout);
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&clientHandle));
+
+
+    // Test with version 1
+    mDeviceInfo.clientInfo.version = 1;
+    EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle));
+    pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);
+
+    EXPECT_EQ(mDeviceInfo.clientInfo.createClientTimeout, pKinesisVideoClient->deviceInfo.clientInfo.createClientTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.stopStreamTimeout, pKinesisVideoClient->deviceInfo.clientInfo.stopStreamTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.offlineBufferAvailabilityTimeout, pKinesisVideoClient->deviceInfo.clientInfo.offlineBufferAvailabilityTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.loggerLogLevel, pKinesisVideoClient->deviceInfo.clientInfo.loggerLogLevel);
+    EXPECT_EQ(mDeviceInfo.clientInfo.logMetric, pKinesisVideoClient->deviceInfo.clientInfo.logMetric);
+    EXPECT_EQ(AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER, pKinesisVideoClient->deviceInfo.clientInfo.automaticStreamingFlags);
+    EXPECT_EQ(INTERMITTENT_PRODUCER_PERIOD_DEFAULT, pKinesisVideoClient->deviceInfo.clientInfo.reservedCallbackPeriod);
+    EXPECT_EQ(SERVICE_CALL_DEFAULT_CONNECTION_TIMEOUT, pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout);
+    EXPECT_EQ(SERVICE_CALL_DEFAULT_TIMEOUT, pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout);
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&clientHandle));
+
+    // Test with version 2
+    mDeviceInfo.clientInfo.version = 2;
+    mDeviceInfo.clientInfo.automaticStreamingFlags = AUTOMATIC_STREAMING_ALWAYS_CONTINUOUS;
+    mDeviceInfo.clientInfo.reservedCallbackPeriod = 10000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle));
+    pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);
+
+    EXPECT_EQ(mDeviceInfo.clientInfo.createClientTimeout, pKinesisVideoClient->deviceInfo.clientInfo.createClientTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.stopStreamTimeout, pKinesisVideoClient->deviceInfo.clientInfo.stopStreamTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.offlineBufferAvailabilityTimeout, pKinesisVideoClient->deviceInfo.clientInfo.offlineBufferAvailabilityTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.loggerLogLevel, pKinesisVideoClient->deviceInfo.clientInfo.loggerLogLevel);
+    EXPECT_EQ(mDeviceInfo.clientInfo.logMetric, pKinesisVideoClient->deviceInfo.clientInfo.logMetric);
+    EXPECT_EQ(AUTOMATIC_STREAMING_ALWAYS_CONTINUOUS, pKinesisVideoClient->deviceInfo.clientInfo.automaticStreamingFlags);
+    EXPECT_EQ(10000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, pKinesisVideoClient->deviceInfo.clientInfo.reservedCallbackPeriod);
+    EXPECT_EQ(SERVICE_CALL_DEFAULT_CONNECTION_TIMEOUT, pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout);
+    EXPECT_EQ(SERVICE_CALL_DEFAULT_TIMEOUT, pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout);
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&clientHandle));
+
+    // Test with version 3. Default serviceCallConnectionTimeout expected since value is 0
+    mDeviceInfo.clientInfo.version = 3;
+    mDeviceInfo.clientInfo.serviceCallConnectionTimeout = 0;
+    mDeviceInfo.clientInfo.serviceCallCompletionTimeout = 3000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle));
+    pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);
+
+    EXPECT_EQ(mDeviceInfo.clientInfo.createClientTimeout, pKinesisVideoClient->deviceInfo.clientInfo.createClientTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.stopStreamTimeout, pKinesisVideoClient->deviceInfo.clientInfo.stopStreamTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.offlineBufferAvailabilityTimeout, pKinesisVideoClient->deviceInfo.clientInfo.offlineBufferAvailabilityTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.loggerLogLevel, pKinesisVideoClient->deviceInfo.clientInfo.loggerLogLevel);
+    EXPECT_EQ(mDeviceInfo.clientInfo.logMetric, pKinesisVideoClient->deviceInfo.clientInfo.logMetric);
+    EXPECT_EQ(AUTOMATIC_STREAMING_ALWAYS_CONTINUOUS, pKinesisVideoClient->deviceInfo.clientInfo.automaticStreamingFlags);
+    EXPECT_EQ(10000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, pKinesisVideoClient->deviceInfo.clientInfo.reservedCallbackPeriod);
+    EXPECT_EQ(SERVICE_CALL_DEFAULT_CONNECTION_TIMEOUT, pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout);
+    EXPECT_EQ(3000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout);
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&clientHandle));
+
+    // Test with version 3. Default serviceCallCompletionTimeout expected since value is 0
+    mDeviceInfo.clientInfo.version = 3;
+    mDeviceInfo.clientInfo.serviceCallConnectionTimeout = 5000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    mDeviceInfo.clientInfo.serviceCallCompletionTimeout = 0;
+    EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle));
+    pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);
+
+    EXPECT_EQ(mDeviceInfo.clientInfo.createClientTimeout, pKinesisVideoClient->deviceInfo.clientInfo.createClientTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.stopStreamTimeout, pKinesisVideoClient->deviceInfo.clientInfo.stopStreamTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.offlineBufferAvailabilityTimeout, pKinesisVideoClient->deviceInfo.clientInfo.offlineBufferAvailabilityTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.loggerLogLevel, pKinesisVideoClient->deviceInfo.clientInfo.loggerLogLevel);
+    EXPECT_EQ(mDeviceInfo.clientInfo.logMetric, pKinesisVideoClient->deviceInfo.clientInfo.logMetric);
+    EXPECT_EQ(AUTOMATIC_STREAMING_ALWAYS_CONTINUOUS, pKinesisVideoClient->deviceInfo.clientInfo.automaticStreamingFlags);
+    EXPECT_EQ(10000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, pKinesisVideoClient->deviceInfo.clientInfo.reservedCallbackPeriod);
+    EXPECT_EQ(5000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout);
+    EXPECT_EQ(SERVICE_CALL_DEFAULT_TIMEOUT, pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout);
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&clientHandle));
+
+    // Test with version 3. Default serviceCallCompletionTimeout expected since value is 0
+    mDeviceInfo.clientInfo.version = 3;
+    mDeviceInfo.clientInfo.serviceCallConnectionTimeout = 5000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    mDeviceInfo.clientInfo.serviceCallCompletionTimeout = 10000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle));
+    pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);
+
+    EXPECT_EQ(mDeviceInfo.clientInfo.createClientTimeout, pKinesisVideoClient->deviceInfo.clientInfo.createClientTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.stopStreamTimeout, pKinesisVideoClient->deviceInfo.clientInfo.stopStreamTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.offlineBufferAvailabilityTimeout, pKinesisVideoClient->deviceInfo.clientInfo.offlineBufferAvailabilityTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.loggerLogLevel, pKinesisVideoClient->deviceInfo.clientInfo.loggerLogLevel);
+    EXPECT_EQ(mDeviceInfo.clientInfo.logMetric, pKinesisVideoClient->deviceInfo.clientInfo.logMetric);
+    EXPECT_EQ(AUTOMATIC_STREAMING_ALWAYS_CONTINUOUS, pKinesisVideoClient->deviceInfo.clientInfo.automaticStreamingFlags);
+    EXPECT_EQ(10000LL * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, pKinesisVideoClient->deviceInfo.clientInfo.reservedCallbackPeriod);
+    EXPECT_EQ(mDeviceInfo.clientInfo.serviceCallConnectionTimeout, pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout);
+    EXPECT_EQ(mDeviceInfo.clientInfo.serviceCallCompletionTimeout, pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout);
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&clientHandle));
+}
+
 TEST_F(ClientApiTest, kinesisVideoClientCreateSync_Valid_Timeout)
 {
     CLIENT_HANDLE clientHandle;
