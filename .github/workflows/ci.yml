@@ -22,7 +22,7 @@ jobs:
         run: |
           bash scripts/check-clang.sh
   mac-os-build-gcc:
-    runs-on: macos-10.15
+    runs-on: macos-latest
     env:
       CC: gcc-11
       CXX: g++-11
@@ -35,7 +35,7 @@ jobs:
           mkdir build && cd build
           sh -c 'cmake .. -DBUILD_TEST=TRUE;cmake .. -DBUILD_TEST=TRUE'
           make
-          ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"  
+          ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   mac-os-build-clang:
     runs-on: macos-latest
     env:
@@ -50,7 +50,7 @@ jobs:
           make
           ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   linux-gcc-code-coverage:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     env:
       AWS_KVS_LOG_LEVEL: 2
     steps:
@@ -142,30 +142,6 @@ jobs:
   #         cmake .. -DBUILD_TEST=TRUE -DTHREAD_SANITIZER=TRUE
   #         make
   #         ./kvspic_test --gtest_break_on_failure --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:ThreadFunctionalityTest.ThreadCreateAndCancel"
-  linux-gcc-4_4:
-    runs-on: ubuntu-18.04
-    env:
-      AWS_KVS_LOG_LEVEL: 2
-      CC: gcc-4.4
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v2
-      - name: Install deps
-        run: |
-          sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
-          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-          sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ trusty main'
-          sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ trusty universe'
-          sudo apt-get -q update
-          sudo apt-get -y install gcc-4.4
-          sudo apt-get -y install gdb
-      - name: Build repository
-        run: |
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE
-          make
-          ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   windows-msvc:
     runs-on: windows-2022
     env:
