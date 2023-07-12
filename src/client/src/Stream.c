@@ -38,7 +38,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
 
     // Validate the input structs
     CHK_STATUS(validateStreamInfo(pStreamInfo, &pKinesisVideoClient->clientCallbacks));
-    logStreamInfo(pStreamInfo);
+//    logStreamInfo(pStreamInfo);
 
     // Lock the client streams list lock because we will iterate over current streams + add more streams
     // We follow the principle that the streamListLock is *never* acquired inside a client or streams lock,
@@ -3647,7 +3647,7 @@ VOID logStreamInfo(PStreamInfo pStreamInfo)
             CHK_STATUS(hexEncode(pTrackInfoList[i].codecPrivateData, pTrackInfoList[i].codecPrivateDataSize, NULL, &hexEncodedCpdLen));
             CHK((hexEncodedCpd = (PCHAR) MEMALLOC(hexEncodedCpdLen)) != NULL, STATUS_NOT_ENOUGH_MEMORY);
             CHK_STATUS(hexEncode(pTrackInfoList[i].codecPrivateData, pTrackInfoList[i].codecPrivateDataSize, hexEncodedCpd, &hexEncodedCpdLen));
-            DLOGD("\tTrack cpd: %s", hexEncodedCpd);
+//            DLOGD("\tTrack cpd: %s", hexEncodedCpd);
             MEMFREE(hexEncodedCpd);
             hexEncodedCpd = NULL;
         } else {
