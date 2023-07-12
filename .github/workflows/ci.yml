@@ -5,6 +5,7 @@ on:
     branches: 
       - develop
       - master
+      - sync-master-to-develop-2
   pull_request:
     branches:
       - develop

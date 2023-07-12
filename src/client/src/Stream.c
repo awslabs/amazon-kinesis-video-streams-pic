@@ -753,7 +753,6 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     UINT64 windowDuration, currentDuration;
     PTrackInfo pTrackInfo = NULL;
     PSerializedMetadata pSerializedMetadata = NULL;
-    PFrameOrderCoordinator pFrameOrderCoordinator;
 
     PFrameOrderCoordinator pFrameOrderCoordinator;
 
