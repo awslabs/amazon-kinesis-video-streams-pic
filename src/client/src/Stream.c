@@ -153,6 +153,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     pKinesisVideoStream->metadataTracker.offset = 0;
     pKinesisVideoStream->metadataTracker.send = FALSE;
     pKinesisVideoStream->metadataTracker.data = NULL;
+    pKinesisVideoStream->metadataTracker.events = 0;
 
     // initialize streamingAuthInfo expiration
     pKinesisVideoStream->streamingAuthInfo.expiration = INVALID_TIMESTAMP_VALUE;
@@ -164,6 +165,8 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     // Copy the structures in their entirety
     MEMCPY(&pKinesisVideoStream->streamInfo, pStreamInfo, SIZEOF(StreamInfo));
     fixupStreamInfo(&pKinesisVideoStream->streamInfo);
+
+    pKinesisVideoStream->allowStreamCreation = pStreamInfo->streamCaps.allowStreamCreation;
 
     // Fix-up the stream name if not specified
     if (pKinesisVideoStream->streamInfo.name[0] == '\0') {
@@ -338,6 +341,7 @@ STATUS freeStream(PKinesisVideoStream pKinesisVideoStream)
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
     CHK(pKinesisVideoClient != NULL, STATUS_CLIENT_FREED_BEFORE_STREAM);
 
+    DLOGD("[%s] Freeing stream", pKinesisVideoStream->streamInfo.name);
     // Shutdown the processing
     CHK_STATUS_CONTINUE(shutdownStream(pKinesisVideoStream, FALSE));
 
@@ -399,6 +403,8 @@ STATUS freeStream(PKinesisVideoStream pKinesisVideoStream)
         semaphoreFree(&pKinesisVideoStream->base.shutdownSemaphore);
     }
 
+    DLOGD("[%s] Completed freeing stream", pKinesisVideoStream->streamInfo.name);
+
     // Release the object
     MEMFREE(pKinesisVideoStream);
 
@@ -458,7 +464,7 @@ STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
 
     retStatus = frameOrderCoordinatorFlush(pKinesisVideoStream);
     if (STATUS_FAILED(retStatus)) {
-        DLOGE("frameOrderCoordinatorFlush failed with 0x%08x", retStatus);
+        DLOGE("[%s] frameOrderCoordinatorFlush failed with 0x%08x", pKinesisVideoStream->streamInfo.name, retStatus);
         retStatus = STATUS_SUCCESS;
     }
 
@@ -561,6 +567,8 @@ STATUS stopStreamSync(PKinesisVideoStream pKinesisVideoStream)
 
     CHK_STATUS(stopStream(pKinesisVideoStream));
 
+    CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     // Lock the stream
@@ -569,17 +577,17 @@ STATUS stopStreamSync(PKinesisVideoStream pKinesisVideoStream)
 
     do {
         if (pKinesisVideoStream->streamClosed) {
-            DLOGV("Kinesis Video Stream is Closed.");
+            DLOGV("[%s] Kinesis Video Stream is Closed.", pKinesisVideoStream->streamInfo.name);
             break;
         }
 
         if (pKinesisVideoStream->base.shutdown) {
-            DLOGW("Kinesis Video Stream is being shut down.");
+            DLOGW("[%s] Kinesis Video Stream is being shut down.", pKinesisVideoStream->streamInfo.name);
             break;
         }
 
         // Need to await for the Stream Stopped state before returning
-        DLOGV("Awaiting for the stop stream to complete...");
+        DLOGV("[%s] Awaiting for the stop stream to complete...", pKinesisVideoStream->streamInfo.name);
 
         // Blocking path
         // Wait may return without any data available due to a spurious wake up.
@@ -593,7 +601,7 @@ STATUS stopStreamSync(PKinesisVideoStream pKinesisVideoStream)
 CleanUp:
 
     if (retStatus == STATUS_OPERATION_TIMED_OUT) {
-        DLOGE("Failed to stop Kinesis Video Stream - timed out.");
+        DLOGE("[%s] Failed to stop Kinesis Video Stream - timed out.", pKinesisVideoStream->streamInfo.name);
     }
 
     // release stream lock
@@ -674,7 +682,7 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     CHK_STATUS(getKinesisVideoMetrics(TO_CLIENT_HANDLE(pKinesisVideoClient), &clientMetrics));
     CHK_STATUS(getKinesisVideoStreamMetrics(TO_STREAM_HANDLE(pKinesisVideoStream), &streamMetrics));
 
-    DLOGD("Kinesis Video client and stream metrics:");
+    DLOGD("Kinesis Video client and stream metrics for stream %s", pKinesisVideoStream->streamInfo.name);
     DLOGD("\tOverall storage byte size: %" PRIu64 " ", clientMetrics.contentStoreSize);
     DLOGD("\tAvailable storage byte size: %" PRIu64 " ", clientMetrics.contentStoreAvailableSize);
     DLOGD("\tAllocated storage byte size: %" PRIu64 " ", clientMetrics.contentStoreAllocatedSize);
@@ -737,7 +745,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     UINT64 remainingSize = 0, remainingDuration = 0, thresholdPercent = 0, duration = 0, viewByteSize = 0, allocSize = 0;
     PBYTE pAlloc = NULL;
     UINT32 trackIndex, packagedSize = 0, packagedMetadataSize = 0, overallSize = 0, itemFlags = ITEM_FLAG_NONE;
-    BOOL streamLocked = FALSE, clientLocked = FALSE, freeOnError = TRUE, justStartedStreaming = FALSE;
+    BOOL streamLocked = FALSE, clientLocked = FALSE, freeOnError = TRUE;
     EncodedFrameInfo encodedFrameInfo;
     MKV_STREAM_STATE generatorState = MKV_STATE_START_BLOCK;
     UINT64 currentTime = INVALID_TIMESTAMP_VALUE;
@@ -747,10 +755,11 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     UINT64 windowDuration, currentDuration;
     PTrackInfo pTrackInfo = NULL;
     PSerializedMetadata pSerializedMetadata = NULL;
-    PFrameOrderCoordinator pFrameOrderCoordinator = pKinesisVideoStream->pFrameOrderCoordinator;
+    PFrameOrderCoordinator pFrameOrderCoordinator;
 
     CHK(pKinesisVideoStream != NULL && pFrame != NULL, STATUS_NULL_ARG);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+    pFrameOrderCoordinator = pKinesisVideoStream->pFrameOrderCoordinator;
 
     if (!CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
         // Lookup the track that pFrame belongs to
@@ -801,7 +810,6 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     if (pKinesisVideoStream->streamState == STREAM_STATE_NEW && pKinesisVideoStream->streamReady) {
         // Step the state machine once to get out of the Ready state
         CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
-        justStartedStreaming = TRUE;
     }
 
     // if we need to reset the generator on the next key frame (during the rotation only)
@@ -908,7 +916,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         CHK_STATUS(mkvgenPackageFrame(pKinesisVideoStream->pMkvGenerator, pFrame, pTrackInfo, pAlloc, &packagedSize, &encodedFrameInfo));
 
         // Package the metadata if specified
-        if (packagedMetadataSize != 0 && !justStartedStreaming) {
+        if (packagedMetadataSize != 0) {
             // Move the packaged bits out first to make room for the metadata
             // NOTE: need to use MEMMOVE due to the overlapping ranges
             MEMMOVE(pAlloc + encodedFrameInfo.dataOffset + packagedMetadataSize, pAlloc + encodedFrameInfo.dataOffset,
@@ -995,7 +1003,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             }
 
             if (STATUS_FAILED(logStreamMetric(pKinesisVideoStream))) {
-                DLOGW("Failed to log stream metric with error 0x%08x", retStatus);
+                DLOGW("[%s] Failed to log stream metric with error 0x%08x", pKinesisVideoStream->streamInfo.name, retStatus);
             }
 
             // lock frame order coordinator
@@ -1253,16 +1261,16 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             // Set the state to terminated and early return with the EOS with the right handle
             pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
 
-            DLOGI("Indicating an EOS after last persisted ACK is received for stream upload handle %" PRIu64, uploadHandle);
+            DLOGI("[%s] Indicating an EOS after last persisted ACK is received for stream upload handle %" PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
             CHK(FALSE, STATUS_END_OF_STREAM);
 
         case UPLOAD_HANDLE_STATE_TERMINATED:
             // This path get invoked if a connection get terminated by calling reset connection
-            DLOGW("Indicating an end-of-stream for a terminated stream upload handle %" PRIu64, uploadHandle);
+            DLOGW("[%s] Indicating an end-of-stream for a terminated stream upload handle %", PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
             CHK(FALSE, STATUS_END_OF_STREAM);
 
         case UPLOAD_HANDLE_STATE_ERROR:
-            DLOGW("Indicating an abort for a errored stream upload handle %" PRIu64, uploadHandle);
+            DLOGW("[%s] Indicating an abort for a errored stream upload handle %", PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
             CHK(FALSE, STATUS_UPLOAD_HANDLE_ABORTED);
         default:
             // no-op for other UPLOAD_HANDLE states
@@ -1310,7 +1318,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
                     }
 
                     pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_AWAITING_ACK;
-                    DLOGI("Handle %" PRIu64 " waiting for last persisted ack with ts %" PRIu64, pUploadHandleInfo->handle,
+                    DLOGI("[%s] Handle %" PRIu64 " waiting for last persisted ack with ts %" PRIu64, pKinesisVideoStream->streamInfo.name, pUploadHandleInfo->handle,
                           pUploadHandleInfo->lastFragmentTs);
 
                     // Will terminate later after the ACK is received
@@ -1646,7 +1654,7 @@ STATUS getStreamMetrics(PKinesisVideoStream pKinesisVideoStream, PStreamMetrics 
             pStreamMetrics->currentTransferRate = pKinesisVideoStream->diagnostics.currentTransferRate;
             break;
         default:
-            DLOGW("Invalid stream metric struct version. Nothing to populate");
+            DLOGW("[%s] Invalid stream metric struct version. Nothing to populate", pKinesisVideoStream->streamInfo.name);
             break;
     }
 
@@ -1870,7 +1878,7 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = NULL;
-    BOOL streamLocked = FALSE, hasMetadata = pMetadata == NULL ? FALSE : TRUE, creatingNodes = FALSE;
+    BOOL streamLocked = FALSE, hasMetadata = pMetadata == NULL ? FALSE : TRUE, creatingNodes = FALSE, streamStarted = FALSE;
     UINT8 iter = 0;
     UINT32 packagedSize = 0, totalPackagedSize = 0, metadataQueueSize;
     UINT32 packagedSizes[MAX_FRAGMENT_METADATA_COUNT] = {0};
@@ -1886,6 +1894,11 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
     // Check if the stream has been stopped
     CHK(!pKinesisVideoStream->streamStopped, STATUS_STREAM_HAS_BEEN_STOPPED);
 
+    // Check that the existing stream events have not already been stored
+    CHK(!(event & pKinesisVideoStream->metadataTracker.events), STATUS_DUPLICATE_STREAM_EVENT_TYPE);
+
+    pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+
     // Lock the stream
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     streamLocked = TRUE;
@@ -1896,6 +1909,9 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
                                            STREAM_STATE_READY | STREAM_STATE_PUT_STREAM | STREAM_STATE_TAG_STREAM | STREAM_STATE_STREAMING |
                                                STREAM_STATE_GET_ENDPOINT | STREAM_STATE_GET_TOKEN | STREAM_STATE_STOPPED));
     }
+    CHK_STATUS(mkvgenHasStreamStarted(pKinesisVideoStream->pMkvGenerator, &streamStarted));
+    // want stream to have started
+    CHK(streamStarted != FALSE, STATUS_STREAM_NOT_STARTED);
 
     // Validate if the customer is not attempting to add an internal metadata
     if (hasMetadata) {
@@ -1933,31 +1949,33 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
         CHK_STATUS(mkvgenGenerateTagsChain(NULL, KVSEVENT_NOTIFICATION_STRING, "", &packagedSize, MKV_TREE_TAGS));
         CHK_STATUS(
             createSerializedMetadata(KVSEVENT_NOTIFICATION_STRING, "", FALSE, packagedSize, event, MKV_TREE_TAGS, &serializedNodes[neededNodes++]));
+        pKinesisVideoStream->metadataTracker.events |= STREAM_EVENT_TYPE_NOTIFICATION;
         // Check that custom data can fit as well
         if (hasMetadata) {
             for (iter = 0; iter < pMetadata->numberOfPairs; iter++) {
                 CHK_STATUS(mkvgenGenerateTagsChain(NULL, pMetadata->names[iter], pMetadata->values[iter], &packagedSize, MKV_TREE_SIMPLE));
-                CHK_STATUS(createSerializedMetadata(pMetadata->names[iter], pMetadata->values[iter], FALSE, packagedSize, event, MKV_TREE_SIMPLE,
-                                                    &serializedNodes[neededNodes++]));
+                CHK_STATUS(createSerializedMetadata(pMetadata->names[iter], pMetadata->values[iter], FALSE, packagedSize,
+                                                    STREAM_EVENT_TYPE_NOTIFICATION, MKV_TREE_SIMPLE, &serializedNodes[neededNodes++]));
             }
         }
     }
     if (CHECK_STREAM_EVENT_TYPE_IMAGE_GENERATION(event)) {
         CHK_STATUS(mkvgenGenerateTagsChain(NULL, KVSEVENT_IMAGE_GENERATION_STRING, "", &packagedSize, MKV_TREE_TAGS));
-        CHK_STATUS(createSerializedMetadata(KVSEVENT_IMAGE_GENERATION_STRING, "", FALSE, packagedSize, event, MKV_TREE_TAGS,
-                                            &serializedNodes[neededNodes++]));
+        CHK_STATUS(createSerializedMetadata(KVSEVENT_IMAGE_GENERATION_STRING, "", FALSE, packagedSize, STREAM_EVENT_TYPE_IMAGE_GENERATION,
+                                            MKV_TREE_TAGS, &serializedNodes[neededNodes++]));
+        pKinesisVideoStream->metadataTracker.events |= STREAM_EVENT_TYPE_IMAGE_GENERATION;
         if (hasMetadata) {
             if (pMetadata->imagePrefix != NULL) {
                 CHK_STATUS(mkvgenGenerateTagsChain(NULL, KVSEVENT_IMAGE_PREFIX_STRING, pMetadata->imagePrefix, &packagedSize, MKV_TREE_SIMPLE));
-                CHK_STATUS(createSerializedMetadata(KVSEVENT_IMAGE_PREFIX_STRING, pMetadata->imagePrefix, FALSE, packagedSize, event, MKV_TREE_SIMPLE,
-                                                    &serializedNodes[neededNodes++]));
+                CHK_STATUS(createSerializedMetadata(KVSEVENT_IMAGE_PREFIX_STRING, pMetadata->imagePrefix, FALSE, packagedSize,
+                                                    STREAM_EVENT_TYPE_IMAGE_GENERATION, MKV_TREE_SIMPLE, &serializedNodes[neededNodes++]));
             }
             // Check that custom data can fit as well
             if (hasMetadata) {
                 for (iter = 0; iter < pMetadata->numberOfPairs; iter++) {
                     CHK_STATUS(mkvgenGenerateTagsChain(NULL, pMetadata->names[iter], pMetadata->values[iter], &packagedSize, MKV_TREE_SIMPLE));
-                    CHK_STATUS(createSerializedMetadata(pMetadata->names[iter], pMetadata->values[iter], FALSE, packagedSize, event, MKV_TREE_SIMPLE,
-                                                        &serializedNodes[neededNodes++]));
+                    CHK_STATUS(createSerializedMetadata(pMetadata->names[iter], pMetadata->values[iter], FALSE, packagedSize,
+                                                        STREAM_EVENT_TYPE_IMAGE_GENERATION, MKV_TREE_SIMPLE, &serializedNodes[neededNodes++]));
                 }
             }
         }
@@ -2514,6 +2532,7 @@ VOID freeMetadataTracker(PMetadataTracker pMetadataTracker)
         pMetadataTracker->send = FALSE;
         pMetadataTracker->offset = 0;
         pMetadataTracker->size = 0;
+        pMetadataTracker->events = 0;
     }
 }
 
@@ -2704,7 +2723,7 @@ CleanUp:
 
     // Set the current back if we had modified it
     if (setCurrentBack && STATUS_FAILED((setViewStatus = contentViewSetCurrentIndex(pKinesisVideoStream->pView, curItemIndex)))) {
-        DLOGW("Failed to set the current back to index %" PRIu64 " with status 0x%08x", curItemIndex, setViewStatus);
+        DLOGW("[%s] Failed to set the current back to index %" PRIu64 " with status 0x%08x", pKinesisVideoStream->streamInfo.name, curItemIndex, setViewStatus);
     }
 
     LEAVES();
@@ -3007,6 +3026,7 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
                 tagsStart = pBuffer + packagedSize;
             }
 
+            // generate TAGS chain and push it onto pBuffer
             CHK_STATUS(mkvgenGenerateTagsChain(pBuffer + packagedSize, pSerializedMetadata->name, pSerializedMetadata->value, &metadataSize,
                                                pSerializedMetadata->parent));
 
@@ -3026,6 +3046,10 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
         if (pSerializedMetadata->persistent) {
             CHK_STATUS(stackQueueEnqueue(pKinesisVideoStream->pMetadataQueue, item));
         } else {
+            // bitwise XOR the metadata event with MAX to produce something like
+            // 1111 ^ 0010 =  1101
+            // Then bitwise AND that with the existing event mapping to remove the event
+            pKinesisVideoStream->metadataTracker.events &= (MAX_UINT32 ^ pSerializedMetadata->event);
             // Delete the allocation otherwise
             SAFE_MEMFREE(pSerializedMetadata);
         }
@@ -3198,6 +3222,11 @@ STATUS packageNotSentMetadata(PKinesisVideoStream pKinesisVideoStream)
             allocSize -= packagedSize;
             overallSize += packagedSize;
         }
+
+        // bitwise XOR the metadata event with MAX to produce something like
+        // 1111 ^ 0010 =  1101
+        // Then bitwise AND that with the existing event mapping to remove the event
+        pKinesisVideoStream->metadataTracker.events &= (MAX_UINT32 ^ pSerializedMetadata->event);
 
         // The item is the allocation so free it
         MEMFREE(pSerializedMetadata);
@@ -3545,16 +3574,17 @@ VOID logStreamInfo(PStreamInfo pStreamInfo)
     DLOGD("\tMax latency (100ns): %" PRIu64, pStreamInfo->streamCaps.maxLatency);
     DLOGD("\tFragment duration (100ns): %" PRIu64, pStreamInfo->streamCaps.fragmentDuration);
     DLOGD("\tKey frame fragmentation: %s", pStreamInfo->streamCaps.keyFrameFragmentation ? "Yes" : "No");
-    DLOGD("\tUse frame timecode: %s", pStreamInfo->streamCaps.frameTimecodes ? "Yes" : "No");
-    DLOGD("\tAbsolute frame timecode: %s", pStreamInfo->streamCaps.absoluteFragmentTimes ? "Yes" : "No");
+    DLOGD("\tUse frame timecodes: %s", pStreamInfo->streamCaps.frameTimecodes ? "Yes" : "No");
+    DLOGD("\tAbsolute frame timecodes: %s", pStreamInfo->streamCaps.absoluteFragmentTimes ? "Yes" : "No");
     DLOGD("\tNal adaptation flags: %u", pStreamInfo->streamCaps.nalAdaptationFlags);
-    DLOGD("\tAverage bandwith (bps): %u", pStreamInfo->streamCaps.avgBandwidthBps);
+    DLOGD("\tAverage bandwidth (bps): %u", pStreamInfo->streamCaps.avgBandwidthBps);
     DLOGD("\tFramerate: %u", pStreamInfo->streamCaps.frameRate);
     DLOGD("\tBuffer duration (100ns): %" PRIu64, pStreamInfo->streamCaps.bufferDuration);
     DLOGD("\tReplay duration (100ns): %" PRIu64, pStreamInfo->streamCaps.replayDuration);
     DLOGD("\tConnection Staleness duration (100ns): %" PRIu64, pStreamInfo->streamCaps.connectionStalenessDuration);
     DLOGD("\tStore Pressure Policy: %u", pStreamInfo->streamCaps.storePressurePolicy);
     DLOGD("\tView Overflow Policy: %u", pStreamInfo->streamCaps.viewOverflowPolicy);
+    DLOGD("\tAllow stream creation: %s", pStreamInfo->streamCaps.allowStreamCreation ? "Yes" : "No");
 
     if (pStreamInfo->streamCaps.segmentUuid != NULL) {
         hasSegmentUUID = TRUE;

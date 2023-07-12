@@ -142,15 +142,15 @@ STATUS defaultStreamStateTransitionHook(
 
     if(pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn != NULL) {
         if((countStatus = pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn(pKvsRetryStrategy, &pKinesisVideoStream->diagnostics.streamApiCallRetryCount)) != STATUS_SUCCESS) {
-            DLOGW("Failed to get retry count. Error code: %08x", countStatus);
+            DLOGW("[%s] Failed to get retry count. Error code: %08x", pKinesisVideoStream->streamInfo.name, countStatus);
         }
         else {
-            DLOGD("Stream state machine retry count: %lu", pKinesisVideoStream->diagnostics.streamApiCallRetryCount);
+            DLOGD("[%s] Stream state machine retry count: %lu", pKinesisVideoStream->streamInfo.name, pKinesisVideoStream->diagnostics.streamApiCallRetryCount);
         }
     }
 
-    DLOGD("\n KinesisVideoStream base result is [%u]. Executing KVS retry handler of retry strategy type [%u]",
-          pKinesisVideoStream->base.result, pKvsRetryStrategy->retryStrategyType);
+    DLOGD("\n [%s] KinesisVideoStream base result is [%u]. Executing KVS retry handler of retry strategy type [%u]",
+          pKinesisVideoStream->streamInfo.name, pKinesisVideoStream->base.result, pKvsRetryStrategy->retryStrategyType);
 
     pKvsRetryStrategyCallbacks->executeRetryStrategyFn(pKvsRetryStrategy, &retryWaitTime);
     *stateTransitionWaitTime = retryWaitTime;
@@ -220,7 +220,9 @@ STATUS executeDescribeStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
-    pKinesisVideoStream->base.serviceCallContext.timeout = SERVICE_CALL_DEFAULT_TIMEOUT;
+    pKinesisVideoStream->base.serviceCallContext.timeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout;
+    pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
+
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
     // Reset the call result
@@ -268,8 +270,13 @@ STATUS fromDescribeStreamState(UINT64 customData, PUINT64 pState)
                 break;
 
             case SERVICE_CALL_RESOURCE_NOT_FOUND:
-                // Move to the create state as no streams have been found
-                state = STREAM_STATE_CREATE;
+                // Move to the create state if the application allows it
+                if(pKinesisVideoStream->allowStreamCreation) {
+                    state = STREAM_STATE_CREATE;
+                }
+                else {
+                    state = STREAM_STATE_STOPPED;
+                }
                 break;
 
             default:
@@ -625,7 +632,9 @@ STATUS executeGetEndpointStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
-    pKinesisVideoStream->base.serviceCallContext.timeout = SERVICE_CALL_DEFAULT_TIMEOUT;
+    pKinesisVideoStream->base.serviceCallContext.timeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout;
+    pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
+
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
     // Reset the call result
@@ -659,7 +668,9 @@ STATUS executeGetTokenStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
-    pKinesisVideoStream->base.serviceCallContext.timeout = SERVICE_CALL_DEFAULT_TIMEOUT;
+    pKinesisVideoStream->base.serviceCallContext.timeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout;
+    pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
+
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
     // Reset the call result
@@ -693,7 +704,9 @@ STATUS executeCreateStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
-    pKinesisVideoStream->base.serviceCallContext.timeout = SERVICE_CALL_DEFAULT_TIMEOUT;
+    pKinesisVideoStream->base.serviceCallContext.timeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout;
+    pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
+
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
     // Reset the call result
@@ -729,7 +742,9 @@ STATUS executeTagStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
-    pKinesisVideoStream->base.serviceCallContext.timeout = SERVICE_CALL_DEFAULT_TIMEOUT;
+    pKinesisVideoStream->base.serviceCallContext.timeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout;
+    pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
+
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
     // Reset the call result
@@ -803,6 +818,8 @@ STATUS executePutStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
     // Infinite wait for streaming
     pKinesisVideoStream->base.serviceCallContext.timeout = SERVICE_CALL_INFINITE_TIMEOUT;
+    pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
+
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
     // We need to call the put stream API the first time
@@ -858,7 +875,6 @@ STATUS executeStoppedStreamState(UINT64 customData, UINT64 time)
 
     // Also store the connection stopping result
     pKinesisVideoStream->connectionDroppedResult = pKinesisVideoStream->base.result;
-
     // Check if we want to prime the state machine based on whether we have any more content to send
     // currently and if the error is a timeout.
     if (SERVICE_CALL_RESULT_IS_A_TIMEOUT(pKinesisVideoStream->connectionDroppedResult)) {

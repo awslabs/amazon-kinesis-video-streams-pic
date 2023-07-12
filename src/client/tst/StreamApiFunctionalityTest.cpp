@@ -29,7 +29,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_DescribeStreamNotExisting)
     MEMSET(testArn, 'A', MAX_ARN_LEN + 1);
 
     CreateStream();
-    // Ensure the describe called
+    // Ensure that describe called
     EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
 
     // Reset the stream name
@@ -67,6 +67,35 @@ TEST_F(StreamApiFunctionalityTest, putFrame_DescribeStreamNotExisting)
     EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
     EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
 }
+
+TEST_F(StreamApiFunctionalityTest, putFrame_DescribeStreamNotExisting_CreateNotAllowed)
+{
+    CHAR testArn[MAX_ARN_LEN + 2];
+    MEMSET(testArn, 'A', MAX_ARN_LEN + 1);
+
+    mStreamInfo.streamCaps.allowStreamCreation = FALSE;
+
+    CreateStream();
+    // Ensure that describe called
+    EXPECT_EQ(0, STRCMP(TEST_STREAM_NAME, mStreamName));
+
+    // Reset the stream name
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+    // Make sure if it doesn't exist we do not end up creating it
+    EXPECT_EQ(STATUS_SERVICE_CALL_RESOURCE_NOT_FOUND_ERROR, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESOURCE_NOT_FOUND, NULL));
+
+    // Verify describe was called only once, stream not existing is a fatal error and should not be re-tried
+    EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
+
+    // Verify create was *NOT* called
+    EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
+
+    // Verify other state functions were also not called
+    EXPECT_EQ(0, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
+    EXPECT_EQ(0, ATOMIC_LOAD(&mPutStreamFuncCount));
+}
+
 
 TEST_F(StreamApiFunctionalityTest, streamFormatChange_stateCheck)
 {

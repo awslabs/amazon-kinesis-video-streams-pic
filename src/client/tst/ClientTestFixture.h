@@ -450,6 +450,7 @@ class ClientTestBase : public ::testing::Test {
         mStreamInfo.streamCaps.frameOrderingMode = FRAME_ORDER_MODE_PASS_THROUGH;
         mStreamInfo.streamCaps.storePressurePolicy = CONTENT_STORE_PRESSURE_POLICY_OOM;
         mStreamInfo.streamCaps.viewOverflowPolicy = CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM;
+        mStreamInfo.streamCaps.allowStreamCreation = TRUE;
         mTrackInfo.trackId = TEST_TRACKID;
         mTrackInfo.codecPrivateDataSize = 0;
         mTrackInfo.codecPrivateData = NULL;
@@ -595,7 +596,6 @@ class ClientTestBase : public ::testing::Test {
 
         // Set the random number generator seed for reproducibility
         SRAND(12345);
-
         // Create the client
         STATUS status = createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &mClientHandle);
 

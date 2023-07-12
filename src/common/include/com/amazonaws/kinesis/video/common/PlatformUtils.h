@@ -52,6 +52,7 @@ extern logPrintFunc globalCustomLogPrintFn;
 #define LOG_LEVEL_ERROR   5
 #define LOG_LEVEL_FATAL   6
 #define LOG_LEVEL_SILENT  7
+#define LOG_LEVEL_PROFILE 8
 
 #define LOG_LEVEL_VERBOSE_STR (PCHAR) "VERBOSE"
 #define LOG_LEVEL_DEBUG_STR   (PCHAR) "DEBUG"
@@ -60,6 +61,7 @@ extern logPrintFunc globalCustomLogPrintFn;
 #define LOG_LEVEL_ERROR_STR   (PCHAR) "ERROR"
 #define LOG_LEVEL_FATAL_STR   (PCHAR) "FATAL"
 #define LOG_LEVEL_SILENT_STR  (PCHAR) "SILENT"
+#define LOG_LEVEL_PROFILE_STR (PCHAR) "PROFILE"
 
 // LOG_LEVEL_VERBOSE_STR string length
 #define MAX_LOG_LEVEL_STRLEN 7
@@ -80,6 +82,10 @@ extern logPrintFunc globalCustomLogPrintFn;
 #ifndef DLOGV
 #define DLOGV(fmt, ...) __LOG(LOG_LEVEL_VERBOSE, (PCHAR) LOG_CLASS, (PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
 #endif
+#ifndef DLOGP
+#define DLOGP(fmt, ...) __LOG(LOG_LEVEL_PROFILE, (PCHAR) LOG_CLASS, (PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
+#endif
+
 #ifndef ENTER
 #define ENTER() DLOGV("Enter")
 #endif

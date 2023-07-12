@@ -906,6 +906,25 @@ CleanUp:
     return retStatus;
 }
 
+STATUS mkvgenHasStreamStarted(PMkvGenerator pMkvGenerator, PBOOL pBool)
+{
+    PStreamMkvGenerator pStreamMkvGenerator = NULL;
+    STATUS retStatus = STATUS_SUCCESS;
+    CHK(pMkvGenerator != NULL && pBool != NULL, STATUS_NULL_ARG);
+    pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
+
+    if (pStreamMkvGenerator->generatorState == MKV_GENERATOR_STATE_START ||
+        pStreamMkvGenerator->generatorState == MKV_GENERATOR_STATE_SEGMENT_HEADER) {
+        // We haven't yet started the stream
+        *pBool = FALSE;
+    } else {
+        *pBool = TRUE;
+    }
+CleanUp:
+
+    return retStatus;
+}
+
 /**
  * Gets the state of the stream
  */
