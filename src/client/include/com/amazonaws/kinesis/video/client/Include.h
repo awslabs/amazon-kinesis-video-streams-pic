@@ -1195,7 +1195,6 @@ typedef struct __ClientInfo {
     // ------------------------------ V2 compat --------------------------
     UINT64 serviceCallCompletionTimeout;
     UINT64 serviceCallConnectionTimeout;
-
 } ClientInfo, *PClientInfo;
 
 /**

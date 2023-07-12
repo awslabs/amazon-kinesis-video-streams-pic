@@ -886,6 +886,10 @@ STATUS putKinesisVideoFrame(STREAM_HANDLE streamHandle, PFrame pFrame)
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.putFrameLock);
     putFrameLocked = TRUE;
 
+    // Acquire putFrame Lock
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.putFrameLock);
+    putFrameLocked = TRUE;
+
     // Process and store the result
     CHK_STATUS(frameOrderCoordinatorPutFrame(pKinesisVideoStream, pFrame));
 
