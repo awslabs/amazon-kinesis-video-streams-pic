@@ -17,6 +17,8 @@ PCHAR getLogLevelStr(UINT32 loglevel)
             return LOG_LEVEL_ERROR_STR;
         case LOG_LEVEL_FATAL:
             return LOG_LEVEL_FATAL_STR;
+        case LOG_LEVEL_PROFILE:
+            return LOG_LEVEL_PROFILE_STR;
         default:
             return LOG_LEVEL_SILENT_STR;
     }
@@ -25,7 +27,7 @@ PCHAR getLogLevelStr(UINT32 loglevel)
 VOID addLogMetadata(PCHAR buffer, UINT32 bufferLen, PCHAR fmt, UINT32 logLevel)
 {
     UINT32 timeStrLen = 0;
-    /* space for "yyyy-mm-dd HH:MM:SS\0" + space + null */
+    /* space for "yyyy-mm-dd HH:MM:SS.MMMMMM" + space + null */
     CHAR timeString[MAX_TIMESTAMP_FORMAT_STR_LEN + 1 + 1];
     STATUS retStatus = STATUS_SUCCESS;
     UINT32 offset = 0;
@@ -38,15 +40,15 @@ VOID addLogMetadata(PCHAR buffer, UINT32 bufferLen, PCHAR fmt, UINT32 logLevel)
 #endif
 
     /* if something fails in getting time, still print the log, just without timestamp */
-    retStatus = generateTimestampStr(globalGetTime(), "%Y-%m-%d %H:%M:%S ", timeString, (UINT32) ARRAY_SIZE(timeString), &timeStrLen);
+    retStatus = generateTimestampStrInMilliseconds("%Y-%m-%d %H:%M:%S", timeString, (UINT32) ARRAY_SIZE(timeString), &timeStrLen);
     if (STATUS_FAILED(retStatus)) {
         PRINTF("Fail to get time with status code is %08x\n", retStatus);
         timeString[0] = '\0';
     }
 
-    offset = (UINT32) SNPRINTF(buffer, bufferLen, "%s%-*s ", timeString, MAX_LOG_LEVEL_STRLEN, getLogLevelStr(logLevel));
+    offset = (UINT32) SNPRINTF(buffer, timeStrLen + MAX_LOG_LEVEL_STRLEN + 2, "%s%-*s ", timeString, MAX_LOG_LEVEL_STRLEN, getLogLevelStr(logLevel));
 #ifdef ENABLE_LOG_THREAD_ID
-    offset += SNPRINTF(buffer + offset, bufferLen - offset, "%s ", tidString);
+    offset += SNPRINTF(buffer + offset, ARRAY_SIZE(tidString), "%s ", tidString);
 #endif
     SNPRINTF(buffer + offset, bufferLen - offset, "%s\n", fmt);
 }
@@ -58,9 +60,7 @@ VOID defaultLogPrint(UINT32 level, PCHAR tag, PCHAR fmt, ...)
 {
     CHAR logFmtString[MAX_LOG_FORMAT_LENGTH + 1];
     UINT32 logLevel = GET_LOGGER_LOG_LEVEL();
-
     UNUSED_PARAM(tag);
-
     if (level >= logLevel) {
         addLogMetadata(logFmtString, (UINT32) ARRAY_SIZE(logFmtString), fmt, level);
 

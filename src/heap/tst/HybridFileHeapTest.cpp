@@ -79,7 +79,7 @@ TEST_P(HybridFileHeapTest, hybridFileHeapOperationsAivPrimaryHeap)
 
     // Validate the allocations
     for (i = 0; i < numAlloc; i++) {
-        SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, FILE_HEAP_DEFAULT_ROOT_DIRECTORY, FPATHSEPARATOR, i + 1);
+        SNPRINTF(filePath, MAX_PATH_LEN + 1, "%s%c%u" FILE_HEAP_FILE_EXTENSION, FILE_HEAP_DEFAULT_ROOT_DIRECTORY, FPATHSEPARATOR, i + 1);
         exist = FALSE;
         EXPECT_EQ(STATUS_SUCCESS, fileExists(filePath, &exist));
         EXPECT_EQ(TRUE, exist);
@@ -134,7 +134,7 @@ TEST_P(HybridFileHeapTest, hybridFileHeapOperationsAivPrimaryHeap)
 
     // Validate the allocations
     for (i = 0; i < numAlloc; i++) {
-        SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, FILE_HEAP_DEFAULT_ROOT_DIRECTORY, FPATHSEPARATOR, i + 1);
+        SNPRINTF(filePath, MAX_PATH_LEN + 1, "%s%c%u" FILE_HEAP_FILE_EXTENSION, FILE_HEAP_DEFAULT_ROOT_DIRECTORY, FPATHSEPARATOR, i + 1);
         exist = FALSE;
         EXPECT_EQ(STATUS_SUCCESS, fileExists(filePath, &exist));
         EXPECT_EQ(TRUE, exist);
@@ -168,5 +168,5 @@ TEST_P(HybridFileHeapTest, hybridFileCreateHeapMemHeapSmall)
                                              &pHeap)));
 }
 
-INSTANTIATE_TEST_CASE_P(PermutatedHeapType, HybridFileHeapTest,
+INSTANTIATE_TEST_SUITE_P(PermutatedHeapType, HybridFileHeapTest,
                         Values(FLAGS_USE_AIV_HEAP, FLAGS_USE_SYSTEM_HEAP));

@@ -410,6 +410,12 @@ TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Name)
 
     CHAR tagName[MKV_MAX_TAG_NAME_LEN + 2] = {0};
     CHAR tagValue[MKV_MAX_TAG_VALUE_LEN + 2] = {0};
+//<<<<<<< HEAD
+//=======
+//    Frame frame;
+//    UINT64 timestamp = 100;
+//    BYTE tempBuffer[1000];
+//>>>>>>> master
 
     Meta.names[0] = tagName;
     Meta.values[0] = tagValue;
@@ -418,6 +424,7 @@ TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Name)
     MEMCPY(tagName, (PCHAR) "AWS", STRLEN("AWS"));
     // Create and ready stream
     ReadyStream();
+//<<<<<<< HEAD
 
     EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
     printf("%d\n", __LINE__);
@@ -443,6 +450,35 @@ TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Name)
     EXPECT_EQ(STATUS_SUCCESS,
               putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION | STREAM_EVENT_TYPE_IMAGE_GENERATION, &Meta));
     printf("%d\n", __LINE__);
+//=======
+//    EXPECT_EQ(STATUS_STREAM_NOT_STARTED, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+//
+//    frame.duration = TEST_LONG_FRAME_DURATION;
+//    frame.decodingTs = timestamp;
+//    frame.presentationTs = timestamp;
+//    frame.size = SIZEOF(tempBuffer);
+//    frame.frameData = tempBuffer;
+//    frame.trackId = TEST_TRACKID;
+//    frame.flags = FRAME_FLAG_KEY_FRAME;
+//    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
+//
+//    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+//
+//    MEMCPY(tagName, (PCHAR) "AWS ", STRLEN("AWS "));
+//    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+//
+//    MEMCPY(tagName, (PCHAR) "AWSTag", STRLEN("AWSTag"));
+//    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+//
+//    MEMCPY(tagName, (PCHAR) "AWS:", STRLEN("AWS:"));
+//    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+//
+//    MEMCPY(tagName, (PCHAR) "aWS", STRLEN("aWS"));
+//    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+//
+//    MEMCPY(tagName, (PCHAR) "aws", STRLEN("aws"));
+//    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_IMAGE_GENERATION, &Meta));
+//>>>>>>> master
 }
 
 TEST_F(StreamApiTest, insertKinesisVideoTag_Stream_State_Error)
@@ -465,8 +501,8 @@ TEST_F(StreamApiTest, insertKinesisVideoTag_Non_Persistent_Count)
     ReadyStream();
 
     for (i = 0; i < MAX_FRAGMENT_METADATA_COUNT; i++) {
-        SPRINTF(tagName, "tagName_%d", i);
-        SPRINTF(tagValue, "tagValue_%d", i);
+        SNPRINTF(tagName, MKV_MAX_TAG_NAME_LEN + 1, "tagName_%d", i);
+        SNPRINTF(tagValue, MKV_MAX_TAG_VALUE_LEN + 1, "tagValue_%d", i);
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, tagName, tagValue, FALSE));
     }
 
@@ -484,8 +520,8 @@ TEST_F(StreamApiTest, insertKinesisVideoTag_Persistent_Count)
     ReadyStream();
 
     for (i = 0; i < MAX_FRAGMENT_METADATA_COUNT; i++) {
-        SPRINTF(tagName, "tagName_%d", i);
-        SPRINTF(tagValue, "tagValue_%d", i);
+        SNPRINTF(tagName, MKV_MAX_TAG_NAME_LEN + 1, "tagName_%d", i);
+        SNPRINTF(tagValue, MKV_MAX_TAG_VALUE_LEN + 1, "tagValue_%d", i);
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, tagName, tagValue, TRUE));
     }
 
@@ -503,8 +539,8 @@ TEST_F(StreamApiTest, insertKinesisVideoTag_Mixed_Count)
     ReadyStream();
 
     for (i = 0; i < MAX_FRAGMENT_METADATA_COUNT; i++) {
-        SPRINTF(tagName, "tagName_%d", i);
-        SPRINTF(tagValue, "tagValue_%d", i);
+        SNPRINTF(tagName, MKV_MAX_TAG_NAME_LEN + 1, "tagName_%d", i);
+        SNPRINTF(tagValue, MKV_MAX_TAG_VALUE_LEN + 1, "tagValue_%d", i);
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, tagName, tagValue, i % 2 == 0));
     }
 

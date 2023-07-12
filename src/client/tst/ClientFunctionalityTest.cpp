@@ -570,7 +570,7 @@ TEST_P(ClientFunctionalityTest, StreamFormatChangedGeneratedAacAudioDirectCpdPas
     EXPECT_TRUE(!IS_VALID_CLIENT_HANDLE(mClientHandle));
 }
 
-INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, ClientFunctionalityTest,
+INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, ClientFunctionalityTest,
                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE),
                                 Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR),
                                 Bool(),
