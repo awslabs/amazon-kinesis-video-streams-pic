@@ -11,7 +11,32 @@ STATUS semaphoreCreate(UINT32 maxPermits, PSEMAPHORE_HANDLE pHandle)
 
     CHK(pHandle != NULL, STATUS_NULL_ARG);
 
-    CHK_STATUS(semaphoreCreateInternal(maxPermits, &pSemaphore));
+    CHK_STATUS(semaphoreCreateInternal(maxPermits, &pSemaphore, FALSE));
+
+    *pHandle = TO_SEMAPHORE_HANDLE(pSemaphore);
+
+CleanUp:
+
+    if (STATUS_FAILED(retStatus)) {
+        semaphoreFreeInternal(&pSemaphore);
+    }
+
+    LEAVES();
+    return retStatus;
+}
+
+/**
+ * Create a semaphore object
+ */
+STATUS semaphoreEmptyCreate(UINT32 maxPermits, PSEMAPHORE_HANDLE pHandle)
+{
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    PSemaphore pSemaphore = NULL;
+
+    CHK(pHandle != NULL, STATUS_NULL_ARG);
+
+    CHK_STATUS(semaphoreCreateInternal(maxPermits, &pSemaphore, TRUE));
 
     *pHandle = TO_SEMAPHORE_HANDLE(pSemaphore);
 
@@ -78,7 +103,7 @@ STATUS semaphoreWaitUntilClear(SEMAPHORE_HANDLE handle, UINT64 timeout)
 /////////////////////////////////////////////////////////////////////////////////
 // Internal operations
 /////////////////////////////////////////////////////////////////////////////////
-STATUS semaphoreCreateInternal(UINT32 maxPermits, PSemaphore* ppSemaphore)
+STATUS semaphoreCreateInternal(UINT32 maxPermits, PSemaphore* ppSemaphore, BOOL empty)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -88,7 +113,12 @@ STATUS semaphoreCreateInternal(UINT32 maxPermits, PSemaphore* ppSemaphore)
     CHK(maxPermits > 0, STATUS_INVALID_ARG);
     CHK(NULL != (pSemaphore = (PSemaphore) MEMCALLOC(1, SIZEOF(Semaphore))), STATUS_NOT_ENOUGH_MEMORY);
     pSemaphore->maxPermitCount = maxPermits;
-    ATOMIC_STORE(&pSemaphore->permitCount, maxPermits);
+    pSemaphore->signalSemaphore = empty;
+    if (empty) {
+        ATOMIC_STORE(&pSemaphore->permitCount, 0);
+    } else {
+        ATOMIC_STORE(&pSemaphore->permitCount, maxPermits);
+    }
 
     pSemaphore->semaphoreLock = MUTEX_CREATE(FALSE);
     CHK(IS_VALID_MUTEX_VALUE(pSemaphore->semaphoreLock), STATUS_INVALID_OPERATION);
@@ -140,8 +170,9 @@ STATUS semaphoreFreeInternal(PSemaphore* ppSemaphore)
         CVAR_BROADCAST(pSemaphore->drainedNotify);
     }
 
-    // We will use a sort of spin-lock to await for termination
-    while (ATOMIC_LOAD(&pSemaphore->permitCount) != pSemaphore->maxPermitCount && waitTime <= SEMAPHORE_SHUTDOWN_TIMEOUT) {
+    // We will use a sort of spin-lock to await for termination for non-signal based semaphore use cases
+    while (!pSemaphore->signalSemaphore && ATOMIC_LOAD(&pSemaphore->permitCount) != pSemaphore->maxPermitCount &&
+           waitTime <= SEMAPHORE_SHUTDOWN_TIMEOUT) {
         THREAD_SLEEP(SEMAPHORE_SHUTDOWN_SPINLOCK_SLEEP_DURATION);
         waitTime += SEMAPHORE_SHUTDOWN_SPINLOCK_SLEEP_DURATION;
     }

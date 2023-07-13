@@ -154,8 +154,8 @@ typedef struct {
 } TimerQueue, *PTimerQueue;
 
 // Public handle to and from object converters
-#define TO_TIMER_QUEUE_HANDLE(p)   ((TIMER_QUEUE_HANDLE)(p))
-#define FROM_TIMER_QUEUE_HANDLE(h) (IS_VALID_TIMER_QUEUE_HANDLE(h) ? (PTimerQueue)(h) : NULL)
+#define TO_TIMER_QUEUE_HANDLE(p)   ((TIMER_QUEUE_HANDLE) (p))
+#define FROM_TIMER_QUEUE_HANDLE(h) (IS_VALID_TIMER_QUEUE_HANDLE(h) ? (PTimerQueue) (h) : NULL)
 
 // Internal Functions
 STATUS timerQueueCreateInternal(UINT32, PTimerQueue*);
@@ -185,6 +185,9 @@ typedef struct {
     // Whether we are shutting down
     volatile ATOMIC_BOOL shutdown;
 
+    // Whether semaphore is allowed to be deleted at 0 count
+    BOOL signalSemaphore;
+
     // Max allowed permits
     SIZE_T maxPermitCount;
 
@@ -202,11 +205,11 @@ typedef struct {
 } Semaphore, *PSemaphore;
 
 // Public handle to and from object converters
-#define TO_SEMAPHORE_HANDLE(p)   ((SEMAPHORE_HANDLE)(p))
-#define FROM_SEMAPHORE_HANDLE(h) (IS_VALID_SEMAPHORE_HANDLE(h) ? (PSemaphore)(h) : NULL)
+#define TO_SEMAPHORE_HANDLE(p)   ((SEMAPHORE_HANDLE) (p))
+#define FROM_SEMAPHORE_HANDLE(h) (IS_VALID_SEMAPHORE_HANDLE(h) ? (PSemaphore) (h) : NULL)
 
 // Internal Functions
-STATUS semaphoreCreateInternal(UINT32, PSemaphore*);
+STATUS semaphoreCreateInternal(UINT32, PSemaphore*, BOOL);
 STATUS semaphoreFreeInternal(PSemaphore*);
 STATUS semaphoreAcquireInternal(PSemaphore, UINT64);
 STATUS semaphoreReleaseInternal(PSemaphore);

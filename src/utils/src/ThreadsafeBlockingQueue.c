@@ -10,16 +10,20 @@ STATUS safeBlockingQueueCreate(PSafeBlockingQueue* ppSafeQueue)
 
     CHK(ppSafeQueue != NULL, STATUS_NULL_ARG);
 
-    //Allocate the main structure
+    // Allocate the main structure
     pSafeQueue = (PSafeBlockingQueue) MEMCALLOC(1, SIZEOF(SafeBlockingQueue));
     CHK(pSafeQueue != NULL, STATUS_NOT_ENOUGH_MEMORY);
 
+    ATOMIC_STORE_BOOL(&pSafeQueue->terminate, FALSE);
+
     pSafeQueue->mutex = MUTEX_CREATE(FALSE);
-    CHK_STATUS(semaphoreCreate(UINT32_MAX, &(pSafeQueue->semaphore)));
+    CHK_STATUS(semaphoreEmptyCreate(INT32_MAX, &(pSafeQueue->semaphore)));
     CHK_STATUS(stackQueueCreate(&(pSafeQueue->queue)));
 
+    *ppSafeQueue = pSafeQueue;
+
 CleanUp:
-    if(STATUS_FAILED(retStatus) && pSafeQueue != NULL) {
+    if (STATUS_FAILED(retStatus) && pSafeQueue != NULL) {
         SAFE_MEMFREE(pSafeQueue);
     }
 
@@ -29,14 +33,24 @@ CleanUp:
 /**
  * Frees and de-allocates the thread safe blocking queue
  */
-PUBLIC_API STATUS safeBlockingQueueFree(PSafeBlockingQueue pSafeQueue)
+STATUS safeBlockingQueueFree(PSafeBlockingQueue pSafeQueue)
 {
     STATUS retStatus = STATUS_SUCCESS;
     CHK(pSafeQueue != NULL, STATUS_NULL_ARG);
 
-    //free semaphore first, this will unblock any threads
-    //blocking on the queue.
+    // set terminate flag, lock mutex -- this assures all other threads
+    // are no longer directly interacting with the queue
+    //
+    // free semaphore, this will unblock any threads blocking on said semaphore,
+    // and then exit from the terminate flag
+    //
+    // unlock mutex
+    ATOMIC_STORE_BOOL(&pSafeQueue->terminate, TRUE);
+
+    MUTEX_LOCK(pSafeQueue->mutex);
     CHK_STATUS(semaphoreFree(&(pSafeQueue->semaphore)));
+    MUTEX_UNLOCK(pSafeQueue->mutex);
+
     CHK_STATUS(stackQueueFree(pSafeQueue->queue));
     MUTEX_FREE(pSafeQueue->mutex);
 
@@ -50,27 +64,32 @@ CleanUp:
 /**
  * Clears and de-allocates all the items
  */
-PUBLIC_API STATUS safeBlockingQueueClear(PSafeBlockingQueue pSafeQueue, BOOL freeData)
+STATUS safeBlockingQueueClear(PSafeBlockingQueue pSafeQueue, BOOL freeData)
 {
     STATUS retStatus = STATUS_SUCCESS;
     BOOL locked = FALSE;
 
     CHK(pSafeQueue != NULL, STATUS_NULL_ARG);
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
 
-    //0 timeout semaphore acquire, eventually getting a timeout, this is done to clear
-    //the counting semaphore
-    while(semaphoreAcquire(pSafeQueue->semaphore, 0) == STATUS_SUCCESS);
+    // 0 timeout semaphore acquire, eventually getting a timeout, this is done to clear
+    // the counting semaphore
+    while ((semaphoreAcquire(pSafeQueue->semaphore, 0) == STATUS_SUCCESS) && !ATOMIC_LOAD_BOOL(&pSafeQueue->terminate))
+        ;
+
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
 
     MUTEX_LOCK(pSafeQueue->mutex);
     locked = TRUE;
-    
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
+
     CHK_STATUS(stackQueueClear(pSafeQueue->queue, freeData));
 
     MUTEX_UNLOCK(pSafeQueue->mutex);
     locked = FALSE;
 
 CleanUp:
-    if(locked) {
+    if (locked) {
         MUTEX_UNLOCK(pSafeQueue->mutex);
     }
 
@@ -80,49 +99,25 @@ CleanUp:
 /**
  * Gets the number of items in the stack/queue
  */
-PUBLIC_API STATUS safeBlockingQueueGetCount(PSafeBlockingQueue pSafeQueue, PUINT32 pCount)
+STATUS safeBlockingQueueGetCount(PSafeBlockingQueue pSafeQueue, PUINT32 pCount)
 {
     STATUS retStatus = STATUS_SUCCESS;
     BOOL locked = FALSE;
 
     CHK(pSafeQueue != NULL, STATUS_NULL_ARG);
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
 
     MUTEX_LOCK(pSafeQueue->mutex);
     locked = TRUE;
-    
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
+
     CHK_STATUS(stackQueueGetCount(pSafeQueue->queue, pCount));
 
     MUTEX_UNLOCK(pSafeQueue->mutex);
     locked = FALSE;
 
 CleanUp:
-    if(locked) {
-        MUTEX_UNLOCK(pSafeQueue->mutex);
-    }
-
-    return retStatus;
-}
-
-/**
- * Removes the item at the given item
- */
-PUBLIC_API STATUS safeBlockingQueueRemoveItem(PSafeBlockingQueue pSafeQueue, UINT64 item)
-{
-    STATUS retStatus = STATUS_SUCCESS;
-    BOOL locked = FALSE;
-
-    CHK(pSafeQueue != NULL, STATUS_NULL_ARG);
-
-    MUTEX_LOCK(pSafeQueue->mutex);
-    locked = TRUE;
-    
-    CHK_STATUS(stackQueueRemoveItem(pSafeQueue->queue, item));
-
-    MUTEX_UNLOCK(pSafeQueue->mutex);
-    locked = FALSE;
-
-CleanUp:
-    if(locked) {
+    if (locked) {
         MUTEX_UNLOCK(pSafeQueue->mutex);
     }
 
@@ -132,23 +127,25 @@ CleanUp:
 /**
  * Whether the thread safe blocking queue is empty
  */
-PUBLIC_API STATUS safeBlockingQueueIsEmpty(PSafeBlockingQueue pSafeQueue, PBOOL pIsEmpty)
+STATUS safeBlockingQueueIsEmpty(PSafeBlockingQueue pSafeQueue, PBOOL pIsEmpty)
 {
     STATUS retStatus = STATUS_SUCCESS;
     BOOL locked = FALSE;
 
     CHK(pSafeQueue != NULL && pIsEmpty != NULL, STATUS_NULL_ARG);
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
 
     MUTEX_LOCK(pSafeQueue->mutex);
     locked = TRUE;
-    
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
+
     CHK_STATUS(stackQueueIsEmpty(pSafeQueue->queue, pIsEmpty));
 
     MUTEX_UNLOCK(pSafeQueue->mutex);
     locked = FALSE;
 
 CleanUp:
-    if(locked) {
+    if (locked) {
         MUTEX_UNLOCK(pSafeQueue->mutex);
     }
 
@@ -158,16 +155,18 @@ CleanUp:
 /**
  * Enqueues an item in the queue
  */
-PUBLIC_API STATUS safeBlockingQueueEnqueue(PSafeBlockingQueue pSafeQueue, UINT64 item)
+STATUS safeBlockingQueueEnqueue(PSafeBlockingQueue pSafeQueue, UINT64 item)
 {
     STATUS retStatus = STATUS_SUCCESS;
     BOOL locked = FALSE;
 
     CHK(pSafeQueue != NULL, STATUS_NULL_ARG);
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
 
     MUTEX_LOCK(pSafeQueue->mutex);
     locked = TRUE;
-    
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
+
     CHK_STATUS(stackQueueEnqueue(pSafeQueue->queue, item));
 
     MUTEX_UNLOCK(pSafeQueue->mutex);
@@ -176,7 +175,7 @@ PUBLIC_API STATUS safeBlockingQueueEnqueue(PSafeBlockingQueue pSafeQueue, UINT64
     CHK_STATUS(semaphoreRelease(pSafeQueue->semaphore));
 
 CleanUp:
-    if(locked) {
+    if (locked) {
         MUTEX_UNLOCK(pSafeQueue->mutex);
     }
 
@@ -186,25 +185,28 @@ CleanUp:
 /**
  * Dequeues an item from the queue
  */
-PUBLIC_API STATUS safeBlockingQueueDequeue(PSafeBlockingQueue pSafeQueue, PUINT64 pItem)
+STATUS safeBlockingQueueDequeue(PSafeBlockingQueue pSafeQueue, PUINT64 pItem)
 {
     STATUS retStatus = STATUS_SUCCESS;
     BOOL locked = FALSE;
 
     CHK(pSafeQueue != NULL && pItem != NULL, STATUS_NULL_ARG);
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
 
     CHK_STATUS(semaphoreAcquire(pSafeQueue->semaphore, INFINITE_TIME_VALUE));
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
 
     MUTEX_LOCK(pSafeQueue->mutex);
     locked = TRUE;
-    
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
+
     CHK_STATUS(stackQueueDequeue(pSafeQueue->queue, pItem));
 
     MUTEX_UNLOCK(pSafeQueue->mutex);
     locked = FALSE;
 
 CleanUp:
-    if(locked) {
+    if (locked) {
         MUTEX_UNLOCK(pSafeQueue->mutex);
     }
 

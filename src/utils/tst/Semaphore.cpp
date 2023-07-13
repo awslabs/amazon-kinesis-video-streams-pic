@@ -40,9 +40,9 @@ TEST_F(SemaphoreFunctionalityTest, apiInputTest)
     EXPECT_NE(STATUS_SUCCESS, semaphoreCreate(0, &handle));
     EXPECT_NE(STATUS_SUCCESS, semaphoreCreate(10, NULL));
     EXPECT_NE(STATUS_SUCCESS, semaphoreCreate(0, NULL));
-    EXPECT_NE(STATUS_SUCCESS, semaphoreCreateInternal(0, &pSemaphore));
-    EXPECT_NE(STATUS_SUCCESS, semaphoreCreateInternal(10, NULL));
-    EXPECT_NE(STATUS_SUCCESS, semaphoreCreateInternal(0, NULL));
+    EXPECT_NE(STATUS_SUCCESS, semaphoreCreateInternal(0, &pSemaphore, FALSE));
+    EXPECT_NE(STATUS_SUCCESS, semaphoreCreateInternal(10, NULL, FALSE));
+    EXPECT_NE(STATUS_SUCCESS, semaphoreCreateInternal(0, NULL, FALSE));
     EXPECT_NE(STATUS_SUCCESS, semaphoreFree(NULL));
 
     for (UINT32 i = 1; i < 1000; i++) {
@@ -281,4 +281,22 @@ TEST_F(SemaphoreFunctionalityTest, freeWithoutReleaseAllThreadsTest)
     THREAD_SLEEP(300 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     EXPECT_EQ(0, (UINT32) ATOMIC_LOAD(&threadCount));
+}
+
+TEST_F(SemaphoreFunctionalityTest, emptySemaphoreAcquireBasicTest)
+{
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreEmptyCreate(2, &handle));
+
+    EXPECT_EQ(STATUS_OPERATION_TIMED_OUT, semaphoreAcquire(handle, 0));
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreRelease(handle));
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreAcquire(handle, 0));
+
+    // Validate there is no interference with locked
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreLock(handle));
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreRelease(handle));
+    EXPECT_EQ(STATUS_SEMAPHORE_ACQUIRE_WHEN_LOCKED, semaphoreAcquire(handle, 0));
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreUnlock(handle));
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreAcquire(handle, 0));
+
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&handle));
 }
