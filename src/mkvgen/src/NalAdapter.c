@@ -13,10 +13,13 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData, UINT32 frameDataSize, BO
     STATUS retStatus = STATUS_SUCCESS;
     UINT32 i = 0, zeroCount = 0, runSize = 0;
     BOOL markerFound = FALSE;
-    PBYTE pCurPnt = pFrameData, pAdaptedCurPnt = pAdaptedFrameData, pRunStart = NULL;
+    PBYTE pCurPnt = pFrameData, pAdaptedCurPnt, pRunStart = NULL;
 
     CHK(pFrameData != NULL && pAdaptedFrameDataSize != NULL, STATUS_NULL_ARG);
 
+    CHK(pAdaptedFrameData != NULL, retStatus);
+
+    pAdaptedCurPnt = pAdaptedFrameData;
     // Validate only when removeEpb flag is set which is the case when we need to split the NALus for
     // CPD processing. For frame adaptation we might have a certain bloat due to bad encoder adaptation flag
     if (removeEpb && pAdaptedFrameData != NULL && HANDLING_TRAILING_NALU_ZERO) {
@@ -193,6 +196,7 @@ STATUS adaptH264CpdNalsFromAnnexBToAvcc(PBYTE pCpd, UINT32 cpdSize, PBYTE pAdapt
 
     // Quick check for size only
     CHK(pAdaptedCpd != NULL, retStatus);
+
 
     // Convert the raw bits
     CHK_STATUS(adaptFrameNalsFromAnnexBToAvcc(pCpd, cpdSize, FALSE, NULL, &adaptedRawSize));
