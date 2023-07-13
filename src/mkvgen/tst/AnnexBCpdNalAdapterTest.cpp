@@ -58,9 +58,9 @@ TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_ValidZerosInStream)
         EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpds[i], cpdSize, NULL, &adaptedCpdSize));
         EXPECT_EQ(adaptedSizes[i], adaptedCpdSize);
         MEMSET(adaptedCpd, 0x00, SIZEOF(adaptedCpd));
-//        EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpds[i], cpdSize, adaptedCpd, &adaptedCpdSize));
-//        EXPECT_EQ(actualAdaptedSizes[i], adaptedCpdSize);
-//        EXPECT_EQ(0, MEMCMP(adaptedCpds[i], adaptedCpd, adaptedCpdSize)) << "Failed comparison on index: " << i;
+        EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpds[i], cpdSize, adaptedCpd, &adaptedCpdSize));
+        EXPECT_EQ(actualAdaptedSizes[i], adaptedCpdSize);
+        EXPECT_EQ(0, MEMCMP(adaptedCpds[i], adaptedCpd, adaptedCpdSize)) << "Failed comparison on index: " << i;
     }
 }
 
@@ -75,7 +75,7 @@ TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_ValidSpsPps)
     UINT32 adaptedCpdSize = SIZEOF(adaptedCpd);
 
     EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, NULL, &adaptedCpdSize));
-//    EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, adaptedCpd, &adaptedCpdSize));
+    EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, adaptedCpd, &adaptedCpdSize));
 
     BYTE cpd2[] = {0x00, 0x00, 0x00, 0x01, 0x67, 0x64, 0x00, 0x34,
                    0xAC, 0x2B, 0x40, 0x1E, 0x00, 0x78, 0xD8, 0x08,
@@ -85,7 +85,7 @@ TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_ValidSpsPps)
     cpdSize = SIZEOF(cpd2);
 
     EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd2, cpdSize, NULL, &adaptedCpdSize));
-//    EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd2, cpdSize, adaptedCpd, &adaptedCpdSize));
+    EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd2, cpdSize, adaptedCpd, &adaptedCpdSize));
 }
 
 TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_FixedUpValidSpsPps)
@@ -105,7 +105,7 @@ TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_FixedUpValidSpsPps)
     UINT32 adaptedCpdSize = SIZEOF(adaptedCpd);
 
     EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, NULL, &adaptedCpdSize));
-//    EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, adaptedCpd, &adaptedCpdSize));
+    EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, adaptedCpd, &adaptedCpdSize));
 }
 
 TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_ValidH265) {
@@ -168,18 +168,18 @@ TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_ValidH265) {
     UINT16 i;
 
     for (i = 0; i < 8; i++) {
-//        EXPECT_EQ(STATUS_SUCCESS, adaptH265CpdNalsFromAnnexBToHvcc(cpd[i], cpdSizes[i], NULL, &adaptedCpdSize))
-//                            << "Failed on iteration " << i;
-//        EXPECT_EQ(STATUS_SUCCESS, adaptH265CpdNalsFromAnnexBToHvcc(cpd[i], cpdSizes[i], adaptedCpd, &adaptedCpdSize))
-//                            << "Failed on iteration " << i;
+        EXPECT_EQ(STATUS_SUCCESS, adaptH265CpdNalsFromAnnexBToHvcc(cpd[i], cpdSizes[i], NULL, &adaptedCpdSize))
+                            << "Failed on iteration " << i;
+        EXPECT_EQ(STATUS_SUCCESS, adaptH265CpdNalsFromAnnexBToHvcc(cpd[i], cpdSizes[i], adaptedCpd, &adaptedCpdSize))
+                            << "Failed on iteration " << i;
 
-//        EXPECT_EQ(naluCounts[i], adaptedCpd[HEVC_CPD_HEADER_OVERHEAD - 1])
-//                            << "Failed on iteration " << i;
+        EXPECT_EQ(naluCounts[i], adaptedCpd[HEVC_CPD_HEADER_OVERHEAD - 1])
+                            << "Failed on iteration " << i;
 
         // The avgFrameRate should be 0 = two bytes
-//        EXPECT_EQ(0, adaptedCpd[HEVC_CPD_HEADER_OVERHEAD - 3])
-//                            << "Failed on iteration " << i;
-//        EXPECT_EQ(0, adaptedCpd[HEVC_CPD_HEADER_OVERHEAD - 4])
-//                            << "Failed on iteration " << i;
+        EXPECT_EQ(0, adaptedCpd[HEVC_CPD_HEADER_OVERHEAD - 3])
+                            << "Failed on iteration " << i;
+        EXPECT_EQ(0, adaptedCpd[HEVC_CPD_HEADER_OVERHEAD - 4])
+                            << "Failed on iteration " << i;
     }
 }

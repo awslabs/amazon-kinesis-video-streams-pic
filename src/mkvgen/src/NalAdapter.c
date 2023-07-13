@@ -11,15 +11,12 @@
 STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData, UINT32 frameDataSize, BOOL removeEpb, PBYTE pAdaptedFrameData, PUINT32 pAdaptedFrameDataSize)
 {
     STATUS retStatus = STATUS_SUCCESS;
-    UINT32 i = 0, zeroCount = 0, runSize = 0;
+    UINT32 i = 0, zeroCount = 0, runSize = 0, adaptedSize = 0;
     BOOL markerFound = FALSE;
-    PBYTE pCurPnt = pFrameData, pAdaptedCurPnt, pRunStart = NULL;
+    PBYTE pCurPnt = pFrameData, pAdaptedCurPnt = pAdaptedFrameData, pRunStart = NULL;
 
     CHK(pFrameData != NULL && pAdaptedFrameDataSize != NULL, STATUS_NULL_ARG);
 
-    CHK(pAdaptedFrameData != NULL, retStatus);
-
-    pAdaptedCurPnt = pAdaptedFrameData;
     // Validate only when removeEpb flag is set which is the case when we need to split the NALus for
     // CPD processing. For frame adaptation we might have a certain bloat due to bad encoder adaptation flag
     if (removeEpb && pAdaptedFrameData != NULL && HANDLING_TRAILING_NALU_ZERO) {
@@ -53,8 +50,12 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData, UINT32 frameDataSize, BO
             // Store the beginning of the run
             pRunStart = pAdaptedCurPnt;
 
-            // Increment the adapted pointer to 4 bytes
-            pAdaptedCurPnt += 4;
+            if(pAdaptedCurPnt == NULL) {
+                adaptedSize += 4;
+            } else {
+                // Increment the adapted pointer to 4 bytes
+                pAdaptedCurPnt += 4;
+            }
 
             // Store an indicator that we have a marker
             markerFound = TRUE;
@@ -65,7 +66,11 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData, UINT32 frameDataSize, BO
         } else if (removeEpb && *pCurPnt == 0x03 && zeroCount == 2 && (i < frameDataSize - 1) &&
                    ((*(pCurPnt + 1) == 0x00) || (*(pCurPnt + 1) == 0x01) || (*(pCurPnt + 1) == 0x02) || (*(pCurPnt + 1) == 0x03))) {
             // Removing the EPB
-            pAdaptedCurPnt += zeroCount;
+            if(pAdaptedCurPnt == NULL) {
+                adaptedSize += zeroCount;
+            } else {
+                pAdaptedCurPnt += zeroCount;
+            }
 
             // If the adapted frame is specified then copy the zeros and then the current byte
             if (pAdaptedFrameData != NULL) {
@@ -82,7 +87,12 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData, UINT32 frameDataSize, BO
             // Advance the current pointer and the run size to the number of zeros so far
             // as well as add the zeros to the adapted buffer if any
             runSize += zeroCount + 1; // for the current byte
-            pAdaptedCurPnt += zeroCount + 1;
+            if(pAdaptedCurPnt == NULL) {
+                adaptedSize += zeroCount + 1;
+            } else {
+                pAdaptedCurPnt += zeroCount + 1;
+            }
+
 
             // If the adapted frame is specified then copy the zeros and then the current byte
             if (pAdaptedFrameData != NULL) {
@@ -103,7 +113,11 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData, UINT32 frameDataSize, BO
     }
 
     // We could still have last few zeros at the end of the frame data and need to fix-up the last NAL
-    pAdaptedCurPnt += zeroCount;
+    if(pAdaptedCurPnt == NULL) {
+        adaptedSize += zeroCount;
+    } else {
+        pAdaptedCurPnt += zeroCount;
+    }
     if (pAdaptedFrameData != NULL) {
         // The last remaining zeros should go towards the run size
         runSize += zeroCount;
@@ -125,12 +139,19 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData, UINT32 frameDataSize, BO
     }
 
 CleanUp:
-
+    printf("Cur pt: 0x%08x, 0x%08x\n", pAdaptedCurPnt, pAdaptedFrameData);
     if (STATUS_SUCCEEDED(retStatus) && pAdaptedFrameDataSize != NULL) {
         // NOTE: Due to EPB removal we could in fact make the adaptation buffer smaller than the original
         // We will require at least the original size buffer.
-        *pAdaptedFrameDataSize = (removeEpb && HANDLING_TRAILING_NALU_ZERO) ? MAX(frameDataSize, (UINT32)(pAdaptedCurPnt - pAdaptedFrameData))
-                                                                            : (UINT32)(pAdaptedCurPnt - pAdaptedFrameData);
+        if(pAdaptedCurPnt != NULL) {
+            *pAdaptedFrameDataSize = (removeEpb && HANDLING_TRAILING_NALU_ZERO) ? MAX(frameDataSize, (UINT32)(pAdaptedCurPnt - pAdaptedFrameData))
+                                                                                : (UINT32)(pAdaptedCurPnt - pAdaptedFrameData);
+        } else {
+            *pAdaptedFrameDataSize = (removeEpb && HANDLING_TRAILING_NALU_ZERO) ? MAX(frameDataSize, (UINT32)(pAdaptedCurPnt - pAdaptedFrameData))
+                                                                                : adaptedSize;
+        }
+
+        printf("Size: %d\n", *pAdaptedFrameDataSize);
     }
 
     return retStatus;
@@ -196,7 +217,6 @@ STATUS adaptH264CpdNalsFromAnnexBToAvcc(PBYTE pCpd, UINT32 cpdSize, PBYTE pAdapt
 
     // Quick check for size only
     CHK(pAdaptedCpd != NULL, retStatus);
-
 
     // Convert the raw bits
     CHK_STATUS(adaptFrameNalsFromAnnexBToAvcc(pCpd, cpdSize, FALSE, NULL, &adaptedRawSize));

@@ -97,6 +97,7 @@ jobs:
           sudo apt-get -y install clang
       - name: Build repository
         run: |
+          clang --version
           mkdir build && cd build
           cmake .. -DBUILD_TEST=TRUE -DUNDEFINED_BEHAVIOR_SANITIZER=TRUE
           make
