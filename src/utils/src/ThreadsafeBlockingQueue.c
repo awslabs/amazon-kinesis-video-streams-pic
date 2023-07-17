@@ -48,10 +48,10 @@ STATUS safeBlockingQueueFree(PSafeBlockingQueue pSafeQueue)
     ATOMIC_STORE_BOOL(&pSafeQueue->terminate, TRUE);
 
     MUTEX_LOCK(pSafeQueue->mutex);
-    CHK_STATUS(semaphoreFree(&(pSafeQueue->semaphore)));
+    semaphoreFree(&(pSafeQueue->semaphore));
     MUTEX_UNLOCK(pSafeQueue->mutex);
 
-    CHK_STATUS(stackQueueFree(pSafeQueue->queue));
+    stackQueueFree(pSafeQueue->queue);
     MUTEX_FREE(pSafeQueue->mutex);
 
     SAFE_MEMFREE(pSafeQueue);
