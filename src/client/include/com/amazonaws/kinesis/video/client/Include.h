@@ -185,6 +185,8 @@ extern "C" {
 #define STATUS_PUTMEDIA_LAST_PERSIST_ACK_NOT_RECEIVED            STATUS_CLIENT_BASE + 0x00000088
 #define STATUS_NON_ALIGNED_HEAP_WITH_IN_CONTENT_STORE_ALLOCATORS STATUS_CLIENT_BASE + 0x00000089
 #define STATUS_MULTIPLE_CONSECUTIVE_EOFR                         STATUS_CLIENT_BASE + 0x0000008a
+#define STATUS_DUPLICATE_STREAM_EVENT_TYPE                       STATUS_CLIENT_BASE + 0x0000008b
+#define STATUS_STREAM_NOT_STARTED                                STATUS_CLIENT_BASE + 0x0000008c
 
 #define IS_RECOVERABLE_ERROR(error)                                                                                                                  \
     ((error) == STATUS_SERVICE_CALL_RESOURCE_NOT_FOUND_ERROR || (error) == STATUS_SERVICE_CALL_RESOURCE_IN_USE_ERROR ||                              \
@@ -320,9 +322,15 @@ extern "C" {
 #define MIN_VIEW_BUFFER_DURATION (MAX(MIN_BUFFER_DURATION_IN_SECONDS * HUNDREDS_OF_NANOS_IN_A_SECOND, MIN_CONTENT_VIEW_BUFFER_DURATION))
 
 /**
- * Service call default timeout - 5 seconds
+ * Service call default connection timeout - 5 seconds
  */
-#define SERVICE_CALL_DEFAULT_TIMEOUT (5 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+#define SERVICE_CALL_DEFAULT_CONNECTION_TIMEOUT (5 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+
+/**
+ * Service call default completion timeout - 10 seconds. Needs to be more than connection timeout
+ */
+#define SERVICE_CALL_DEFAULT_TIMEOUT (10 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+
 
 /**
  * Service call infinite timeout for streaming
@@ -449,16 +457,16 @@ extern "C" {
  */
 #define DEVICE_INFO_CURRENT_VERSION           1
 #define CALLBACKS_CURRENT_VERSION             0
-#define STREAM_INFO_CURRENT_VERSION           2
+#define STREAM_INFO_CURRENT_VERSION           3
 #define SEGMENT_INFO_CURRENT_VERSION          0
 #define STORAGE_INFO_CURRENT_VERSION          0
 #define AUTH_INFO_CURRENT_VERSION             0
-#define SERVICE_CALL_CONTEXT_CURRENT_VERSION  0
+#define SERVICE_CALL_CONTEXT_CURRENT_VERSION  1
 #define STREAM_DESCRIPTION_CURRENT_VERSION    1
 #define FRAGMENT_ACK_CURRENT_VERSION          0
 #define STREAM_METRICS_CURRENT_VERSION        3
 #define CLIENT_METRICS_CURRENT_VERSION        2
-#define CLIENT_INFO_CURRENT_VERSION           2
+#define CLIENT_INFO_CURRENT_VERSION           3
 #define STREAM_EVENT_METADATA_CURRENT_VERSION 0
 
 /**
@@ -1061,6 +1069,10 @@ struct __StreamCaps {
 
     // Content view overflow handling policy
     CONTENT_VIEW_OVERFLOW_POLICY viewOverflowPolicy;
+
+    // ------------------------------ V2 compat -----------------------
+    // Enable / Disable stream creation if describe call fails
+    BOOL allowStreamCreation;
 };
 
 typedef struct __StreamCaps* PStreamCaps;
@@ -1179,6 +1191,11 @@ typedef struct __ClientInfo {
 
     // Function pointers for application to provide a custom retry strategy
     KvsRetryStrategyCallbacks kvsRetryStrategyCallbacks;
+
+    // ------------------------------ V2 compat --------------------------
+    UINT64 serviceCallCompletionTimeout;
+    UINT64 serviceCallConnectionTimeout;
+
 } ClientInfo, *PClientInfo;
 
 /**
@@ -1478,6 +1495,9 @@ struct __ServiceCallContext {
 
     // Authentication info
     PAuthInfo pAuthInfo;
+
+    // -------- V0 compat --------
+    UINT64 connectionTimeout;
 };
 
 typedef struct __ServiceCallContext* PServiceCallContext;
