@@ -989,17 +989,35 @@ BOOL checkBufferValues(PVOID, BYTE, SIZE_T);
 // Time functionality
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
- * @UINT64  - IN - timestamp in 100ns to be converted to string
- * @PCHAR   - IN - timestamp format string
- * @PCHAR   - IN - buffer to hold the resulting string
+ * This function generates the time string based on the timestamp format requested and the timestamp provided
+ * Example: generateTimestampStrInMilliseconds(1689093566, "%Y-%m-%d %H:%M:%S", timeString, (UINT32) ARRAY_SIZE(timeString), &timeStrLen);
+ * @UINT64  - IN - timestamp in 100ns to be converted to string. Sample timestamp input: 1689093566
+ * @PCHAR   - IN - timestamp format string. Sample time format input: %Y-%m-%d %H:%M:%S
+ * @PCHAR   - IN - buffer to hold the resulting string. Sample timestring output: 2023-07-11 16:37:07
  * @UINT32  - IN - buffer size
  * @PUINT32 - OUT - actual number of characters in the result string not including null terminator
  * @return  - STATUS code of the execution
  */
 PUBLIC_API STATUS generateTimestampStr(UINT64, PCHAR, PCHAR, UINT32, PUINT32);
 
+/**
+ * This function generates the millisecond portion of the timestamp and appends to the timestamp format supplied.
+ * The output is of the format: <Timestring-format>.ssssss where ssssss is the millisecond format
+ * Example: generateTimestampStrInMilliseconds("%Y-%m-%d %H:%M:%S", timeString, (UINT32) ARRAY_SIZE(timeString), &timeStrLen);
+ * Formats can be constructed using this: https://man7.org/linux/man-pages/man3/strftime.3.html
+ * @PCHAR   - IN - timestamp format string without milliseconds. Sample time format input: %Y-%m-%d %H:%M:%S
+ * @PCHAR   - IN - buffer to hold the resulting string. Sample timestring output: 2023-07-11 16:37:07.025527,
+ * where 025527 is the appended millisecond value
+ * @UINT32  - IN - buffer size
+ * @PUINT32 - OUT - actual number of characters in the result string not including null terminator
+ * @return  - STATUS code of the execution
+ */
+PUBLIC_API STATUS generateTimestampStrInMilliseconds(PCHAR, PCHAR, UINT32, PUINT32);
+
 // yyyy-mm-dd HH:MM:SS
-#define MAX_TIMESTAMP_FORMAT_STR_LEN 19
+#define MAX_TIMESTAMP_FORMAT_STR_LEN    26
+
+#define MAX_MILLISECOND_PORTION_LENGTH  8
 
 // Max timestamp string length including null terminator
 #define MAX_TIMESTAMP_STR_LEN 17
@@ -1438,7 +1456,9 @@ PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
  * Default values used in the file logger
  */
 #define FILE_LOGGER_LOG_FILE_NAME           "kvsFileLog"
+#define FILE_LOGGER_FILTER_LOG_FILE_NAME    "kvsFileLogFilter"
 #define FILE_LOGGER_LAST_INDEX_FILE_NAME    "kvsFileLogIndex"
+#define FILE_LOGGER_LAST_FILTER_INDEX_FILE_NAME    "kvsFileFilterLogIndex"
 #define FILE_LOGGER_STRING_BUFFER_SIZE      (100 * 1024)
 #define FILE_LOGGER_LOG_FILE_COUNT          3
 #define FILE_LOGGER_LOG_FILE_DIRECTORY_PATH "./"
@@ -1456,6 +1476,22 @@ PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
  * @return - STATUS code of the execution
  */
 PUBLIC_API STATUS createFileLogger(UINT64, UINT64, PCHAR, BOOL, BOOL, logPrintFunc*);
+
+/**
+ * Creates a file based logger object and installs the global logger callback function
+ *
+ * @param - UINT64 - IN - Size of string buffer in file logger. When the string buffer is full the logger will flush everything into a new file
+ * @param - UINT64 - IN - Max number of log file. When exceeded, the oldest file will be deleted when new one is generated
+ * @param - PCHAR - IN - Directory in which the log file will be generated
+ * @param - BOOL - IN - Whether to print log to std out too
+ * @param - BOOL - IN - Whether to set global logger function pointer
+ * @param - BOOL - IN - Whether to enable logging other log levels into a file
+ * @param - UINT32 - IN - Log level that needs to be filtered into another file
+ * @param - logPrintFunc* - OUT/OPT - Optional function pointer to be returned to the caller that contains the main function for actual output
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS createFileLoggerWithLevelFiltering(UINT64, UINT64, PCHAR, BOOL, BOOL, BOOL, UINT32, logPrintFunc*);
 
 /**
  * Frees the static file logger object and resets the global logging function if it was

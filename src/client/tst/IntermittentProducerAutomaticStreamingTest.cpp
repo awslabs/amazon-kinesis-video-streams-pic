@@ -703,5 +703,5 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateMultiStream) {
 
 
 
-INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, IntermittentProducerAutomaticStreamingTest,
+INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, IntermittentProducerAutomaticStreamingTest,
         Combine(Values(1000,2000,3000), Values(0, CLIENT_INFO_CURRENT_VERSION)));

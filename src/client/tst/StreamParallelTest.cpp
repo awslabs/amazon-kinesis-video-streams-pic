@@ -115,7 +115,7 @@ TEST_F(StreamParallelTest, putFrame_BasicParallelPutGet)
 
     // Create and ready a stream
     for (mStreamCount = 0; mStreamCount < MAX_TEST_STREAM_COUNT; mStreamCount++) {
-        SPRINTF(streamName, "%s %d", TEST_STREAM_NAME, mStreamCount);
+        SNPRINTF(streamName, MAX_STREAM_NAME_LEN, "%s %d", TEST_STREAM_NAME, mStreamCount);
         STRCPY(mStreamInfo.name, streamName);
         EXPECT_TRUE(STATUS_SUCCEEDED(createKinesisVideoStream(mClientHandle, &mStreamInfo, &mStreamHandle)));
 
