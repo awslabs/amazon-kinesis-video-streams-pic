@@ -67,6 +67,7 @@ extern "C" {
 #define STATUS_UTIL_INVALID_TAG_VALUE_LEN            STATUS_UTILS_BASE + 0x00000015
 #define STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE     STATUS_UTILS_BASE + 0x0000002a
 #define STATUS_EXPONENTIAL_BACKOFF_RETRIES_EXHAUSTED STATUS_UTILS_BASE + 0x0000002b
+#define STATUS_THREADPOOL_MAX_COUNT                  STATUS_UTILS_BASE + 0x0000002c
 
 /**
  * Base64 encode/decode functionality
@@ -1851,6 +1852,56 @@ PUBLIC_API STATUS safeBlockingQueueEnqueue(PSafeBlockingQueue, UINT64);
  * Dequeues an item from the queue
  */
 PUBLIC_API STATUS safeBlockingQueueDequeue(PSafeBlockingQueue, PUINT64);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// Threadpool APIs
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+typedef struct __Threadpool {
+    volatile ATOMIC_BOOL terminate;
+    // tracks task
+    PSafeBlockingQueue taskQueue;
+
+    // tracks threads created
+    PStackQueue threadList;
+
+    MUTEX listMutex;
+    UINT32 minThreads;
+    UINT32 maxThreads;
+} Threadpool, *PThreadpool;
+
+/**
+ * Create a new threadpool
+ */
+STATUS threadpoolCreate(PThreadpool* ppThreadpool, UINT32 minThreads, UINT32 maxThreads);
+
+/**
+ * Destroy a threadpool
+ */
+STATUS threadpoolFree(PThreadpool pThreadpool);
+
+/**
+ * Amount of threads currently tracked by this threadpool
+ */
+STATUS threadpoolTotalThreadCount(PThreadpool pThreadpool, PUINT32 pCount);
+
+/**
+ * Create a thread with the given task.
+ * returns: STATUS_SUCCESS if a thread was already available
+ *          or if a new thread was created.
+ *          STATUS_FAILED/ if the threadpool is already at its
+ *          predetermined max.
+ */
+STATUS threadpoolTryAdd(PThreadpool, startRoutine, PVOID);
+
+/**
+ * Create a thread with the given task.
+ * returns: STATUS_SUCCESS if a thread was already available
+ *          or if a new thread was created
+ *          or if the task was added to the queue for the next thread.
+ *          STATUS_FAILED/ if the threadpool queue is full.
+ */
+STATUS threadpoolPush(PThreadpool, startRoutine, PVOID);
 
 #ifdef __cplusplus
 }
