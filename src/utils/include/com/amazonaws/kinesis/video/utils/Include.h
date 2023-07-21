@@ -1905,6 +1905,9 @@ PUBLIC_API STATUS safeBlockingQueueDequeue(PSafeBlockingQueue, PUINT64);
 // Threadpool APIs
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// windows doesn't support INT32_MAX
+#define KVS_MAX_BLOCKING_QUEUE_ENTRIES ((INT32) 1024 * 1024 * 1024)
+
 typedef struct __Threadpool {
     volatile ATOMIC_BOOL terminate;
     // threads waiting for a task

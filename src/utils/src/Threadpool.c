@@ -110,6 +110,7 @@ PVOID threadpoolActor(PVOID data)
     // we assume we've already been removed from the threadList
     MUTEX_FREE(pThreadData->dataMutex);
     SAFE_MEMFREE(pThreadData);
+    return 0;
 }
 
 /**

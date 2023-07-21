@@ -19,7 +19,7 @@ STATUS safeBlockingQueueCreate(PSafeBlockingQueue* ppSafeQueue)
 
     pSafeQueue->mutex = MUTEX_CREATE(FALSE);
     pSafeQueue->terminationSignal = CVAR_CREATE();
-    CHK_STATUS(semaphoreEmptyCreate(INT32_MAX, &(pSafeQueue->semaphore)));
+    CHK_STATUS(semaphoreEmptyCreate(KVS_MAX_BLOCKING_QUEUE_ENTRIES, &(pSafeQueue->semaphore)));
     CHK_STATUS(stackQueueCreate(&(pSafeQueue->queue)));
 
     *ppSafeQueue = pSafeQueue;
