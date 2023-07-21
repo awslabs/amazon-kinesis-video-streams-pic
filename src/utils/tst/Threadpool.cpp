@@ -90,8 +90,11 @@ TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
     //before the first thread is ready to accept tasks
     UINT32 min = rand()%(max/2) + 2;
     EXPECT_EQ(STATUS_SUCCESS, threadpoolCreate(&pThreadpool, min, max));
+    //let threads get ready so new threads aren't created for this task
+    THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(STATUS_SUCCESS, threadpoolTotalThreadCount(pThreadpool, &count));
     EXPECT_EQ(count, min);
+
     for(UINT32 i = 0; i < min; i++) {
         EXPECT_EQ(STATUS_SUCCESS, threadpoolPush(pThreadpool, exitOnTeardownTask, &terminate));
     }
