@@ -132,6 +132,7 @@ CleanUp:
     return retStatus;
 }
 
+STATUS defaultConditionVariableWait(CVAR cvar, MUTEX mutex, UINT64 timeout)
 {
     STATUS retStatus = STATUS_SUCCESS;
     PWinLock pLock = (PWinLock) mutex;
