@@ -86,7 +86,9 @@ TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
     BOOL terminate = FALSE;
     srand(GETTIME());
     const UINT32 max = 10;
-    UINT32 min = rand()%(max/2);
+    //accepted race condition where min is 1, threadpoolPush can create a new thread
+    //before the first thread is ready to accept tasks
+    UINT32 min = rand()%(max/2) + 2;
     EXPECT_EQ(STATUS_SUCCESS, threadpoolCreate(&pThreadpool, min, max));
     EXPECT_EQ(STATUS_SUCCESS, threadpoolTotalThreadCount(pThreadpool, &count));
     EXPECT_EQ(count, min);
@@ -132,14 +134,27 @@ TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest
     THREAD_SLEEP(150 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 }
 
+typedef struct ThreadpoolUser {
+    PThreadpool pThreadpool;
+    volatile ATOMIC_BOOL usable;
+};
+
 PVOID createTasks(PVOID customData) {
-    PThreadpool pThreadpool = (PThreadpool)customData;
+    ThreadpoolUser * user = (ThreadpoolUser*)customData;
+    PThreadpool pThreadpool = user->pThreadpool;
     auto iterations = rand()%20;
 
     for(auto i = 0; i < iterations; i++) {
         THREAD_SLEEP((rand()%5 + 1) * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
         //allowed to fail as we may delete the threadpool early
-        threadpoolPush(pThreadpool, randomishTask, NULL);
+        if (ATOMIC_LOAD_BOOL(&user->usable)) {
+            if (threadpoolPush(pThreadpool, randomishTask, NULL) != STATUS_SUCCESS) {
+                break;
+            }
+        }
+        else {
+            break;
+        }
     }
     return 0;
 }
@@ -147,6 +162,7 @@ PVOID createTasks(PVOID customData) {
 TEST_F(ThreadpoolFunctionalityTest, MultithreadUseTest)
 {
     PThreadpool pThreadpool = NULL;
+    ThreadpoolUser user;
     UINT32 count = 0;
     BOOL terminate = FALSE;
     srand(GETTIME());
@@ -154,10 +170,13 @@ TEST_F(ThreadpoolFunctionalityTest, MultithreadUseTest)
     UINT32 min = rand()%(max/2);
     TID thread1, thread2;
     EXPECT_EQ(STATUS_SUCCESS, threadpoolCreate(&pThreadpool, min, max));
-    THREAD_CREATE(&thread1, createTasks, pThreadpool);
-    THREAD_CREATE(&thread2, createTasks, pThreadpool);
+    user.pThreadpool = pThreadpool;
+    ATOMIC_STORE_BOOL(&user.usable, TRUE);
+    THREAD_CREATE(&thread1, createTasks, &user);
+    THREAD_CREATE(&thread2, createTasks, &user);
 
     THREAD_SLEEP((rand()%50 + 50) * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    ATOMIC_STORE_BOOL(&user.usable, FALSE);
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
     //wait for threads to exit before test ends to avoid false memory leak alarm

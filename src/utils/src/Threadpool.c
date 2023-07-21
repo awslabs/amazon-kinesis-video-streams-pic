@@ -23,19 +23,26 @@ PVOID threadpoolActor(PVOID data)
     UINT64 item = 0;
     BOOL finished = FALSE;
 
-    if (data == NULL) {
+    if (pThreadData == NULL) {
         DLOGE("Threadpool actor unable to start, threaddata is NULL");
         return 0;
     }
 
-    pThreadpool = pThreadData->pThreadpool;
+    // attempt to acquire thread mutex, if we cannot it means the threadpool has already been
+    // destroyed. Quickly exit
+    if (MUTEX_TRYLOCK(pThreadData->dataMutex)) {
+        pThreadpool = pThreadData->pThreadpool;
 
-    if (pThreadpool == NULL) {
-        DLOGE("Threadpool actor unable to start, threadpool is NULL");
-        return 0;
+        if (pThreadpool == NULL) {
+            DLOGE("Threadpool actor unable to start, threadpool is NULL");
+            return 0;
+        }
+
+        pQueue = pThreadpool->taskQueue;
+        MUTEX_UNLOCK(pThreadData->dataMutex);
+    } else {
+        finished = TRUE;
     }
-
-    pQueue = pThreadpool->taskQueue;
 
     // This actor will now wait for a task to be added to the queue, and then execute that task
     // when the task is complete it will check if the we're beyond our min threshhold of threads
@@ -53,7 +60,8 @@ PVOID threadpoolActor(PVOID data)
                     pTask->function(pTask->customData);
                     SAFE_MEMFREE(pTask);
                 }
-            } else if (ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
+                // got an error, but not terminating, so fixup available thread count
+            } else if (!ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
                 ATOMIC_DECREMENT(&pThreadData->pThreadpool->availableThreads);
             }
         }

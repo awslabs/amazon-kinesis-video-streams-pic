@@ -89,23 +89,40 @@ TEST_F(ThreadsafeBlockingQueueFunctionalityTest, queueCountCorrectTest)
 }
 #define STATIC_NUMBER_OF_ITEMS 50
 
+typedef struct SafeQueueUser {
+    PSafeBlockingQueue pSafeQueue;
+    volatile ATOMIC_BOOL usable;
+};
+
 void* writingThread(void* ptr) {
-    PSafeBlockingQueue pSafeQueue = (PSafeBlockingQueue)ptr;
+    SafeQueueUser * user = (SafeQueueUser*)ptr;
+    PSafeBlockingQueue pSafeQueue = user->pSafeQueue;
 
     for(int i = 0; i < STATIC_NUMBER_OF_ITEMS; i++) {
         std::this_thread::sleep_for(std::chrono::milliseconds(rand()%50));
-        safeBlockingQueueEnqueue(pSafeQueue, i);
+        if(ATOMIC_LOAD_BOOL(&user->usable)) {
+            safeBlockingQueueEnqueue(pSafeQueue, i);
+        }
+        else {
+            break;
+        }
     }
      
 }
 
 void* readingThread(void* ptr) {
-    PSafeBlockingQueue pSafeQueue = (PSafeBlockingQueue)ptr;
+    SafeQueueUser * user = (SafeQueueUser*)ptr;
+    PSafeBlockingQueue pSafeQueue = user->pSafeQueue;
     UINT64 item = 0;
 
     for(int i = 0; i < STATIC_NUMBER_OF_ITEMS; i++) {
         std::this_thread::sleep_for(std::chrono::milliseconds(rand()%50));
-        if(safeBlockingQueueDequeue(pSafeQueue, &item) != STATUS_SUCCESS) {
+        if(ATOMIC_LOAD_BOOL(&user->usable)) {
+            if(safeBlockingQueueDequeue(pSafeQueue, &item) != STATUS_SUCCESS) {
+                break;
+            }
+        }
+        else {
             break;
         }
     }
@@ -114,6 +131,7 @@ void* readingThread(void* ptr) {
 TEST_F(ThreadsafeBlockingQueueFunctionalityTest, multithreadQueueDequeueTest)
 {
     PSafeBlockingQueue pSafeQueue = NULL;
+    SafeQueueUser user;
     UINT64 totalThreads = 0, item = 0, threadCount = 0;
     BOOL empty = FALSE;
     TID threads[8] = {0};
@@ -122,21 +140,25 @@ TEST_F(ThreadsafeBlockingQueueFunctionalityTest, multithreadQueueDequeueTest)
     //make it even
     totalThreads -= totalThreads%2;
     EXPECT_EQ(STATUS_SUCCESS, safeBlockingQueueCreate(&pSafeQueue));
+    user.pSafeQueue = pSafeQueue;
+    ATOMIC_STORE_BOOL(&user.usable, TRUE);
     for(UINT64 i = 0; i < totalThreads/2; i++) {
-        THREAD_CREATE(&threads[threadCount++], readingThread, pSafeQueue);
+        THREAD_CREATE(&threads[threadCount++], readingThread, &user);
     }
     for(UINT64 i = 0; i < totalThreads/2; i++) {
-        THREAD_CREATE(&threads[threadCount++], writingThread, pSafeQueue);
+        THREAD_CREATE(&threads[threadCount++], writingThread, &user);
     }
     for(UINT64 i = 0; i < totalThreads; i++) {
         THREAD_JOIN(threads[i], NULL);
     }
+    ATOMIC_STORE_BOOL(&user.usable, FALSE);
     EXPECT_EQ(STATUS_SUCCESS, safeBlockingQueueFree(pSafeQueue));
 }
 
 TEST_F(ThreadsafeBlockingQueueFunctionalityTest, multithreadTeardownTest)
 {
     PSafeBlockingQueue pSafeQueue = NULL;
+    SafeQueueUser user;
     UINT64 totalThreads = 0, item = 0, threadCount = 0;
     BOOL empty = FALSE;
     TID threads[8] = {0};
@@ -145,10 +167,13 @@ TEST_F(ThreadsafeBlockingQueueFunctionalityTest, multithreadTeardownTest)
     //make it even
     totalThreads -= totalThreads%2;
     EXPECT_EQ(STATUS_SUCCESS, safeBlockingQueueCreate(&pSafeQueue));
+    user.pSafeQueue = pSafeQueue;
+    ATOMIC_STORE_BOOL(&user.usable, TRUE);
     for(UINT64 i = 0; i < totalThreads; i++) {
-        THREAD_CREATE(&threads[threadCount++], readingThread, pSafeQueue);
+        THREAD_CREATE(&threads[threadCount++], readingThread, &user);
     }
     THREAD_SLEEP(125 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    ATOMIC_STORE_BOOL(&user.usable, FALSE);
     EXPECT_EQ(STATUS_SUCCESS, safeBlockingQueueFree(pSafeQueue));
     for(UINT64 i = 0; i < totalThreads; i++) {
         THREAD_JOIN(threads[i], NULL);

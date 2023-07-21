@@ -1016,9 +1016,9 @@ PUBLIC_API STATUS generateTimestampStr(UINT64, PCHAR, PCHAR, UINT32, PUINT32);
 PUBLIC_API STATUS generateTimestampStrInMilliseconds(PCHAR, PCHAR, UINT32, PUINT32);
 
 // yyyy-mm-dd HH:MM:SS
-#define MAX_TIMESTAMP_FORMAT_STR_LEN    26
+#define MAX_TIMESTAMP_FORMAT_STR_LEN 26
 
-#define MAX_MILLISECOND_PORTION_LENGTH  8
+#define MAX_MILLISECOND_PORTION_LENGTH 8
 
 // Max timestamp string length including null terminator
 #define MAX_TIMESTAMP_STR_LEN 17
@@ -1466,13 +1466,13 @@ PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
 /**
  * Default values used in the file logger
  */
-#define FILE_LOGGER_LOG_FILE_NAME           "kvsFileLog"
-#define FILE_LOGGER_FILTER_LOG_FILE_NAME    "kvsFileLogFilter"
-#define FILE_LOGGER_LAST_INDEX_FILE_NAME    "kvsFileLogIndex"
-#define FILE_LOGGER_LAST_FILTER_INDEX_FILE_NAME    "kvsFileFilterLogIndex"
-#define FILE_LOGGER_STRING_BUFFER_SIZE      (100 * 1024)
-#define FILE_LOGGER_LOG_FILE_COUNT          3
-#define FILE_LOGGER_LOG_FILE_DIRECTORY_PATH "./"
+#define FILE_LOGGER_LOG_FILE_NAME               "kvsFileLog"
+#define FILE_LOGGER_FILTER_LOG_FILE_NAME        "kvsFileLogFilter"
+#define FILE_LOGGER_LAST_INDEX_FILE_NAME        "kvsFileLogIndex"
+#define FILE_LOGGER_LAST_FILTER_INDEX_FILE_NAME "kvsFileFilterLogIndex"
+#define FILE_LOGGER_STRING_BUFFER_SIZE          (100 * 1024)
+#define FILE_LOGGER_LOG_FILE_COUNT              3
+#define FILE_LOGGER_LOG_FILE_DIRECTORY_PATH     "./"
 
 /**
  * Creates a file based logger object and installs the global logger callback function
@@ -1859,9 +1859,11 @@ PUBLIC_API STATUS computePower(UINT64, UINT64, PUINT64);
 
 typedef struct {
     volatile ATOMIC_BOOL terminate;
+    volatile SIZE_T atLockCount;
     PStackQueue queue;
     MUTEX mutex;
     SEMAPHORE_HANDLE semaphore;
+    CVAR terminationSignal;
 } SafeBlockingQueue, *PSafeBlockingQueue;
 
 /**
