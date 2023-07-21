@@ -107,7 +107,7 @@ void* writingThread(void* ptr) {
             break;
         }
     }
-     
+    return 0;
 }
 
 void* readingThread(void* ptr) {
@@ -126,6 +126,7 @@ void* readingThread(void* ptr) {
             break;
         }
     }
+    return 0;
 }
 
 TEST_F(ThreadsafeBlockingQueueFunctionalityTest, multithreadQueueDequeueTest)
