@@ -105,7 +105,9 @@ void* readingThread(void* ptr) {
 
     for(int i = 0; i < STATIC_NUMBER_OF_ITEMS; i++) {
         std::this_thread::sleep_for(std::chrono::milliseconds(rand()%50));
-        safeBlockingQueueDequeue(pSafeQueue, &item);
+        if(safeBlockingQueueDequeue(pSafeQueue, &item) != STATUS_SUCCESS) {
+            break;
+        }
     }
 }
 
@@ -146,6 +148,7 @@ TEST_F(ThreadsafeBlockingQueueFunctionalityTest, multithreadTeardownTest)
     for(UINT64 i = 0; i < totalThreads; i++) {
         THREAD_CREATE(&threads[threadCount++], readingThread, pSafeQueue);
     }
+    THREAD_SLEEP(125 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(STATUS_SUCCESS, safeBlockingQueueFree(pSafeQueue));
     for(UINT64 i = 0; i < totalThreads; i++) {
         THREAD_JOIN(threads[i], NULL);

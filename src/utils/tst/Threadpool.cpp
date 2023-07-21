@@ -24,7 +24,6 @@ TEST_F(ThreadpoolFunctionalityTest, CreateDestroyTest)
     EXPECT_EQ(STATUS_SUCCESS, threadpoolCreate(&pThreadpool, 1, 1));
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
-
     //wait for threads to exit before test ends
     THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
@@ -47,6 +46,11 @@ TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
     BOOL terminate = FALSE;
     srand(GETTIME());
     EXPECT_EQ(STATUS_SUCCESS, threadpoolCreate(&pThreadpool, 1, 1));
+
+    //sleep for a little. Create asynchronously detaches threads, so using TryAdd too soon can
+    //fail if the threads are not yet ready.
+    THREAD_SLEEP(10 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+
     EXPECT_EQ(STATUS_SUCCESS, threadpoolTryAdd(pThreadpool, exitOnTeardownTask, &terminate));
     EXPECT_EQ(STATUS_THREADPOOL_MAX_COUNT, threadpoolTryAdd(pThreadpool, exitOnTeardownTask, &terminate));
     terminate = TRUE;

@@ -257,6 +257,9 @@ STATUS semaphoreAcquireInternal(PSemaphore pSemaphore, UINT64 timeout)
         if (ATOMIC_LOAD(&pSemaphore->waitCount) == 0 && ATOMIC_LOAD_BOOL(&pSemaphore->shutdown)) {
             CHK_STATUS(CVAR_BROADCAST(pSemaphore->semaphoreNotify));
         }
+        // whether it was the last signal or not, if a shutdown is happening we want all semaphores
+        // to return a status code indicating this event,
+        CHK(!ATOMIC_LOAD_BOOL(&pSemaphore->shutdown), STATUS_SEMAPHORE_OPERATION_AFTER_SHUTDOWN);
     }
 
     MUTEX_UNLOCK(pSemaphore->semaphoreLock);

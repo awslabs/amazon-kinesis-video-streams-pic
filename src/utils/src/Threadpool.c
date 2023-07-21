@@ -281,9 +281,9 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
         // lock list mutex
         MUTEX_LOCK(pThreadpool->listMutex);
 
-        // iterate on list
-        retStatus = stackQueueGetIterator(pThreadpool->threadList, &iterator);
         do {
+            // iterate on list
+            retStatus = stackQueueGetIterator(pThreadpool->threadList, &iterator);
             if (!IS_VALID_ITERATOR(iterator)) {
                 finished = TRUE;
                 break;

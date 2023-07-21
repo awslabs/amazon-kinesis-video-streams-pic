@@ -17,7 +17,7 @@ STATUS safeBlockingQueueCreate(PSafeBlockingQueue* ppSafeQueue)
     ATOMIC_STORE_BOOL(&pSafeQueue->terminate, FALSE);
 
     pSafeQueue->mutex = MUTEX_CREATE(FALSE);
-    CHK_STATUS(semaphoreEmptyCreate(INT16_MAX, &(pSafeQueue->semaphore)));
+    CHK_STATUS(semaphoreEmptyCreate(INT32_MAX, &(pSafeQueue->semaphore)));
     CHK_STATUS(stackQueueCreate(&(pSafeQueue->queue)));
 
     *ppSafeQueue = pSafeQueue;
@@ -198,7 +198,6 @@ STATUS safeBlockingQueueDequeue(PSafeBlockingQueue pSafeQueue, PUINT64 pItem)
     CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
 
     CHK_STATUS(semaphoreAcquire(pSafeQueue->semaphore, INFINITE_TIME_VALUE));
-    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
 
     MUTEX_LOCK(pSafeQueue->mutex);
     locked = TRUE;
