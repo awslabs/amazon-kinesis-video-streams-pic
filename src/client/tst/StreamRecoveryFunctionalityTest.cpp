@@ -1290,7 +1290,8 @@ TEST_P(StreamRecoveryFunctionalityTest, EventMetadataStartStreamFailRecovery) {
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
     // Start with some metadata - important that it's before frames
-    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, NULL));
+    // We expect this to fail because we do not allow putting this metadata before stream is started
+    EXPECT_EQ(STATUS_STREAM_NOT_STARTED, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, NULL));
 
     // put all frames for the first few fragments
     for (i = 0; i < numFragments * mMockProducerConfig.mKeyFrameInterval; i++) {
@@ -1346,5 +1347,5 @@ TEST_P(StreamRecoveryFunctionalityTest, EventMetadataStartStreamFailRecovery) {
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 }
 
-INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, StreamRecoveryFunctionalityTest,
+INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, StreamRecoveryFunctionalityTest,
                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));

@@ -513,5 +513,5 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationBasicMultiTrackPassThrou
     VerifyStopStreamSyncAndFree();
 }
 
-INSTANTIATE_TEST_CASE_P(PermutatedStreamInfo, StreamApiFunctionalityScenarioTest,
+INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, StreamApiFunctionalityScenarioTest,
                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));

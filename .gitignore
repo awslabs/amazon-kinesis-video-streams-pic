@@ -9,3 +9,4 @@ outputs
 *.swp
 *.swo
 tags
+cmake-build-pic/

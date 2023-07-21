@@ -543,5 +543,5 @@ TEST_P(HybridHeapTest, hybridFillResizeAlloc)
     EXPECT_EQ(STATUS_SUCCESS, heapRelease(mHeap));
 }
 
-INSTANTIATE_TEST_CASE_P(PermutatedHeapType, HybridHeapTest,
+INSTANTIATE_TEST_SUITE_P(PermutatedHeapType, HybridHeapTest,
                         Values(FLAGS_USE_AIV_HEAP, FLAGS_USE_SYSTEM_HEAP));
