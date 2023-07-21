@@ -159,21 +159,3 @@ TEST_F(ThreadpoolFunctionalityTest, MultithreadUseTest)
     //wait for threads to exit before test ends to avoid false memory leak alarm
     THREAD_SLEEP(250 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 }
-
-#if 0
-TEST_F(ThreadpoolFunctionalityTest, )
-{
-    PThreadpool pThreadpool = NULL;
-    srand(GETTIME());
-    EXPECT_EQ(STATUS_SUCCESS, threadpoolCreate(&pThreadpool, 0, 1));
-    EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
-}
-
-TEST_F(ThreadpoolFunctionalityTest, )
-{
-    PThreadpool pThreadpool = NULL;
-    srand(GETTIME());
-    EXPECT_EQ(STATUS_SUCCESS, threadpoolCreate(&pThreadpool, 0, 1));
-    EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
-}
-#endif
