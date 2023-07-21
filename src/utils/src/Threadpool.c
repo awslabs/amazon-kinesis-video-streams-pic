@@ -25,14 +25,14 @@ PVOID threadpoolActor(PVOID data)
 
     if (data == NULL) {
         DLOGE("Threadpool actor unable to start, threaddata is NULL");
-        return;
+        return 0;
     }
 
     pThreadpool = pThreadData->pThreadpool;
 
     if (pThreadpool == NULL) {
         DLOGE("Threadpool actor unable to start, threadpool is NULL");
-        return;
+        return 0;
     }
 
     pQueue = pThreadpool->taskQueue;
