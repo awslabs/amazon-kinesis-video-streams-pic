@@ -44,11 +44,17 @@ PVOID threadpoolActor(PVOID data)
         // ThreadData is allocated separately from the Threadpool.
         // The Threadpool will set terminate to false before the threadpool is free.
         // This way the thread actors can avoid accessing the Threadpool after termination.
-        if (!ATOMIC_LOAD_BOOL(&pThreadData->terminate) && safeBlockingQueueDequeue(pQueue, &item) == STATUS_SUCCESS) {
-            pTask = (PTaskData) item;
-            if (pTask != NULL) {
-                pTask->function(pTask->customData);
-                SAFE_MEMFREE(pTask);
+        if (!ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
+            ATOMIC_INCREMENT(&pThreadData->pThreadpool->availableThreads);
+            if (safeBlockingQueueDequeue(pQueue, &item) == STATUS_SUCCESS) {
+                pTask = (PTaskData) item;
+                ATOMIC_DECREMENT(&pThreadData->pThreadpool->availableThreads);
+                if (pTask != NULL) {
+                    pTask->function(pTask->customData);
+                    SAFE_MEMFREE(pTask);
+                }
+            } else if (ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
+                ATOMIC_DECREMENT(&pThreadData->pThreadpool->availableThreads);
             }
         }
 
@@ -114,6 +120,7 @@ STATUS threadpoolCreate(PThreadpool* ppThreadpool, UINT32 minThreads, UINT32 max
     poolCreated = TRUE;
 
     ATOMIC_STORE_BOOL(&pThreadpool->terminate, FALSE);
+    ATOMIC_STORE(&pThreadpool->availableThreads, 0);
 
     pThreadpool->listMutex = MUTEX_CREATE(FALSE);
     mutexCreated = TRUE;
@@ -226,7 +233,7 @@ STATUS threadpoolInternalCanCreateThread(PThreadpool pThreadpool, PBOOL pSpaceAv
     MUTEX_LOCK(pThreadpool->listMutex);
     locked = TRUE;
 
-    CHK_STATUS(stackQueueGetCount(pThreadpool->threadList, &count) == STATUS_SUCCESS);
+    CHK_STATUS(stackQueueGetCount(pThreadpool->threadList, &count));
 
     if (count < pThreadpool->maxThreads) {
         *pSpaceAvailable = TRUE;
@@ -253,7 +260,7 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
     STATUS retStatus = STATUS_SUCCESS;
     StackQueueIterator iterator;
     PThreadData item = NULL;
-    BOOL finished = FALSE;
+    BOOL finished = FALSE, taskQueueEmpty = FALSE;
     CHK(pThreadpool != NULL, STATUS_NULL_ARG);
 
     // Threads are not forced to finish their tasks. If the user has assigned
@@ -264,7 +271,11 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
 
     // set terminate flag of pool -- no new threads/items can be added now
     ATOMIC_STORE_BOOL(&pThreadpool->terminate, TRUE);
-    CHK_STATUS(safeBlockingQueueClear(pThreadpool->taskQueue, TRUE));
+
+    CHK_STATUS(safeBlockingQueueIsEmpty(pThreadpool->taskQueue, &taskQueueEmpty));
+    if (!taskQueueEmpty) {
+        CHK_STATUS(safeBlockingQueueClear(pThreadpool->taskQueue, TRUE));
+    }
 
     while (!finished) {
         // lock list mutex
@@ -339,7 +350,7 @@ STATUS threadpoolTotalThreadCount(PThreadpool pThreadpool, PUINT32 pCount)
     MUTEX_LOCK(pThreadpool->listMutex);
     locked = TRUE;
 
-    CHK_STATUS(stackQueueGetCount(pThreadpool->threadList, pCount) == STATUS_SUCCESS);
+    CHK_STATUS(stackQueueGetCount(pThreadpool->threadList, pCount));
 
     MUTEX_UNLOCK(pThreadpool->listMutex);
     locked = FALSE;
@@ -348,6 +359,26 @@ CleanUp:
     if (locked) {
         MUTEX_UNLOCK(pThreadpool->listMutex);
     }
+    return retStatus;
+}
+
+/**
+ * Amount of threads available to accept a new task
+ */
+STATUS threadpoolInternalInactiveThreadCount(PThreadpool pThreadpool, PSIZE_T pCount)
+{
+    STATUS retStatus = STATUS_SUCCESS;
+    SIZE_T unblockedThreads = 0;
+    UINT32 pendingTasks;
+
+    CHK(pThreadpool != NULL && pCount != NULL, STATUS_NULL_ARG);
+    CHK(!ATOMIC_LOAD_BOOL(&pThreadpool->terminate), STATUS_INVALID_OPERATION);
+
+    CHK_STATUS(safeBlockingQueueGetCount(pThreadpool->taskQueue, &pendingTasks));
+    unblockedThreads = (SIZE_T) ATOMIC_LOAD(&pThreadpool->availableThreads);
+    *pCount = unblockedThreads - (SIZE_T) pendingTasks;
+
+CleanUp:
     return retStatus;
 }
 
@@ -362,12 +393,19 @@ STATUS threadpoolTryAdd(PThreadpool pThreadpool, startRoutine function, PVOID cu
 {
     STATUS retStatus = STATUS_SUCCESS;
     BOOL spaceAvailable = FALSE;
+    SIZE_T count = 0;
     CHK(pThreadpool != NULL, STATUS_NULL_ARG);
 
     CHK_STATUS(threadpoolInternalCanCreateThread(pThreadpool, &spaceAvailable));
-    CHK(spaceAvailable, STATUS_THREADPOOL_MAX_COUNT);
+    CHK_STATUS(threadpoolInternalInactiveThreadCount(pThreadpool, &count));
+    // fail if there is not an available thread or if we're already maxed out on threads
+    CHK(spaceAvailable || count > 0, STATUS_THREADPOOL_MAX_COUNT);
+
     CHK_STATUS(threadpoolInternalCreateTask(pThreadpool, function, customData));
-    CHK_STATUS(threadpoolInternalCreateThread(pThreadpool));
+    // only create a thread if there aren't any inactive threads.
+    if (count <= 0) {
+        CHK_STATUS(threadpoolInternalCreateThread(pThreadpool));
+    }
 
 CleanUp:
     return retStatus;
@@ -384,13 +422,19 @@ STATUS threadpoolPush(PThreadpool pThreadpool, startRoutine function, PVOID cust
 {
     STATUS retStatus = STATUS_SUCCESS;
     BOOL spaceAvailable = FALSE;
+    SIZE_T count = 0;
     CHK(pThreadpool != NULL, STATUS_NULL_ARG);
 
     CHK_STATUS(threadpoolInternalCanCreateThread(pThreadpool, &spaceAvailable));
-    if (spaceAvailable) {
+    CHK_STATUS(threadpoolInternalInactiveThreadCount(pThreadpool, &count));
+
+    // always queue task
+    CHK_STATUS(threadpoolInternalCreateTask(pThreadpool, function, customData));
+
+    // only create a thread if there are no available threads and not maxed
+    if (count <= 0 && spaceAvailable) {
         CHK_STATUS(threadpoolInternalCreateThread(pThreadpool));
     }
-    CHK_STATUS(threadpoolInternalCreateTask(pThreadpool, function, customData));
 
 CleanUp:
     return retStatus;

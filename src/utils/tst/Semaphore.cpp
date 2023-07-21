@@ -300,3 +300,37 @@ TEST_F(SemaphoreFunctionalityTest, emptySemaphoreAcquireBasicTest)
 
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&handle));
 }
+
+TEST_F(SemaphoreFunctionalityTest, emptySemaphoreAcquireFreeTest)
+{
+    UINT32 i;
+    TID threadId;
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreEmptyCreate(10, &handle));
+
+    // Spin up a threads to await for the semaphore
+    for (i = 0; i < 10; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threadId, acquireThreadRoutine, (PVOID) this));
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_DETACH(threadId));
+    }
+    // wait for all threads to start
+    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    EXPECT_EQ(10, (UINT32) ATOMIC_LOAD(&threadCount));
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&handle));
+}
+
+TEST_F(SemaphoreFunctionalityTest, avoidLossySignalsTest) {
+    UINT32 i;
+    TID threadId;
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreEmptyCreate(100, &handle));
+
+    // Spin up a threads to await for the semaphore, release immediately
+    for (i = 0; i < 100; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threadId, acquireThreadRoutine, (PVOID) this));
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_DETACH(threadId));
+        EXPECT_EQ(STATUS_SUCCESS, semaphoreRelease(handle));
+    }
+    // wait for all threads to start
+    THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    EXPECT_EQ(0, (UINT32) ATOMIC_LOAD(&threadCount));
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&handle));
+}

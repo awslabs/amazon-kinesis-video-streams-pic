@@ -132,7 +132,6 @@ CleanUp:
     return retStatus;
 }
 
-STATUS defaultConditionVariableWait(CVAR cvar, MUTEX mutex, UINT64 timeout)
 {
     STATUS retStatus = STATUS_SUCCESS;
     PWinLock pLock = (PWinLock) mutex;
@@ -143,7 +142,7 @@ STATUS defaultConditionVariableWait(CVAR cvar, MUTEX mutex, UINT64 timeout)
     if (INFINITE_TIME_VALUE == timeout) {
         dwTimeout = INFINITE;
     } else {
-        dwTimeout = (DWORD)(timeout / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+        dwTimeout = (DWORD) (timeout / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     }
 
     if (pLock->reentrant) {
@@ -176,7 +175,7 @@ MUTEX defaultCreateMutex(BOOL reentrant)
     // Allocate the mutex
     pMutex = (pthread_mutex_t*) MEMCALLOC(1, SIZEOF(pthread_mutex_t));
     if (NULL == pMutex) {
-        return (MUTEX)(reentrant ? &globalKvsReentrantMutex : &globalKvsNonReentrantMutex);
+        return (MUTEX) (reentrant ? &globalKvsReentrantMutex : &globalKvsNonReentrantMutex);
     }
 
     if (0 != pthread_mutexattr_init(&mutexAttributes) ||
@@ -184,7 +183,7 @@ MUTEX defaultCreateMutex(BOOL reentrant)
         0 != pthread_mutex_init(pMutex, &mutexAttributes)) {
         // In case of an error return the global mutexes
         MEMFREE(pMutex);
-        return (MUTEX)(reentrant ? &globalKvsReentrantMutex : &globalKvsNonReentrantMutex);
+        return (MUTEX) (reentrant ? &globalKvsReentrantMutex : &globalKvsNonReentrantMutex);
     }
 
     return (MUTEX) pMutex;

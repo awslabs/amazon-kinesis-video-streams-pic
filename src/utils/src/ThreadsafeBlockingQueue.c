@@ -17,7 +17,7 @@ STATUS safeBlockingQueueCreate(PSafeBlockingQueue* ppSafeQueue)
     ATOMIC_STORE_BOOL(&pSafeQueue->terminate, FALSE);
 
     pSafeQueue->mutex = MUTEX_CREATE(FALSE);
-    CHK_STATUS(semaphoreEmptyCreate(INT32_MAX, &(pSafeQueue->semaphore)));
+    CHK_STATUS(semaphoreEmptyCreate(INT16_MAX, &(pSafeQueue->semaphore)));
     CHK_STATUS(stackQueueCreate(&(pSafeQueue->queue)));
 
     *ppSafeQueue = pSafeQueue;
@@ -36,6 +36,7 @@ CleanUp:
 STATUS safeBlockingQueueFree(PSafeBlockingQueue pSafeQueue)
 {
     STATUS retStatus = STATUS_SUCCESS;
+    INT32 count = 0;
     CHK(pSafeQueue != NULL, STATUS_NULL_ARG);
 
     // set terminate flag, lock mutex -- this assures all other threads
@@ -47,11 +48,14 @@ STATUS safeBlockingQueueFree(PSafeBlockingQueue pSafeQueue)
     // unlock mutex
     ATOMIC_STORE_BOOL(&pSafeQueue->terminate, TRUE);
 
-    MUTEX_LOCK(pSafeQueue->mutex);
+    CHK_STATUS(semaphoreLock(pSafeQueue->semaphore));
+
     semaphoreFree(&(pSafeQueue->semaphore));
+
+    MUTEX_LOCK(pSafeQueue->mutex);
+    stackQueueFree(pSafeQueue->queue);
     MUTEX_UNLOCK(pSafeQueue->mutex);
 
-    stackQueueFree(pSafeQueue->queue);
     MUTEX_FREE(pSafeQueue->mutex);
 
     SAFE_MEMFREE(pSafeQueue);

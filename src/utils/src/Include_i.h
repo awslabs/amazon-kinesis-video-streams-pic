@@ -179,6 +179,9 @@ typedef struct {
     // Current granted permit count
     volatile SIZE_T permitCount;
 
+    // Current number of threads waiting
+    volatile SIZE_T waitCount;
+
     // Whether the semaphore is locked for granting any more permits
     volatile ATOMIC_BOOL locked;
 
@@ -215,6 +218,7 @@ STATUS semaphoreAcquireInternal(PSemaphore, UINT64);
 STATUS semaphoreReleaseInternal(PSemaphore);
 STATUS semaphoreSetLockInternal(PSemaphore, BOOL);
 STATUS semaphoreWaitUntilClearInternal(PSemaphore, UINT64);
+STATUS semaphoreGetCountInternal(PSemaphore, PINT32);
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Instrumented allocators functionality
@@ -291,6 +295,7 @@ STATUS flushLogToFile();
 
 STATUS threadpoolInternalCreateThread(PThreadpool);
 STATUS threadpoolInternalCanCreateThread(PThreadpool, PBOOL);
+STATUS threadpoolInternalInactiveThreadCount(PThreadpool, PSIZE_T);
 
 #ifdef __cplusplus
 }

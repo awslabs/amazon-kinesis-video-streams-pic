@@ -1354,6 +1354,16 @@ PUBLIC_API STATUS semaphoreUnlock(SEMAPHORE_HANDLE);
  */
 PUBLIC_API STATUS semaphoreWaitUntilClear(SEMAPHORE_HANDLE, UINT64);
 
+/*
+ * Get the current value of the semaphore count
+ *
+ * @param - SEMAPHORE_HANDLE - IN - Semaphore handle
+ * @param - PINT32 - OUT - Value of count
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS semaphoreGetCount(SEMAPHORE_HANDLE, PINT32);
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // Instrumented memory allocators functionality
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1859,6 +1869,9 @@ PUBLIC_API STATUS safeBlockingQueueDequeue(PSafeBlockingQueue, PUINT64);
 
 typedef struct __Threadpool {
     volatile ATOMIC_BOOL terminate;
+    // threads waiting for a task
+    volatile SIZE_T availableThreads;
+
     // tracks task
     PSafeBlockingQueue taskQueue;
 
