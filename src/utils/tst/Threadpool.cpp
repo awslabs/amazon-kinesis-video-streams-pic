@@ -71,7 +71,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
     EXPECT_EQ(STATUS_SUCCESS, threadpoolPush(pThreadpool, exitOnTeardownTask, &terminate));
     EXPECT_EQ(STATUS_SUCCESS, threadpoolPush(pThreadpool, exitOnTeardownTask, &terminate));
     EXPECT_EQ(STATUS_SUCCESS, threadpoolTotalThreadCount(pThreadpool, &count));
-    EXPECT_EQ(count, 1);
+    EXPECT_EQ(count, 2);
     terminate = TRUE;
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
@@ -121,7 +121,7 @@ TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest
     BOOL terminate = FALSE;
     srand(GETTIME());
     const UINT32 max = 10;
-    UINT32 min = rand()%(max/2);
+    UINT32 min = rand()%(max/2) + 2;
     EXPECT_EQ(STATUS_SUCCESS, threadpoolCreate(&pThreadpool, min, max));
     for(UINT32 i = 0; i < min; i++) {
         EXPECT_EQ(STATUS_SUCCESS, threadpoolPush(pThreadpool, exitOnTeardownTask, &terminate));
@@ -170,7 +170,7 @@ TEST_F(ThreadpoolFunctionalityTest, MultithreadUseTest)
     BOOL terminate = FALSE;
     srand(GETTIME());
     const UINT32 max = 10;
-    UINT32 min = rand()%(max/2);
+    UINT32 min = rand()%(max/2) + 2;
     TID thread1, thread2;
     EXPECT_EQ(STATUS_SUCCESS, threadpoolCreate(&pThreadpool, min, max));
     user.pThreadpool = pThreadpool;
