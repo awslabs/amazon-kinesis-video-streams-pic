@@ -66,7 +66,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
     BOOL terminate = FALSE;
     UINT32 count = 0;
     srand(GETTIME());
-    EXPECT_EQ(STATUS_SUCCESS, threadpoolCreate(&pThreadpool, 0, 1));
+    EXPECT_EQ(STATUS_SUCCESS, threadpoolCreate(&pThreadpool, 1, 2));
     EXPECT_EQ(STATUS_SUCCESS, threadpoolPush(pThreadpool, exitOnTeardownTask, &terminate));
     EXPECT_EQ(STATUS_SUCCESS, threadpoolPush(pThreadpool, exitOnTeardownTask, &terminate));
     EXPECT_EQ(STATUS_SUCCESS, threadpoolPush(pThreadpool, exitOnTeardownTask, &terminate));

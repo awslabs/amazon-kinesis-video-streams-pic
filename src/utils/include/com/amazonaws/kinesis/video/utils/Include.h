@@ -1868,36 +1868,55 @@ typedef struct {
 
 /**
  * Create a new thread safe blocking queue
+ *
+ * @param - PSafeBlockingQueue* - OUT - Pointer to PSafeBlockingQueue to create.
  */
 PUBLIC_API STATUS safeBlockingQueueCreate(PSafeBlockingQueue*);
 
 /**
  * Frees and de-allocates the thread safe blocking queue
+ *
+ * @param - PSafeBlockingQueue - OUT - PSafeBlockingQueue to destroy.
  */
 PUBLIC_API STATUS safeBlockingQueueFree(PSafeBlockingQueue);
 
 /**
  * Clears and de-allocates all the items
+ *
+ * @param - PSafeBlockingQueue - IN - PSafeBlockingQueue to affect.
+ * @param - BOOL - IN - Free objects stored in queue
  */
 PUBLIC_API STATUS safeBlockingQueueClear(PSafeBlockingQueue, BOOL);
 
 /**
  * Gets the number of items in the stack/queue
+ *
+ * @param - PSafeBlockingQueue - IN - PSafeBlockingQueue to affect.
+ * @param - PUINT32 - OUT - Pointer to integer to store count in
  */
 PUBLIC_API STATUS safeBlockingQueueGetCount(PSafeBlockingQueue, PUINT32);
 
 /**
  * Whether the thread safe blocking queue is empty
+ *
+ * @param - PSafeBlockingQueue - IN - PSafeBlockingQueue to affect.
+ * @param - PBOOL - OUT - Pointer to bool to store whether the queue is empty (true) or not (false)
  */
 PUBLIC_API STATUS safeBlockingQueueIsEmpty(PSafeBlockingQueue, PBOOL);
 
 /**
  * Enqueues an item in the queue
+ *
+ * @param - PSafeBlockingQueue - IN - PSafeBlockingQueue to affect.
+ * @param - UINT64 - IN - casted pointer to object to enqueue
  */
 PUBLIC_API STATUS safeBlockingQueueEnqueue(PSafeBlockingQueue, UINT64);
 
 /**
  * Dequeues an item from the queue
+ *
+ * @param - PSafeBlockingQueue - IN - PSafeBlockingQueue to affect.
+ * @param - PUINT64 - OUT - casted pointer to object dequeued
  */
 PUBLIC_API STATUS safeBlockingQueueDequeue(PSafeBlockingQueue, PUINT64);
 
@@ -1926,18 +1945,28 @@ typedef struct __Threadpool {
 
 /**
  * Create a new threadpool
+ *
+ * @param - PThreadpool* - OUT - Pointer to PThreadpool to create
+ * @param - UINT32 - IN - minimum threads the threadpool must maintain (cannot be 0)
+ * @param - UINT32 - IN - maximum threads the threadpool is allowed to create 
+ *                       (cannot be 0, must be greater than minimum)
  */
-STATUS threadpoolCreate(PThreadpool* ppThreadpool, UINT32 minThreads, UINT32 maxThreads);
+PUBLIC_API STATUS threadpoolCreate(PThreadpool*, UINT32, UINT32);
 
 /**
  * Destroy a threadpool
+ *
+ * @param - PThreadpool - IN - PThreadpool to destroy
  */
-STATUS threadpoolFree(PThreadpool pThreadpool);
+PUBLIC_API STATUS threadpoolFree(PThreadpool pThreadpool);
 
 /**
  * Amount of threads currently tracked by this threadpool
+ *
+ * @param - PThreadpool - IN - PThreadpool to modify
+ * @param - PUINT32 - OUT - Pointer to integer to store the count
  */
-STATUS threadpoolTotalThreadCount(PThreadpool pThreadpool, PUINT32 pCount);
+PUBLIC_API STATUS threadpoolTotalThreadCount(PThreadpool pThreadpool, PUINT32 pCount);
 
 /**
  * Create a thread with the given task.
@@ -1945,8 +1974,12 @@ STATUS threadpoolTotalThreadCount(PThreadpool pThreadpool, PUINT32 pCount);
  *          or if a new thread was created.
  *          STATUS_FAILED/ if the threadpool is already at its
  *          predetermined max.
+ *
+ * @param - PThreadpool - IN - PThreadpool to modify
+ * @param - startRoutine - IN - function pointer to run in thread
+ * @param - PVOID - IN - custom data to send to function pointer
  */
-STATUS threadpoolTryAdd(PThreadpool, startRoutine, PVOID);
+PUBLIC_API STATUS threadpoolTryAdd(PThreadpool, startRoutine, PVOID);
 
 /**
  * Create a thread with the given task.
@@ -1954,8 +1987,12 @@ STATUS threadpoolTryAdd(PThreadpool, startRoutine, PVOID);
  *          or if a new thread was created
  *          or if the task was added to the queue for the next thread.
  *          STATUS_FAILED/ if the threadpool queue is full.
+ *
+ * @param - PThreadpool - IN - PThreadpool to modify
+ * @param - startRoutine - IN - function pointer to run in thread
+ * @param - PVOID - IN - custom data to send to function pointer
  */
-STATUS threadpoolPush(PThreadpool, startRoutine, PVOID);
+PUBLIC_API STATUS threadpoolPush(PThreadpool, startRoutine, PVOID);
 
 #ifdef __cplusplus
 }

@@ -123,7 +123,7 @@ STATUS threadpoolCreate(PThreadpool* ppThreadpool, UINT32 minThreads, UINT32 max
     PThreadpool pThreadpool = NULL;
     BOOL poolCreated = FALSE, mutexCreated = FALSE, listCreated = FALSE, queueCreated = FALSE;
     CHK(ppThreadpool != NULL, STATUS_NULL_ARG);
-    CHK(minThreads <= maxThreads, STATUS_INVALID_ARG);
+    CHK(minThreads <= maxThreads && minThreads > 0 && maxThreads > 0, STATUS_INVALID_ARG);
 
     pThreadpool = (PThreadpool) MEMCALLOC(1, SIZEOF(Threadpool));
     CHK(pThreadpool != NULL, STATUS_NOT_ENOUGH_MEMORY);
