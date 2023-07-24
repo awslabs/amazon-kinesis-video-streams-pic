@@ -119,6 +119,7 @@ PVOID threadpoolActor(PVOID data)
 STATUS threadpoolCreate(PThreadpool* ppThreadpool, UINT32 minThreads, UINT32 maxThreads)
 {
     STATUS retStatus = STATUS_SUCCESS;
+    UINT32 i = 0;
     PThreadpool pThreadpool = NULL;
     BOOL poolCreated = FALSE, mutexCreated = FALSE, listCreated = FALSE, queueCreated = FALSE;
     CHK(ppThreadpool != NULL, STATUS_NULL_ARG);
@@ -142,7 +143,7 @@ STATUS threadpoolCreate(PThreadpool* ppThreadpool, UINT32 minThreads, UINT32 max
 
     pThreadpool->minThreads = minThreads;
     pThreadpool->maxThreads = maxThreads;
-    for (UINT32 i = 0; i < minThreads; i++) {
+    for (i = 0; i < minThreads; i++) {
         CHK_STATUS(threadpoolInternalCreateThread(pThreadpool));
     }
 
@@ -219,7 +220,7 @@ STATUS threadpoolInternalCreateTask(PThreadpool pThreadpool, startRoutine functi
 
     allocated = TRUE;
 
-    CHK_STATUS(safeBlockingQueueEnqueue(pThreadpool->taskQueue, pTask));
+    CHK_STATUS(safeBlockingQueueEnqueue(pThreadpool->taskQueue, (UINT64)pTask));
 
 CleanUp:
     if (STATUS_FAILED(retStatus) && allocated) {
