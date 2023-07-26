@@ -64,6 +64,7 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
     va_list valist;
 
     UNUSED_PARAM(tag);
+    printf("Printing out...%p, %d\n", &gFileLogger, level);
     if (level >= GET_LOGGER_LOG_LEVEL() && gFileLogger != NULL) {
         MUTEX_LOCK(gFileLogger->lock);
         addLogMetadata(logFmtString, (UINT32) ARRAY_SIZE(logFmtString), fmt, level);
@@ -254,6 +255,7 @@ STATUS createFileLoggerWithLevelFiltering(UINT64 maxStringBufferLen, UINT64 maxL
         gFileLogger = (PFileLogger) MEMALLOC(SIZEOF(FileLogger) + maxStringBufferLen * SIZEOF(CHAR));
     }
 
+    printf("gFileLogger address: %p\n", &gFileLogger);
     MEMSET(gFileLogger, 0x00, SIZEOF(FileLogger));
 
     gFileLogger->lock = MUTEX_CREATE(FALSE);
