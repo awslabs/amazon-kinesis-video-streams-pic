@@ -154,8 +154,8 @@ typedef struct {
 } TimerQueue, *PTimerQueue;
 
 // Public handle to and from object converters
-#define TO_TIMER_QUEUE_HANDLE(p)   ((TIMER_QUEUE_HANDLE)(p))
-#define FROM_TIMER_QUEUE_HANDLE(h) (IS_VALID_TIMER_QUEUE_HANDLE(h) ? (PTimerQueue)(h) : NULL)
+#define TO_TIMER_QUEUE_HANDLE(p)   ((TIMER_QUEUE_HANDLE) (p))
+#define FROM_TIMER_QUEUE_HANDLE(h) (IS_VALID_TIMER_QUEUE_HANDLE(h) ? (PTimerQueue) (h) : NULL)
 
 // Internal Functions
 STATUS timerQueueCreateInternal(UINT32, PTimerQueue*);
@@ -179,11 +179,17 @@ typedef struct {
     // Current granted permit count
     volatile SIZE_T permitCount;
 
+    // Current number of threads waiting
+    volatile SIZE_T waitCount;
+
     // Whether the semaphore is locked for granting any more permits
     volatile ATOMIC_BOOL locked;
 
     // Whether we are shutting down
     volatile ATOMIC_BOOL shutdown;
+
+    // Whether semaphore is allowed to be deleted at 0 count
+    BOOL signalSemaphore;
 
     // Max allowed permits
     SIZE_T maxPermitCount;
@@ -202,16 +208,17 @@ typedef struct {
 } Semaphore, *PSemaphore;
 
 // Public handle to and from object converters
-#define TO_SEMAPHORE_HANDLE(p)   ((SEMAPHORE_HANDLE)(p))
-#define FROM_SEMAPHORE_HANDLE(h) (IS_VALID_SEMAPHORE_HANDLE(h) ? (PSemaphore)(h) : NULL)
+#define TO_SEMAPHORE_HANDLE(p)   ((SEMAPHORE_HANDLE) (p))
+#define FROM_SEMAPHORE_HANDLE(h) (IS_VALID_SEMAPHORE_HANDLE(h) ? (PSemaphore) (h) : NULL)
 
 // Internal Functions
-STATUS semaphoreCreateInternal(UINT32, PSemaphore*);
+STATUS semaphoreCreateInternal(UINT32, PSemaphore*, BOOL);
 STATUS semaphoreFreeInternal(PSemaphore*);
 STATUS semaphoreAcquireInternal(PSemaphore, UINT64);
 STATUS semaphoreReleaseInternal(PSemaphore);
 STATUS semaphoreSetLockInternal(PSemaphore, BOOL);
 STATUS semaphoreWaitUntilClearInternal(PSemaphore, UINT64);
+STATUS semaphoreGetCountInternal(PSemaphore, PINT32);
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Instrumented allocators functionality
@@ -295,6 +302,14 @@ typedef struct {
  * @return - STATUS of execution
  */
 STATUS flushLogToFile(PFileLoggerParameters);
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+// Threadpool functionality
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+STATUS threadpoolInternalCreateThread(PThreadpool);
+STATUS threadpoolInternalCanCreateThread(PThreadpool, PBOOL);
+STATUS threadpoolInternalInactiveThreadCount(PThreadpool, PSIZE_T);
 
 #ifdef __cplusplus
 }
