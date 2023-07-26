@@ -254,7 +254,8 @@ STATUS describeStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CAL
         }
 
         if (0 != STRNCMP(pKinesisVideoStream->streamInfo.streamCaps.contentType, streamDescription.contentType, MAX_CONTENT_TYPE_LEN)) {
-            DLOGW("Content type returned from the DescribeStream call doesn't match the one specified in the StreamInfo");
+            DLOGW("Content type returned from the DescribeStream(%s) call doesn't match the one specified in the StreamInfo(%s)",
+                  streamDescription.contentType, pKinesisVideoStream->streamInfo.streamCaps.contentType);
         }
 
         if (0 != STRNCMP(pKinesisVideoStream->streamInfo.name, streamDescription.streamName, MAX_STREAM_NAME_LEN)) {
