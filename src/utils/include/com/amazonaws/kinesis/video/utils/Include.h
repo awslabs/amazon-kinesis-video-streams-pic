@@ -28,7 +28,7 @@ extern "C" {
  * EMA (Exponential Moving Average) alpha value and 1-alpha value - over appx 20 samples
  */
 #define EMA_ALPHA_VALUE           ((DOUBLE) 0.05)
-#define ONE_MINUS_EMA_ALPHA_VALUE ((DOUBLE)(1 - EMA_ALPHA_VALUE))
+#define ONE_MINUS_EMA_ALPHA_VALUE ((DOUBLE) (1 - EMA_ALPHA_VALUE))
 
 /**
  * Calculates the EMA (Exponential Moving Average) accumulator value
@@ -67,6 +67,7 @@ extern "C" {
 #define STATUS_UTIL_INVALID_TAG_VALUE_LEN            STATUS_UTILS_BASE + 0x00000015
 #define STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE     STATUS_UTILS_BASE + 0x0000002a
 #define STATUS_EXPONENTIAL_BACKOFF_RETRIES_EXHAUSTED STATUS_UTILS_BASE + 0x0000002b
+#define STATUS_THREADPOOL_MAX_COUNT                  STATUS_UTILS_BASE + 0x0000002c
 
 /**
  * Base64 encode/decode functionality
@@ -918,31 +919,34 @@ extern putUnalignedInt64Func putUnalignedInt64LittleEndian;
 
 // Helper macro for unaligned
 #define GET_UNALIGNED(ptr)                                                                                                                           \
-    SIZEOF(*(ptr)) == 1 ? *(ptr)                                                                                                                     \
-                        : SIZEOF(*(ptr)) == 2 ? getUnalignedInt16(ptr)                                                                               \
-                                              : SIZEOF(*(ptr)) == 4 ? getUnalignedInt32(ptr) : SIZEOF(*(ptr)) == 8 ? getUnalignedInt64(ptr) : 0
+    SIZEOF(*(ptr)) == 1       ? *(ptr)                                                                                                               \
+        : SIZEOF(*(ptr)) == 2 ? getUnalignedInt16(ptr)                                                                                               \
+        : SIZEOF(*(ptr)) == 4 ? getUnalignedInt32(ptr)                                                                                               \
+        : SIZEOF(*(ptr)) == 8 ? getUnalignedInt64(ptr)                                                                                               \
+                              : 0
 
 #define GET_UNALIGNED_BIG_ENDIAN(ptr)                                                                                                                \
-    SIZEOF(*(ptr)) == 1                                                                                                                              \
-        ? *(ptr)                                                                                                                                     \
+    SIZEOF(*(ptr)) == 1       ? *(ptr)                                                                                                               \
         : SIZEOF(*(ptr)) == 2 ? getUnalignedInt16BigEndian(ptr)                                                                                      \
-                              : SIZEOF(*(ptr)) == 4 ? getUnalignedInt32BigEndian(ptr) : SIZEOF(*(ptr)) == 8 ? getUnalignedInt64BigEndian(ptr) : 0
+        : SIZEOF(*(ptr)) == 4 ? getUnalignedInt32BigEndian(ptr)                                                                                      \
+        : SIZEOF(*(ptr)) == 8 ? getUnalignedInt64BigEndian(ptr)                                                                                      \
+                              : 0
 
 #define PUT_UNALIGNED(ptr, val)                                                                                                                      \
     do {                                                                                                                                             \
         PVOID __pVoid = (ptr);                                                                                                                       \
         switch (SIZEOF(*(ptr))) {                                                                                                                    \
             case 1:                                                                                                                                  \
-                *(PINT8) __pVoid = (INT8)(val);                                                                                                      \
+                *(PINT8) __pVoid = (INT8) (val);                                                                                                     \
                 break;                                                                                                                               \
             case 2:                                                                                                                                  \
-                putUnalignedInt16(__pVoid, (INT16)(val));                                                                                            \
+                putUnalignedInt16(__pVoid, (INT16) (val));                                                                                           \
                 break;                                                                                                                               \
             case 4:                                                                                                                                  \
-                putUnalignedInt32(__pVoid, (INT32)(val));                                                                                            \
+                putUnalignedInt32(__pVoid, (INT32) (val));                                                                                           \
                 break;                                                                                                                               \
             case 8:                                                                                                                                  \
-                putUnalignedInt64(__pVoid, (INT64)(val));                                                                                            \
+                putUnalignedInt64(__pVoid, (INT64) (val));                                                                                           \
                 break;                                                                                                                               \
             default:                                                                                                                                 \
                 CHECK_EXT(FALSE, "Bad alignment size.");                                                                                             \
@@ -955,16 +959,16 @@ extern putUnalignedInt64Func putUnalignedInt64LittleEndian;
         PVOID __pVoid = (ptr);                                                                                                                       \
         switch (SIZEOF(*(ptr))) {                                                                                                                    \
             case 1:                                                                                                                                  \
-                *(PINT8) __pVoid = (INT8)(val);                                                                                                      \
+                *(PINT8) __pVoid = (INT8) (val);                                                                                                     \
                 break;                                                                                                                               \
             case 2:                                                                                                                                  \
-                putUnalignedInt16BigEndian(__pVoid, (INT16)(val));                                                                                   \
+                putUnalignedInt16BigEndian(__pVoid, (INT16) (val));                                                                                  \
                 break;                                                                                                                               \
             case 4:                                                                                                                                  \
-                putUnalignedInt32BigEndian(__pVoid, (INT32)(val));                                                                                   \
+                putUnalignedInt32BigEndian(__pVoid, (INT32) (val));                                                                                  \
                 break;                                                                                                                               \
             case 8:                                                                                                                                  \
-                putUnalignedInt64BigEndian(__pVoid, (INT64)(val));                                                                                   \
+                putUnalignedInt64BigEndian(__pVoid, (INT64) (val));                                                                                  \
                 break;                                                                                                                               \
             default:                                                                                                                                 \
                 CHECK_EXT(FALSE, "Bad alignment size.");                                                                                             \
@@ -1280,6 +1284,16 @@ typedef SEMAPHORE_HANDLE* PSEMAPHORE_HANDLE;
  */
 PUBLIC_API STATUS semaphoreCreate(UINT32, PSEMAPHORE_HANDLE);
 
+/**
+ * Create a semaphore object that starts with 0 count
+ *
+ * @param - UINT32 - IN - The permit count
+ * @param - PSEMAPHORE_HANDLE - OUT - Semaphore handle
+ *
+ * @return  - STATUS code of the execution
+ */
+PUBLIC_API STATUS semaphoreEmptyCreate(UINT32, PSEMAPHORE_HANDLE);
+
 /*
  * Frees the semaphore object releasing all the awaiting threads.
  *
@@ -1339,6 +1353,16 @@ PUBLIC_API STATUS semaphoreUnlock(SEMAPHORE_HANDLE);
  * @return - STATUS code of the execution
  */
 PUBLIC_API STATUS semaphoreWaitUntilClear(SEMAPHORE_HANDLE, UINT64);
+
+/*
+ * Get the current value of the semaphore count
+ *
+ * @param - SEMAPHORE_HANDLE - IN - Semaphore handle
+ * @param - PINT32 - OUT - Value of count
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS semaphoreGetCount(SEMAPHORE_HANDLE, PINT32);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // Instrumented memory allocators functionality
@@ -1467,10 +1491,7 @@ PUBLIC_API STATUS freeFileLogger();
 /**
  * Retry configuration type
  */
-typedef enum {
-    KVS_RETRY_STRATEGY_DISABLED                 = 0x00,
-    KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT = 0x01
-} KVS_RETRY_STRATEGY_TYPE;
+typedef enum { KVS_RETRY_STRATEGY_DISABLED = 0x00, KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT = 0x01 } KVS_RETRY_STRATEGY_TYPE;
 
 // Opaque pointers to hold retry strategy state and configuration
 // depending on the underlying implementation
@@ -1513,7 +1534,7 @@ typedef STATUS (*CreateRetryStrategyFn)(PKvsRetryStrategy);
  *
  * @return Status of the callback
  */
-typedef STATUS (*GetCurrentRetryAttemptNumberFn) (PKvsRetryStrategy, PUINT32);
+typedef STATUS (*GetCurrentRetryAttemptNumberFn)(PKvsRetryStrategy, PUINT32);
 
 /**
  * Handler to release resources associated with a retry strategy
@@ -1549,7 +1570,6 @@ struct __KvsRetryStrategyCallbacks {
 typedef struct __KvsRetryStrategyCallbacks KvsRetryStrategyCallbacks;
 typedef struct __KvsRetryStrategyCallbacks* PKvsRetryStrategyCallbacks;
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // APIs for exponential backoff retry strategy
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1563,14 +1583,14 @@ typedef struct __KvsRetryStrategyCallbacks* PKvsRetryStrategyCallbacks;
  * Factor for computing the exponential backoff wait time
  * The larger the value, the slower the retries will be.
  */
-#define MIN_KVS_RETRY_TIME_FACTOR_MILLISECONDS                       50
-#define LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS                    1000
-#define DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS                  LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS
+#define MIN_KVS_RETRY_TIME_FACTOR_MILLISECONDS     50
+#define LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS   1000
+#define DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS
 
 /**
  * Factor determining the curve of exponential wait time
  */
-#define DEFAULT_KVS_EXPONENTIAL_FACTOR                              2
+#define DEFAULT_KVS_EXPONENTIAL_FACTOR 2
 
 /**
  * Maximum exponential wait time. Once the exponential wait time
@@ -1579,66 +1599,65 @@ typedef struct __KvsRetryStrategyCallbacks* PKvsRetryStrategyCallbacks;
  * required to put a reasonable upper bound on wait time. If not provided
  * in the config, we'll use the default value
  */
-#define MIN_KVS_MAX_WAIT_TIME_MILLISECONDS                      10000
-#define LIMIT_KVS_MAX_WAIT_TIME_MILLISECONDS                    25000
-#define DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS                  16000
+#define MIN_KVS_MAX_WAIT_TIME_MILLISECONDS     10000
+#define LIMIT_KVS_MAX_WAIT_TIME_MILLISECONDS   25000
+#define DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS 16000
 
 /**
  * Maximum time between two consecutive calls to exponentialBackoffBlockingWait
  * after which the retry count will be reset to initial state. This is needed
  * to restart the exponential wait time from base value if
  */
-#define MIN_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS          90000
-#define LIMIT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS       120000
-#define DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS     MIN_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS
+#define MIN_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS     90000
+#define LIMIT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS   120000
+#define DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS MIN_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS
 
 /**
  * Factor to get a random jitter. Jitter values [0, 300).
  * Only applicable for Fixed jitter variant
  */
-#define MIN_KVS_JITTER_FACTOR_MILLISECONDS                           50
-#define LIMIT_KVS_JITTER_FACTOR_MILLISECONDS                        600
-#define DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS                      300
+#define MIN_KVS_JITTER_FACTOR_MILLISECONDS     50
+#define LIMIT_KVS_JITTER_FACTOR_MILLISECONDS   600
+#define DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS 300
 
 typedef enum {
-    BACKOFF_NOT_STARTED     = (UINT16) 0x01,
-    BACKOFF_IN_PROGRESS     = (UINT16) 0x02,
-    BACKOFF_TERMINATED      = (UINT16) 0x03
+    BACKOFF_NOT_STARTED = (UINT16) 0x01,
+    BACKOFF_IN_PROGRESS = (UINT16) 0x02,
+    BACKOFF_TERMINATED = (UINT16) 0x03
 } ExponentialBackoffStatus;
 
 typedef enum {
-    FULL_JITTER     = (UINT16) 0x01,
-    FIXED_JITTER    = (UINT16) 0x02,
-    NO_JITTER       = (UINT16) 0x03,
-    } ExponentialBackoffJitterType;
+    FULL_JITTER = (UINT16) 0x01,
+    FIXED_JITTER = (UINT16) 0x02,
+    NO_JITTER = (UINT16) 0x03,
+} ExponentialBackoffJitterType;
 
 typedef struct __ExponentialBackoffRetryStrategyConfig {
     // Max retries after which an error will be returned
     // to the application. For infinite retries, set this
     // to KVS_INFINITE_EXPONENTIAL_RETRIES.
-    UINT32  maxRetryCount;
+    UINT32 maxRetryCount;
     // Maximum retry wait time. Once the retry wait time
     // reaches this value, subsequent retries will wait for
     // maxRetryWaitTime (plus jitter).
-    UINT64  maxRetryWaitTime;
+    UINT64 maxRetryWaitTime;
     // Factor for computing the exponential backoff wait time
-    UINT64  retryFactorTime;
+    UINT64 retryFactorTime;
     // The minimum time between two consecutive retries
     // after which retry state will be reset i.e. retries
     // will start from initial retry state.
-    UINT64  minTimeToResetRetryState;
+    UINT64 minTimeToResetRetryState;
     // Jitter type indicating how much jitter to be added
     // Default will be FULL_JITTER
     ExponentialBackoffJitterType jitterType;
     // Factor determining random jitter value.
     // Jitter will be between [0, jitterFactor)
     // This parameter is only valid for jitter type FIXED_JITTER
-    UINT32  jitterFactor;
+    UINT32 jitterFactor;
 } ExponentialBackoffRetryStrategyConfig, *PExponentialBackoffRetryStrategyConfig;
 
-#define TO_EXPONENTIAL_BACKOFF_STATE(ptr)  ((PExponentialBackoffRetryStrategyState)(ptr))
-#define TO_EXPONENTIAL_BACKOFF_CONFIG(ptr) ((PExponentialBackoffRetryStrategyConfig)(ptr))
-
+#define TO_EXPONENTIAL_BACKOFF_STATE(ptr)  ((PExponentialBackoffRetryStrategyState) (ptr))
+#define TO_EXPONENTIAL_BACKOFF_CONFIG(ptr) ((PExponentialBackoffRetryStrategyConfig) (ptr))
 
 typedef struct {
     ExponentialBackoffRetryStrategyConfig exponentialBackoffRetryStrategyConfig;
@@ -1670,12 +1689,12 @@ typedef struct {
  for FIXED_JITTER variant, jitter = random number between [0, DEFAULT_KVS_JITTER_FACTOR_MILLISECONDS)
 ************************************************************************/
 static const ExponentialBackoffRetryStrategyConfig DEFAULT_EXPONENTIAL_BACKOFF_CONFIGURATION = {
-        KVS_INFINITE_EXPONENTIAL_RETRIES, /* max retry count */
-        DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS, /* max retry wait time */
-        DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS, /* factor determining exponential curve */
-        DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS, /* minimum time to reset retry state */
-        FULL_JITTER, /* use FULL_JITTER variant */
-        0 /* jitter value unused for full jitter variant */
+    KVS_INFINITE_EXPONENTIAL_RETRIES,                       /* max retry count */
+    DEFAULT_KVS_MAX_WAIT_TIME_MILLISECONDS,                 /* max retry wait time */
+    DEFAULT_KVS_RETRY_TIME_FACTOR_MILLISECONDS,             /* factor determining exponential curve */
+    DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS, /* minimum time to reset retry state */
+    FULL_JITTER,                                            /* use FULL_JITTER variant */
+    0                                                       /* jitter value unused for full jitter variant */
 };
 
 /**************************************************************************************************
@@ -1797,6 +1816,147 @@ PUBLIC_API STATUS exponentialBackoffRetryStrategyFree(PKvsRetryStrategy);
  *
  */
 PUBLIC_API STATUS computePower(UINT64, UINT64, PUINT64);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// Threadsafe Blocking Queue APIs
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+typedef struct {
+    volatile ATOMIC_BOOL terminate;
+    volatile SIZE_T atLockCount;
+    PStackQueue queue;
+    MUTEX mutex;
+    SEMAPHORE_HANDLE semaphore;
+    CVAR terminationSignal;
+} SafeBlockingQueue, *PSafeBlockingQueue;
+
+/**
+ * Create a new thread safe blocking queue
+ *
+ * @param - PSafeBlockingQueue* - OUT - Pointer to PSafeBlockingQueue to create.
+ */
+PUBLIC_API STATUS safeBlockingQueueCreate(PSafeBlockingQueue*);
+
+/**
+ * Frees and de-allocates the thread safe blocking queue
+ *
+ * @param - PSafeBlockingQueue - OUT - PSafeBlockingQueue to destroy.
+ */
+PUBLIC_API STATUS safeBlockingQueueFree(PSafeBlockingQueue);
+
+/**
+ * Clears and de-allocates all the items
+ *
+ * @param - PSafeBlockingQueue - IN - PSafeBlockingQueue to affect.
+ * @param - BOOL - IN - Free objects stored in queue
+ */
+PUBLIC_API STATUS safeBlockingQueueClear(PSafeBlockingQueue, BOOL);
+
+/**
+ * Gets the number of items in the stack/queue
+ *
+ * @param - PSafeBlockingQueue - IN - PSafeBlockingQueue to affect.
+ * @param - PUINT32 - OUT - Pointer to integer to store count in
+ */
+PUBLIC_API STATUS safeBlockingQueueGetCount(PSafeBlockingQueue, PUINT32);
+
+/**
+ * Whether the thread safe blocking queue is empty
+ *
+ * @param - PSafeBlockingQueue - IN - PSafeBlockingQueue to affect.
+ * @param - PBOOL - OUT - Pointer to bool to store whether the queue is empty (true) or not (false)
+ */
+PUBLIC_API STATUS safeBlockingQueueIsEmpty(PSafeBlockingQueue, PBOOL);
+
+/**
+ * Enqueues an item in the queue
+ *
+ * @param - PSafeBlockingQueue - IN - PSafeBlockingQueue to affect.
+ * @param - UINT64 - IN - casted pointer to object to enqueue
+ */
+PUBLIC_API STATUS safeBlockingQueueEnqueue(PSafeBlockingQueue, UINT64);
+
+/**
+ * Dequeues an item from the queue
+ *
+ * @param - PSafeBlockingQueue - IN - PSafeBlockingQueue to affect.
+ * @param - PUINT64 - OUT - casted pointer to object dequeued
+ */
+PUBLIC_API STATUS safeBlockingQueueDequeue(PSafeBlockingQueue, PUINT64);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// Threadpool APIs
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// windows doesn't support INT32_MAX
+#define KVS_MAX_BLOCKING_QUEUE_ENTRIES ((INT32) 1024 * 1024 * 1024)
+
+typedef struct __Threadpool {
+    volatile ATOMIC_BOOL terminate;
+    // threads waiting for a task
+    volatile SIZE_T availableThreads;
+
+    // tracks task
+    PSafeBlockingQueue taskQueue;
+
+    // tracks threads created
+    PStackQueue threadList;
+
+    MUTEX listMutex;
+    UINT32 minThreads;
+    UINT32 maxThreads;
+} Threadpool, *PThreadpool;
+
+/**
+ * Create a new threadpool
+ *
+ * @param - PThreadpool* - OUT - Pointer to PThreadpool to create
+ * @param - UINT32 - IN - minimum threads the threadpool must maintain (cannot be 0)
+ * @param - UINT32 - IN - maximum threads the threadpool is allowed to create 
+ *                       (cannot be 0, must be greater than minimum)
+ */
+PUBLIC_API STATUS threadpoolCreate(PThreadpool*, UINT32, UINT32);
+
+/**
+ * Destroy a threadpool
+ *
+ * @param - PThreadpool - IN - PThreadpool to destroy
+ */
+PUBLIC_API STATUS threadpoolFree(PThreadpool pThreadpool);
+
+/**
+ * Amount of threads currently tracked by this threadpool
+ *
+ * @param - PThreadpool - IN - PThreadpool to modify
+ * @param - PUINT32 - OUT - Pointer to integer to store the count
+ */
+PUBLIC_API STATUS threadpoolTotalThreadCount(PThreadpool pThreadpool, PUINT32 pCount);
+
+/**
+ * Create a thread with the given task.
+ * returns: STATUS_SUCCESS if a thread was already available
+ *          or if a new thread was created.
+ *          STATUS_FAILED/ if the threadpool is already at its
+ *          predetermined max.
+ *
+ * @param - PThreadpool - IN - PThreadpool to modify
+ * @param - startRoutine - IN - function pointer to run in thread
+ * @param - PVOID - IN - custom data to send to function pointer
+ */
+PUBLIC_API STATUS threadpoolTryAdd(PThreadpool, startRoutine, PVOID);
+
+/**
+ * Create a thread with the given task.
+ * returns: STATUS_SUCCESS if a thread was already available
+ *          or if a new thread was created
+ *          or if the task was added to the queue for the next thread.
+ *          STATUS_FAILED/ if the threadpool queue is full.
+ *
+ * @param - PThreadpool - IN - PThreadpool to modify
+ * @param - startRoutine - IN - function pointer to run in thread
+ * @param - PVOID - IN - custom data to send to function pointer
+ */
+PUBLIC_API STATUS threadpoolPush(PThreadpool, startRoutine, PVOID);
 
 #ifdef __cplusplus
 }
