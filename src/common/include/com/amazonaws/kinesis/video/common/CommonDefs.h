@@ -619,11 +619,11 @@ typedef BOOL (*memChk)(PVOID ptr, BYTE val, SIZE_T size);
 //
 // Default allocator functions
 //
-INLINE PVOID defaultMemAlloc(SIZE_T size);
-INLINE PVOID defaultMemAlignAlloc(SIZE_T size, SIZE_T alignment);
-INLINE PVOID defaultMemCalloc(SIZE_T num, SIZE_T size);
-INLINE PVOID defaultMemRealloc(PVOID ptr, SIZE_T size);
-INLINE VOID defaultMemFree(VOID* ptr);
+PVOID defaultMemAlloc(SIZE_T size);
+PVOID defaultMemAlignAlloc(SIZE_T size, SIZE_T alignment);
+PVOID defaultMemCalloc(SIZE_T num, SIZE_T size);
+PVOID defaultMemRealloc(PVOID ptr, SIZE_T size);
+VOID defaultMemFree(VOID* ptr);
 
 //
 // Global allocator function pointers
@@ -647,10 +647,10 @@ typedef PCHAR (*dlError)();
 //
 // Default dynamic library loading functions
 //
-INLINE PVOID defaultDlOpen(PCHAR filename, UINT32 flag);
-INLINE INT32 defaultDlClose(PVOID handle);
-INLINE PVOID defaultDlSym(PVOID handle, PCHAR symbol);
-INLINE PCHAR defaultDlError();
+PVOID defaultDlOpen(PCHAR filename, UINT32 flag);
+INT32 defaultDlClose(PVOID handle);
+PVOID defaultDlSym(PVOID handle, PCHAR symbol);
+PCHAR defaultDlError();
 
 //
 // Global dynamic library loading function pointers
@@ -682,7 +682,7 @@ typedef UINT64 (*getTime)();
 //
 #define TIME_DIFF_UNIX_WINDOWS_TIME 116444736000000000ULL
 
-PUBLIC_API INLINE UINT64 defaultGetTime();
+PUBLIC_API UINT64 defaultGetTime();
 
 //
 // Thread related functionality
