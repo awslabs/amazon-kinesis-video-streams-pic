@@ -27,7 +27,7 @@ typedef VOID (*logPrintFunc)(UINT32, PCHAR, PCHAR, ...);
 //
 // Default logger function
 //
-PUBLIC_API INLINE VOID defaultLogPrint(UINT32 level, PCHAR tag, PCHAR fmt, ...);
+PUBLIC_API VOID defaultLogPrint(UINT32 level, PCHAR tag, PCHAR fmt, ...);
 
 extern logPrintFunc globalCustomLogPrintFn;
 

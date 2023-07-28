@@ -83,36 +83,36 @@ STATUS getFileDirSize(UINT64, DIR_ENTRY_TYPES, PCHAR, PCHAR);
 /**
  * Endianness functionality
  */
-INLINE INT16 getInt16Swap(INT16);
-INLINE INT16 getInt16NoSwap(INT16);
-INLINE INT32 getInt32Swap(INT32);
-INLINE INT32 getInt32NoSwap(INT32);
-INLINE INT64 getInt64Swap(INT64);
-INLINE INT64 getInt64NoSwap(INT64);
+INT16 getInt16Swap(INT16);
+INT16 getInt16NoSwap(INT16);
+INT32 getInt32Swap(INT32);
+INT32 getInt32NoSwap(INT32);
+INT64 getInt64Swap(INT64);
+INT64 getInt64NoSwap(INT64);
 
-INLINE VOID putInt16Swap(PINT16, INT16);
-INLINE VOID putInt16NoSwap(PINT16, INT16);
-INLINE VOID putInt32Swap(PINT32, INT32);
-INLINE VOID putInt32NoSwap(PINT32, INT32);
-INLINE VOID putInt64Swap(PINT64, INT64);
-INLINE VOID putInt64NoSwap(PINT64, INT64);
+VOID putInt16Swap(PINT16, INT16);
+VOID putInt16NoSwap(PINT16, INT16);
+VOID putInt32Swap(PINT32, INT32);
+VOID putInt32NoSwap(PINT32, INT32);
+VOID putInt64Swap(PINT64, INT64);
+VOID putInt64NoSwap(PINT64, INT64);
 
 /**
  * Unaligned access functionality
  */
-INLINE INT16 getUnalignedInt16Be(PVOID);
-INLINE INT16 getUnalignedInt16Le(PVOID);
-INLINE INT32 getUnalignedInt32Be(PVOID);
-INLINE INT32 getUnalignedInt32Le(PVOID);
-INLINE INT64 getUnalignedInt64Be(PVOID);
-INLINE INT64 getUnalignedInt64Le(PVOID);
+INT16 getUnalignedInt16Be(PVOID);
+INT16 getUnalignedInt16Le(PVOID);
+INT32 getUnalignedInt32Be(PVOID);
+INT32 getUnalignedInt32Le(PVOID);
+INT64 getUnalignedInt64Be(PVOID);
+INT64 getUnalignedInt64Le(PVOID);
 
-INLINE VOID putUnalignedInt16Be(PVOID, INT16);
-INLINE VOID putUnalignedInt16Le(PVOID, INT16);
-INLINE VOID putUnalignedInt32Be(PVOID, INT32);
-INLINE VOID putUnalignedInt32Le(PVOID, INT32);
-INLINE VOID putUnalignedInt64Be(PVOID, INT64);
-INLINE VOID putUnalignedInt64Le(PVOID, INT64);
+VOID putUnalignedInt16Be(PVOID, INT16);
+VOID putUnalignedInt16Le(PVOID, INT16);
+VOID putUnalignedInt32Be(PVOID, INT32);
+VOID putUnalignedInt32Le(PVOID, INT32);
+VOID putUnalignedInt64Be(PVOID, INT64);
+VOID putUnalignedInt64Le(PVOID, INT64);
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // TimerQueue functionality
