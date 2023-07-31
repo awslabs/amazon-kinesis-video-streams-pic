@@ -41,14 +41,14 @@ STATUS generateTimestampStrInMilliseconds(PCHAR formatStr, PCHAR pDestBuffer, UI
 
     timeinfo = GMTIME(&(tv.tv_sec));  // Convert to broken-down time
 
-    millisecondVal = tv.tv_usec / HUNDREDS_OF_NANOS_IN_A_MICROSECOND;  // Convert microseconds to milliseconds
+    millisecondVal = tv.tv_usec / 1000;  // Convert microseconds to milliseconds
 
 #else
     struct timespec nowTime;
     clock_gettime(CLOCK_REALTIME, &nowTime);
 
     timeinfo = GMTIME(&(nowTime.tv_sec));
-    millisecondVal = nowTime.tv_nsec / DEFAULT_TIME_UNIT_IN_NANOS;  // Convert nanoseconds to milliseconds
+    millisecondVal = nowTime.tv_nsec / (HUNDREDS_OF_NANOS_IN_A_MILLISECOND * DEFAULT_TIME_UNIT_IN_NANOS);  // Convert nanoseconds to milliseconds
 
 #endif
     formattedStrLen = 0;
