@@ -1913,10 +1913,13 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
         for (iter = 0; iter < pMetadata->numberOfPairs; iter++) {
             CHK(0 != STRNCMP(AWS_INTERNAL_METADATA_PREFIX, pMetadata->names[iter], (SIZEOF(AWS_INTERNAL_METADATA_PREFIX) - 1) / SIZEOF(CHAR)),
                 STATUS_INVALID_METADATA_NAME);
+            CHK(STRLEN(pMetadata->names[iter]) <= MKV_MAX_TAG_NAME_LEN, STATUS_INVALID_IMAGE_METADATA_KEY_LENGTH);
+            CHK(STRLEN(pMetadata->values[iter]) <= MKV_MAX_TAG_VALUE_LEN, STATUS_INVALID_IMAGE_METADATA_VALUE_LENGTH);
         }
         if (pMetadata->imagePrefix != NULL) {
             CHK(0 != STRNCMP(AWS_INTERNAL_METADATA_PREFIX, pMetadata->imagePrefix, (SIZEOF(AWS_INTERNAL_METADATA_PREFIX) - 1) / SIZEOF(CHAR)),
                 STATUS_INVALID_METADATA_NAME);
+            CHK(STRLEN(pMetadata->imagePrefix) <= MAX_IMAGE_PREFIX_LENGTH, STATUS_INVALID_IMAGE_PREFIX_LENGTH);
         }
         neededNodes += pMetadata->numberOfPairs;
     }

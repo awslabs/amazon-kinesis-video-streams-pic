@@ -187,6 +187,9 @@ extern "C" {
 #define STATUS_MULTIPLE_CONSECUTIVE_EOFR                         STATUS_CLIENT_BASE + 0x0000008a
 #define STATUS_DUPLICATE_STREAM_EVENT_TYPE                       STATUS_CLIENT_BASE + 0x0000008b
 #define STATUS_STREAM_NOT_STARTED                                STATUS_CLIENT_BASE + 0x0000008c
+#define STATUS_INVALID_IMAGE_PREFIX_LENGTH                       STATUS_CLIENT_BASE + 0x0000008d
+#define STATUS_INVALID_IMAGE_METADATA_KEY_LENGTH                 STATUS_CLIENT_BASE + 0x0000008e
+#define STATUS_INVALID_IMAGE_METADATA_VALUE_LENGTH               STATUS_CLIENT_BASE + 0x0000008f
 
 #define IS_RECOVERABLE_ERROR(error)                                                                                                                  \
     ((error) == STATUS_SERVICE_CALL_RESOURCE_NOT_FOUND_ERROR || (error) == STATUS_SERVICE_CALL_RESOURCE_IN_USE_ERROR ||                              \
@@ -279,7 +282,7 @@ extern "C" {
 /**
  * Max name/value pairs for custom event metadata
  */
-#define MAX_EVENT_CUSTOM_PAIRS 5
+#define MAX_EVENT_CUSTOM_PAIRS 10
 
 /**
  * Max length of the fragment sequence number
@@ -380,6 +383,11 @@ extern "C" {
  * Max client id string length
  */
 #define MAX_CLIENT_ID_STRING_LENGTH 64
+
+/**
+ * Max image prefix max length: Including the NULL character
+ */
+#define MAX_IMAGE_PREFIX_LENGTH 256
 
 /**
  * Default timecode scale sentinel value
