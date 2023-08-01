@@ -35,12 +35,12 @@ typedef struct AIV_ALLOCATION_HEADER {
     // Chaining left and right
     struct AIV_ALLOCATION_HEADER* pNext;
     struct AIV_ALLOCATION_HEADER* pPrev;
-} * PAIV_ALLOCATION_HEADER;
+}* PAIV_ALLOCATION_HEADER;
 
 // Macros to convert to and from handle
 #define AIV_HANDLE_SHIFT_BITS    2
-#define TO_AIV_HANDLE(pAiv, p)   (ALLOCATION_HANDLE)((UINT64)(((PBYTE)(p) - (PBYTE)((pAiv)->pAllocation))) << AIV_HANDLE_SHIFT_BITS)
-#define FROM_AIV_HANDLE(pAiv, h) ((PVOID)((PBYTE)((pAiv)->pAllocation) + ((UINT64)(h) >> AIV_HANDLE_SHIFT_BITS)))
+#define TO_AIV_HANDLE(pAiv, p)   (ALLOCATION_HANDLE)((UINT64) (((PBYTE) (p) - (PBYTE) ((pAiv)->pAllocation))) << AIV_HANDLE_SHIFT_BITS)
+#define FROM_AIV_HANDLE(pAiv, h) ((PVOID) ((PBYTE) ((pAiv)->pAllocation) + ((UINT64) (h) >> AIV_HANDLE_SHIFT_BITS)))
 
 /**
  * AIV heap struct
@@ -68,8 +68,8 @@ typedef struct {
  */
 #define CHK_AIV_ALLOCATION(pAiv, pAlloc)                                                                                                             \
     do {                                                                                                                                             \
-        CHK_ERR((PBYTE)(pAlloc) != NULL && (PBYTE)(pAlloc) >= ((PBYTE)((PAivHeap)(pAiv))->pAllocation) &&                                            \
-                    (PBYTE)(pAlloc) < ((PBYTE)((PAivHeap)(pAiv))->pAllocation) + ((PHeap)(pAiv))->heapLimit,                                         \
+        CHK_ERR((PBYTE) (pAlloc) != NULL && (PBYTE) (pAlloc) >= ((PBYTE) ((PAivHeap) (pAiv))->pAllocation) &&                                        \
+                    (PBYTE) (pAlloc) < ((PBYTE) ((PAivHeap) (pAiv))->pAllocation) + ((PHeap) (pAiv))->heapLimit,                                     \
                 STATUS_INVALID_HANDLE_ERROR, "Invalid handle value.");                                                                               \
     } while (FALSE)
 
@@ -82,27 +82,27 @@ typedef struct {
 /**
  * Gets the allocation header
  */
-#define GET_AIV_ALLOCATION_HEADER(p) ((PAIV_ALLOCATION_HEADER)(p) -1)
+#define GET_AIV_ALLOCATION_HEADER(p) ((PAIV_ALLOCATION_HEADER) (p) -1)
 
 /**
  * Retrieve the allocation size
  */
-#define GET_AIV_ALLOCATION_SIZE(pAlloc) (((PALLOCATION_HEADER)(pAlloc))->size)
+#define GET_AIV_ALLOCATION_SIZE(pAlloc) (((PALLOCATION_HEADER) (pAlloc))->size)
 
 /**
  * Sets the allocation size
  */
-#define SET_AIV_ALLOCATION_SIZE(pAlloc, s) (((PALLOCATION_HEADER)(pAlloc))->size = (UINT64)(s))
+#define SET_AIV_ALLOCATION_SIZE(pAlloc, s) (((PALLOCATION_HEADER) (pAlloc))->size = (UINT64) (s))
 
 /**
  * Gets the pointer to the allocation itself
  */
-#define GET_AIV_ALLOCATION(pAlloc) ((PBYTE)((PAIV_ALLOCATION_HEADER)(pAlloc) + 1))
+#define GET_AIV_ALLOCATION(pAlloc) ((PBYTE) ((PAIV_ALLOCATION_HEADER) (pAlloc) + 1))
 
 /**
  * Gets the allocation footer
  */
-#define GET_AIV_ALLOCATION_FOOTER(pAlloc) ((PALLOCATION_FOOTER)(GET_AIV_ALLOCATION(pAlloc) + GET_AIV_ALLOCATION_SIZE(pAlloc)))
+#define GET_AIV_ALLOCATION_FOOTER(pAlloc) ((PALLOCATION_FOOTER) (GET_AIV_ALLOCATION(pAlloc) + GET_AIV_ALLOCATION_SIZE(pAlloc)))
 
 /**
  * Gets the allocation footer size

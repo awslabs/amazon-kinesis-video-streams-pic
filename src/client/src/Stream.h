@@ -21,17 +21,17 @@ extern "C" {
 /**
  * Kinesis Video stream states definitions
  */
-#define STREAM_STATE_NONE         ((UINT64) 0)       // 0x00
-#define STREAM_STATE_NEW          ((UINT64)(1 << 0)) // 0x01
-#define STREAM_STATE_DESCRIBE     ((UINT64)(1 << 1)) // 0x02
-#define STREAM_STATE_CREATE       ((UINT64)(1 << 2)) // 0x04
-#define STREAM_STATE_TAG_STREAM   ((UINT64)(1 << 3)) // 0x08
-#define STREAM_STATE_GET_TOKEN    ((UINT64)(1 << 4)) // 0x10
-#define STREAM_STATE_GET_ENDPOINT ((UINT64)(1 << 5)) // 0x20
-#define STREAM_STATE_READY        ((UINT64)(1 << 6)) // 0x40
-#define STREAM_STATE_PUT_STREAM   ((UINT64)(1 << 7)) // 0x80
-#define STREAM_STATE_STREAMING    ((UINT64)(1 << 8)) // 0x100
-#define STREAM_STATE_STOPPED      ((UINT64)(1 << 9)) // 0x200
+#define STREAM_STATE_NONE         ((UINT64) 0)        // 0x00
+#define STREAM_STATE_NEW          ((UINT64) (1 << 0)) // 0x01
+#define STREAM_STATE_DESCRIBE     ((UINT64) (1 << 1)) // 0x02
+#define STREAM_STATE_CREATE       ((UINT64) (1 << 2)) // 0x04
+#define STREAM_STATE_TAG_STREAM   ((UINT64) (1 << 3)) // 0x08
+#define STREAM_STATE_GET_TOKEN    ((UINT64) (1 << 4)) // 0x10
+#define STREAM_STATE_GET_ENDPOINT ((UINT64) (1 << 5)) // 0x20
+#define STREAM_STATE_READY        ((UINT64) (1 << 6)) // 0x40
+#define STREAM_STATE_PUT_STREAM   ((UINT64) (1 << 7)) // 0x80
+#define STREAM_STATE_STREAMING    ((UINT64) (1 << 8)) // 0x100
+#define STREAM_STATE_STOPPED      ((UINT64) (1 << 9)) // 0x200
 
 #define STREAM_STATE_REACHED_READY(s)                                                                                                                \
     ((s) == STREAM_STATE_READY || (s) == STREAM_STATE_PUT_STREAM || (s) == STREAM_STATE_STREAMING || (s) == STREAM_STATE_STOPPED)
@@ -214,7 +214,7 @@ struct __MetadataTracker {
     // Storage for the packaged metadata.
     PBYTE data;
 
-    //Tracking events (bit shifted)
+    // Tracking events (bit shifted)
     UINT32 events;
 };
 typedef struct __MetadataTracker* PMetadataTracker;
@@ -291,7 +291,7 @@ typedef enum {
 /**
  * Whether the upload handle is in state s
  */
-#define IS_UPLOAD_HANDLE_IN_STATE(u, s) ((((PUploadHandleInfo)(u))->state & (s)) != UPLOAD_HANDLE_STATE_NONE)
+#define IS_UPLOAD_HANDLE_IN_STATE(u, s) ((((PUploadHandleInfo) (u))->state & (s)) != UPLOAD_HANDLE_STATE_NONE)
 
 /**
  * Whether the upload handle is in sending EoS state

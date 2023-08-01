@@ -110,7 +110,7 @@ typedef struct {
  * Handle definition
  */
 #ifndef HEAP_HANDLE_TO_POINTER
-#define HEAP_HANDLE_TO_POINTER(h) ((PHeap)(h))
+#define HEAP_HANDLE_TO_POINTER(h) ((PHeap) (h))
 #endif
 
 /**

@@ -26,8 +26,8 @@ extern "C" {
 /**
  * We will encode a sequential number as the handle in upper 32 bits
  */
-#define TO_FILE_HANDLE(h)   ((UINT32)((UINT64)(h) >> 32))
-#define FROM_FILE_HANDLE(h) (ALLOCATION_HANDLE)(((UINT64)(h) << 32) | ALIGNMENT_BITS)
+#define TO_FILE_HANDLE(h)   ((UINT32) ((UINT64) (h) >> 32))
+#define FROM_FILE_HANDLE(h) (ALLOCATION_HANDLE)(((UINT64) (h) << 32) | ALIGNMENT_BITS)
 
 /**
  * Hybrid heap struct

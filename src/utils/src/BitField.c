@@ -105,7 +105,7 @@ STATUS bitFieldGet(PBitField pBitField, UINT32 index, PBOOL pIsSet)
     CHK(pBitField != NULL && pIsSet != NULL, STATUS_NULL_ARG);
     CHK(index < pBitField->itemCount, STATUS_INVALID_ARG);
 
-    byte = *((PBYTE)(pBitField + 1) + (index >> 3));
+    byte = *((PBYTE) (pBitField + 1) + (index >> 3));
     *pIsSet = (byte & (0x80 >> (index % 8))) != 0;
 
 CleanUp:
@@ -124,7 +124,7 @@ STATUS bitFieldSet(PBitField pBitField, UINT32 index, BOOL isSet)
     CHK(pBitField != NULL, STATUS_NULL_ARG);
     CHK(index < pBitField->itemCount, STATUS_INVALID_ARG);
 
-    pByte = (PBYTE)(pBitField + 1) + (index >> 3);
+    pByte = (PBYTE) (pBitField + 1) + (index >> 3);
     if (isSet) {
         *pByte |= (0x80 >> (index % 8));
     } else {

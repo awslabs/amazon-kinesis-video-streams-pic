@@ -8,16 +8,15 @@
  * For larger base values (<=100), the exponent limit is upto 9
  * For ultra large base values (<=1000), the exponent limit is upto 6
  */
-STATUS computePower(UINT64 base, UINT64 exponent, PUINT64 result) {
+STATUS computePower(UINT64 base, UINT64 exponent, PUINT64 result)
+{
     STATUS retStatus = STATUS_SUCCESS;
     UINT64 res = 1;
 
     CHK(result != NULL, STATUS_NULL_ARG);
 
     // base and exponent values checks to prevent overflow
-    CHK((base <= 5 && exponent <= 27) ||
-            (base <= 100 && exponent <= 9) ||
-            (base <= 1000 && exponent <= 6), STATUS_INVALID_ARG);
+    CHK((base <= 5 && exponent <= 27) || (base <= 100 && exponent <= 9) || (base <= 1000 && exponent <= 6), STATUS_INVALID_ARG);
 
     // Anything power 0 is 1
     if (exponent == 0) {

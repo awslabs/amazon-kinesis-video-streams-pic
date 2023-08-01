@@ -632,7 +632,7 @@ VOID splitFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT64 siz
     } else {
         // split the block
         // Prepare the new free block
-        pNewFree = (PAIV_ALLOCATION_HEADER)((PBYTE)(pBlock + 1) + alignedSize + AIV_ALLOCATION_FOOTER_SIZE);
+        pNewFree = (PAIV_ALLOCATION_HEADER) ((PBYTE) (pBlock + 1) + alignedSize + AIV_ALLOCATION_FOOTER_SIZE);
 
         // Set the header
         MEMCPY(pNewFree, &gAivHeader, AIV_ALLOCATION_HEADER_SIZE);
@@ -671,7 +671,7 @@ VOID splitFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT64 siz
         SET_AIV_ALLOCATION_SIZE(pBlock, alignedSize);
 
         // set the existing allocations footer
-        MEMCPY((PBYTE)(pBlock + 1) + GET_AIV_ALLOCATION_SIZE(pBlock), &gAivFooter, AIV_ALLOCATION_FOOTER_SIZE);
+        MEMCPY((PBYTE) (pBlock + 1) + GET_AIV_ALLOCATION_SIZE(pBlock), &gAivFooter, AIV_ALLOCATION_FOOTER_SIZE);
         SET_AIV_ALLOCATION_FOOTER_SIZE(pBlock);
     }
 
@@ -698,7 +698,7 @@ VOID splitAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT6
     CHECK_EXT(GET_AIV_ALLOCATION_SIZE(pBlock) >= size + MIN_FREE_BLOCK_SIZE, "Invalid block size to split.");
 
     // Prepare the new free block
-    pNewFree = (PAIV_ALLOCATION_HEADER)((PBYTE)(pBlock + 1) + alignedSize + AIV_ALLOCATION_FOOTER_SIZE);
+    pNewFree = (PAIV_ALLOCATION_HEADER) ((PBYTE) (pBlock + 1) + alignedSize + AIV_ALLOCATION_FOOTER_SIZE);
 
     // Set the header
     MEMCPY(pNewFree, &gAivHeader, AIV_ALLOCATION_HEADER_SIZE);
@@ -718,7 +718,7 @@ VOID splitAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock, UINT6
     SET_AIV_ALLOCATION_SIZE(pBlock, alignedSize);
 
     // set the existing allocations footer
-    MEMCPY((PBYTE)(pBlock + 1) + GET_AIV_ALLOCATION_SIZE(pBlock), &gAivFooter, AIV_ALLOCATION_FOOTER_SIZE);
+    MEMCPY((PBYTE) (pBlock + 1) + GET_AIV_ALLOCATION_SIZE(pBlock), &gAivFooter, AIV_ALLOCATION_FOOTER_SIZE);
     SET_AIV_ALLOCATION_FOOTER_SIZE(pBlock);
 
     // Add the remainder to the free chain
@@ -760,7 +760,7 @@ VOID coalesceFreeToAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pAll
 
 #ifdef HEAP_DEBUG
         // Null the memory in debug mode
-        MEMSET((PBYTE)(pFree + 1), 0x00, (SIZE_T) freeSize);
+        MEMSET((PBYTE) (pFree + 1), 0x00, (SIZE_T) freeSize);
 #endif
 
         SET_AIV_ALLOCATION_SIZE(pAlloc, blockSize + freeSize + AIV_ALLOCATION_HEADER_SIZE + AIV_ALLOCATION_FOOTER_SIZE);
@@ -773,7 +773,7 @@ VOID coalesceFreeToAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pAll
         // Prepare the new free block without accounting for the header.
         // The new footer will be accounted for from the allocated footer
         // to move to the new position and fixed up.
-        pNewFree = (PAIV_ALLOCATION_HEADER)((PBYTE) pFree + alignedDiffSize);
+        pNewFree = (PAIV_ALLOCATION_HEADER) ((PBYTE) pFree + alignedDiffSize);
 
         // Store the existing next and prev
         pNext = pFree->pNext;
@@ -817,7 +817,7 @@ VOID coalesceFreeToAllocatedBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pAll
 
 #ifdef HEAP_DEBUG
         // Null the memory in debug mode
-        MEMSET((PBYTE)(pAlloc + 1) + blockSize, 0x00, (SIZE_T) alignedDiffSize);
+        MEMSET((PBYTE) (pAlloc + 1) + blockSize, 0x00, (SIZE_T) alignedDiffSize);
 #endif
     }
 }
@@ -948,9 +948,9 @@ VOID addFreeBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pBlock)
 BOOL checkOverlap(PAIV_ALLOCATION_HEADER pBlock1, PAIV_ALLOCATION_HEADER pBlock2)
 {
     if (pBlock1 < pBlock2) {
-        return (PBYTE)(pBlock1 + 1) + GET_AIV_ALLOCATION_SIZE(pBlock1) + AIV_ALLOCATION_FOOTER_SIZE > (PBYTE) pBlock2;
+        return (PBYTE) (pBlock1 + 1) + GET_AIV_ALLOCATION_SIZE(pBlock1) + AIV_ALLOCATION_FOOTER_SIZE > (PBYTE) pBlock2;
     } else {
-        return (PBYTE)(pBlock2 + 1) + GET_AIV_ALLOCATION_SIZE(pBlock2) + AIV_ALLOCATION_FOOTER_SIZE > (PBYTE) pBlock1;
+        return (PBYTE) (pBlock2 + 1) + GET_AIV_ALLOCATION_SIZE(pBlock2) + AIV_ALLOCATION_FOOTER_SIZE > (PBYTE) pBlock1;
     }
 }
 
@@ -970,7 +970,7 @@ PAIV_ALLOCATION_HEADER getLeftBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER pB
 
     UINT64 blockSize = pFooter->size;
 
-    PAIV_ALLOCATION_HEADER pHeader = (PAIV_ALLOCATION_HEADER)((PBYTE) pFooter - blockSize - AIV_ALLOCATION_HEADER_SIZE);
+    PAIV_ALLOCATION_HEADER pHeader = (PAIV_ALLOCATION_HEADER) ((PBYTE) pFooter - blockSize - AIV_ALLOCATION_HEADER_SIZE);
 
     CHECK_EXT((PBYTE) pHeader >= (PBYTE) pAivHeap->pAllocation, "Heap corrupted or invalid allocation");
 
@@ -984,7 +984,7 @@ PAIV_ALLOCATION_HEADER getRightBlock(PAivHeap pAivHeap, PAIV_ALLOCATION_HEADER p
 {
     // Assuming all the parameters have been sanitized as this is an internal functionality
     UINT64 blockSize = GET_AIV_ALLOCATION_SIZE(pBlock);
-    PAIV_ALLOCATION_HEADER pHeader = (PAIV_ALLOCATION_HEADER)((PBYTE)(pBlock + 1) + blockSize + AIV_ALLOCATION_FOOTER_SIZE);
+    PAIV_ALLOCATION_HEADER pHeader = (PAIV_ALLOCATION_HEADER) ((PBYTE) (pBlock + 1) + blockSize + AIV_ALLOCATION_FOOTER_SIZE);
     PBYTE pHeapLimit = (PBYTE) pAivHeap->pAllocation + ((PHeap) pAivHeap)->heapLimit;
 
     // Check for the boundary

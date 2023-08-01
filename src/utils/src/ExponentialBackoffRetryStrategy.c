@@ -1,6 +1,7 @@
 #include "Include_i.h"
 
-STATUS normalizeExponentialBackoffConfig(PExponentialBackoffRetryStrategyConfig pExponentialBackoffRetryStrategyConfig) {
+STATUS normalizeExponentialBackoffConfig(PExponentialBackoffRetryStrategyConfig pExponentialBackoffRetryStrategyConfig)
+{
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
 
@@ -10,20 +11,16 @@ STATUS normalizeExponentialBackoffConfig(PExponentialBackoffRetryStrategyConfig 
     pExponentialBackoffRetryStrategyConfig->retryFactorTime *= HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     pExponentialBackoffRetryStrategyConfig->minTimeToResetRetryState *= HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
 
-    DLOGV("Thread Id [%"PRIu64"]. Exponential backoff retry strategy config - "
-        "maxRetryCount: [%"PRIu64"], "
-        "maxRetryWaitTime: [%"PRIu64"], "
-        "retryFactorTime: [%"PRIu64"], "
-        "minTimeToResetRetryState: [%"PRIu64"], "
-        "jitterType: [%"PRIu64"], "
-        "jitterFactor: [%"PRIu64"], ",
-        GETTID(),
-        pExponentialBackoffRetryStrategyConfig->maxRetryCount,
-        pExponentialBackoffRetryStrategyConfig->maxRetryWaitTime,
-        pExponentialBackoffRetryStrategyConfig->retryFactorTime,
-        pExponentialBackoffRetryStrategyConfig->minTimeToResetRetryState,
-        pExponentialBackoffRetryStrategyConfig->jitterType,
-        pExponentialBackoffRetryStrategyConfig->jitterFactor);
+    DLOGV("Thread Id [%" PRIu64 "]. Exponential backoff retry strategy config - "
+          "maxRetryCount: [%" PRIu64 "], "
+          "maxRetryWaitTime: [%" PRIu64 "], "
+          "retryFactorTime: [%" PRIu64 "], "
+          "minTimeToResetRetryState: [%" PRIu64 "], "
+          "jitterType: [%" PRIu64 "], "
+          "jitterFactor: [%" PRIu64 "], ",
+          GETTID(), pExponentialBackoffRetryStrategyConfig->maxRetryCount, pExponentialBackoffRetryStrategyConfig->maxRetryWaitTime,
+          pExponentialBackoffRetryStrategyConfig->retryFactorTime, pExponentialBackoffRetryStrategyConfig->minTimeToResetRetryState,
+          pExponentialBackoffRetryStrategyConfig->jitterType, pExponentialBackoffRetryStrategyConfig->jitterFactor);
 
     // Seed rand to generate random number for jitter
     SRAND(GETTIME());
@@ -33,18 +30,16 @@ CleanUp:
     return retStatus;
 }
 
-STATUS resetExponentialBackoffRetryState(PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState) {
+STATUS resetExponentialBackoffRetryState(PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState)
+{
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
 
     CHK(pExponentialBackoffRetryStrategyState != NULL, STATUS_NULL_ARG);
 
-    DLOGV("Thread Id [%"PRIu64"]. Resetting Exponential Backoff State. Last retry system time [%"PRIu64"], "
-        "retry count so far [%u], Current system time [%"PRIu64"]",
-        GETTID(),
-        pExponentialBackoffRetryStrategyState->lastRetrySystemTime,
-        pExponentialBackoffRetryStrategyState->currentRetryCount,
-        GETTIME());
+    DLOGV("Thread Id [%" PRIu64 "]. Resetting Exponential Backoff State. Last retry system time [%" PRIu64 "], "
+          "retry count so far [%u], Current system time [%" PRIu64 "]",
+          GETTID(), pExponentialBackoffRetryStrategyState->lastRetrySystemTime, pExponentialBackoffRetryStrategyState->currentRetryCount, GETTIME());
 
     pExponentialBackoffRetryStrategyState->currentRetryCount = 0;
     pExponentialBackoffRetryStrategyState->lastRetryWaitTime = 0;
@@ -56,7 +51,8 @@ CleanUp:
     return retStatus;
 }
 
-STATUS exponentialBackoffRetryStrategyWithDefaultConfigCreate(PKvsRetryStrategy pKvsRetryStrategy) {
+STATUS exponentialBackoffRetryStrategyWithDefaultConfigCreate(PKvsRetryStrategy pKvsRetryStrategy)
+{
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState = NULL;
@@ -77,33 +73,38 @@ STATUS exponentialBackoffRetryStrategyWithDefaultConfigCreate(PKvsRetryStrategy 
 
 CleanUp:
     if (STATUS_SUCCEEDED(retStatus)) {
-        pKvsRetryStrategy->pRetryStrategy = (PRetryStrategy)pExponentialBackoffRetryStrategyState;
+        pKvsRetryStrategy->pRetryStrategy = (PRetryStrategy) pExponentialBackoffRetryStrategyState;
     }
 
     LEAVES();
     return retStatus;
 }
 
-STATUS validateExponentialBackoffConfig(PExponentialBackoffRetryStrategyConfig pExponentialBackoffRetryStrategyConfig) {
+STATUS validateExponentialBackoffConfig(PExponentialBackoffRetryStrategyConfig pExponentialBackoffRetryStrategyConfig)
+{
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
 
     CHK(pExponentialBackoffRetryStrategyConfig != NULL, STATUS_NULL_ARG);
 
-    CHK(CHECK_IN_RANGE(pExponentialBackoffRetryStrategyConfig->maxRetryWaitTime,
-                       MIN_KVS_MAX_WAIT_TIME_MILLISECONDS, LIMIT_KVS_MAX_WAIT_TIME_MILLISECONDS), STATUS_INVALID_ARG);
-    CHK(CHECK_IN_RANGE(pExponentialBackoffRetryStrategyConfig->retryFactorTime,
-                       MIN_KVS_RETRY_TIME_FACTOR_MILLISECONDS, LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS), STATUS_INVALID_ARG);
-    CHK(CHECK_IN_RANGE(pExponentialBackoffRetryStrategyConfig->minTimeToResetRetryState,
-                       MIN_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS, LIMIT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS), STATUS_INVALID_ARG);
-    CHK(pExponentialBackoffRetryStrategyConfig->jitterType == FULL_JITTER ||
-    pExponentialBackoffRetryStrategyConfig->jitterType == FIXED_JITTER ||
-    pExponentialBackoffRetryStrategyConfig->jitterType == NO_JITTER, STATUS_INVALID_ARG);
+    CHK(CHECK_IN_RANGE(pExponentialBackoffRetryStrategyConfig->maxRetryWaitTime, MIN_KVS_MAX_WAIT_TIME_MILLISECONDS,
+                       LIMIT_KVS_MAX_WAIT_TIME_MILLISECONDS),
+        STATUS_INVALID_ARG);
+    CHK(CHECK_IN_RANGE(pExponentialBackoffRetryStrategyConfig->retryFactorTime, MIN_KVS_RETRY_TIME_FACTOR_MILLISECONDS,
+                       LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS),
+        STATUS_INVALID_ARG);
+    CHK(CHECK_IN_RANGE(pExponentialBackoffRetryStrategyConfig->minTimeToResetRetryState, MIN_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS,
+                       LIMIT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS),
+        STATUS_INVALID_ARG);
+    CHK(pExponentialBackoffRetryStrategyConfig->jitterType == FULL_JITTER || pExponentialBackoffRetryStrategyConfig->jitterType == FIXED_JITTER ||
+            pExponentialBackoffRetryStrategyConfig->jitterType == NO_JITTER,
+        STATUS_INVALID_ARG);
 
     // Validate jitterFactor only if jitter type is jitterFactor
     if (pExponentialBackoffRetryStrategyConfig->jitterType == FIXED_JITTER) {
-        CHK(CHECK_IN_RANGE(pExponentialBackoffRetryStrategyConfig->jitterFactor,
-                           MIN_KVS_JITTER_FACTOR_MILLISECONDS, LIMIT_KVS_JITTER_FACTOR_MILLISECONDS), STATUS_INVALID_ARG);
+        CHK(CHECK_IN_RANGE(pExponentialBackoffRetryStrategyConfig->jitterFactor, MIN_KVS_JITTER_FACTOR_MILLISECONDS,
+                           LIMIT_KVS_JITTER_FACTOR_MILLISECONDS),
+            STATUS_INVALID_ARG);
     }
 
 CleanUp:
@@ -111,7 +112,8 @@ CleanUp:
     return retStatus;
 }
 
-STATUS exponentialBackoffRetryStrategyCreate(PKvsRetryStrategy pKvsRetryStrategy) {
+STATUS exponentialBackoffRetryStrategyCreate(PKvsRetryStrategy pKvsRetryStrategy)
+{
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState = NULL;
@@ -141,14 +143,15 @@ STATUS exponentialBackoffRetryStrategyCreate(PKvsRetryStrategy pKvsRetryStrategy
 
 CleanUp:
     if (STATUS_SUCCEEDED(retStatus)) {
-        pKvsRetryStrategy->pRetryStrategy = (PRetryStrategy)pExponentialBackoffRetryStrategyState;
+        pKvsRetryStrategy->pRetryStrategy = (PRetryStrategy) pExponentialBackoffRetryStrategyState;
     }
 
     LEAVES();
     return retStatus;
 }
 
-UINT64 getRandomJitter(ExponentialBackoffJitterType jitterType, UINT32 configuredJitterFactor, UINT64 currentRetryWaitTime) {
+UINT64 getRandomJitter(ExponentialBackoffJitterType jitterType, UINT32 configuredJitterFactor, UINT64 currentRetryWaitTime)
+{
     UINT64 jitter = 0;
 
     switch (jitterType) {
@@ -166,7 +169,8 @@ UINT64 getRandomJitter(ExponentialBackoffJitterType jitterType, UINT32 configure
     return jitter;
 }
 
-STATUS calculateWaitTime(PExponentialBackoffRetryStrategyState pRetryState, PExponentialBackoffRetryStrategyConfig pRetryConfig, PUINT64 pWaitTime) {
+STATUS calculateWaitTime(PExponentialBackoffRetryStrategyState pRetryState, PExponentialBackoffRetryStrategyConfig pRetryConfig, PUINT64 pWaitTime)
+{
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     UINT64 power = 0, waitTime = 0;
@@ -183,7 +187,8 @@ CleanUp:
     return retStatus;
 }
 
-STATUS validateAndUpdateExponentialBackoffStatus(PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState) {
+STATUS validateAndUpdateExponentialBackoffStatus(PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState)
+{
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
 
@@ -201,7 +206,7 @@ STATUS validateAndUpdateExponentialBackoffStatus(PExponentialBackoffRetryStrateg
             CHK_ERR(FALSE, STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE, "Exponential backoff is already terminated");
             // No 'break' needed since CHK(FALSE, ...) will always jump to CleanUp
         default:
-            DLOGV("Cannot execute exponentialBackoffBlockingWait. Unexpected state [%"PRIu64"]", pExponentialBackoffRetryStrategyState->status);
+            DLOGV("Cannot execute exponentialBackoffBlockingWait. Unexpected state [%" PRIu64 "]", pExponentialBackoffRetryStrategyState->status);
             CHK_ERR(FALSE, STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE, "Unexpected exponential backoff state");
     }
 
@@ -210,7 +215,8 @@ CleanUp:
     return retStatus;
 }
 
-STATUS getExponentialBackoffRetryStrategyWaitTime(PKvsRetryStrategy pKvsRetryStrategy, PUINT64 retryWaitTime) {
+STATUS getExponentialBackoffRetryStrategyWaitTime(PKvsRetryStrategy pKvsRetryStrategy, PUINT64 retryWaitTime)
+{
     ENTERS();
     PExponentialBackoffRetryStrategyState pRetryState = NULL;
     PExponentialBackoffRetryStrategyConfig pRetryConfig = NULL;
@@ -231,16 +237,15 @@ STATUS getExponentialBackoffRetryStrategyWaitTime(PKvsRetryStrategy pKvsRetryStr
     pRetryConfig = &(pRetryState->exponentialBackoffRetryStrategyConfig);
 
     // If retries is exhausted, return error to the application
-    CHK(pRetryConfig->maxRetryCount == KVS_INFINITE_EXPONENTIAL_RETRIES ||
-         pRetryConfig->maxRetryCount > pRetryState->currentRetryCount, STATUS_EXPONENTIAL_BACKOFF_RETRIES_EXHAUSTED);
+    CHK(pRetryConfig->maxRetryCount == KVS_INFINITE_EXPONENTIAL_RETRIES || pRetryConfig->maxRetryCount > pRetryState->currentRetryCount,
+        STATUS_EXPONENTIAL_BACKOFF_RETRIES_EXHAUSTED);
 
     // check the last retry time. If the difference between last retry and current time is greater than
     // minTimeToResetRetryState, then reset the retry state
     //
     // Proceed if this is not the first retry
     currentSystemTime = GETTIME();
-    if (pRetryState->currentRetryCount != 0 &&
-        currentSystemTime > pRetryState->lastRetrySystemTime && // sanity check
+    if (pRetryState->currentRetryCount != 0 && currentSystemTime > pRetryState->lastRetrySystemTime && // sanity check
         currentSystemTime - pRetryState->lastRetrySystemTime > pRetryConfig->minTimeToResetRetryState) {
         CHK_STATUS(resetExponentialBackoffRetryState(pRetryState));
         pRetryState->status = BACKOFF_IN_PROGRESS;
@@ -260,9 +265,7 @@ STATUS getExponentialBackoffRetryStrategyWaitTime(PKvsRetryStrategy pKvsRetryStr
 
     // Note: Do not move the call to getRandomJitter in calculateWaitTime.
     // This is because we need randomization for wait time after we reach maxRetryWaitTime
-    jitter = getRandomJitter(pRetryConfig->jitterType,
-                             pRetryConfig->jitterFactor,
-                             currentRetryWaitTime);
+    jitter = getRandomJitter(pRetryConfig->jitterType, pRetryConfig->jitterFactor, currentRetryWaitTime);
     currentRetryWaitTime += jitter;
 
     // Update retry state's count and wait time values
@@ -272,11 +275,12 @@ STATUS getExponentialBackoffRetryStrategyWaitTime(PKvsRetryStrategy pKvsRetryStr
 
     *retryWaitTime = currentRetryWaitTime;
 
-    DLOGV("\n Thread Id [%"PRIu64"] "
-          "Number of retries [%"PRIu64"], "
-          "Retry wait time [%"PRIu64"] ms, "
-          "Retry system time [%"PRIu64"]",
-          GETTID(), pRetryState->currentRetryCount, pRetryState->lastRetryWaitTime/HUNDREDS_OF_NANOS_IN_A_MILLISECOND, pRetryState->lastRetrySystemTime);
+    DLOGV("\n Thread Id [%" PRIu64 "] "
+          "Number of retries [%" PRIu64 "], "
+          "Retry wait time [%" PRIu64 "] ms, "
+          "Retry system time [%" PRIu64 "]",
+          GETTID(), pRetryState->currentRetryCount, pRetryState->lastRetryWaitTime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND,
+          pRetryState->lastRetrySystemTime);
 
 CleanUp:
     if (retStatus == STATUS_EXPONENTIAL_BACKOFF_RETRIES_EXHAUSTED) {
@@ -292,7 +296,8 @@ CleanUp:
     return retStatus;
 }
 
-STATUS getExponentialBackoffRetryCount(PKvsRetryStrategy pKvsRetryStrategy, PUINT32 pRetryCount) {
+STATUS getExponentialBackoffRetryCount(PKvsRetryStrategy pKvsRetryStrategy, PUINT32 pRetryCount)
+{
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PExponentialBackoffRetryStrategyState pRetryState = NULL;
@@ -310,7 +315,8 @@ CleanUp:
     return retStatus;
 }
 
-STATUS exponentialBackoffRetryStrategyBlockingWait(PKvsRetryStrategy pKvsRetryStrategy) {
+STATUS exponentialBackoffRetryStrategyBlockingWait(PKvsRetryStrategy pKvsRetryStrategy)
+{
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     UINT64 retryWaitTime;
@@ -323,7 +329,8 @@ CleanUp:
     return retStatus;
 }
 
-STATUS exponentialBackoffRetryStrategyFree(PKvsRetryStrategy pKvsRetryStrategy) {
+STATUS exponentialBackoffRetryStrategyFree(PKvsRetryStrategy pKvsRetryStrategy)
+{
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState;

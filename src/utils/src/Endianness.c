@@ -128,58 +128,58 @@ VOID putUnalignedInt16Le(PVOID pVal, INT16 val)
 {
     PBYTE pDst = (PBYTE) pVal;
     pDst[0] = (INT8) val;
-    pDst[1] = (INT8)(val >> 8);
+    pDst[1] = (INT8) (val >> 8);
 }
 
 VOID putUnalignedInt16Be(PVOID pVal, INT16 val)
 {
     PBYTE pDst = (PBYTE) pVal;
     pDst[1] = (INT8) val;
-    pDst[0] = (INT8)(val >> 8);
+    pDst[0] = (INT8) (val >> 8);
 }
 
 VOID putUnalignedInt32Le(PVOID pVal, INT32 val)
 {
     PBYTE pDst = (PBYTE) pVal;
     pDst[0] = (INT8) val;
-    pDst[1] = (INT8)(val >> 8);
-    pDst[2] = (INT8)(val >> 16);
-    pDst[3] = (INT8)(val >> 24);
+    pDst[1] = (INT8) (val >> 8);
+    pDst[2] = (INT8) (val >> 16);
+    pDst[3] = (INT8) (val >> 24);
 }
 
 VOID putUnalignedInt32Be(PVOID pVal, INT32 val)
 {
     PBYTE pDst = (PBYTE) pVal;
     pDst[3] = (INT8) val;
-    pDst[2] = (INT8)(val >> 8);
-    pDst[1] = (INT8)(val >> 16);
-    pDst[0] = (INT8)(val >> 24);
+    pDst[2] = (INT8) (val >> 8);
+    pDst[1] = (INT8) (val >> 16);
+    pDst[0] = (INT8) (val >> 24);
 }
 
 VOID putUnalignedInt64Le(PVOID pVal, INT64 val)
 {
     PBYTE pDst = (PBYTE) pVal;
     pDst[0] = (INT8) val;
-    pDst[1] = (INT8)(val >> 8);
-    pDst[2] = (INT8)(val >> 16);
-    pDst[3] = (INT8)(val >> 24);
-    pDst[4] = (INT8)(val >> 32);
-    pDst[5] = (INT8)(val >> 40);
-    pDst[6] = (INT8)(val >> 48);
-    pDst[7] = (INT8)(val >> 56);
+    pDst[1] = (INT8) (val >> 8);
+    pDst[2] = (INT8) (val >> 16);
+    pDst[3] = (INT8) (val >> 24);
+    pDst[4] = (INT8) (val >> 32);
+    pDst[5] = (INT8) (val >> 40);
+    pDst[6] = (INT8) (val >> 48);
+    pDst[7] = (INT8) (val >> 56);
 }
 
 VOID putUnalignedInt64Be(PVOID pVal, INT64 val)
 {
     PBYTE pDst = (PBYTE) pVal;
     pDst[7] = (INT8) val;
-    pDst[6] = (INT8)(val >> 8);
-    pDst[5] = (INT8)(val >> 16);
-    pDst[4] = (INT8)(val >> 24);
-    pDst[3] = (INT8)(val >> 32);
-    pDst[2] = (INT8)(val >> 40);
-    pDst[1] = (INT8)(val >> 48);
-    pDst[0] = (INT8)(val >> 56);
+    pDst[6] = (INT8) (val >> 8);
+    pDst[5] = (INT8) (val >> 16);
+    pDst[4] = (INT8) (val >> 24);
+    pDst[3] = (INT8) (val >> 32);
+    pDst[2] = (INT8) (val >> 40);
+    pDst[1] = (INT8) (val >> 48);
+    pDst[0] = (INT8) (val >> 56);
 }
 
 //

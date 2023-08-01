@@ -114,29 +114,29 @@ PUBLIC_API STATUS setStateMachineCurrentState(PStateMachine, UINT64);
 PUBLIC_API STATUS resetStateMachineRetryCount(PStateMachine);
 
 static const ExponentialBackoffRetryStrategyConfig DEFAULT_STATE_MACHINE_EXPONENTIAL_BACKOFF_RETRY_CONFIGURATION = {
-        /* Exponential wait times with this config will look like following -
-            ************************************
-            * Retry Count *      Wait time     *
-            * **********************************
-            *     1       *    100ms + jitter  *
-            *     2       *    200ms + jitter  *
-            *     3       *    400ms + jitter  *
-            *     4       *    800ms + jitter  *
-            *     5       *   1600ms + jitter  *
-            *     6       *   3200ms + jitter  *
-            *     7       *   6400ms + jitter  *
-            *     8       *  10000ms + jitter  *
-            *     9       *  10000ms + jitter  *
-            *    10       *  10000ms + jitter  *
-            ************************************
-            jitter = random number between [0, wait time)
-        */
-        KVS_INFINITE_EXPONENTIAL_RETRIES, /* max retry count */
-        10000, /* max retry wait time in milliseconds */
-        100, /* factor determining exponential curve in milliseconds */
-        DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS, /* minimum time in milliseconds to reset retry state */
-        FULL_JITTER, /* use full jitter variant */
-        0 /* jitter value unused for full jitter variant */
+    /* Exponential wait times with this config will look like following -
+        ************************************
+        * Retry Count *      Wait time     *
+        * **********************************
+        *     1       *    100ms + jitter  *
+        *     2       *    200ms + jitter  *
+        *     3       *    400ms + jitter  *
+        *     4       *    800ms + jitter  *
+        *     5       *   1600ms + jitter  *
+        *     6       *   3200ms + jitter  *
+        *     7       *   6400ms + jitter  *
+        *     8       *  10000ms + jitter  *
+        *     9       *  10000ms + jitter  *
+        *    10       *  10000ms + jitter  *
+        ************************************
+        jitter = random number between [0, wait time)
+    */
+    KVS_INFINITE_EXPONENTIAL_RETRIES,                       /* max retry count */
+    10000,                                                  /* max retry wait time in milliseconds */
+    100,                                                    /* factor determining exponential curve in milliseconds */
+    DEFAULT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS, /* minimum time in milliseconds to reset retry state */
+    FULL_JITTER,                                            /* use full jitter variant */
+    0                                                       /* jitter value unused for full jitter variant */
 };
 
 #ifdef __cplusplus

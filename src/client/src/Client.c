@@ -95,7 +95,8 @@ CleanUp:
     return retStatus;
 }
 
-STATUS setupDefaultKvsRetryStrategyParameters(PKinesisVideoClient pKinesisVideoClient) {
+STATUS setupDefaultKvsRetryStrategyParameters(PKinesisVideoClient pKinesisVideoClient)
+{
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKvsRetryStrategyCallbacks pKvsRetryStrategyCallbacks = &(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategyCallbacks);
@@ -107,14 +108,16 @@ STATUS setupDefaultKvsRetryStrategyParameters(PKinesisVideoClient pKinesisVideoC
     pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn = getExponentialBackoffRetryCount;
 
     // Use exponential backoff config for state machine
-    pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.pRetryStrategyConfig = (PRetryStrategyConfig)&DEFAULT_STATE_MACHINE_EXPONENTIAL_BACKOFF_RETRY_CONFIGURATION;
+    pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.pRetryStrategyConfig =
+        (PRetryStrategyConfig) &DEFAULT_STATE_MACHINE_EXPONENTIAL_BACKOFF_RETRY_CONFIGURATION;
 
 CleanUp:
     LEAVES();
     return retStatus;
 }
 
-STATUS configureClientWithRetryStrategy(PKinesisVideoClient pKinesisVideoClient) {
+STATUS configureClientWithRetryStrategy(PKinesisVideoClient pKinesisVideoClient)
+{
     ENTERS();
     PRetryStrategy pRetryStrategy = NULL;
     STATUS retStatus = STATUS_SUCCESS;
@@ -126,11 +129,8 @@ STATUS configureClientWithRetryStrategy(PKinesisVideoClient pKinesisVideoClient)
 
     // If the callbacks for retry strategy are already set, then use that otherwise
     // build the client with a default retry strategy.
-    if (pKvsRetryStrategyCallbacks->createRetryStrategyFn == NULL ||
-        pKvsRetryStrategyCallbacks->freeRetryStrategyFn == NULL ||
-        pKvsRetryStrategyCallbacks->executeRetryStrategyFn == NULL ||
-        pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn == NULL) {
-
+    if (pKvsRetryStrategyCallbacks->createRetryStrategyFn == NULL || pKvsRetryStrategyCallbacks->freeRetryStrategyFn == NULL ||
+        pKvsRetryStrategyCallbacks->executeRetryStrategyFn == NULL || pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn == NULL) {
         CHK_STATUS(setupDefaultKvsRetryStrategyParameters(pKinesisVideoClient));
     }
 
@@ -142,15 +142,16 @@ CleanUp:
     return retStatus;
 }
 
-STATUS freeClientRetryStrategy(PKinesisVideoClient pKinesisVideoClient) {
+STATUS freeClientRetryStrategy(PKinesisVideoClient pKinesisVideoClient)
+{
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
 
-    CHK(pKinesisVideoClient != NULL &&
-            pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategyCallbacks.freeRetryStrategyFn != NULL, STATUS_SUCCESS);
+    CHK(pKinesisVideoClient != NULL && pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategyCallbacks.freeRetryStrategyFn != NULL,
+        STATUS_SUCCESS);
 
     CHK_STATUS(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategyCallbacks.freeRetryStrategyFn(
-            &(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy)));
+        &(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy)));
     pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.pRetryStrategy = NULL;
 
 CleanUp:
@@ -266,7 +267,7 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     CHK(IS_VALID_CVAR_VALUE(pKinesisVideoClient->base.ready), STATUS_NOT_ENOUGH_MEMORY);
 
     // Set the tags pointer to point after the array of streams
-    pKinesisVideoClient->deviceInfo.tags = (PTag)((PKinesisVideoStream*) (pKinesisVideoClient + 1) + pDeviceInfo->streamCount);
+    pKinesisVideoClient->deviceInfo.tags = (PTag) ((PKinesisVideoStream*) (pKinesisVideoClient + 1) + pDeviceInfo->streamCount);
 
     // Package the tags after the structure
     CHK_STATUS(packageTags(pDeviceInfo->tagCount, pDeviceInfo->tags, tagsSize, pKinesisVideoClient->deviceInfo.tags, NULL));
@@ -280,7 +281,8 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
         pKinesisVideoClient->clientCallbacks.createMutexFn(pKinesisVideoClient->clientCallbacks.customData, TRUE);
 
     // Create the putFrame lock
-    pKinesisVideoClient->base.putFrameLock = pKinesisVideoClient->clientCallbacks.createMutexFn(pKinesisVideoClient->clientCallbacks.customData, TRUE);
+    pKinesisVideoClient->base.putFrameLock =
+        pKinesisVideoClient->clientCallbacks.createMutexFn(pKinesisVideoClient->clientCallbacks.customData, TRUE);
 
     // Create the state machine and step it
     CHK_STATUS(createStateMachine(CLIENT_STATE_MACHINE_STATES, CLIENT_STATE_MACHINE_STATE_COUNT, TO_CUSTOM_DATA(pKinesisVideoClient),
@@ -1811,7 +1813,7 @@ VOID createRandomName(PCHAR pName, UINT32 maxChars, GetRandomNumberFunc randFn, 
 
     for (i = 0; i < maxChars; i++) {
         // Generate an alpha char
-        curChar = (CHAR)(randFn(customData) % (10 + 26));
+        curChar = (CHAR) (randFn(customData) % (10 + 26));
         if (curChar <= 9) {
             // Assign num
             curChar += '0';
