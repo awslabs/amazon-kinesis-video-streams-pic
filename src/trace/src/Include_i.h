@@ -138,11 +138,11 @@ typedef struct {
  * Conversion definitions
  */
 #ifndef TRACE_PROFILER_HANDLE_TO_POINTER
-#define TRACE_PROFILER_HANDLE_TO_POINTER(h) (IS_VALID_TRACE_PROFILER_HANDLE(h) ? (PTraceProfiler)(h) : NULL)
+#define TRACE_PROFILER_HANDLE_TO_POINTER(h) (IS_VALID_TRACE_PROFILER_HANDLE(h) ? (PTraceProfiler) (h) : NULL)
 #endif
 
 #ifndef TRACE_HANDLE_TO_POINTER
-#define TRACE_HANDLE_TO_POINTER(h) ((PTrace)(h))
+#define TRACE_HANDLE_TO_POINTER(h) ((PTrace) (h))
 #endif
 
 STATUS getAivFormattedTraceBuffer(PTraceProfiler pTraceProfiler, PCHAR* ppBuffer, PUINT32 pBufferSize, UINT32 traceCount, PTrace pCurTrace);

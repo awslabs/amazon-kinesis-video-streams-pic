@@ -300,7 +300,7 @@ STATUS createFile(PCHAR filePath, UINT64 size)
     CHK(fp != NULL, STATUS_OPEN_FILE_FAILED);
 
     if (size != 0) {
-        CHK(0 == FSEEK(fp, (UINT32)(size - 1), SEEK_SET), STATUS_INVALID_OPERATION);
+        CHK(0 == FSEEK(fp, (UINT32) (size - 1), SEEK_SET), STATUS_INVALID_OPERATION);
         CHK(0 == FPUTC(0, fp), STATUS_INVALID_OPERATION);
     }
 

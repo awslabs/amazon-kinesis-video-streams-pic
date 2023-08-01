@@ -403,7 +403,7 @@ STATUS timerQueueCreateInternal(UINT32 maxTimers, PTimerQueue* ppTimerQueue)
     CHK(IS_VALID_CVAR_VALUE(pTimerQueue->executorCvar), STATUS_INVALID_OPERATION);
 
     // Set the timer entry array past the end of the main allocation
-    pTimerQueue->pTimers = (PTimerEntry)(pTimerQueue + 1);
+    pTimerQueue->pTimers = (PTimerEntry) (pTimerQueue + 1);
 
     // Block threads start
     MUTEX_LOCK(pTimerQueue->startLock);
@@ -610,5 +610,5 @@ CleanUp:
     }
 
     LEAVES();
-    return (PVOID)(ULONG_PTR) retStatus;
+    return (PVOID) (ULONG_PTR) retStatus;
 }

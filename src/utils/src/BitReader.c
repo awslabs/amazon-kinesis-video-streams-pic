@@ -98,7 +98,7 @@ STATUS bitReaderReadExpGolomb(PBitReader pBitReader, PUINT32 pRead)
 
     CHK_STATUS(bitReaderReadBits(pBitReader, i, &retVal));
 
-    shifted = (UINT32)((UINT64) 1 << i);
+    shifted = (UINT32) ((UINT64) 1 << i);
     *pRead = retVal + shifted - 1;
 
 CleanUp:
@@ -120,7 +120,7 @@ STATUS bitReaderReadExpGolombSe(PBitReader pBitReader, PINT32 pRead)
     if (exGolomb & 0x01) {
         retVal = (exGolomb + 1) / 2;
     } else {
-        retVal = -((INT64)(exGolomb / 2));
+        retVal = -((INT64) (exGolomb / 2));
     }
 
     *pRead = retVal;

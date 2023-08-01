@@ -115,7 +115,7 @@ UINT64 getCurrentAuthExpiration(PKinesisVideoClient pKinesisVideoClient)
  */
 UINT64 randomizeAuthInfoExpiration(PKinesisVideoClient pKinesisVideoClient, UINT64 expiration, UINT64 currentTime)
 {
-    UINT64 jitterInSec = (UINT64)((expiration - currentTime) * AUTH_INFO_EXPIRATION_JITTER_RATIO / HUNDREDS_OF_NANOS_IN_A_SECOND);
+    UINT64 jitterInSec = (UINT64) ((expiration - currentTime) * AUTH_INFO_EXPIRATION_JITTER_RATIO / HUNDREDS_OF_NANOS_IN_A_SECOND);
 
     // Quick check whether we need to do anything
     if (!ENABLE_AUTH_INFO_EXPIRATION_RANDOMIZATION || jitterInSec == 0 ||

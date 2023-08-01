@@ -331,7 +331,6 @@ extern "C" {
  */
 #define SERVICE_CALL_DEFAULT_TIMEOUT (10 * HUNDREDS_OF_NANOS_IN_A_SECOND)
 
-
 /**
  * Service call infinite timeout for streaming
  */
@@ -581,8 +580,9 @@ typedef enum {
     *PVIDEO_CODEC_ID;
 
 #define GET_STREAMING_TYPE_STR(st)                                                                                                                   \
-    ((st) == STREAMING_TYPE_REALTIME ? (PCHAR) "STREAMING_TYPE_REALTIME"                                                                             \
-                                     : (st) == STREAMING_TYPE_NEAR_REALTIME ? (PCHAR) "STREAMING_TYPE_NEAR_REALTIME" : "STREAMING_TYPE_OFFLINE")
+    ((st) == STREAMING_TYPE_REALTIME            ? (PCHAR) "STREAMING_TYPE_REALTIME"                                                                  \
+         : (st) == STREAMING_TYPE_NEAR_REALTIME ? (PCHAR) "STREAMING_TYPE_NEAR_REALTIME"                                                             \
+                                                : "STREAMING_TYPE_OFFLINE")
 
 /**
  * Whether the streaming mode is offline
@@ -664,7 +664,7 @@ typedef enum {
 
     // Forbidden
     SERVICE_CALL_FORBIDDEN = 403,
-    
+
     // Security Credentials Expired
     SERVICE_CALL_SIGNATURE_EXPIRED = 10008,
 

@@ -195,7 +195,7 @@ BOOL acceptState(PParserState pState)
             }
 
             UINT64 storedValue = pState->value;
-            pState->value += (UINT64)(tempResult);
+            pState->value += (UINT64) (tempResult);
 
             if ((pState->value < storedValue) || (tempResult != 0.0 && ((UINT64) tempResult == 0))) {
                 // Overflow detected in addition or casting

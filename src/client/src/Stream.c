@@ -193,7 +193,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     pKinesisVideoStream->streamInfo.streamCaps.replayDuration = MIN(pStreamInfo->streamCaps.bufferDuration, pStreamInfo->streamCaps.replayDuration);
 
     // Set the tags pointer to point after the KinesisVideoStream struct
-    pKinesisVideoStream->streamInfo.tags = (PTag)((PBYTE)(pKinesisVideoStream + 1));
+    pKinesisVideoStream->streamInfo.tags = (PTag) ((PBYTE) (pKinesisVideoStream + 1));
 
     // Package the tags after the structure
     CHK_STATUS(packageTags(pStreamInfo->tagCount, pStreamInfo->tags, tagsSize, pKinesisVideoStream->streamInfo.tags, &tagsSize));
@@ -205,7 +205,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     if (pStreamInfo->streamCaps.segmentUuid == NULL) {
         for (i = 0; i < MKV_SEGMENT_UUID_LEN; i++) {
             pKinesisVideoStream->streamInfo.streamCaps.segmentUuid[i] =
-                ((BYTE)(pKinesisVideoClient->clientCallbacks.getRandomNumberFn(pKinesisVideoClient->clientCallbacks.customData) % 0x100));
+                ((BYTE) (pKinesisVideoClient->clientCallbacks.getRandomNumberFn(pKinesisVideoClient->clientCallbacks.customData) % 0x100));
         }
     } else {
         MEMCPY(pKinesisVideoStream->streamInfo.streamCaps.segmentUuid, pStreamInfo->streamCaps.segmentUuid, MKV_SEGMENT_UUID_LEN);
@@ -226,7 +226,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     }
 
     // Move pCurPnt to the end of pKinesisVideoStream->streamInfo.streamCaps.trackInfoList
-    pCurPnt = (PBYTE)(pKinesisVideoStream->streamInfo.streamCaps.trackInfoList + pKinesisVideoStream->streamInfo.streamCaps.trackInfoCount);
+    pCurPnt = (PBYTE) (pKinesisVideoStream->streamInfo.streamCaps.trackInfoList + pKinesisVideoStream->streamInfo.streamCaps.trackInfoCount);
 
     // Calculate the max items in the view
     maxViewItems = calculateViewItemCount(&pKinesisVideoStream->streamInfo);
@@ -930,7 +930,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // is not enough storage
     if (!IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
         remainingSize = pKinesisVideoClient->pHeap->heapLimit - pKinesisVideoClient->pHeap->heapSize;
-        thresholdPercent = (UINT32)(((DOUBLE) remainingSize / pKinesisVideoClient->pHeap->heapLimit) * 100);
+        thresholdPercent = (UINT32) (((DOUBLE) remainingSize / pKinesisVideoClient->pHeap->heapLimit) * 100);
 
         if (thresholdPercent <= STORAGE_PRESSURE_NOTIFICATION_THRESHOLD) {
             pKinesisVideoStream->diagnostics.storagePressures++;
@@ -951,7 +951,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 
             // Check for buffer duration pressure. Note that streamCaps.bufferDuration will never be 0.
             remainingDuration = pKinesisVideoStream->streamInfo.streamCaps.bufferDuration - windowDuration;
-            thresholdPercent = (UINT32)(((DOUBLE) remainingDuration / pKinesisVideoStream->streamInfo.streamCaps.bufferDuration) * 100);
+            thresholdPercent = (UINT32) (((DOUBLE) remainingDuration / pKinesisVideoStream->streamInfo.streamCaps.bufferDuration) * 100);
             if (thresholdPercent <= BUFFER_DURATION_PRESSURE_NOTIFICATION_THRESHOLD) {
                 pKinesisVideoStream->diagnostics.bufferPressures++;
 
@@ -1082,7 +1082,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         if (pTrackInfo != NULL && pTrackInfo->trackType == MKV_TRACK_INFO_TYPE_VIDEO) {
             if (!CHECK_ITEM_STREAM_START(itemFlags)) {
                 // Calculate the delta time in seconds
-                deltaInSeconds = (DOUBLE)(currentTime - pKinesisVideoStream->diagnostics.lastFrameRateTimestamp) / HUNDREDS_OF_NANOS_IN_A_SECOND;
+                deltaInSeconds = (DOUBLE) (currentTime - pKinesisVideoStream->diagnostics.lastFrameRateTimestamp) / HUNDREDS_OF_NANOS_IN_A_SECOND;
                 if (deltaInSeconds != 0) {
                     frameRate = 1 / deltaInSeconds;
 
@@ -1093,7 +1093,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
 
                 // Update elementaryFrameRate.
                 deltaInSeconds =
-                    (DOUBLE)(pFrame->presentationTs - pKinesisVideoStream->diagnostics.previousFrameRatePts) / HUNDREDS_OF_NANOS_IN_A_SECOND;
+                    (DOUBLE) (pFrame->presentationTs - pKinesisVideoStream->diagnostics.previousFrameRatePts) / HUNDREDS_OF_NANOS_IN_A_SECOND;
                 if (deltaInSeconds != 0) {
                     pKinesisVideoStream->diagnostics.elementaryFrameRate = 1 / deltaInSeconds;
                 }
@@ -1473,7 +1473,7 @@ CleanUp:
 
         if (!restarted) {
             // Calculate the delta time in seconds
-            deltaInSeconds = (DOUBLE)(currentTime - pKinesisVideoStream->diagnostics.lastTransferRateTimestamp) / HUNDREDS_OF_NANOS_IN_A_SECOND;
+            deltaInSeconds = (DOUBLE) (currentTime - pKinesisVideoStream->diagnostics.lastTransferRateTimestamp) / HUNDREDS_OF_NANOS_IN_A_SECOND;
 
             if (deltaInSeconds > TRANSFER_RATE_MEASURING_INTERVAL_EPSILON) {
                 transferRate = pKinesisVideoStream->diagnostics.accumulatedByteCount / deltaInSeconds;
@@ -1760,7 +1760,7 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
     // Check if we have enough space available. Adding maxFrameSizeSeen to handle fragmentation as well as when curl thread needs to alloc space for
     // sending data.
     availableHeapSize = pKinesisVideoClient->deviceInfo.storageInfo.storageSize - heapSize - MAX_ALLOCATION_OVERHEAD_SIZE -
-        (UINT64)(pKinesisVideoStream->maxFrameSizeSeen * FRAME_ALLOC_FRAGMENTATION_FACTOR);
+        (UINT64) (pKinesisVideoStream->maxFrameSizeSeen * FRAME_ALLOC_FRAGMENTATION_FACTOR);
 
     // Early return if storage space is unavailable.
     CHK(availableHeapSize >= allocationSize, STATUS_SUCCESS);
@@ -2503,12 +2503,12 @@ UINT32 calculateViewItemCount(PStreamInfo pStreamInfo)
         case STREAMING_TYPE_REALTIME:
         case STREAMING_TYPE_OFFLINE:
             // Calculate the number of frames for the duration of the buffer.
-            viewItemCount = pStreamInfo->streamCaps.frameRate * ((UINT32)(pStreamInfo->streamCaps.bufferDuration / HUNDREDS_OF_NANOS_IN_A_SECOND));
+            viewItemCount = pStreamInfo->streamCaps.frameRate * ((UINT32) (pStreamInfo->streamCaps.bufferDuration / HUNDREDS_OF_NANOS_IN_A_SECOND));
             break;
 
         case STREAMING_TYPE_NEAR_REALTIME:
             // Calculate the number of the fragments in the buffer.
-            viewItemCount = (UINT32)(pStreamInfo->streamCaps.bufferDuration / pStreamInfo->streamCaps.fragmentDuration);
+            viewItemCount = (UINT32) (pStreamInfo->streamCaps.bufferDuration / pStreamInfo->streamCaps.fragmentDuration);
             break;
     }
 
@@ -3283,7 +3283,7 @@ STATUS createSerializedMetadata(PCHAR name, PCHAR value, BOOL persistent, UINT32
     pSerializedMetadata->parent = parent;
 
     // Set the name to point to the end of the structure
-    pSerializedMetadata->name = (PCHAR)(pSerializedMetadata + 1);
+    pSerializedMetadata->name = (PCHAR) (pSerializedMetadata + 1);
 
     // Copy the name of the metadata
     STRCPY(pSerializedMetadata->name, name);

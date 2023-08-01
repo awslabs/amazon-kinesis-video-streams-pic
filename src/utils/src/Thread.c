@@ -32,7 +32,7 @@ PUBLIC_API DWORD WINAPI startWrapperRoutine(LPVOID data)
     // Free the heap allocated wrapper as we have a local stack copy
     MEMFREE(pWrapper);
 
-    UINT32 retVal = (UINT32)(UINT64) wrapper.storedStartRoutine(wrapper.storedArgs);
+    UINT32 retVal = (UINT32) (UINT64) wrapper.storedStartRoutine(wrapper.storedArgs);
 
     return retVal;
 }

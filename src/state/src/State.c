@@ -33,7 +33,7 @@ STATUS createStateMachine(PStateMachineState pStates, UINT32 stateCount, UINT64 
     pStateMachine->customData = customData;
 
     // Set the states pointer and copy the globals
-    pStateMachine->states = (PStateMachineState)(pStateMachine + 1);
+    pStateMachine->states = (PStateMachineState) (pStateMachine + 1);
 
     // Copy the states over
     MEMCPY(pStateMachine->states, pStates, SIZEOF(StateMachineState) * stateCount);
@@ -171,11 +171,8 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
 
     DLOGV("State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64 ", "
           "Current local state retry count [%u], Max local state retry count [%u], State transition wait time [%u] ms",
-          pStateMachineImpl->context.pCurrentState->state,
-          nextState,
-          pStateMachineImpl->context.localStateRetryCount,
-          pState->maxLocalStateRetryCount,
-          errorStateTransitionWaitTime/HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+          pStateMachineImpl->context.pCurrentState->state, nextState, pStateMachineImpl->context.localStateRetryCount,
+          pState->maxLocalStateRetryCount, errorStateTransitionWaitTime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     // Check if we have tried enough times within the same state
     if (pState->maxLocalStateRetryCount != INFINITE_RETRY_COUNT_SENTINEL) {
@@ -188,7 +185,8 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
     // Execute the state function if specified
     // The executeStateFn callback is expected to wait for stateTransitionWaitTime before executing the actual logic
     if (pStateMachineImpl->context.pCurrentState->executeStateFn != NULL) {
-        CHK_STATUS(pStateMachineImpl->context.pCurrentState->executeStateFn(pStateMachineImpl->customData, pStateMachineImpl->context.stateTransitionWaitTime));
+        CHK_STATUS(pStateMachineImpl->context.pCurrentState->executeStateFn(pStateMachineImpl->customData,
+                                                                            pStateMachineImpl->context.stateTransitionWaitTime));
     }
 
 CleanUp:

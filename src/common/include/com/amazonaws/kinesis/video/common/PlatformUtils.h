@@ -140,8 +140,8 @@ extern logPrintFunc globalCustomLogPrintFn;
     LOG_ALWAYS_FATAL_IF(!(x), "%s::%s: ASSERTION FAILED at %s:%d: " fmt, (PCHAR) LOG_CLASS, __FUNCTION__, SANITIZED_FILE, __LINE__, ##__VA_ARGS__)
 #endif
 
-#ifndef LOG_GIT_HASH    
-#define LOG_GIT_HASH()    DLOGI("SDK version: %s", GIT_HASH)
+#ifndef LOG_GIT_HASH
+#define LOG_GIT_HASH() DLOGI("SDK version: %s", GIT_HASH)
 #endif
 
 #ifdef __cplusplus

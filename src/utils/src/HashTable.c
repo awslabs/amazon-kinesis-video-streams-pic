@@ -44,8 +44,8 @@ STATUS hashTableCreateWithParams(UINT32 bucketCount, UINT32 bucketLength, PHashT
     // NOTE: the buckets have been NULL-ed by calloc.
     // The buckets follow immediately after the hash table
     // The entries follow immediately after the buckets array
-    pHashBucket = (PHashBucket)(pHashTable + 1);
-    pHashEntry = (PHashEntry)(((PBYTE) pHashBucket) + bucketAllocSize);
+    pHashBucket = (PHashBucket) (pHashTable + 1);
+    pHashEntry = (PHashEntry) (((PBYTE) pHashBucket) + bucketAllocSize);
 
     for (i = 0; i < bucketCount; i++) {
         pHashBucket->count = 0;
@@ -86,7 +86,7 @@ STATUS hashTableFree(PHashTable pHashTable)
     hashTableClear(pHashTable);
 
     // Free the buckets
-    pHashBucket = (PHashBucket)(pHashTable + 1);
+    pHashBucket = (PHashBucket) (pHashTable + 1);
     for (i = 0; i < pHashTable->bucketCount; i++) {
         // Check if the entries have been allocated by comparing the length against the original bucketLength
         if (pHashBucket[i].length != pHashTable->bucketLength) {
@@ -115,7 +115,7 @@ STATUS hashTableClear(PHashTable pHashTable)
 
     // Iterate through and clear buckets.
     // NOTE: This doesn't de-allocate the buckets
-    pHashBucket = (PHashBucket)(pHashTable + 1);
+    pHashBucket = (PHashBucket) (pHashTable + 1);
     for (i = 0; i < pHashTable->bucketCount; i++) {
         pHashBucket[i].count = 0;
     }
@@ -385,7 +385,7 @@ STATUS hashTableGetAllEntries(PHashTable pHashTable, PHashEntry pHashEntries, PU
     pHashEntry = pHashEntries;
 
     // Copy the items into the array
-    pHashBucket = (PHashBucket)(pHashTable + 1);
+    pHashBucket = (PHashBucket) (pHashTable + 1);
     for (bucketIndex = 0; bucketIndex < pHashTable->bucketCount; bucketIndex++) {
         if (pHashBucket[bucketIndex].count != 0) {
             // Copy into the array
@@ -419,7 +419,7 @@ STATUS hashTableIterateEntries(PHashTable pHashTable, UINT64 callerData, HashEnt
     CHK(pHashTable != NULL && hashEntryFn != NULL, STATUS_NULL_ARG);
 
     // Iterate over buckets and entries
-    pHashBucket = (PHashBucket)(pHashTable + 1);
+    pHashBucket = (PHashBucket) (pHashTable + 1);
     for (bucketIndex = 0; bucketIndex < pHashTable->bucketCount; bucketIndex++) {
         if (pHashBucket[bucketIndex].count != 0) {
             // Iterate and call the callback function on entries
@@ -450,7 +450,7 @@ CleanUp:
  */
 PHashBucket getHashBucket(PHashTable pHashTable, UINT64 key)
 {
-    PHashBucket pHashBucket = (PHashBucket)(pHashTable + 1);
+    PHashBucket pHashBucket = (PHashBucket) (pHashTable + 1);
     UINT32 index = getKeyHash(key) % pHashTable->bucketCount;
 
     return &pHashBucket[index];

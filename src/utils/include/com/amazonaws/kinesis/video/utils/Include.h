@@ -1948,7 +1948,7 @@ typedef struct __Threadpool {
  *
  * @param - PThreadpool* - OUT - Pointer to PThreadpool to create
  * @param - UINT32 - IN - minimum threads the threadpool must maintain (cannot be 0)
- * @param - UINT32 - IN - maximum threads the threadpool is allowed to create 
+ * @param - UINT32 - IN - maximum threads the threadpool is allowed to create
  *                       (cannot be 0, must be greater than minimum)
  */
 PUBLIC_API STATUS threadpoolCreate(PThreadpool*, UINT32, UINT32);

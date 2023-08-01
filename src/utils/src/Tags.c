@@ -56,8 +56,8 @@ STATUS packageTags(UINT32 tagCount, PTag pSrcTags, UINT32 tagsSize, PTag pDstTag
 
     for (i = 0; i < tagCount; i++) {
         // Get the name and value lengths - those should have been validated already
-        nameSize = (UINT32)(STRLEN(pSrcTags[i].name) + 1) * SIZEOF(CHAR);
-        valueSize = (UINT32)(STRLEN(pSrcTags[i].value) + 1) * SIZEOF(CHAR);
+        nameSize = (UINT32) (STRLEN(pSrcTags[i].name) + 1) * SIZEOF(CHAR);
+        valueSize = (UINT32) (STRLEN(pSrcTags[i].value) + 1) * SIZEOF(CHAR);
         CHK(remaining >= nameSize + valueSize, STATUS_NOT_ENOUGH_MEMORY);
 
         pDstTags[i].version = pSrcTags[i].version;

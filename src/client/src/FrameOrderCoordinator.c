@@ -305,7 +305,7 @@ STATUS frameOrderCoordinatorPutFrame(PKinesisVideoStream pKinesisVideoStream, PF
     CHK(NULL != (pFrame = (PFrame) MEMALLOC(overallSize)), STATUS_NOT_ENOUGH_MEMORY);
 
     *pFrame = *pUserFrame;
-    pFrame->frameData = (PBYTE)(pFrame + 1);
+    pFrame->frameData = (PBYTE) (pFrame + 1);
     MEMCPY(pFrame->frameData, pUserFrame->frameData, pUserFrame->size);
 
     CHK_STATUS(stackQueueEnqueue(pPutFrameTrackData->frameQueue, (UINT64) pFrame));

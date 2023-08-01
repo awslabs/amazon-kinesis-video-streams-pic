@@ -220,7 +220,7 @@ STATUS threadpoolInternalCreateTask(PThreadpool pThreadpool, startRoutine functi
 
     allocated = TRUE;
 
-    CHK_STATUS(safeBlockingQueueEnqueue(pThreadpool->taskQueue, (UINT64)pTask));
+    CHK_STATUS(safeBlockingQueueEnqueue(pThreadpool->taskQueue, (UINT64) pTask));
 
 CleanUp:
     if (STATUS_FAILED(retStatus) && allocated) {

@@ -35,7 +35,7 @@ STATUS ulltostr(UINT64 value, PCHAR pStr, UINT32 size, UINT32 base, PUINT32 pSiz
     }
 
     while (value != 0) {
-        remainder = (UINT32)(value % base);
+        remainder = (UINT32) (value % base);
         value = value / base;
 
         // Need space for the NULL terminator
@@ -105,11 +105,11 @@ STATUS strtoint(PCHAR pStart, PCHAR pEnd, UINT32 base, PUINT64 pRet, PBOOL pSign
     while (pCur != pEnd && *pCur != '\0') {
         curChar = *pCur;
         if (curChar >= '0' && curChar <= '9') {
-            digit = (UINT64)(curChar - '0');
+            digit = (UINT64) (curChar - '0');
         } else if (curChar >= 'a' && curChar <= 'z') {
-            digit = (UINT64)(curChar - 'a') + 10;
+            digit = (UINT64) (curChar - 'a') + 10;
         } else if (curChar >= 'A' && curChar <= 'Z') {
-            digit = (UINT64)(curChar - 'A') + 10;
+            digit = (UINT64) (curChar - 'A') + 10;
         } else {
             CHK(FALSE, STATUS_INVALID_DIGIT);
         }
@@ -130,7 +130,7 @@ STATUS strtoint(PCHAR pStart, PCHAR pEnd, UINT32 base, PUINT64 pRet, PBOOL pSign
     CHK(seenChars, STATUS_EMPTY_STRING);
 
     if (!positive) {
-        result = (UINT64)((INT64) result * -1);
+        result = (UINT64) ((INT64) result * -1);
     }
 
     *pRet = result;
@@ -388,7 +388,7 @@ STATUS trimstrall(PCHAR pStr, UINT32 strLen, PCHAR* ppStart, PCHAR* ppEnd)
 
     // Calculate the new length
     if (strLen != 0) {
-        strLen -= (UINT32)(*ppStart - pStr);
+        strLen -= (UINT32) (*ppStart - pStr);
         if (strLen == 0) {
             // This is the case where we have no more string left and we can't call the rtrimstr API
             // as it will interpret the strLen of 0 as a signal to calculate the length
@@ -434,7 +434,7 @@ STATUS tolowerupperstr(PCHAR pStr, UINT32 strLen, BOOL toUpper, PCHAR pConverted
 
     // Iterate strLen characters (not accounting for the NULL terminator) or until the NULL terminator is reached
     while (i++ < strLen && *pSrc != '\0') {
-        *pDst = (CHAR)(toUpper ? TOUPPER(*pSrc) : TOLOWER(*pSrc));
+        *pDst = (CHAR) (toUpper ? TOUPPER(*pSrc) : TOLOWER(*pSrc));
 
         pSrc++;
         pDst++;

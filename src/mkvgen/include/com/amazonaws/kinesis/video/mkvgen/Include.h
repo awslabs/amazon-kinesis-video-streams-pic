@@ -224,8 +224,9 @@ typedef enum {
 typedef enum { MKV_TREE_TAGS = 0, MKV_TREE_TAG, MKV_TREE_SIMPLE, MKV_TREE_LAST } MKV_TREE_TYPE;
 
 #define GET_TRACK_TYPE_STR(st)                                                                                                                       \
-    ((st) == MKV_TRACK_INFO_TYPE_VIDEO ? (PCHAR) "TRACK_INFO_TYPE_VIDEO"                                                                             \
-                                       : (st) == MKV_TRACK_INFO_TYPE_AUDIO ? (PCHAR) "TRACK_INFO_TYPE_AUDIO" : "TRACK_INFO_TYPE_UNKNOWN")
+    ((st) == MKV_TRACK_INFO_TYPE_VIDEO       ? (PCHAR) "TRACK_INFO_TYPE_VIDEO"                                                                       \
+         : (st) == MKV_TRACK_INFO_TYPE_AUDIO ? (PCHAR) "TRACK_INFO_TYPE_AUDIO"                                                                       \
+                                             : "TRACK_INFO_TYPE_UNKNOWN")
 
 /**
  * Macros checking for the frame flags
@@ -235,15 +236,15 @@ typedef enum { MKV_TREE_TAGS = 0, MKV_TREE_TAG, MKV_TREE_SIMPLE, MKV_TREE_LAST }
 #define CHECK_FRAME_FLAG_INVISIBLE_FRAME(f)   (((f) &FRAME_FLAG_INVISIBLE_FRAME) != FRAME_FLAG_NONE)
 #define CHECK_FRAME_FLAG_END_OF_FRAGMENT(f)   (((f) &FRAME_FLAG_END_OF_FRAGMENT) != FRAME_FLAG_NONE)
 
-#define SET_FRAME_FLAG_KEY_FRAME(f)         ((f) = (FRAME_FLAGS)(f | FRAME_FLAG_KEY_FRAME))
-#define SET_FRAME_FLAG_DISCARDABLE_FRAME(f) ((f) = (FRAME_FLAGS)(f | FRAME_FLAG_DISCARDABLE_FRAME))
-#define SET_FRAME_FLAG_INVISIBLE_FRAME(f)   ((f) = (FRAME_FLAGS)(f | FRAME_FLAG_INVISIBLE_FRAME))
-#define SET_FRAME_FLAG_END_OF_FRAGMENT(f)   ((f) = (FRAME_FLAGS)(f | FRAME_FLAG_END_OF_FRAGMENT))
+#define SET_FRAME_FLAG_KEY_FRAME(f)         ((f) = (FRAME_FLAGS) (f | FRAME_FLAG_KEY_FRAME))
+#define SET_FRAME_FLAG_DISCARDABLE_FRAME(f) ((f) = (FRAME_FLAGS) (f | FRAME_FLAG_DISCARDABLE_FRAME))
+#define SET_FRAME_FLAG_INVISIBLE_FRAME(f)   ((f) = (FRAME_FLAGS) (f | FRAME_FLAG_INVISIBLE_FRAME))
+#define SET_FRAME_FLAG_END_OF_FRAGMENT(f)   ((f) = (FRAME_FLAGS) (f | FRAME_FLAG_END_OF_FRAGMENT))
 
-#define CLEAR_FRAME_FLAG_KEY_FRAME(f)         ((f) = (FRAME_FLAGS)(f & ~FRAME_FLAG_KEY_FRAME))
-#define CLEAR_FRAME_FLAG_DISCARDABLE_FRAME(f) ((f) = (FRAME_FLAGS)(f & ~FRAME_FLAG_DISCARDABLE_FRAME))
-#define CLEAR_FRAME_FLAG_INVISIBLE_FRAME(f)   ((f) = (FRAME_FLAGS)(f & ~FRAME_FLAG_INVISIBLE_FRAME))
-#define CLEAR_FRAME_FLAG_END_OF_FRAGMENT(f)   ((f) = (FRAME_FLAGS)(f & ~FRAME_FLAG_END_OF_FRAGMENT))
+#define CLEAR_FRAME_FLAG_KEY_FRAME(f)         ((f) = (FRAME_FLAGS) (f & ~FRAME_FLAG_KEY_FRAME))
+#define CLEAR_FRAME_FLAG_DISCARDABLE_FRAME(f) ((f) = (FRAME_FLAGS) (f & ~FRAME_FLAG_DISCARDABLE_FRAME))
+#define CLEAR_FRAME_FLAG_INVISIBLE_FRAME(f)   ((f) = (FRAME_FLAGS) (f & ~FRAME_FLAG_INVISIBLE_FRAME))
+#define CLEAR_FRAME_FLAG_END_OF_FRAGMENT(f)   ((f) = (FRAME_FLAGS) (f & ~FRAME_FLAG_END_OF_FRAGMENT))
 
 /**
  * Frame types enum
@@ -472,7 +473,6 @@ typedef UINT64 (*GetCurrentTimeFunc)(UINT64);
 ////////////////////////////////////////////////////
 // Public functions
 ////////////////////////////////////////////////////
-
 
 PUBLIC_API STATUS mkvgenHasStreamStarted(PMkvGenerator, PBOOL);
 /**

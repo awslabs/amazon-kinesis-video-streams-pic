@@ -152,7 +152,7 @@ DEFINE_HEAP_ALLOC(sysHeapAlloc)
     pHeader->size = size;
 
     // Setting the return value
-    *pHandle = (ALLOCATION_HANDLE)((PBYTE) pHeader + SYS_ALLOCATION_HEADER_SIZE);
+    *pHandle = (ALLOCATION_HANDLE) ((PBYTE) pHeader + SYS_ALLOCATION_HEADER_SIZE);
 
 CleanUp:
     LEAVES();
@@ -178,7 +178,7 @@ DEFINE_HEAP_FREE(sysHeapFree)
 
 #ifdef HEAP_DEBUG
     // Null the memory in debug mode
-    MEMSET(pHeader, 0x00, (SIZE_T)(SYS_ALLOCATION_HEADER_SIZE + pHeader->size + SYS_ALLOCATION_FOOTER_SIZE));
+    MEMSET(pHeader, 0x00, (SIZE_T) (SYS_ALLOCATION_HEADER_SIZE + pHeader->size + SYS_ALLOCATION_FOOTER_SIZE));
 #endif
 
     // Perform the de-allocation - will cause corruption if invalid pointer is passed in
@@ -263,7 +263,7 @@ DEFINE_HEAP_SET_ALLOC_SIZE(sysHeapSetAllocSize)
     pNewHeader->size = newSize;
 
     // Setting the return value
-    *pHandle = (ALLOCATION_HANDLE)((PBYTE) pNewHeader + SYS_ALLOCATION_HEADER_SIZE);
+    *pHandle = (ALLOCATION_HANDLE) ((PBYTE) pNewHeader + SYS_ALLOCATION_HEADER_SIZE);
 
 CleanUp:
     LEAVES();
@@ -341,7 +341,7 @@ DEFINE_ALLOC_SIZE(sysGetAllocationSize)
     }
 
     // Check the footer
-    if (0 != MEMCMP((PBYTE)(pHeader + 1) + pHeader->size, &gSysFooter, SYS_ALLOCATION_FOOTER_SIZE)) {
+    if (0 != MEMCMP((PBYTE) (pHeader + 1) + pHeader->size, &gSysFooter, SYS_ALLOCATION_FOOTER_SIZE)) {
         DLOGE("Invalid footer for allocation %p", pAllocation);
         return INVALID_ALLOCATION_VALUE;
     }

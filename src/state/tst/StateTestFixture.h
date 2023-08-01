@@ -9,11 +9,11 @@
  * Kinesis Video client states definitions
  */
 #define TEST_STATE_0 ((UINT64) 0)
-#define TEST_STATE_1 ((UINT64)(1 << 0))
-#define TEST_STATE_2 ((UINT64)(1 << 1))
-#define TEST_STATE_3 ((UINT64)(1 << 2))
-#define TEST_STATE_4 ((UINT64)(1 << 3))
-#define TEST_STATE_5 ((UINT64)(1 << 4))
+#define TEST_STATE_1 ((UINT64) (1 << 0))
+#define TEST_STATE_2 ((UINT64) (1 << 1))
+#define TEST_STATE_3 ((UINT64) (1 << 2))
+#define TEST_STATE_4 ((UINT64) (1 << 3))
+#define TEST_STATE_5 ((UINT64) (1 << 4))
 
 #define TEST_STATE_COUNT 6
 
