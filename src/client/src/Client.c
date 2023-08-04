@@ -70,10 +70,11 @@ STATUS checkIntermittentProducerCallback(UINT32 timerId, UINT64 currentTime, UIN
                 // Check if last PutFrame is older than max timeout, if so, send EoFR, if not, do nothing
                 // Ignoring currentTime it COULD be smaller than pCurrStream->lastPutFrametimestamp
                 // Due to this method entering but waiting on stream lock from putFrame call
-                if (IS_VALID_TIMESTAMP(pCurrStream->lastPutFrameTimestamp) && currentTime > pCurrStream->lastPutFrameTimestamp &&
+                if (!pCurrStream->streamStopped && IS_VALID_TIMESTAMP(pCurrStream->lastPutFrameTimestamp) &&
+                    currentTime > pCurrStream->lastPutFrameTimestamp &&
                     (currentTime - pCurrStream->lastPutFrameTimestamp) > INTERMITTENT_PRODUCER_MAX_TIMEOUT) {
                     if (!STATUS_SUCCEEDED(retStatus = putKinesisVideoFrame(TO_STREAM_HANDLE(pCurrStream), &eofr))) {
-                        DLOGW("Failed to submit auto eofr with 0x%08x, for stream name: %s", retStatus, pCurrStream->streamInfo.name);
+                        DLOGW("Failed to submit auto eofr with 0x%08x, for stream: %s", retStatus, pCurrStream->streamInfo.name);
                     }
                 }
 
@@ -881,8 +882,13 @@ STATUS putKinesisVideoFrame(STREAM_HANDLE streamHandle, PFrame pFrame)
     CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->base.shutdownSemaphore, INFINITE_TIME_VALUE));
     releaseStreamSemaphore = TRUE;
 
-    DLOGV("debug frame info pts: %" PRIu64 ", dts: %" PRIu64 ", duration: %" PRIu64 ", size: %u, trackId: %" PRIu64 ", isKey %d",
-          pFrame->presentationTs, pFrame->decodingTs, pFrame->duration, pFrame->size, pFrame->trackId, CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags));
+    DLOGV("[%s] debug frame info pts: %" PRIu64 ", dts: %" PRIu64 ", duration: %" PRIu64 ", size: %u, trackId: %" PRIu64 ", isKey %d",
+          pKinesisVideoStream->streamInfo.name, pFrame->presentationTs, pFrame->decodingTs, pFrame->duration, pFrame->size, pFrame->trackId,
+          CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags));
+
+    // Acquire putFrame Lock
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.putFrameLock);
+    putFrameLocked = TRUE;
 
     // Acquire putFrame Lock
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.putFrameLock);
@@ -898,9 +904,17 @@ CleanUp:
     }
 
     if (STATUS_FAILED(retStatus) && pFrame != NULL) {
-        DLOGW("Failed to submit frame to Kinesis Video client. "
-              "status: 0x%08x decoding timestamp: %" PRIu64 " presentation timestamp: %" PRIu64,
-              retStatus, pFrame->decodingTs, pFrame->presentationTs);
+        // Check necessary since we could end up in clean up if pKinesisVideoStream is NULL
+        if (pKinesisVideoStream != NULL) {
+            DLOGW("[%s] Failed to submit frame to Kinesis Video client. "
+                  "status: 0x%08x decoding timestamp: %" PRIu64 " presentation timestamp: %" PRIu64,
+                  pKinesisVideoStream->streamInfo.name, retStatus, pFrame->decodingTs, pFrame->presentationTs);
+        } else {
+            DLOGW("Failed to submit frame to Kinesis Video client. "
+                  "status: 0x%08x decoding timestamp: %" PRIu64 " presentation timestamp: %" PRIu64,
+                  retStatus, pFrame->decodingTs, pFrame->presentationTs);
+        }
+
     } else {
         /* In case pFrame is NULL and something failed */
         CHK_LOG_ERR(retStatus);
