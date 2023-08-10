@@ -245,6 +245,20 @@ STATUS describeStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CAL
         // Check the rest of the values and warn on mismatch
         // NOTE: We need to compare non-empty KMS keys only as the default is used when none is specified
 
+        if ((pKinesisVideoStream->streamInfo.kmsKeyId[0] != '\0') &&
+            (0 != STRNCMP(pKinesisVideoStream->streamInfo.kmsKeyId, streamDescription.kmsKeyId, MAX_ARN_LEN))) {
+            DLOGW("KMS key ID returned from the DescribeStream call doesn't match the one specified in the StreamInfo");
+        }
+
+        if (pKinesisVideoStream->streamInfo.retention != streamDescription.retention) {
+            DLOGW("Retention period returned from the DescribeStream call doesn't match the one specified in the StreamInfo");
+        }
+
+        if (0 != STRNCMP(pKinesisVideoStream->streamInfo.streamCaps.contentType, streamDescription.contentType, MAX_CONTENT_TYPE_LEN)) {
+            DLOGW("Content type returned from the DescribeStream(%s) call doesn't match the one specified in the StreamInfo(%s)",
+                  streamDescription.contentType, pKinesisVideoStream->streamInfo.streamCaps.contentType);
+        }
+
         if (0 != STRNCMP(pKinesisVideoStream->streamInfo.name, streamDescription.streamName, MAX_STREAM_NAME_LEN)) {
             DLOGW("Stream name returned from the DescribeStream(%s) call doesn't match the one specified in the StreamInfo(%s)",
                   streamDescription.streamName, pKinesisVideoStream->streamInfo.name);
