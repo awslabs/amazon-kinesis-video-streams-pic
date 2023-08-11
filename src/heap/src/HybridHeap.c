@@ -164,8 +164,8 @@ DEFINE_INIT_HEAP(hybridHeapInit)
     CHK_STATUS(commonHeapInit(pHeap, heapLimit));
 
     // Calculate the in-memory and vram based heap sizes
-    memHeapLimit = (UINT32)(heapLimit * pHybridHeap->spillRatio);
-    vramHeapLimit = (UINT32)(heapLimit - memHeapLimit);
+    memHeapLimit = (UINT32) (heapLimit * pHybridHeap->spillRatio);
+    vramHeapLimit = (UINT32) (heapLimit - memHeapLimit);
 
     // Try to see if we can allocate enough vram
     maxVramSize = pHybridHeap->vramGetMax();
@@ -600,7 +600,7 @@ DEFINE_ALLOC_SIZE(hybridGetAllocationSize)
     }
 
     // Check the footer
-    if (0 != MEMCMP((PBYTE)(pAllocation + 1) + pAllocation->size, &gVramFooter, VRAM_ALLOCATION_FOOTER_SIZE)) {
+    if (0 != MEMCMP((PBYTE) (pAllocation + 1) + pAllocation->size, &gVramFooter, VRAM_ALLOCATION_FOOTER_SIZE)) {
         DLOGE("Invalid footer for allocation %p", pAllocation);
         return INVALID_ALLOCATION_VALUE;
     }

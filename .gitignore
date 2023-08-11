@@ -6,4 +6,7 @@ cmake-build-debug/
 cmake-build-release/
 open-source/
 outputs
+*.swp
+*.swo
+tags
 cmake-build-pic/

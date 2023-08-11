@@ -95,8 +95,8 @@ extern "C" {
 #define CLEAR_ITEM_SKIP_ITEM(f)          ((f) &= ~ITEM_FLAG_SKIP_ITEM)
 #define CLEAR_ITEM_STREAM_START_DEBUG(f) ((f) &= ~ITEM_FLAG_STREAM_START_DEBUG)
 
-#define GET_ITEM_DATA_OFFSET(f)    ((UINT16)((f) >> 16))
-#define SET_ITEM_DATA_OFFSET(f, o) ((f) = ((f) &0x0000ffff) | (((UINT16)(o)) << 16))
+#define GET_ITEM_DATA_OFFSET(f)    ((UINT16) ((f) >> 16))
+#define SET_ITEM_DATA_OFFSET(f, o) ((f) = ((f) &0x0000ffff) | (((UINT16) (o)) << 16))
 
 /**
  * This is a sentinel indicating an invalid index value

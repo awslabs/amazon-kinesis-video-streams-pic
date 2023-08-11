@@ -83,36 +83,36 @@ STATUS getFileDirSize(UINT64, DIR_ENTRY_TYPES, PCHAR, PCHAR);
 /**
  * Endianness functionality
  */
-INLINE INT16 getInt16Swap(INT16);
-INLINE INT16 getInt16NoSwap(INT16);
-INLINE INT32 getInt32Swap(INT32);
-INLINE INT32 getInt32NoSwap(INT32);
-INLINE INT64 getInt64Swap(INT64);
-INLINE INT64 getInt64NoSwap(INT64);
+INT16 getInt16Swap(INT16);
+INT16 getInt16NoSwap(INT16);
+INT32 getInt32Swap(INT32);
+INT32 getInt32NoSwap(INT32);
+INT64 getInt64Swap(INT64);
+INT64 getInt64NoSwap(INT64);
 
-INLINE VOID putInt16Swap(PINT16, INT16);
-INLINE VOID putInt16NoSwap(PINT16, INT16);
-INLINE VOID putInt32Swap(PINT32, INT32);
-INLINE VOID putInt32NoSwap(PINT32, INT32);
-INLINE VOID putInt64Swap(PINT64, INT64);
-INLINE VOID putInt64NoSwap(PINT64, INT64);
+VOID putInt16Swap(PINT16, INT16);
+VOID putInt16NoSwap(PINT16, INT16);
+VOID putInt32Swap(PINT32, INT32);
+VOID putInt32NoSwap(PINT32, INT32);
+VOID putInt64Swap(PINT64, INT64);
+VOID putInt64NoSwap(PINT64, INT64);
 
 /**
  * Unaligned access functionality
  */
-INLINE INT16 getUnalignedInt16Be(PVOID);
-INLINE INT16 getUnalignedInt16Le(PVOID);
-INLINE INT32 getUnalignedInt32Be(PVOID);
-INLINE INT32 getUnalignedInt32Le(PVOID);
-INLINE INT64 getUnalignedInt64Be(PVOID);
-INLINE INT64 getUnalignedInt64Le(PVOID);
+INT16 getUnalignedInt16Be(PVOID);
+INT16 getUnalignedInt16Le(PVOID);
+INT32 getUnalignedInt32Be(PVOID);
+INT32 getUnalignedInt32Le(PVOID);
+INT64 getUnalignedInt64Be(PVOID);
+INT64 getUnalignedInt64Le(PVOID);
 
-INLINE VOID putUnalignedInt16Be(PVOID, INT16);
-INLINE VOID putUnalignedInt16Le(PVOID, INT16);
-INLINE VOID putUnalignedInt32Be(PVOID, INT32);
-INLINE VOID putUnalignedInt32Le(PVOID, INT32);
-INLINE VOID putUnalignedInt64Be(PVOID, INT64);
-INLINE VOID putUnalignedInt64Le(PVOID, INT64);
+VOID putUnalignedInt16Be(PVOID, INT16);
+VOID putUnalignedInt16Le(PVOID, INT16);
+VOID putUnalignedInt32Be(PVOID, INT32);
+VOID putUnalignedInt32Le(PVOID, INT32);
+VOID putUnalignedInt64Be(PVOID, INT64);
+VOID putUnalignedInt64Le(PVOID, INT64);
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // TimerQueue functionality
@@ -154,8 +154,8 @@ typedef struct {
 } TimerQueue, *PTimerQueue;
 
 // Public handle to and from object converters
-#define TO_TIMER_QUEUE_HANDLE(p)   ((TIMER_QUEUE_HANDLE)(p))
-#define FROM_TIMER_QUEUE_HANDLE(h) (IS_VALID_TIMER_QUEUE_HANDLE(h) ? (PTimerQueue)(h) : NULL)
+#define TO_TIMER_QUEUE_HANDLE(p)   ((TIMER_QUEUE_HANDLE) (p))
+#define FROM_TIMER_QUEUE_HANDLE(h) (IS_VALID_TIMER_QUEUE_HANDLE(h) ? (PTimerQueue) (h) : NULL)
 
 // Internal Functions
 STATUS timerQueueCreateInternal(UINT32, PTimerQueue*);
@@ -179,11 +179,17 @@ typedef struct {
     // Current granted permit count
     volatile SIZE_T permitCount;
 
+    // Current number of threads waiting
+    volatile SIZE_T waitCount;
+
     // Whether the semaphore is locked for granting any more permits
     volatile ATOMIC_BOOL locked;
 
     // Whether we are shutting down
     volatile ATOMIC_BOOL shutdown;
+
+    // Whether semaphore is allowed to be deleted at 0 count
+    BOOL signalSemaphore;
 
     // Max allowed permits
     SIZE_T maxPermitCount;
@@ -202,16 +208,17 @@ typedef struct {
 } Semaphore, *PSemaphore;
 
 // Public handle to and from object converters
-#define TO_SEMAPHORE_HANDLE(p)   ((SEMAPHORE_HANDLE)(p))
-#define FROM_SEMAPHORE_HANDLE(h) (IS_VALID_SEMAPHORE_HANDLE(h) ? (PSemaphore)(h) : NULL)
+#define TO_SEMAPHORE_HANDLE(p)   ((SEMAPHORE_HANDLE) (p))
+#define FROM_SEMAPHORE_HANDLE(h) (IS_VALID_SEMAPHORE_HANDLE(h) ? (PSemaphore) (h) : NULL)
 
 // Internal Functions
-STATUS semaphoreCreateInternal(UINT32, PSemaphore*);
+STATUS semaphoreCreateInternal(UINT32, PSemaphore*, BOOL);
 STATUS semaphoreFreeInternal(PSemaphore*);
 STATUS semaphoreAcquireInternal(PSemaphore, UINT64);
 STATUS semaphoreReleaseInternal(PSemaphore);
 STATUS semaphoreSetLockInternal(PSemaphore, BOOL);
 STATUS semaphoreWaitUntilClearInternal(PSemaphore, UINT64);
+STATUS semaphoreGetCountInternal(PSemaphore, PINT32);
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Instrumented allocators functionality
@@ -295,6 +302,14 @@ typedef struct {
  * @return - STATUS of execution
  */
 STATUS flushLogToFile(PFileLoggerParameters);
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+// Threadpool functionality
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+STATUS threadpoolInternalCreateThread(PThreadpool);
+STATUS threadpoolInternalCanCreateThread(PThreadpool, PBOOL);
+STATUS threadpoolInternalInactiveThreadCount(PThreadpool, PSIZE_T);
 
 #ifdef __cplusplus
 }

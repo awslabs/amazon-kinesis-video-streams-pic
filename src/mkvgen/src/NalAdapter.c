@@ -11,7 +11,7 @@
 STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData, UINT32 frameDataSize, BOOL removeEpb, PBYTE pAdaptedFrameData, PUINT32 pAdaptedFrameDataSize)
 {
     STATUS retStatus = STATUS_SUCCESS;
-    UINT32 i = 0, zeroCount = 0, runSize = 0;
+    UINT32 i = 0, zeroCount = 0, runSize = 0, adaptedSize = 0;
     BOOL markerFound = FALSE;
     PBYTE pCurPnt = pFrameData, pAdaptedCurPnt = pAdaptedFrameData, pRunStart = NULL;
 
@@ -50,8 +50,12 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData, UINT32 frameDataSize, BO
             // Store the beginning of the run
             pRunStart = pAdaptedCurPnt;
 
-            // Increment the adapted pointer to 4 bytes
-            pAdaptedCurPnt += 4;
+            if (pAdaptedCurPnt == NULL) {
+                adaptedSize += 4;
+            } else {
+                // Increment the adapted pointer to 4 bytes
+                pAdaptedCurPnt += 4;
+            }
 
             // Store an indicator that we have a marker
             markerFound = TRUE;
@@ -62,7 +66,11 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData, UINT32 frameDataSize, BO
         } else if (removeEpb && *pCurPnt == 0x03 && zeroCount == 2 && (i < frameDataSize - 1) &&
                    ((*(pCurPnt + 1) == 0x00) || (*(pCurPnt + 1) == 0x01) || (*(pCurPnt + 1) == 0x02) || (*(pCurPnt + 1) == 0x03))) {
             // Removing the EPB
-            pAdaptedCurPnt += zeroCount;
+            if (pAdaptedCurPnt == NULL) {
+                adaptedSize += zeroCount;
+            } else {
+                pAdaptedCurPnt += zeroCount;
+            }
 
             // If the adapted frame is specified then copy the zeros and then the current byte
             if (pAdaptedFrameData != NULL) {
@@ -79,7 +87,11 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData, UINT32 frameDataSize, BO
             // Advance the current pointer and the run size to the number of zeros so far
             // as well as add the zeros to the adapted buffer if any
             runSize += zeroCount + 1; // for the current byte
-            pAdaptedCurPnt += zeroCount + 1;
+            if (pAdaptedCurPnt == NULL) {
+                adaptedSize += zeroCount + 1;
+            } else {
+                pAdaptedCurPnt += zeroCount + 1;
+            }
 
             // If the adapted frame is specified then copy the zeros and then the current byte
             if (pAdaptedFrameData != NULL) {
@@ -100,7 +112,11 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData, UINT32 frameDataSize, BO
     }
 
     // We could still have last few zeros at the end of the frame data and need to fix-up the last NAL
-    pAdaptedCurPnt += zeroCount;
+    if (pAdaptedCurPnt == NULL) {
+        adaptedSize += zeroCount;
+    } else {
+        pAdaptedCurPnt += zeroCount;
+    }
     if (pAdaptedFrameData != NULL) {
         // The last remaining zeros should go towards the run size
         runSize += zeroCount;
@@ -122,12 +138,15 @@ STATUS adaptFrameNalsFromAnnexBToAvcc(PBYTE pFrameData, UINT32 frameDataSize, BO
     }
 
 CleanUp:
-
     if (STATUS_SUCCEEDED(retStatus) && pAdaptedFrameDataSize != NULL) {
         // NOTE: Due to EPB removal we could in fact make the adaptation buffer smaller than the original
         // We will require at least the original size buffer.
-        *pAdaptedFrameDataSize = (removeEpb && HANDLING_TRAILING_NALU_ZERO) ? MAX(frameDataSize, (UINT32)(pAdaptedCurPnt - pAdaptedFrameData))
-                                                                            : (UINT32)(pAdaptedCurPnt - pAdaptedFrameData);
+        if (pAdaptedCurPnt != NULL) {
+            *pAdaptedFrameDataSize = (removeEpb && HANDLING_TRAILING_NALU_ZERO) ? MAX(frameDataSize, (UINT32) (pAdaptedCurPnt - pAdaptedFrameData))
+                                                                                : (UINT32) (pAdaptedCurPnt - pAdaptedFrameData);
+        } else {
+            *pAdaptedFrameDataSize = (removeEpb && HANDLING_TRAILING_NALU_ZERO) ? MAX(frameDataSize, adaptedSize) : adaptedSize;
+        }
     }
 
     return retStatus;
@@ -246,7 +265,7 @@ STATUS adaptH264CpdNalsFromAnnexBToAvcc(PBYTE pCpd, UINT32 cpdSize, PBYTE pAdapt
     pCurPnt += ppsSize;
 
     // Precise adapted size
-    adaptedCpdSize = (UINT32)(pCurPnt - pAdaptedCpd);
+    adaptedCpdSize = (UINT32) (pCurPnt - pAdaptedCpd);
 
 CleanUp:
 
@@ -299,7 +318,7 @@ STATUS adaptH265CpdNalsFromAnnexBToHvcc(PBYTE pCpd, UINT32 cpdSize, PBYTE pAdapt
     // Get the NALu count and store the pointer to SPS
     // It should be VPS/SPS/PPS
     // In some cases the PPS might be missing
-    while (naluCount < ARRAY_SIZE(naluTypes) && (UINT32)(pSrcPnt - pAdaptedBits) < adaptedRawSize) {
+    while (naluCount < ARRAY_SIZE(naluTypes) && (UINT32) (pSrcPnt - pAdaptedBits) < adaptedRawSize) {
         CHK(pSrcPnt - pAdaptedBits + SIZEOF(UINT32) <= adaptedRawSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
         naluSize = (UINT32) GET_UNALIGNED_BIG_ENDIAN((PUINT32) pSrcPnt);
 
@@ -308,7 +327,7 @@ STATUS adaptH265CpdNalsFromAnnexBToHvcc(PBYTE pCpd, UINT32 cpdSize, PBYTE pAdapt
         naluSizes[naluCount] = naluSize;
 
         pSrcPnt += SIZEOF(UINT32) + naluSize;
-        CHK((UINT32)(pSrcPnt - pAdaptedBits) <= adaptedRawSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
+        CHK((UINT32) (pSrcPnt - pAdaptedBits) <= adaptedRawSize, STATUS_MKV_INVALID_ANNEXB_CPD_NALUS);
         naluCount++;
     }
 
@@ -340,7 +359,7 @@ STATUS adaptH265CpdNalsFromAnnexBToHvcc(PBYTE pCpd, UINT32 cpdSize, PBYTE pAdapt
     *pCurPnt++ = HEVC_CONFIG_VERSION_CODE;
 
     // general_profile_space, general_tier_flag, general_profile_idc
-    *pCurPnt++ = (UINT8)(spsInfo.general_profile_space << 6 | (spsInfo.general_tier_flag & 0x01) << 5 | (spsInfo.general_profile_idc & 0x1f));
+    *pCurPnt++ = (UINT8) (spsInfo.general_profile_space << 6 | (spsInfo.general_tier_flag & 0x01) << 5 | (spsInfo.general_profile_idc & 0x1f));
 
     // general_profile_compatibility_flags
     *pCurPnt++ = spsInfo.general_profile_compatibility_flags[0];
@@ -367,13 +386,13 @@ STATUS adaptH265CpdNalsFromAnnexBToHvcc(PBYTE pCpd, UINT32 cpdSize, PBYTE pAdapt
     *pCurPnt++ = 0xfc;
 
     // chroma_format_idc
-    *pCurPnt++ = (UINT8)(0xfc | (spsInfo.chroma_format_idc & 0x03));
+    *pCurPnt++ = (UINT8) (0xfc | (spsInfo.chroma_format_idc & 0x03));
 
     // bit_depth_luma_minus8
-    *pCurPnt++ = (UINT8)(0xf8 | (spsInfo.bit_depth_luma_minus8 & 0x07));
+    *pCurPnt++ = (UINT8) (0xf8 | (spsInfo.bit_depth_luma_minus8 & 0x07));
 
     // bit_depth_luma_minus8
-    *pCurPnt++ = (UINT8)(0xf8 | (spsInfo.bit_depth_chroma_minus8 & 0x07));
+    *pCurPnt++ = (UINT8) (0xf8 | (spsInfo.bit_depth_chroma_minus8 & 0x07));
 
     // avgFrameRate
     *pCurPnt++ = 0x00;

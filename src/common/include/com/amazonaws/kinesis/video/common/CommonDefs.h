@@ -428,7 +428,7 @@ typedef INT_PTR SSIZE_T, *PSSIZE_T;
 #define SAFE_DELETE_ARRAY(p)                                                                                                                         \
     do {                                                                                                                                             \
         if (p) {                                                                                                                                     \
-            delete[](p);                                                                                                                             \
+            delete[] (p);                                                                                                                            \
             (p) = NULL;                                                                                                                              \
         }                                                                                                                                            \
     } while (0)
@@ -457,40 +457,40 @@ typedef INT_PTR SSIZE_T, *PSSIZE_T;
 
 #define STATUS_SUCCESS ((STATUS) 0x00000000)
 
-#define STATUS_FAILED(x)    (((STATUS)(x)) != STATUS_SUCCESS)
+#define STATUS_FAILED(x)    (((STATUS) (x)) != STATUS_SUCCESS)
 #define STATUS_SUCCEEDED(x) (!STATUS_FAILED(x))
 
-#define STATUS_BASE                                     0x00000000
-#define STATUS_NULL_ARG                                 STATUS_BASE + 0x00000001
-#define STATUS_INVALID_ARG                              STATUS_BASE + 0x00000002
-#define STATUS_INVALID_ARG_LEN                          STATUS_BASE + 0x00000003
-#define STATUS_NOT_ENOUGH_MEMORY                        STATUS_BASE + 0x00000004
-#define STATUS_BUFFER_TOO_SMALL                         STATUS_BASE + 0x00000005
-#define STATUS_UNEXPECTED_EOF                           STATUS_BASE + 0x00000006
-#define STATUS_FORMAT_ERROR                             STATUS_BASE + 0x00000007
-#define STATUS_INVALID_HANDLE_ERROR                     STATUS_BASE + 0x00000008
-#define STATUS_OPEN_FILE_FAILED                         STATUS_BASE + 0x00000009
-#define STATUS_READ_FILE_FAILED                         STATUS_BASE + 0x0000000a
-#define STATUS_WRITE_TO_FILE_FAILED                     STATUS_BASE + 0x0000000b
-#define STATUS_INTERNAL_ERROR                           STATUS_BASE + 0x0000000c
-#define STATUS_INVALID_OPERATION                        STATUS_BASE + 0x0000000d
-#define STATUS_NOT_IMPLEMENTED                          STATUS_BASE + 0x0000000e
-#define STATUS_OPERATION_TIMED_OUT                      STATUS_BASE + 0x0000000f
-#define STATUS_NOT_FOUND                                STATUS_BASE + 0x00000010
-#define STATUS_CREATE_THREAD_FAILED                     STATUS_BASE + 0x00000011
-#define STATUS_THREAD_NOT_ENOUGH_RESOURCES              STATUS_BASE + 0x00000012
-#define STATUS_THREAD_INVALID_ARG                       STATUS_BASE + 0x00000013
-#define STATUS_THREAD_PERMISSIONS                       STATUS_BASE + 0x00000014
-#define STATUS_THREAD_DEADLOCKED                        STATUS_BASE + 0x00000015
-#define STATUS_THREAD_DOES_NOT_EXIST                    STATUS_BASE + 0x00000016
-#define STATUS_JOIN_THREAD_FAILED                       STATUS_BASE + 0x00000017
-#define STATUS_WAIT_FAILED                              STATUS_BASE + 0x00000018
-#define STATUS_CANCEL_THREAD_FAILED                     STATUS_BASE + 0x00000019
-#define STATUS_THREAD_IS_NOT_JOINABLE                   STATUS_BASE + 0x0000001a
-#define STATUS_DETACH_THREAD_FAILED                     STATUS_BASE + 0x0000001b
-#define STATUS_THREAD_ATTR_INIT_FAILED                  STATUS_BASE + 0x0000001c
-#define STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED        STATUS_BASE + 0x0000001d
-#define STATUS_MEMORY_NOT_FREED                         STATUS_BASE + 0x0000001e
+#define STATUS_BASE                              0x00000000
+#define STATUS_NULL_ARG                          STATUS_BASE + 0x00000001
+#define STATUS_INVALID_ARG                       STATUS_BASE + 0x00000002
+#define STATUS_INVALID_ARG_LEN                   STATUS_BASE + 0x00000003
+#define STATUS_NOT_ENOUGH_MEMORY                 STATUS_BASE + 0x00000004
+#define STATUS_BUFFER_TOO_SMALL                  STATUS_BASE + 0x00000005
+#define STATUS_UNEXPECTED_EOF                    STATUS_BASE + 0x00000006
+#define STATUS_FORMAT_ERROR                      STATUS_BASE + 0x00000007
+#define STATUS_INVALID_HANDLE_ERROR              STATUS_BASE + 0x00000008
+#define STATUS_OPEN_FILE_FAILED                  STATUS_BASE + 0x00000009
+#define STATUS_READ_FILE_FAILED                  STATUS_BASE + 0x0000000a
+#define STATUS_WRITE_TO_FILE_FAILED              STATUS_BASE + 0x0000000b
+#define STATUS_INTERNAL_ERROR                    STATUS_BASE + 0x0000000c
+#define STATUS_INVALID_OPERATION                 STATUS_BASE + 0x0000000d
+#define STATUS_NOT_IMPLEMENTED                   STATUS_BASE + 0x0000000e
+#define STATUS_OPERATION_TIMED_OUT               STATUS_BASE + 0x0000000f
+#define STATUS_NOT_FOUND                         STATUS_BASE + 0x00000010
+#define STATUS_CREATE_THREAD_FAILED              STATUS_BASE + 0x00000011
+#define STATUS_THREAD_NOT_ENOUGH_RESOURCES       STATUS_BASE + 0x00000012
+#define STATUS_THREAD_INVALID_ARG                STATUS_BASE + 0x00000013
+#define STATUS_THREAD_PERMISSIONS                STATUS_BASE + 0x00000014
+#define STATUS_THREAD_DEADLOCKED                 STATUS_BASE + 0x00000015
+#define STATUS_THREAD_DOES_NOT_EXIST             STATUS_BASE + 0x00000016
+#define STATUS_JOIN_THREAD_FAILED                STATUS_BASE + 0x00000017
+#define STATUS_WAIT_FAILED                       STATUS_BASE + 0x00000018
+#define STATUS_CANCEL_THREAD_FAILED              STATUS_BASE + 0x00000019
+#define STATUS_THREAD_IS_NOT_JOINABLE            STATUS_BASE + 0x0000001a
+#define STATUS_DETACH_THREAD_FAILED              STATUS_BASE + 0x0000001b
+#define STATUS_THREAD_ATTR_INIT_FAILED           STATUS_BASE + 0x0000001c
+#define STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED STATUS_BASE + 0x0000001d
+#define STATUS_MEMORY_NOT_FREED                  STATUS_BASE + 0x0000001e
 
 #include <stdlib.h>
 #include <string.h>
@@ -619,11 +619,11 @@ typedef BOOL (*memChk)(PVOID ptr, BYTE val, SIZE_T size);
 //
 // Default allocator functions
 //
-INLINE PVOID defaultMemAlloc(SIZE_T size);
-INLINE PVOID defaultMemAlignAlloc(SIZE_T size, SIZE_T alignment);
-INLINE PVOID defaultMemCalloc(SIZE_T num, SIZE_T size);
-INLINE PVOID defaultMemRealloc(PVOID ptr, SIZE_T size);
-INLINE VOID defaultMemFree(VOID* ptr);
+PVOID defaultMemAlloc(SIZE_T size);
+PVOID defaultMemAlignAlloc(SIZE_T size, SIZE_T alignment);
+PVOID defaultMemCalloc(SIZE_T num, SIZE_T size);
+PVOID defaultMemRealloc(PVOID ptr, SIZE_T size);
+VOID defaultMemFree(VOID* ptr);
 
 //
 // Global allocator function pointers
@@ -647,10 +647,10 @@ typedef PCHAR (*dlError)();
 //
 // Default dynamic library loading functions
 //
-INLINE PVOID defaultDlOpen(PCHAR filename, UINT32 flag);
-INLINE INT32 defaultDlClose(PVOID handle);
-INLINE PVOID defaultDlSym(PVOID handle, PCHAR symbol);
-INLINE PCHAR defaultDlError();
+PVOID defaultDlOpen(PCHAR filename, UINT32 flag);
+INT32 defaultDlClose(PVOID handle);
+PVOID defaultDlSym(PVOID handle, PCHAR symbol);
+PCHAR defaultDlError();
 
 //
 // Global dynamic library loading function pointers
@@ -682,7 +682,7 @@ typedef UINT64 (*getTime)();
 //
 #define TIME_DIFF_UNIX_WINDOWS_TIME 116444736000000000ULL
 
-PUBLIC_API INLINE UINT64 defaultGetTime();
+PUBLIC_API UINT64 defaultGetTime();
 
 //
 // Thread related functionality
@@ -1034,7 +1034,7 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 //
 typedef SIZE_T ATOMIC_BOOL;
 #define ATOMIC_LOAD_BOOL             (BOOL) globalAtomicLoad
-#define ATOMIC_STORE_BOOL(a, b)      ATOMIC_STORE((a), (SIZE_T)(b))
+#define ATOMIC_STORE_BOOL(a, b)      ATOMIC_STORE((a), (SIZE_T) (b))
 #define ATOMIC_EXCHANGE_BOOL         (BOOL) globalAtomicExchange
 #define ATOMIC_COMPARE_EXCHANGE_BOOL (BOOL) globalAtomicCompareExchange
 #define ATOMIC_AND_BOOL              (BOOL) globalAtomicAnd
@@ -1050,7 +1050,7 @@ typedef SIZE_T ATOMIC_BOOL;
 // Calculate the byte offset of a field in a structure of type type.
 //
 #ifndef FIELD_OFFSET
-#define FIELD_OFFSET(type, field) ((LONG)(LONG_PTR) & (((type*) 0)->field))
+#define FIELD_OFFSET(type, field) ((LONG) (LONG_PTR) & (((type*) 0)->field))
 #endif
 
 //
@@ -1062,16 +1062,16 @@ typedef SIZE_T ATOMIC_BOOL;
 //
 // Macros to swap endinanness
 //
-#define LOW_BYTE(x)   ((BYTE)(x))
-#define HIGH_BYTE(x)  ((BYTE)(((INT16)(x) >> 8) & 0xFF))
-#define LOW_INT16(x)  ((INT16)(x))
-#define HIGH_INT16(x) ((INT16)(((INT32)(x) >> 16) & 0xFFFF))
-#define LOW_INT32(x)  ((INT32)(x))
-#define HIGH_INT32(x) ((INT32)(((INT64)(x) >> 32) & 0xFFFFFFFF))
+#define LOW_BYTE(x)   ((BYTE) (x))
+#define HIGH_BYTE(x)  ((BYTE) (((INT16) (x) >> 8) & 0xFF))
+#define LOW_INT16(x)  ((INT16) (x))
+#define HIGH_INT16(x) ((INT16) (((INT32) (x) >> 16) & 0xFFFF))
+#define LOW_INT32(x)  ((INT32) (x))
+#define HIGH_INT32(x) ((INT32) (((INT64) (x) >> 32) & 0xFFFFFFFF))
 
-#define MAKE_INT16(a, b) ((INT16)(((UINT8)((UINT16)(a) &0xff)) | ((UINT16)((UINT8)((UINT16)(b) &0xff))) << 8))
-#define MAKE_INT32(a, b) ((INT32)(((UINT16)((UINT32)(a) &0xffff)) | ((UINT32)((UINT16)((UINT32)(b) &0xffff))) << 16))
-#define MAKE_INT64(a, b) ((INT64)(((UINT32)((UINT64)(a) &0xffffffff)) | ((UINT64)((UINT32)((UINT64)(b) &0xffffffff))) << 32))
+#define MAKE_INT16(a, b) ((INT16) (((UINT8) ((UINT16) (a) &0xff)) | ((UINT16) ((UINT8) ((UINT16) (b) &0xff))) << 8))
+#define MAKE_INT32(a, b) ((INT32) (((UINT16) ((UINT32) (a) &0xffff)) | ((UINT32) ((UINT16) ((UINT32) (b) &0xffff))) << 16))
+#define MAKE_INT64(a, b) ((INT64) (((UINT32) ((UINT64) (a) &0xffffffff)) | ((UINT64) ((UINT32) ((UINT64) (b) &0xffffffff))) << 32))
 
 #define SWAP_INT16(x) MAKE_INT16(HIGH_BYTE(x), LOW_BYTE(x))
 
@@ -1102,10 +1102,10 @@ typedef UINT64 HANDLE;
 #define IS_VALID_HANDLE(h) ((h) != INVALID_PIC_HANDLE_VALUE)
 #endif
 #ifndef POINTER_TO_HANDLE
-#define POINTER_TO_HANDLE(h) ((UINT64)(h))
+#define POINTER_TO_HANDLE(h) ((UINT64) (h))
 #endif
 #ifndef HANDLE_TO_POINTER
-#define HANDLE_TO_POINTER(h) ((PBYTE)(h))
+#define HANDLE_TO_POINTER(h) ((PBYTE) (h))
 #endif
 
 ////////////////////////////////////////////////////

@@ -111,14 +111,14 @@ typedef STATUS (*KinesisVideoClientCallbackHookFunc)(UINT64);
 /**
  * Kinesis Video client states definitions
  */
-#define CLIENT_STATE_NONE       ((UINT64) 0)       // 0x00
-#define CLIENT_STATE_NEW        ((UINT64)(1 << 0)) // 0x01
-#define CLIENT_STATE_AUTH       ((UINT64)(1 << 1)) // 0x02
-#define CLIENT_STATE_PROVISION  ((UINT64)(1 << 2)) // 0x04
-#define CLIENT_STATE_GET_TOKEN  ((UINT64)(1 << 3)) // 0x08
-#define CLIENT_STATE_CREATE     ((UINT64)(1 << 4)) // 0x10
-#define CLIENT_STATE_TAG_CLIENT ((UINT64)(1 << 5)) // 0x20
-#define CLIENT_STATE_READY      ((UINT64)(1 << 6)) // 0x40
+#define CLIENT_STATE_NONE       ((UINT64) 0)        // 0x00
+#define CLIENT_STATE_NEW        ((UINT64) (1 << 0)) // 0x01
+#define CLIENT_STATE_AUTH       ((UINT64) (1 << 1)) // 0x02
+#define CLIENT_STATE_PROVISION  ((UINT64) (1 << 2)) // 0x04
+#define CLIENT_STATE_GET_TOKEN  ((UINT64) (1 << 3)) // 0x08
+#define CLIENT_STATE_CREATE     ((UINT64) (1 << 4)) // 0x10
+#define CLIENT_STATE_TAG_CLIENT ((UINT64) (1 << 5)) // 0x20
+#define CLIENT_STATE_READY      ((UINT64) (1 << 6)) // 0x40
 
 /**
  * Object identifier enum - these will serve as sentinel values to identify
@@ -136,17 +136,17 @@ typedef STATUS (*KinesisVideoClientCallbackHookFunc)(UINT64);
 /**
  * Macros to convert to and from handle
  */
-#define TO_CLIENT_HANDLE(p)   ((CLIENT_HANDLE)(p))
-#define FROM_CLIENT_HANDLE(h) (IS_VALID_CLIENT_HANDLE(h) ? (PKinesisVideoClient)(h) : NULL)
+#define TO_CLIENT_HANDLE(p)   ((CLIENT_HANDLE) (p))
+#define FROM_CLIENT_HANDLE(h) (IS_VALID_CLIENT_HANDLE(h) ? (PKinesisVideoClient) (h) : NULL)
 
 #define TO_STREAM_HANDLE(p)   (toStreamHandle(p))
 #define FROM_STREAM_HANDLE(h) (fromStreamHandle(h))
 
-#define TO_CUSTOM_DATA(p)          ((UINT64)(p))
-#define STREAM_FROM_CUSTOM_DATA(h) ((PKinesisVideoStream)(h))
-#define CLIENT_FROM_CUSTOM_DATA(h) ((PKinesisVideoClient)(h))
+#define TO_CUSTOM_DATA(p)          ((UINT64) (p))
+#define STREAM_FROM_CUSTOM_DATA(h) ((PKinesisVideoStream) (h))
+#define CLIENT_FROM_CUSTOM_DATA(h) ((PKinesisVideoClient) (h))
 
-#define KINESIS_VIDEO_OBJECT_IDENTIFIER_FROM_CUSTOM_DATA(h) ((UINT32) * (PUINT32)(h))
+#define KINESIS_VIDEO_OBJECT_IDENTIFIER_FROM_CUSTOM_DATA(h) ((UINT32) * (PUINT32) (h))
 
 /**
  * Default heap flags

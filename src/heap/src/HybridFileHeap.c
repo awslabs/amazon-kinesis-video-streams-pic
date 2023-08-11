@@ -119,7 +119,7 @@ DEFINE_INIT_HEAP(hybridFileHeapInit)
     CHK_STATUS(commonHeapInit(pHeap, heapLimit));
 
     // Calculate the in-memory and file based heap sizes
-    memHeapLimit = (UINT64)(heapLimit * pHybridHeap->spillRatio);
+    memHeapLimit = (UINT64) (heapLimit * pHybridHeap->spillRatio);
     fileHeapLimit = heapLimit - memHeapLimit;
 
     CHK_ERR(fileHeapLimit < MAX_LARGE_HEAP_SIZE, STATUS_NOT_ENOUGH_MEMORY,

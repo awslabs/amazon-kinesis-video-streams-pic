@@ -48,7 +48,7 @@ STATUS profilerInitialize(UINT32 bufferSize, TRACE_LEVEL traceLevel, TRACE_PROFI
     pTraceProfiler->traceBufferLength = (bufferSize - SIZEOF(TraceProfiler)) / SIZEOF(Trace);
 
     // Set the buffer pointer immediately after the struct
-    pTraceProfiler->traceBuffer = (PTrace)(pTraceProfiler + 1);
+    pTraceProfiler->traceBuffer = (PTrace) (pTraceProfiler + 1);
     // Set the next available trace at the start of the buffer
     pTraceProfiler->nextTrace = pTraceProfiler->traceBuffer;
 
@@ -492,7 +492,7 @@ STATUS getAivFormattedTraceBuffer(PTraceProfiler pTraceProfiler, PCHAR* ppBuffer
 
     // Set the actual buffer size
     if (pBufferSize != NULL) {
-        *pBufferSize = (UINT32)(pCurChar - pBuffer);
+        *pBufferSize = (UINT32) (pCurChar - pBuffer);
     }
 
 CleanUp:

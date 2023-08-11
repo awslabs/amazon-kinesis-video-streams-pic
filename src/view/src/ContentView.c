@@ -32,7 +32,7 @@ STATUS createContentView(UINT32 maxItemCount, UINT64 bufferDuration, ContentView
     CHK(pContentView != NULL, STATUS_NOT_ENOUGH_MEMORY);
 
     // Set the pointer
-    pContentView->itemBuffer = (PViewItem)(pContentView + 1);
+    pContentView->itemBuffer = (PViewItem) (pContentView + 1);
 
     // Set the values
     pContentView->contentView.version = CONTENT_VIEW_CURRENT_VERSION;

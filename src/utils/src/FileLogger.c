@@ -20,7 +20,7 @@ STATUS flushLogToFile(PFileLoggerParameters loggerParameters)
     if (loggerParameters->currentFileIndex >= gFileLogger->maxFileCount) {
         fileIndexToRemove = loggerParameters->currentFileIndex - gFileLogger->maxFileCount;
         filePathLen = SNPRINTF(filePath, ARRAY_SIZE(filePath), "%s%s%s.%" PRIu64, gFileLogger->logFileDir, FPATHSEPARATOR_STR,
-                        loggerParameters->logFile, fileIndexToRemove);
+                               loggerParameters->logFile, fileIndexToRemove);
         CHK(filePathLen <= MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
         if (0 != FREMOVE(filePath)) {
             PRINTF("failed to remove file %s\n", filePath);
@@ -28,7 +28,7 @@ STATUS flushLogToFile(PFileLoggerParameters loggerParameters)
     }
 
     filePathLen = SNPRINTF(filePath, ARRAY_SIZE(filePath), "%s%s%s.%" PRIu64, gFileLogger->logFileDir, FPATHSEPARATOR_STR, loggerParameters->logFile,
-                    loggerParameters->currentFileIndex);
+                           loggerParameters->currentFileIndex);
     CHK(filePathLen <= MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
 
     // we need to set null terminator properly because flush is triggered after a vsnprintf.
@@ -73,17 +73,14 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
             vprintf(logFmtString, valist);
             va_end(valist);
         }
-        if(level == gFileLogger->filterLevel) {
+        if (level == gFileLogger->filterLevel) {
             levelLoggerParameters = &gFileLogger->levelLogger;
-        }
-        else if(gFileLogger->enableAllLevels && level != gFileLogger->filterLevel) {
+        } else if (gFileLogger->enableAllLevels && level != gFileLogger->filterLevel) {
             levelLoggerParameters = &gFileLogger->mainLogger;
         }
 
-        if(levelLoggerParameters != NULL) {
-
+        if (levelLoggerParameters != NULL) {
 #if defined _WIN32 || defined _WIN64
-
             // On mingw, vsnprintf has a bug where if the string length is greater than the buffer
             // size it would just return -1.
 
@@ -100,8 +97,8 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
             // even if flushLogToFile failed, currentOffset will still be reset to 0
             // _vsnprintf truncates the string if it is larger than buffer
             va_start(valist, fmt);
-            offset = _vsnprintf(levelLoggerParameters->stringBuffer + levelLoggerParameters->currentOffset, levelLoggerParameters->stringBufferLen - levelLoggerParameters->currentOffset,
-                                logFmtString, valist);
+            offset = _vsnprintf(levelLoggerParameters->stringBuffer + levelLoggerParameters->currentOffset,
+                                levelLoggerParameters->stringBufferLen - levelLoggerParameters->currentOffset, logFmtString, valist);
             va_end(valist);
 
             // truncation happened
@@ -117,8 +114,7 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
 
             va_start(valist, fmt);
             offset = vsnprintf(levelLoggerParameters->stringBuffer + levelLoggerParameters->currentOffset,
-                               levelLoggerParameters->stringBufferLen - levelLoggerParameters->currentOffset,
-                               logFmtString, valist);
+                               levelLoggerParameters->stringBufferLen - levelLoggerParameters->currentOffset, logFmtString, valist);
             va_end(valist);
 
             // If vsnprintf fills the stringBuffer then flush first and then vsnprintf again into the stringBuffer.
@@ -131,8 +127,7 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
                 // even if flushLogToFile failed, currentOffset will still be reset to 0
                 va_start(valist, fmt);
                 offset = vsnprintf(levelLoggerParameters->stringBuffer + levelLoggerParameters->currentOffset,
-                                   levelLoggerParameters->stringBufferLen - levelLoggerParameters->currentOffset,
-                                   logFmtString, valist);
+                                   levelLoggerParameters->stringBufferLen - levelLoggerParameters->currentOffset, logFmtString, valist);
                 va_end(valist);
 
                 // if buffer is not big enough, vsnprintf returns number of characters (excluding the terminating null byte)
@@ -140,8 +135,7 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
                 // gFileLogger->stringBufferLen - 1 bytes. Here we are truncating the log if its length is longer than stringBufferLen.
                 if (offset > levelLoggerParameters->stringBufferLen) {
                     PRINTF("truncating log message as it can't fit into string buffer here\n");
-                    offset = (INT32)
-                    levelLoggerParameters->stringBufferLen - 1;
+                    offset = (INT32) levelLoggerParameters->stringBufferLen - 1;
                 }
             }
 
@@ -155,8 +149,7 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
             levelLoggerParameters->currentOffset += offset;
             if (level == gFileLogger->filterLevel) {
                 gFileLogger->levelLogger = *levelLoggerParameters;
-            }
-            else if (gFileLogger->enableAllLevels && level != gFileLogger->filterLevel) {
+            } else if (gFileLogger->enableAllLevels && level != gFileLogger->filterLevel) {
                 gFileLogger->mainLogger = *levelLoggerParameters;
             }
         }
@@ -182,7 +175,7 @@ STATUS createFileLogger(UINT64 maxStringBufferLen, UINT64 maxLogFileCount, PCHAR
     gFileLogger = (PFileLogger) MEMALLOC(SIZEOF(FileLogger) + maxStringBufferLen * SIZEOF(CHAR));
     MEMSET(gFileLogger, 0x00, SIZEOF(FileLogger));
     // point stringBuffer to the right place
-    gFileLogger->mainLogger.stringBuffer = (PCHAR)(gFileLogger + 1);
+    gFileLogger->mainLogger.stringBuffer = (PCHAR) (gFileLogger + 1);
     gFileLogger->mainLogger.stringBufferLen = maxStringBufferLen;
     STRNCPY(gFileLogger->mainLogger.logFile, FILE_LOGGER_LOG_FILE_NAME, STRLEN(FILE_LOGGER_LOG_FILE_NAME));
     gFileLogger->mainLogger.currentOffset = 0;
@@ -237,15 +230,14 @@ STATUS createFileLoggerWithLevelFiltering(UINT64 maxStringBufferLen, UINT64 maxL
     STATUS retStatus = STATUS_SUCCESS;
     CHK(gFileLogger == NULL, retStatus); // dont allocate again if already allocated
     CHK(maxStringBufferLen <= MAX_FILE_LOGGER_STRING_BUFFER_SIZE && maxStringBufferLen >= MIN_FILE_LOGGER_STRING_BUFFER_SIZE &&
-        maxLogFileCount <= MAX_FILE_LOGGER_LOG_FILE_COUNT && maxLogFileCount > 0,
+            maxLogFileCount <= MAX_FILE_LOGGER_LOG_FILE_COUNT && maxLogFileCount > 0,
         STATUS_INVALID_ARG);
     CHK(STRNLEN(logFileDir, MAX_PATH_LEN + 1) <= MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
     BOOL fileFound = FALSE;
     CHAR fileIndexBuffer[KVS_COMMON_FILE_INDEX_BUFFER_SIZE];
     UINT64 charWritten = 0, indexFileSize = KVS_COMMON_FILE_INDEX_BUFFER_SIZE;
 
-
-    if(enableAllLevels) {
+    if (enableAllLevels) {
         // allocate the struct and string buffer together
         gFileLogger = (PFileLogger) MEMALLOC(SIZEOF(FileLogger) + maxStringBufferLen * 2 * SIZEOF(CHAR));
     } else {
@@ -263,9 +255,9 @@ STATUS createFileLoggerWithLevelFiltering(UINT64 maxStringBufferLen, UINT64 maxL
     gFileLogger->logFileDir[MAX_PATH_LEN] = '\0';
     gFileLogger->enableAllLevels = enableAllLevels;
 
-    if(gFileLogger->enableAllLevels) {
+    if (gFileLogger->enableAllLevels) {
         // point stringBuffer to the right place
-        gFileLogger->mainLogger.stringBuffer = (PCHAR)(gFileLogger + 1);
+        gFileLogger->mainLogger.stringBuffer = (PCHAR) (gFileLogger + 1);
         gFileLogger->mainLogger.stringBufferLen = maxStringBufferLen;
         STRNCPY(gFileLogger->mainLogger.logFile, FILE_LOGGER_LOG_FILE_NAME, STRLEN(FILE_LOGGER_LOG_FILE_NAME));
         gFileLogger->mainLogger.currentOffset = 0;
@@ -287,13 +279,13 @@ STATUS createFileLoggerWithLevelFiltering(UINT64 maxStringBufferLen, UINT64 maxL
         }
     }
 
-    if(level < LOG_LEVEL_VERBOSE || level > LOG_LEVEL_PROFILE) {
+    if (level < LOG_LEVEL_VERBOSE || level > LOG_LEVEL_PROFILE) {
         gFileLogger->filterLevel = 0; // 0 is not a valid level anyways. So this is ok
     } else {
-        if(gFileLogger->enableAllLevels) {
-            gFileLogger->levelLogger.stringBuffer = (PCHAR)(gFileLogger + 1) + maxStringBufferLen;
+        if (gFileLogger->enableAllLevels) {
+            gFileLogger->levelLogger.stringBuffer = (PCHAR) (gFileLogger + 1) + maxStringBufferLen;
         } else {
-            gFileLogger->levelLogger.stringBuffer = (PCHAR)(gFileLogger + 1);
+            gFileLogger->levelLogger.stringBuffer = (PCHAR) (gFileLogger + 1);
         }
 
         gFileLogger->levelLogger.stringBufferLen = maxStringBufferLen;
