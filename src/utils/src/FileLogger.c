@@ -81,7 +81,6 @@ VOID fileLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
 
         if (levelLoggerParameters != NULL) {
 #if defined _WIN32 || defined _WIN64
-
             // On mingw, vsnprintf has a bug where if the string length is greater than the buffer
             // size it would just return -1.
 
