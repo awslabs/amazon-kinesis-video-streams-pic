@@ -6,7 +6,7 @@
 <h4 align="center">Platform Indendent Code for Amazon Kinesis Video Streams </h4>
 
 <p align="center">
-  <a href="https://travis-ci.org/awslabs/amazon-kinesis-video-streams-pic"> <img src="https://travis-ci.org/awslabs/amazon-kinesis-video-streams-pic.svg?branch=master" alt="Build Status"> </a>
+  <a href="https://github.com/awslabs/amazon-kinesis-video-streams-pic/actions/workflows/ci.yml"> <img src=https://github.com/awslabs/amazon-kinesis-video-streams-pic/actions/workflows/ci.yml/badge.svg </a>
   <a href="https://codecov.io/gh/awslabs/amazon-kinesis-video-streams-pic"> <img src="https://codecov.io/gh/awslabs/amazon-kinesis-video-streams-pic/branch/master/graph/badge.svg" alt="Coverage Status"> </a>
 </p>
 
