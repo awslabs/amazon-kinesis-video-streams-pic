@@ -57,7 +57,7 @@ STATUS generateTimestampStrInMilliseconds(PCHAR formatStr, PCHAR pDestBuffer, UI
     formattedStrLen = (UINT32) STRFTIME(pDestBuffer, destBufferLen - MAX_MILLISECOND_PORTION_LENGTH, formatStr, timeinfo);
     CHK(formattedStrLen != 0, STATUS_STRFTIME_FALIED);
     // Total length is 8 plus terminating null character. Generated string would have utmost size - 1. Hence need to add 1 to max length
-    SNPRINTF(pDestBuffer + formattedStrLen, MAX_MILLISECOND_PORTION_LENGTH + 1, ".%06d ", millisecondVal);
+    SNPRINTF(pDestBuffer + formattedStrLen, MAX_MILLISECOND_PORTION_LENGTH + 1, ".%03d ", millisecondVal);
     formattedStrLen = (UINT32) STRLEN(pDestBuffer);
     pDestBuffer[formattedStrLen] = '\0';
     *pFormattedStrLen = formattedStrLen;

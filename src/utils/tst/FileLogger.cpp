@@ -1,7 +1,7 @@
 #include "UtilTestFixture.h"
 
-// length of time and log level string in log: "2019-11-09 19:11:16.xxxxxx VERBOSE "
-#define TIMESTRING_OFFSET               35
+// length of time and log level string in log: "2019-11-09 19:11:16.xxx VERBOSE "
+#define TIMESTRING_OFFSET               32
 
 #ifdef _WIN32
 #define TEST_TEMP_DIR_PATH                                      (PCHAR) "C:\\Windows\\Temp\\"
@@ -41,6 +41,7 @@ TEST_F(FileLoggerTest, basicFileLoggerUsage)
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLog.0");
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLog.1");
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLog.2");
+    DLOGW("Testing log line");
 
     createFileLogger(MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
                      5,
