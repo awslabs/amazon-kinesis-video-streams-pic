@@ -76,7 +76,7 @@ extern "C" {
 #if defined __GNUC__ || defined __GNUG__
 #if defined __x86_64__ || defined __ppc64__
 #define SIZE_64
-#define __LLP64__ // win64 uses LLP64 data model
+#define __LP64__ // Linux uses LP64 data model
 #else
 #define SIZE_32
 #endif
