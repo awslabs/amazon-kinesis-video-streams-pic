@@ -10,3 +10,4 @@ outputs
 *.swo
 tags
 cmake-build-pic/
+.vscode/*

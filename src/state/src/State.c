@@ -125,6 +125,8 @@ CleanUp:
     return retStatus;
 }
 
+// TODO: (nit) typo below, "it's" -> "its"
+
 /**
  * Transition the state machine given it's context
  */
@@ -158,6 +160,9 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
     if (pStateMachineImpl->context.pCurrentState->stateTransitionHookFunc != NULL) {
         CHK_STATUS(pStateMachineImpl->context.pCurrentState->stateTransitionHookFunc(pStateMachineImpl->customData, &errorStateTransitionWaitTime));
     }
+
+    // TODO: (nit) typo below, "to0" -> "to 0"
+
 
     // Check if we are changing the state
     if (pState->state != pStateMachineImpl->context.pCurrentState->state) {

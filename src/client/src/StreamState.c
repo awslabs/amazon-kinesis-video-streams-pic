@@ -105,7 +105,8 @@ STATUS fromNewStreamState(UINT64 customData, PUINT64 pState)
     if (pKinesisVideoStream->streamState == STREAM_STATE_STOPPED) {
         state = STREAM_STATE_STOPPED;
     } else {
-        state = STREAM_STATE_DESCRIBE;
+        printf("TEST: Not changing to DESCRIBE state.");
+        //state = STREAM_STATE_DESCRIBE;
     }
 
     *pState = state;
