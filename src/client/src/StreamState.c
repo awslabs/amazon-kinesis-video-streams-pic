@@ -40,16 +40,32 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
 UINT32 STREAM_STATE_MACHINE_STATE_COUNT = SIZEOF(STREAM_STATE_MACHINE_STATES) / SIZEOF(StateMachineState);
 
 
-
-UINT64 terminalStates[] = {STREAM_STATE_DESCRIBE, CREATE, GET_ENDPOINT, TAG_STREAM, GET_TOKEN, PUT_STREAM};
+UINT64 terminalStates[] = {STREAM_STATE_DESCRIBE, STREAM_STATE_CREATE, STREAM_STATE_GET_ENDPOINT, STREAM_STATE_TAG_STREAM, 
+                            STREAM_STATE_GET_TOKEN, STREAM_STATE_PUT_STREAM};
 
 STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
 {
     PStateMachineState* ppState;
-    CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
-    while(..; != terminalStates[*])
+    UINT64 currentState;
+
+    BOOL keepIterating = TRUE;
+    UINT32 terminalStateCount = sizeOf(terminalStates)/sizeOf(terminalStates[0]);
+
+    while(keepIterating)
     {
-        stepStateMachine(PStateMachine pStateMachine);
+        stepStateMachine(pStateMachine);
+
+        CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
+        currentState = (*ppState)->state;
+
+        for(UINT32 i = 0; i < terminalStateCount; i++)
+        {
+            if(currentState == terminalStates[i])
+            {
+                keepIterating = false;
+                // TODO: handle the case of execute READY state, keepIterating based on its conditional
+            }
+        }
     }
 }
 
