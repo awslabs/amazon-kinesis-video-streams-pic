@@ -39,26 +39,42 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
 
 UINT32 STREAM_STATE_MACHINE_STATE_COUNT = SIZEOF(STREAM_STATE_MACHINE_STATES) / SIZEOF(StateMachineState);
 
-
+/**
+ * States whose callbacks do not call stepState
+ */
 UINT64 terminalStates[] = {STREAM_STATE_DESCRIBE, STREAM_STATE_CREATE, STREAM_STATE_GET_ENDPOINT, STREAM_STATE_TAG_STREAM, 
                             STREAM_STATE_GET_TOKEN, STREAM_STATE_PUT_STREAM};
 
+
+
+///////////////////////////////////////////////////////////////////////////
+// State machine iterator
+///////////////////////////////////////////////////////////////////////////
+
 STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
 {
+    printf("Iterating...\n");
+
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
     PStateMachineState* ppState;
     UINT64 currentState;
+    UINT32 terminalStateCount = SIZEOF(terminalStates)/SIZEOF(terminalStates[0]);
 
     BOOL keepIterating = TRUE;
-    UINT32 terminalStateCount = sizeOf(terminalStates)/sizeOf(terminalStates[0]);
-
+    UINT64 counter = 0;
     while(keepIterating)
     {
-        stepStateMachine(pStateMachine);
+        printf("StepState call number:%llu\n", counter);
 
+        CHK_STATUS(stepStateMachine(pStateMachine));
+
+        // TODO: (?) Is this the correct status checker to use? Maybe CHK()?
         CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
         currentState = (*ppState)->state;
 
-        for(UINT32 i = 0; i < terminalStateCount; i++)
+        // If current state is a terminal state, don't stepState, break the loop.
+        for(UINT8 i = 0; i < terminalStateCount; i++)
         {
             if(currentState == terminalStates[i])
             {
@@ -67,6 +83,13 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
             }
         }
     }
+    // TODO: let's break out of the loop after a certain amount of time, can add a parameter to iterator
+    //       to allow for a custom timeout for every iterate() call
+
+    CleanUp:
+
+        LEAVES();
+        return retStatus;
 }
 
 
@@ -137,8 +160,9 @@ STATUS fromNewStreamState(UINT64 customData, PUINT64 pState)
     if (pKinesisVideoStream->streamState == STREAM_STATE_STOPPED) {
         state = STREAM_STATE_STOPPED;
     } else {
-        // printf("TEST: Not changing to DESCRIBE state.");
-        state = STREAM_STATE_DESCRIBE;
+        // TODO: remove this
+        printf("TEST: Not changing to DESCRIBE state.");
+        // state = STREAM_STATE_DESCRIBE;
     }
 
     *pState = state;
@@ -159,7 +183,7 @@ STATUS executeNewStreamState(UINT64 customData, UINT64 time)
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
 
     // Step the state machine to automatically invoke the Describe API
-    CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+    CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream->base.pStateMachine));
 
 CleanUp:
 
