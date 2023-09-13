@@ -39,6 +39,22 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
 
 UINT32 STREAM_STATE_MACHINE_STATE_COUNT = SIZEOF(STREAM_STATE_MACHINE_STATES) / SIZEOF(StateMachineState);
 
+
+
+UINT64 terminalStates[] = {STREAM_STATE_DESCRIBE, CREATE, GET_ENDPOINT, TAG_STREAM, GET_TOKEN, PUT_STREAM};
+
+STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
+{
+    PStateMachineState* ppState;
+    CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
+    while(..; != terminalStates[*])
+    {
+        stepStateMachine(PStateMachine pStateMachine);
+    }
+}
+
+
+
 ///////////////////////////////////////////////////////////////////////////
 // State machine callback functions
 ///////////////////////////////////////////////////////////////////////////

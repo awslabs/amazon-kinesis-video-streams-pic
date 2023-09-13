@@ -868,6 +868,11 @@ STATUS executeTagStreamState(UINT64, UINT64);
 
 STATUS defaultStreamStateTransitionHook(UINT64, PUINT64);
 
+///////////////////////////////////////////////////////////////////////////
+// State machine iterator
+///////////////////////////////////////////////////////////////////////////
+STATUS iterateStreamStateMachine(PStateMachine pStateMachine);
+
 #ifdef __cplusplus
 }
 #endif
