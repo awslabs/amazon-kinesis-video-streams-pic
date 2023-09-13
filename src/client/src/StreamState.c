@@ -183,7 +183,6 @@ STATUS executeNewStreamState(UINT64 customData, UINT64 time)
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
 
     // Step the state machine to automatically invoke the Describe API
-    CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream->base.pStateMachine));
 
 CleanUp:
 
