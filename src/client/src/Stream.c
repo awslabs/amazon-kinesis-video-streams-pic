@@ -1267,12 +1267,12 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
 
         case UPLOAD_HANDLE_STATE_TERMINATED:
             // This path get invoked if a connection get terminated by calling reset connection
-            DLOGW("[%s] Indicating an end-of-stream for a terminated stream upload handle %", PRIu64, pKinesisVideoStream->streamInfo.name,
+            DLOGW("[%s] Indicating an end-of-stream for a terminated stream upload handle %" PRIu64, pKinesisVideoStream->streamInfo.name,
                   uploadHandle);
             CHK(FALSE, STATUS_END_OF_STREAM);
 
         case UPLOAD_HANDLE_STATE_ERROR:
-            DLOGW("[%s] Indicating an abort for a errored stream upload handle %", PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
+            DLOGW("[%s] Indicating an abort for a errored stream upload handle %" PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
             CHK(FALSE, STATUS_UPLOAD_HANDLE_ABORTED);
         default:
             // no-op for other UPLOAD_HANDLE states
