@@ -66,12 +66,12 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
     UINT64 counter = 0;
     while(keepIterating)
     {
+        counter++;
         printf("StepState call number:%llu\n", counter);
 
         CHK_STATUS(stepStateMachine(pStateMachine));
 
         printf("Here 1\n");
-        printf("TEST\n");
 
         // TODO: (?) Is this the correct status checker to use? Maybe CHK()?
         getStateMachineCurrentState(pStateMachine, ppTheState);
@@ -81,7 +81,6 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
         currentState = (*ppTheState)->state;
 
         printf("CurrentState: %d\n", (int)currentState);
-        printf("TEST, %d\n", (int)STREAM_STATE_DESCRIBE);
 
         printf("Here 3\n");
 
