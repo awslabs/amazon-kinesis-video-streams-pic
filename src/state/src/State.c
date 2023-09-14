@@ -121,11 +121,11 @@ STATUS getStateMachineCurrentState(PStateMachine pStateMachine, PStateMachineSta
     *ppState = pStateMachineImpl->context.pCurrentState;
 
 CleanUp:
-    printf("Here 1.1\n");
+    //printf("Here 1.1\n");
     LEAVES();
-    printf("Here 1.1\n");
+    //printf("Here 1.1\n");
     return retStatus;
-    printf("Here 1.1\n");
+    //printf("Here 1.1\n");
 }
 
 // TODO: (nit) typo below, "it's" -> "its"
