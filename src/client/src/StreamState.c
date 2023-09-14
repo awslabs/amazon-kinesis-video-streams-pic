@@ -80,6 +80,8 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
 
         currentState = (*ppTheState)->state;
 
+        printf("CurrentState: %d", (int)currentState);
+
         printf("Here 3\n");
 
         // If current state is a terminal state, don't stepState, break the loop.
