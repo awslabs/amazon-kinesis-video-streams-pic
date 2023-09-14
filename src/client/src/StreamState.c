@@ -91,6 +91,10 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
                 //          will probably add it to terminal states list, but leave keepIterating true
                 //          for the non-terminal case
             }
+
+            //if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0) {
+            // Step the state machine to automatically invoke the PutStream API
+            //CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
         }
     }
     // TODO: let's break out of the loop after a certain amount of time, can add a parameter to iterator
