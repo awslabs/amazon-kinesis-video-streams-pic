@@ -789,7 +789,7 @@ STATUS executeReadyStreamState(UINT64 customData, UINT64 time)
     // Check if we need to also call put stream API
     if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0) {
         // Step the state machine to automatically invoke the PutStream API
-        CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+        //CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
     }
 
 CleanUp:
@@ -894,7 +894,7 @@ STATUS executeStoppedStreamState(UINT64 customData, UINT64 time)
     }
 
     // Auto-prime the state machine
-    CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+    //CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
 
 CleanUp:
 

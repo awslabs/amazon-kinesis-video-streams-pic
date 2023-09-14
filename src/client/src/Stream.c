@@ -809,7 +809,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // NOTE: If the connection has been reset we need to start from a new header
     if (pKinesisVideoStream->streamState == STREAM_STATE_NEW && pKinesisVideoStream->streamReady) {
         // Step the state machine once to get out of the Ready state
-        CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+        CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream->base.pStateMachine));
     }
 
     // if we need to reset the generator on the next key frame (during the rotation only)
@@ -3544,7 +3544,7 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
     }
 
     // step out of stopped state
-    CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+    CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream->base.pStateMachine));
 
     // Unlock the stream
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
