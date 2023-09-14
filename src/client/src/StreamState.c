@@ -73,7 +73,7 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
         printf("TEST\n");
 
         // TODO: (?) Is this the correct status checker to use? Maybe CHK()?
-        CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
+        getStateMachineCurrentState(pStateMachine, ppState);
 
         printf("Here 2\n");
 
@@ -171,7 +171,7 @@ STATUS fromNewStreamState(UINT64 customData, PUINT64 pState)
         state = STREAM_STATE_STOPPED;
     } else {
         // TODO: remove this
-        printf("TEST: Not changing to DESCRIBE state.");
+        printf("TEST: Not changing to DESCRIBE state.\n");
         // state = STREAM_STATE_DESCRIBE;
     }
 
