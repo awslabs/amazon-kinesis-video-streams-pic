@@ -57,7 +57,7 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
 
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
-    PStateMachineState* ppState;
+    PStateMachineState* ppTheState;
     UINT64 currentState;
     UINT32 terminalStateCount = SIZEOF(terminalStates)/SIZEOF(terminalStates[0]);
 
@@ -73,11 +73,11 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
         printf("TEST\n");
 
         // TODO: (?) Is this the correct status checker to use? Maybe CHK()?
-        getStateMachineCurrentState(pStateMachine, ppState);
+        getStateMachineCurrentState(pStateMachine, ppTheState);
 
         printf("Here 2\n");
 
-        currentState = (*ppState)->state;
+        currentState = (*ppTheState)->state;
 
         printf("Here 3\n");
 

@@ -111,17 +111,15 @@ CleanUp:
  */
 STATUS getStateMachineCurrentState(PStateMachine pStateMachine, PStateMachineState* ppState)
 {
-    printf("Here 1.1\n");
     ENTERS();
-    printf("Here 1.1\n");
     STATUS retStatus = STATUS_SUCCESS;
-    printf("Here 1.1\n");
     PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
-    printf("Here 1.1\n");
 
     CHK(pStateMachineImpl != NULL && ppState, STATUS_NULL_ARG);
-    printf("Here 1.1\n");
 
+    printf("Here 1.1\n");
+    PStateMachineState* ppOtherStatePointerPointer = pStateMachineImpl->context.pCurrentState;
+    printf("Here 1.1\n");
     *ppState = pStateMachineImpl->context.pCurrentState;
     printf("Here 1.1\n");
 
