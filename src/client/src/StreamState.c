@@ -73,7 +73,7 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
         CHK_STATUS(stepStateMachine(pStateMachine));
 
         // TODO: (?) Is this the correct status checker to use? Maybe CHK()?
-        getStateMachineCurrentState(pStateMachine, ppState);
+        CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
 
         currentState = (*ppState)->state;
 
@@ -88,6 +88,8 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
             {
                 keepIterating = false;
                 // TODO: handle the case of execute READY state, keepIterating based on its conditional
+                //          will probably add it to terminal states list, but leave keepIterating true
+                //          for the non-terminal case
             }
         }
     }
