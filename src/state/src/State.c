@@ -137,6 +137,9 @@ CleanUp:
 STATUS stepStateMachine(PStateMachine pStateMachine)
 {
     ENTERS();
+
+    printf("Stepping State Machine...\n");
+
     STATUS retStatus = STATUS_SUCCESS;
     PStateMachineState pState = NULL;
     UINT64 nextState, time;

@@ -58,8 +58,8 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     UINT64 currentState;
-    PStateMachineState aState = NULL;
-    PStateMachineState* ppTheState = &aState;
+    PStateMachineState pState = NULL;
+    PStateMachineState* ppState = &pState;
     UINT32 terminalStateCount = SIZEOF(terminalStates)/SIZEOF(terminalStates[0]);
 
     BOOL keepIterating = TRUE;
@@ -74,11 +74,11 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
         printf("Here 1\n");
 
         // TODO: (?) Is this the correct status checker to use? Maybe CHK()?
-        getStateMachineCurrentState(pStateMachine, ppTheState);
+        getStateMachineCurrentState(pStateMachine, ppState);
 
         printf("Here 2\n");
 
-        currentState = (*ppTheState)->state;
+        currentState = (*ppState)->state;
 
         printf("CurrentState: %d\n", (int)currentState);
 
@@ -174,8 +174,8 @@ STATUS fromNewStreamState(UINT64 customData, PUINT64 pState)
         state = STREAM_STATE_STOPPED;
     } else {
         // TODO: remove this
-        printf("TEST: Not changing to DESCRIBE state.\n");
-        // state = STREAM_STATE_DESCRIBE;
+        //printf("TEST: Not changing to DESCRIBE state.\n");
+        state = STREAM_STATE_DESCRIBE;
     }
 
     *pState = state;
