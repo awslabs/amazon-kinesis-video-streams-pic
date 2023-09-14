@@ -70,6 +70,7 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
         CHK_STATUS(stepStateMachine(pStateMachine));
 
         printf("Here 1\n");
+        printf("TEST\n");
 
         // TODO: (?) Is this the correct status checker to use? Maybe CHK()?
         CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
