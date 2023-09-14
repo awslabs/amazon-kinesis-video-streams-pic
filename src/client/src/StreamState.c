@@ -57,8 +57,9 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
 
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
-    PStateMachineState* ppTheState = NULL;
     UINT64 currentState;
+    PStateMachineState aState = NULL;
+    PStateMachineState* ppTheState = &aState;
     UINT32 terminalStateCount = SIZEOF(terminalStates)/SIZEOF(terminalStates[0]);
 
     BOOL keepIterating = TRUE;
