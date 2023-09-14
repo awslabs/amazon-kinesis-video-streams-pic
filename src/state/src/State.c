@@ -118,7 +118,7 @@ STATUS getStateMachineCurrentState(PStateMachine pStateMachine, PStateMachineSta
     CHK(pStateMachineImpl != NULL && ppState, STATUS_NULL_ARG);
 
     printf("Here 1.1\n");
-    PStateMachineState* ppOtherStatePointerPointer = pStateMachineImpl->context.pCurrentState;
+    PStateMachineState* ppOtherStatePointerPointer = &pStateMachineImpl->context.pCurrentState;
     printf("Here 1.1\n");
     printf("Here 1.1\n");
     *ppState = pStateMachineImpl->context.pCurrentState;
