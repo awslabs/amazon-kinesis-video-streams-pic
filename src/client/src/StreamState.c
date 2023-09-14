@@ -86,7 +86,7 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
 
             if(currentState == terminalStates[i])
             {
-                keepIterating = false;
+                keepIterating = FALSE;
                 // TODO: handle the case of execute READY state, keepIterating based on its conditional
                 //          will probably add it to terminal states list, but leave keepIterating true
                 //          for the non-terminal case
