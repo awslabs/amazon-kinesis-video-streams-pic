@@ -80,7 +80,8 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
 
         currentState = (*ppTheState)->state;
 
-        printf("CurrentState: %d", (int)currentState);
+        printf("CurrentState: %d\n", (int)currentState);
+        printf("TEST, %d\n", (int)STREAM_STATE_DESCRIBE);
 
         printf("Here 3\n");
 
