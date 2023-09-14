@@ -68,29 +68,24 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
     {
         counter++;
         printf("StepState call number:%llu\n", counter);
+        printf("CurrentState: %d\n", (int)currentState);
 
         CHK_STATUS(stepStateMachine(pStateMachine));
 
-        printf("Here 1\n");
-
         // TODO: (?) Is this the correct status checker to use? Maybe CHK()?
         getStateMachineCurrentState(pStateMachine, ppState);
-
-        printf("Here 2\n");
 
         currentState = (*ppState)->state;
 
         printf("CurrentState: %d\n", (int)currentState);
 
-        printf("Here 3\n");
-
         // If current state is a terminal state, don't stepState, break the loop.
         for(UINT8 i = 0; i < terminalStateCount; i++)
         {
-            printf("Here 4\n");
+            printf("ComparingState: %d\n", (int)terminalStates[i]);
+
             if(currentState == terminalStates[i])
             {
-                printf("Here 5\n");
                 keepIterating = false;
                 // TODO: handle the case of execute READY state, keepIterating based on its conditional
             }
