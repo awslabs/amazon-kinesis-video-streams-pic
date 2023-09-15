@@ -9,7 +9,7 @@ include(GNUInstallDirs)
 option(BUILD_DEPENDENCIES "Whether or not to build depending libraries from source" ON)
 
 # Developer Flags
-option(BUILD_TEST "Build the testing tree." OFF)
+option(BUILD_TEST "Build the testing tree." ON)
 option(CODE_COVERAGE "Enable coverage reporting" OFF)
 option(COMPILER_WARNINGS "Enable all compiler warnings." OFF)
 option(ADDRESS_SANITIZER "Build with AddressSanitizer." OFF)

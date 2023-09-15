@@ -61,7 +61,7 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
     STATUS retStatus = STATUS_SUCCESS;
     PStateMachine pStateMachine = pKinesisVideoStream->base.pStateMachine;
     PStateMachineState pState = NULL;
-    PStateMachineState* ppState = &pState; // ppState can't be null due to check in getStateMachineState
+    PStateMachineState* ppState = &pState; // ppState can't be null due to check for null in getStateMachineState
     UINT64 currentState = STREAM_STATE_NONE;
     UINT64 duration, viewByteSize;
 
