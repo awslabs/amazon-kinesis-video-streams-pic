@@ -871,7 +871,7 @@ STATUS defaultStreamStateTransitionHook(UINT64, PUINT64);
 ///////////////////////////////////////////////////////////////////////////
 // State machine iterator
 ///////////////////////////////////////////////////////////////////////////
-STATUS iterateStreamStateMachine(PStateMachine pStateMachine);
+STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream);
 
 #ifdef __cplusplus
 }

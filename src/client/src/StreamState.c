@@ -42,8 +42,10 @@ UINT32 STREAM_STATE_MACHINE_STATE_COUNT = SIZEOF(STREAM_STATE_MACHINE_STATES) / 
 /**
  * States whose callbacks do not call stepState
  */
-UINT64 terminalStates[] = {STREAM_STATE_DESCRIBE, STREAM_STATE_CREATE, STREAM_STATE_GET_ENDPOINT, STREAM_STATE_TAG_STREAM, 
-                            STREAM_STATE_GET_TOKEN, STREAM_STATE_PUT_STREAM, STREAM_STATE_STREAMING};
+UINT64 terminalStates[] = {STREAM_STATE_DESCRIBE, STREAM_STATE_CREATE, STREAM_STATE_TAG_STREAM, STREAM_STATE_GET_ENDPOINT,
+                            STREAM_STATE_GET_TOKEN, STREAM_STATE_READY, STREAM_STATE_PUT_STREAM, STREAM_STATE_STREAMING};
+
+UINT32 terminalStateCount = SIZEOF(terminalStates)/SIZEOF(terminalStates[0]);
 
 
 
@@ -51,30 +53,33 @@ UINT64 terminalStates[] = {STREAM_STATE_DESCRIBE, STREAM_STATE_CREATE, STREAM_ST
 // State machine iterator
 ///////////////////////////////////////////////////////////////////////////
 
-STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
+STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
 {
     printf("Iterating...\n");
 
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
-    UINT64 currentState;
+    PStateMachine pStateMachine = pKinesisVideoStream->base.pStateMachine;
     PStateMachineState pState = NULL;
-    PStateMachineState* ppState = &pState;
-    UINT32 terminalStateCount = SIZEOF(terminalStates)/SIZEOF(terminalStates[0]);
+    PStateMachineState* ppState = &pState; // ppState can't be null due to check in getStateMachineState
+    UINT64 currentState = STREAM_STATE_NONE;
+    UINT64 duration, viewByteSize;
 
     BOOL keepIterating = TRUE;
-    UINT64 counter = 0;
+    UINT64 counter = 1;
     while(keepIterating)
     {
-        counter++;
         printf("StepState call number:%llu\n", counter);
         printf("CurrentState: %d\n", (int)currentState);
+
+        counter++;
 
         CHK_STATUS(stepStateMachine(pStateMachine));
 
         // TODO: (?) Is this the correct status checker to use? Maybe CHK()?
         CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
 
+        CHK(currentState != STREAM_STATE_NONE, STATUS_NULL_ARG);
         currentState = (*ppState)->state;
 
         printf("CurrentState: %d\n", (int)currentState);
@@ -87,16 +92,24 @@ STATUS iterateStreamStateMachine(PStateMachine pStateMachine)
             if(currentState == terminalStates[i])
             {
                 keepIterating = FALSE;
-                // TODO: handle the case of execute READY state, keepIterating based on its conditional
-                //          will probably add it to terminal states list, but leave keepIterating true
-                //          for the non-terminal case
+                break;
             }
+        }
 
-            //if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0) {
-            // Step the state machine to automatically invoke the PutStream API
-            //CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+        // Check if need to stepState from READY state
+        if(currentState == STREAM_STATE_READY)
+        {
+            // Get the duration and the size. If there is stuff to send then also trigger PutStream
+            CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+            // Check if we need to also call put stream API
+            if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0)
+            {
+                // Step the state machine to automatically invoke the PutStream API
+                keepIterating = TRUE;
+            }
         }
     }
+    
     // TODO: let's break out of the loop after a certain amount of time, can add a parameter to iterator
     //       to allow for a custom timeout for every iterate() call
 
@@ -785,13 +798,12 @@ STATUS executeReadyStreamState(UINT64 customData, UINT64 time)
         pKinesisVideoClient->clientCallbacks.streamReadyFn(pKinesisVideoClient->clientCallbacks.customData, TO_STREAM_HANDLE(pKinesisVideoStream)));
 
     // Get the duration and the size. If there is stuff to send then also trigger PutStream
-    CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
-
+    //CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
     // Check if we need to also call put stream API
-    if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0) {
+    //if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0) {
         // Step the state machine to automatically invoke the PutStream API
         //CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
-    }
+    //}
 
 CleanUp:
 
