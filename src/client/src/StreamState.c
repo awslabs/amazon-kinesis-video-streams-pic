@@ -43,7 +43,7 @@ UINT32 STREAM_STATE_MACHINE_STATE_COUNT = SIZEOF(STREAM_STATE_MACHINE_STATES) / 
  * States whose callbacks do not call stepState
  */
 UINT64 terminalStates[] = {STREAM_STATE_DESCRIBE, STREAM_STATE_CREATE, STREAM_STATE_TAG_STREAM, STREAM_STATE_GET_ENDPOINT,
-                            STREAM_STATE_GET_TOKEN, STREAM_STATE_PUT_STREAM, STREAM_STATE_STREAMING};
+                            STREAM_STATE_GET_TOKEN, STREAM_STATE_READY, STREAM_STATE_PUT_STREAM, STREAM_STATE_STREAMING};
 
 UINT32 terminalStateCount = SIZEOF(terminalStates)/SIZEOF(terminalStates[0]);
 
@@ -79,7 +79,6 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
         // TODO: (?) Is this the correct status checker to use? Maybe CHK()?
         CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
 
-        //CHK(currentState != STREAM_STATE_NONE, STATUS_NULL_ARG);
         currentState = (*ppState)->state;
 
         printf("CurrentState: %d\n", (int)currentState);
@@ -97,17 +96,17 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
         }
 
         // Check if need to stepState from READY state
-        // if(currentState == STREAM_STATE_READY)
-        // {
-        //     // Get the duration and the size. If there is stuff to send then also trigger PutStream
-        //     CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
-        //     // Check if we need to also call put stream API
-        //     if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0)
-        //     {
-        //         // Step the state machine to automatically invoke the PutStream API
-        //         keepIterating = TRUE;
-        //     }
-        // }
+        if(currentState == STREAM_STATE_READY)
+        {
+            // Get the duration and the size. If there is stuff to send then also trigger PutStream
+            CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+            // Check if we need to also call put stream API
+            if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0)
+            {
+                // Step the state machine to automatically invoke the PutStream API
+                keepIterating = TRUE;
+            }
+        }
     }
     
     // TODO: let's break out of the loop after a certain amount of time, can add a parameter to iterator
