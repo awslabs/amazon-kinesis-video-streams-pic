@@ -79,7 +79,7 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
         // TODO: (?) Is this the correct status checker to use? Maybe CHK()?
         CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
 
-        CHK(currentState != STREAM_STATE_NONE, STATUS_NULL_ARG);
+        //CHK(currentState != STREAM_STATE_NONE, STATUS_NULL_ARG);
         currentState = (*ppState)->state;
 
         printf("CurrentState: %d\n", (int)currentState);
