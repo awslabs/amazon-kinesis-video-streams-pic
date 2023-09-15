@@ -97,17 +97,17 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
         }
 
         // Check if need to stepState from READY state
-        if(currentState == STREAM_STATE_READY)
-        {
-            // Get the duration and the size. If there is stuff to send then also trigger PutStream
-            CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
-            // Check if we need to also call put stream API
-            if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0)
-            {
-                // Step the state machine to automatically invoke the PutStream API
-                keepIterating = TRUE;
-            }
-        }
+        // if(currentState == STREAM_STATE_READY)
+        // {
+        //     // Get the duration and the size. If there is stuff to send then also trigger PutStream
+        //     CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+        //     // Check if we need to also call put stream API
+        //     if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0)
+        //     {
+        //         // Step the state machine to automatically invoke the PutStream API
+        //         keepIterating = TRUE;
+        //     }
+        // }
     }
     
     // TODO: let's break out of the loop after a certain amount of time, can add a parameter to iterator
