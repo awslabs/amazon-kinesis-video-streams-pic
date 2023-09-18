@@ -55,7 +55,7 @@ UINT32 terminalStateCount = SIZEOF(terminalStates)/SIZEOF(terminalStates[0]);
 
 STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
 {
-    printf("*** ITERATING... ***\n");
+    //printf("*** ITERATING... ***\n");
 
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -69,12 +69,12 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
     UINT64 counter = 1;
     while(keepIterating)
     {
-        printf("---------------StepState call number:%llu\n", counter);
+        //printf("---------------StepState call number:%llu\n", counter);
 
         // TODO: Remove this getState - only doing it here for debugging
-        CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
-        currentState = (*ppState)->state;
-        printf("CurrentState before step: %d\n", (int)currentState);
+        // CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
+        // currentState = (*ppState)->state;
+        //printf("CurrentState before step: %d\n", (int)currentState);
 
         CHK_STATUS(stepStateMachine(pStateMachine));
 
@@ -83,22 +83,22 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
         CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
 
         currentState = (*ppState)->state;
-        printf("CurrentState after step: %d\n", (int)currentState);
+        //printf("CurrentState after step: %d\n", (int)currentState);
 
         // If current state is a terminal state, don't stepState, break the loop.
         for(UINT8 i = 0; i < terminalStateCount; i++)
         {
-            printf("Comparing state: %d\n", (int)terminalStates[i]);
+            //printf("Comparing state: %d\n", (int)terminalStates[i]);
 
             if(currentState == terminalStates[i])
             {
-                printf("Current state is terminal. Stopping iterator.\n");
+                //printf("Current state is terminal. Stopping iterator.\n");
                 keepIterating = FALSE;
                 break;
             }
         }
 
-        // Check if need to stepState from READY state
+        // For READY state, check if need to stepState.
         if(currentState == STREAM_STATE_READY)
         {
             // Get the duration and the size. If there is stuff to send then also trigger PutStream
@@ -110,6 +110,34 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
                 keepIterating = TRUE;
             }
         }
+
+        // TODO: consider moving all this funcionality back into execute function, and check the conditionals again just
+        //          for setting keepIterating to make this function less clutured.
+        // For STOPPED state, check if we want to prime the state machine based on whether we have any more content to send
+        // currently and if the error is a timeout.
+        if(currentState == STREAM_STATE_STOPPED)
+        {
+            if (SERVICE_CALL_RESULT_IS_A_TIMEOUT(pKinesisVideoStream->connectionDroppedResult))
+            {
+                CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+                if (viewByteSize == 0)
+                {
+                    // Next time putFrame is called we will self-prime.
+                    // The idea is to drop frames till new key frame which will
+                    // become a stream start.
+                    pKinesisVideoStream->resetGeneratorOnKeyFrame = TRUE;
+                    pKinesisVideoStream->skipNonKeyFrames = TRUE;
+
+                    // Set an indicator to step the state machine on new frame
+                    pKinesisVideoStream->streamState = STREAM_STATE_NEW;
+
+                    // Early exit
+                    keepIterating = FALSE;;
+                }
+            }
+        }
+
+
         counter++;
     }
     // TODO: let's break out of the loop after a certain amount of time? Can add a parameter to iterator
@@ -178,6 +206,7 @@ CleanUp:
 
 STATUS fromNewStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("Calling: fromNewStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -204,6 +233,7 @@ CleanUp:
 
 STATUS executeNewStreamState(UINT64 customData, UINT64 time)
 {
+    printf("Calling: executeNewStreamState\n");
     ENTERS();
     UNUSED_PARAM(time);
     STATUS retStatus = STATUS_SUCCESS;
@@ -221,6 +251,7 @@ CleanUp:
 
 STATUS executeDescribeStreamState(UINT64 customData, UINT64 time)
 {
+    printf("Calling: executeDescribeStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -256,6 +287,7 @@ CleanUp:
 
 STATUS fromDescribeStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("Calling: fromDescribeStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -310,6 +342,7 @@ CleanUp:
 
 STATUS fromCreateStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("Calling: fromCreateStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -338,6 +371,7 @@ CleanUp:
 
 STATUS fromTagStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("Calling: fromTagStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -362,6 +396,7 @@ CleanUp:
 
 STATUS fromGetEndpointStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("Calling: fromGetEndpointStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -386,6 +421,7 @@ CleanUp:
 
 STATUS fromGetTokenStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("Calling: fromGetTokenStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -410,6 +446,7 @@ CleanUp:
 
 STATUS fromPutStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("Calling: fromPutStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -491,6 +528,7 @@ CleanUp:
 
 STATUS fromStreamingStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("Calling: fromStreamingStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -514,6 +552,7 @@ CleanUp:
 
 STATUS fromStoppedStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("Calling: fromStoppedStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -592,6 +631,7 @@ CleanUp:
 
 STATUS fromReadyStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("Calling: fromReadyStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -616,6 +656,7 @@ CleanUp:
 
 STATUS executeGetEndpointStreamState(UINT64 customData, UINT64 time)
 {
+    printf("Calling: executeGetEndpointStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -668,6 +709,7 @@ CleanUp:
 
 STATUS executeGetTokenStreamState(UINT64 customData, UINT64 time)
 {
+    printf("Calling: executeGetTokenStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -704,6 +746,7 @@ CleanUp:
 
 STATUS executeCreateStreamState(UINT64 customData, UINT64 time)
 {
+    printf("Calling: executeCreateStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -741,6 +784,7 @@ CleanUp:
 
 STATUS executeTagStreamState(UINT64 customData, UINT64 time)
 {
+    printf("Calling: executeTagStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -778,6 +822,7 @@ CleanUp:
 
 STATUS executeReadyStreamState(UINT64 customData, UINT64 time)
 {
+    printf("Calling: executeReadyStreamState\n");
     ENTERS();
     UNUSED_PARAM(time);
     STATUS retStatus = STATUS_SUCCESS;
@@ -815,6 +860,7 @@ CleanUp:
 
 STATUS executePutStreamState(UINT64 customData, UINT64 time)
 {
+    printf("Calling: executePutStreamState\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -859,6 +905,7 @@ CleanUp:
 
 STATUS executeStreamingStreamState(UINT64 customData, UINT64 time)
 {
+    printf("Calling: executeStreamingStreamState\n");
     ENTERS();
     UNUSED_PARAM(time);
     STATUS retStatus = STATUS_SUCCESS;
@@ -879,6 +926,7 @@ CleanUp:
 
 STATUS executeStoppedStreamState(UINT64 customData, UINT64 time)
 {
+    printf("Calling: executeStoppedStreamState\n");
     ENTERS();
     UNUSED_PARAM(time);
     STATUS retStatus = STATUS_SUCCESS;
@@ -891,22 +939,22 @@ STATUS executeStoppedStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->connectionDroppedResult = pKinesisVideoStream->base.result;
     // Check if we want to prime the state machine based on whether we have any more content to send
     // currently and if the error is a timeout.
-    if (SERVICE_CALL_RESULT_IS_A_TIMEOUT(pKinesisVideoStream->connectionDroppedResult)) {
-        CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
-        if (viewByteSize == 0) {
-            // Next time putFrame is called we will self-prime.
-            // The idea is to drop frames till new key frame which will
-            // become a stream start.
-            pKinesisVideoStream->resetGeneratorOnKeyFrame = TRUE;
-            pKinesisVideoStream->skipNonKeyFrames = TRUE;
+    // if (SERVICE_CALL_RESULT_IS_A_TIMEOUT(pKinesisVideoStream->connectionDroppedResult)) {
+    //     CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+    //     if (viewByteSize == 0) {
+    //         // Next time putFrame is called we will self-prime.
+    //         // The idea is to drop frames till new key frame which will
+    //         // become a stream start.
+    //         pKinesisVideoStream->resetGeneratorOnKeyFrame = TRUE;
+    //         pKinesisVideoStream->skipNonKeyFrames = TRUE;
 
-            // Set an indicator to step the state machine on new frame
-            pKinesisVideoStream->streamState = STREAM_STATE_NEW;
+    //         // Set an indicator to step the state machine on new frame
+    //         pKinesisVideoStream->streamState = STREAM_STATE_NEW;
 
-            // Early exit
-            CHK(FALSE, retStatus);
-        }
-    }
+    //         // Early exit
+    //         //CHK(FALSE, retStatus);
+    //     }
+    // }
 
     // Auto-prime the state machine
     //CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));

@@ -808,8 +808,8 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         }
     }
 
-    printf("PutFrame: pKinesisVideoStream->streamState is %d\n", pKinesisVideoStream->streamState);
-    printf("PutFrame: pKinesisVideoStream->streamRead is %s\n", pKinesisVideoStream->streamState ? "true" : "false");
+    //printf("PutFrame: pKinesisVideoStream->streamState is %d\n", pKinesisVideoStream->streamState);
+    //printf("PutFrame: pKinesisVideoStream->streamRead is %s\n", pKinesisVideoStream->streamState ? "true" : "false");
     // NOTE: If the connection has been reset we need to start from a new header
     if (pKinesisVideoStream->streamState == STREAM_STATE_NEW && pKinesisVideoStream->streamReady) {
         // Step the state machine once to get out of the Ready state
