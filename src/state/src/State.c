@@ -258,3 +258,44 @@ CleanUp:
     LEAVES();
     return retStatus;
 }
+
+/**
+ * Calls the from function of the current state to determine if the state machine is ready to
+ * move on to another state.
+ */
+STATUS checkForStateTransition(PStateMachine pStateMachine, PBOOL pTransitionReady) 
+{
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    PStateMachineState pState = NULL;
+    UINT64 nextState, time;
+    UINT64 customData;
+    PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
+    UINT64 errorStateTransitionWaitTime = 0;
+    BOOL transitionReady = FALSE;
+
+    CHK(pStateMachineImpl != NULL && pTransitionReady != NULL, STATUS_NULL_ARG);
+    customData = pStateMachineImpl->customData;
+
+
+    // Get the next state
+    CHK(pStateMachineImpl->context.pCurrentState->getNextStateFn != NULL, STATUS_NULL_ARG);
+    CHK_STATUS(pStateMachineImpl->context.pCurrentState->getNextStateFn(pStateMachineImpl->customData, &nextState));
+
+    // Iterate over and find the first state
+    for (i = 0; pState == NULL && i < pStateMachineImpl->stateCount; i++) {
+        if (pStateMachineImpl->states[i].state == nextState) {
+            if (pStateMachineImpl->context.pCurrentState->state != nextState) {
+                transitionReady = TRUE;
+            }
+            break;
+        }
+    }
+
+    *pTransitionReady = transitionReady;
+
+CleanUp:
+
+    LEAVES();
+    return retStatus;
+}

@@ -313,6 +313,33 @@ CleanUp:
     return retStatus;
 }
 
+PUBLIC_API STATUS timerQueueKick(TIMER_QUEUE_HANDLE handle, UINT32 timerId) 
+{
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    PTimerQueue pTimerQueue = FROM_TIMER_QUEUE_HANDLE(handle);
+    BOOL locked = FALSE;
+
+    CHK(pTimerQueue != NULL, STATUS_NULL_ARG);
+    CHK(timerId < pTimerQueue->maxTimerCount, STATUS_INVALID_ARG);
+
+    MUTEX_LOCK(pTimerQueue->executorLock);
+    locked = TRUE;
+
+    //change invoke time & signal to trigger timer.
+    pTimerQueue->pTimers[timerId].invokeTime = 0;
+    CVAR_SIGNAL(pTimerQueue->executorCvar);
+
+CleanUp:
+
+    if (locked) {
+        MUTEX_UNLOCK(pTimerQueue->executorLock);
+    }
+
+    LEAVES();
+    return retStatus;
+}
+
 PUBLIC_API STATUS timerQueueShutdown(TIMER_QUEUE_HANDLE handle)
 {
     ENTERS();

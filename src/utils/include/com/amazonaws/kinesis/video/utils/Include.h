@@ -1248,6 +1248,16 @@ PUBLIC_API STATUS timerQueueGetTimersWithCustomData(TIMER_QUEUE_HANDLE, UINT64, 
 PUBLIC_API STATUS timerQueueUpdateTimerPeriod(TIMER_QUEUE_HANDLE, UINT64, UINT32, UINT64);
 
 /*
+ * Kick timer id's timer to invoke immediately. Do nothing if timer not found.
+ *
+ * @param - TIMER_QUEUE_HANDLE - IN - Timer queue handle
+ * @param - UINT32 - IN - Timer id to update
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS timerQueueKick(TIMER_QUEUE_HANDLE, UINT32);
+
+/*
  * stop the timer. Once stopped timer can't be restarted. There will be no more timer callback invocation after
  * timerQueueShutdown returns.
  *
