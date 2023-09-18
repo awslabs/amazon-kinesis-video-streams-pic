@@ -98,6 +98,12 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
             }
         }
 
+        // TODO: re-organize how READY and STOPPED state condional checks are done. Right now they are not consistent:
+        //       READY is a terminal state but STOPPED is not. Both should be either terminal or not, the checks should
+        //       be cleaned up, and a decision needs to be made on whether the states should be terminal or not... OR
+        //       could also do away with the terminal states array and onlyhave a check for READ and STOPPED cases if
+        //       they are the only states that could possibly be non-terminal.
+
         // For READY state, check if need to stepState.
         if(currentState == STREAM_STATE_READY)
         {
