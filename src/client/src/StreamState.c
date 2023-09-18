@@ -49,6 +49,11 @@ UINT32 terminalStateCount = SIZEOF(terminalStates)/SIZEOF(terminalStates[0]);
 
 
 
+// States that always call stepState: NEW
+// States that sometimes call stepState: READY, STOPPED
+
+
+
 ///////////////////////////////////////////////////////////////////////////
 // State machine iterator
 ///////////////////////////////////////////////////////////////////////////
