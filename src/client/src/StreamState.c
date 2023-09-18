@@ -85,8 +85,9 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
         currentState = (*ppState)->state;
         //printf("CurrentState after step: %d\n", (int)currentState);
 
+        UINT8 i;
         // If current state is a terminal state, don't stepState, break the loop.
-        for(UINT8 i = 0; i < terminalStateCount; i++)
+        for(i = 0; i < terminalStateCount; i++)
         {
             //printf("Comparing state: %d\n", (int)terminalStates[i]);
 
