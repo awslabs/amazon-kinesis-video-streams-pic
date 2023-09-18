@@ -6,7 +6,7 @@ class ThreadpoolFunctionalityTest : public UtilTestBase {
 };
 
 PVOID randomishTask(PVOID customData) {
-    THREAD_SLEEP((rand()%100 + 1) * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP((rand()%20 + 100) * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     return 0;
 }
 
@@ -49,7 +49,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
 
     //sleep for a little. Create asynchronously detaches threads, so using TryAdd too soon can
     //fail if the threads are not yet ready.
-    THREAD_SLEEP(10 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     EXPECT_EQ(STATUS_SUCCESS, threadpoolTryAdd(pThreadpool, exitOnTeardownTask, &terminate));
     EXPECT_EQ(STATUS_THREADPOOL_MAX_COUNT, threadpoolTryAdd(pThreadpool, exitOnTeardownTask, &terminate));
@@ -98,6 +98,10 @@ TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
     for(UINT32 i = 0; i < min; i++) {
         EXPECT_EQ(STATUS_SUCCESS, threadpoolPush(pThreadpool, exitOnTeardownTask, &terminate));
     }
+    //Threads have to wake up and accept tasks. Put a small sleep here so that we know the tasks
+    //have started before the next push.
+    THREAD_SLEEP(20 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+
     //no new threads created
     EXPECT_EQ(STATUS_SUCCESS, threadpoolTotalThreadCount(pThreadpool, &count));
     EXPECT_EQ(count, min);
@@ -129,6 +133,7 @@ TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest
     for(UINT32 i = min; i < max; i++) {
         EXPECT_EQ(STATUS_SUCCESS, threadpoolPush(pThreadpool, randomishTask, NULL));
     }
+    THREAD_SLEEP(110 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
     //now threads will exit after threadpoolFree
     terminate = TRUE;
