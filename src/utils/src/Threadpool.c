@@ -70,8 +70,7 @@ PVOID threadpoolActor(PVOID data)
             } else if (!ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
                 ATOMIC_DECREMENT(&pThreadData->pThreadpool->availableThreads);
             }
-        }
-        else {
+        } else {
             finished = TRUE;
             MUTEX_UNLOCK(pThreadData->dataMutex);
             break;
@@ -84,8 +83,7 @@ PVOID threadpoolActor(PVOID data)
         if (MUTEX_TRYLOCK(pThreadData->dataMutex)) {
             if (ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
                 MUTEX_UNLOCK(pThreadData->dataMutex);
-            }
-            else {
+            } else {
                 // Threadpool is active - lock its mutex
                 MUTEX_LOCK(pThreadpool->listMutex);
 
