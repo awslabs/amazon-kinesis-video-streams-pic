@@ -55,7 +55,7 @@ UINT32 terminalStateCount = SIZEOF(terminalStates)/SIZEOF(terminalStates[0]);
 
 STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
 {
-    printf("Iterating...\n");
+    printf("*** ITERATING... ***\n");
 
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -69,27 +69,30 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
     UINT64 counter = 1;
     while(keepIterating)
     {
-        printf("StepState call number:%llu\n", counter);
-        printf("CurrentState: %d\n", (int)currentState);
+        printf("---------------StepState call number:%llu\n", counter);
 
-        counter++;
+        // TODO: Remove this getState - only doing it here for debugging
+        CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
+        currentState = (*ppState)->state;
+        printf("CurrentState before step: %d\n", (int)currentState);
 
         CHK_STATUS(stepStateMachine(pStateMachine));
 
         // TODO: (?) Is this the correct status checker to use? Maybe CHK()?
+        //TODO: This is a key difference to how current state is checked in stepState, look into this
         CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
 
         currentState = (*ppState)->state;
-
-        printf("CurrentState: %d\n", (int)currentState);
+        printf("CurrentState after step: %d\n", (int)currentState);
 
         // If current state is a terminal state, don't stepState, break the loop.
         for(UINT8 i = 0; i < terminalStateCount; i++)
         {
-            printf("ComparingState: %d\n", (int)terminalStates[i]);
+            printf("Comparing state: %d\n", (int)terminalStates[i]);
 
             if(currentState == terminalStates[i])
             {
+                printf("Current state is terminal. Stopping iterator.\n");
                 keepIterating = FALSE;
                 break;
             }
@@ -107,9 +110,9 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
                 keepIterating = TRUE;
             }
         }
+        counter++;
     }
-    
-    // TODO: let's break out of the loop after a certain amount of time, can add a parameter to iterator
+    // TODO: let's break out of the loop after a certain amount of time? Can add a parameter to iterator
     //       to allow for a custom timeout for every iterate() call
 
     CleanUp:
@@ -796,13 +799,13 @@ STATUS executeReadyStreamState(UINT64 customData, UINT64 time)
     CHK_STATUS(
         pKinesisVideoClient->clientCallbacks.streamReadyFn(pKinesisVideoClient->clientCallbacks.customData, TO_STREAM_HANDLE(pKinesisVideoStream)));
 
-    // Get the duration and the size. If there is stuff to send then also trigger PutStream
-    //CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
-    // Check if we need to also call put stream API
-    //if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0) {
-        // Step the state machine to automatically invoke the PutStream API
-        //CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
-    //}
+    // // Get the duration and the size. If there is stuff to send then also trigger PutStream
+    // CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+    // // Check if we need to also call put stream API
+    // if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0) {
+    //     // tep the state machine to automatically invoke the PutStream API
+    //     CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+    // }
 
 CleanUp:
 

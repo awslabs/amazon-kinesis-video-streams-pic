@@ -115,17 +115,13 @@ STATUS getStateMachineCurrentState(PStateMachine pStateMachine, PStateMachineSta
     STATUS retStatus = STATUS_SUCCESS;
     PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
 
-    printf("Here 1.1\n");
     CHK(pStateMachineImpl != NULL && ppState, STATUS_NULL_ARG);
-    printf("Here 1.1\n");
 
     PStateMachineState* ppOtherStatePointerPointer = &pStateMachineImpl->context.pCurrentState;
     *ppState = pStateMachineImpl->context.pCurrentState;
-    printf("Here 1.1\n");
 
 CleanUp:
     LEAVES();
-    printf("Here 1.2\n");
     return retStatus;
 }
 
@@ -137,8 +133,6 @@ CleanUp:
 STATUS stepStateMachine(PStateMachine pStateMachine)
 {
     ENTERS();
-
-    printf("Stepping State Machine...\n");
 
     STATUS retStatus = STATUS_SUCCESS;
     PStateMachineState pState = NULL;
@@ -169,8 +163,6 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
     }
 
     // TODO: (nit) typo below, "to0" -> "to 0"
-
-
     // Check if we are changing the state
     if (pState->state != pStateMachineImpl->context.pCurrentState->state) {
         // Since we're transitioning to a different state from this state, reset the local state retry count to0
