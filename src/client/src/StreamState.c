@@ -62,7 +62,6 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
     do
     {
         counter++;
-        printf("COUNT: %d\n", counter);
         pKinesisVideoStream->keepIterating = FALSE;
         CHK_STATUS(stepStateMachine(pStateMachine));    
     } while(pKinesisVideoStream->keepIterating);
