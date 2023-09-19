@@ -58,8 +58,11 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
     STATUS retStatus = STATUS_SUCCESS;
     PStateMachine pStateMachine = pKinesisVideoStream->base.pStateMachine;
 
+    UINT32 counter = 0;
     do
     {
+        counter++;
+        printf("COUNT: %d", counter);
         pKinesisVideoStream->keepIterating = FALSE;
         CHK_STATUS(stepStateMachine(pStateMachine));    
     } while(pKinesisVideoStream->keepIterating);
@@ -141,7 +144,7 @@ STATUS fromNewStreamState(UINT64 customData, PUINT64 pState)
     if (pKinesisVideoStream->streamState == STREAM_STATE_STOPPED) {
         state = STREAM_STATE_STOPPED;
     } else {
-        state = STREAM_STATE_DESCRIBE;
+        //state = STREAM_STATE_DESCRIBE;
     }
 
     *pState = state;
