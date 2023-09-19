@@ -49,16 +49,15 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
     STATUS retStatus = STATUS_SUCCESS;
     PStateMachine pStateMachine = pKinesisVideoStream->base.pStateMachine;
 
-    do
-    {
+    do {
         pKinesisVideoStream->keepIterating = FALSE;
-        CHK_STATUS(stepStateMachine(pStateMachine));    
-    } while(pKinesisVideoStream->keepIterating);
+        CHK_STATUS(stepStateMachine(pStateMachine));
+    } while (pKinesisVideoStream->keepIterating);
 
-    CleanUp:
+CleanUp:
 
-        LEAVES();
-        return retStatus;
+    LEAVES();
+    return retStatus;
 }
 
 ///////////////////////////////////////////////////////////////////////////
