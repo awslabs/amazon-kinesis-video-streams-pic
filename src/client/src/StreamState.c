@@ -61,18 +61,12 @@ UINT32 terminalStateCount = SIZEOF(terminalStates)/SIZEOF(terminalStates[0]);
 STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
 {
     //printf("*** ITERATING... ***\n");
-
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PStateMachine pStateMachine = pKinesisVideoStream->base.pStateMachine;
-    PStateMachineState pState = NULL;
-    PStateMachineState* ppState = &pState; // ppState can't be null due to check for null in getStateMachineState
-    UINT64 currentState = STREAM_STATE_NONE;
-    UINT64 duration, viewByteSize;
 
-    BOOL keepIterating = TRUE;
-    UINT64 counter = 1;
-    while(keepIterating)
+    pKinesisVideoStream->keepIterating = FALSE;
+    do
     {
         //printf("---------------StepState call number:%llu\n", counter);
 
@@ -83,75 +77,10 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
 
         CHK_STATUS(stepStateMachine(pStateMachine));
 
-        // TODO: (?) Is this the correct status checker to use? Maybe CHK()?
-        //TODO: This is a key difference to how current state is checked in stepState, look into this
-        CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
-
-        currentState = (*ppState)->state;
         //printf("CurrentState after step: %d\n", (int)currentState);
+    
+    } while(pKinesisVideoStream->keepIterating);
 
-        UINT8 i;
-        // If current state is a terminal state, don't stepState, break the loop.
-        for(i = 0; i < terminalStateCount; i++)
-        {
-            //printf("Comparing state: %d\n", (int)terminalStates[i]);
-
-            if(currentState == terminalStates[i])
-            {
-                //printf("Current state is terminal. Stopping iterator.\n");
-                keepIterating = FALSE;
-                break;
-            }
-        }
-
-        // TODO: re-organize how READY and STOPPED state condional checks are done. Right now they are not consistent:
-        //       READY is a terminal state but STOPPED is not. Both should be either terminal or not, the checks should
-        //       be cleaned up, and a decision needs to be made on whether the states should be terminal or not... OR
-        //       could also do away with the terminal states array and onlyhave a check for READ and STOPPED cases if
-        //       they are the only states that could possibly be non-terminal.
-
-        // For READY state, check if need to stepState.
-        if(currentState == STREAM_STATE_READY)
-        {
-            // Get the duration and the size. If there is stuff to send then also trigger PutStream
-            CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
-            // Check if we need to also call put stream API
-            if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0)
-            {
-                // Step the state machine to automatically invoke the PutStream API
-                keepIterating = TRUE;
-            }
-        }
-
-        // TODO: consider moving all this funcionality back into execute function, and check the conditionals again just
-        //          for setting keepIterating to make this function less clutured.
-        // For STOPPED state, check if we want to prime the state machine based on whether we have any more content to send
-        // currently and if the error is a timeout.
-        if(currentState == STREAM_STATE_STOPPED)
-        {
-            if (SERVICE_CALL_RESULT_IS_A_TIMEOUT(pKinesisVideoStream->connectionDroppedResult))
-            {
-                CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
-                if (viewByteSize == 0)
-                {
-                    // Next time putFrame is called we will self-prime.
-                    // The idea is to drop frames till new key frame which will
-                    // become a stream start.
-                    pKinesisVideoStream->resetGeneratorOnKeyFrame = TRUE;
-                    pKinesisVideoStream->skipNonKeyFrames = TRUE;
-
-                    // Set an indicator to step the state machine on new frame
-                    pKinesisVideoStream->streamState = STREAM_STATE_NEW;
-
-                    // Early exit
-                    keepIterating = FALSE;;
-                }
-            }
-        }
-
-
-        counter++;
-    }
     // TODO: let's break out of the loop after a certain amount of time? Can add a parameter to iterator
     //       to allow for a custom timeout for every iterate() call
 
@@ -254,6 +183,7 @@ STATUS executeNewStreamState(UINT64 customData, UINT64 time)
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
 
     // Step the state machine to automatically invoke the Describe API
+    pKinesisVideoStream->keepIterating = TRUE;
 
 CleanUp:
 
@@ -856,13 +786,13 @@ STATUS executeReadyStreamState(UINT64 customData, UINT64 time)
     CHK_STATUS(
         pKinesisVideoClient->clientCallbacks.streamReadyFn(pKinesisVideoClient->clientCallbacks.customData, TO_STREAM_HANDLE(pKinesisVideoStream)));
 
-    // // Get the duration and the size. If there is stuff to send then also trigger PutStream
-    // CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
-    // // Check if we need to also call put stream API
-    // if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0) {
-    //     // tep the state machine to automatically invoke the PutStream API
-    //     CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
-    // }
+    // Get the duration and the size. If there is stuff to send then also trigger PutStream
+    CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+    // Check if we need to also call put stream API
+    if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0) {
+        // Step the state machine to automatically invoke the PutStream API
+        pKinesisVideoStream->keepIterating = TRUE;
+    }
 
 CleanUp:
 
@@ -951,25 +881,25 @@ STATUS executeStoppedStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->connectionDroppedResult = pKinesisVideoStream->base.result;
     // Check if we want to prime the state machine based on whether we have any more content to send
     // currently and if the error is a timeout.
-    // if (SERVICE_CALL_RESULT_IS_A_TIMEOUT(pKinesisVideoStream->connectionDroppedResult)) {
-    //     CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
-    //     if (viewByteSize == 0) {
-    //         // Next time putFrame is called we will self-prime.
-    //         // The idea is to drop frames till new key frame which will
-    //         // become a stream start.
-    //         pKinesisVideoStream->resetGeneratorOnKeyFrame = TRUE;
-    //         pKinesisVideoStream->skipNonKeyFrames = TRUE;
+    if (SERVICE_CALL_RESULT_IS_A_TIMEOUT(pKinesisVideoStream->connectionDroppedResult)) {
+        CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+        if (viewByteSize == 0) {
+            // Next time putFrame is called we will self-prime.
+            // The idea is to drop frames till new key frame which will
+            // become a stream start.
+            pKinesisVideoStream->resetGeneratorOnKeyFrame = TRUE;
+            pKinesisVideoStream->skipNonKeyFrames = TRUE;
 
-    //         // Set an indicator to step the state machine on new frame
-    //         pKinesisVideoStream->streamState = STREAM_STATE_NEW;
+            // Set an indicator to step the state machine on new frame
+            pKinesisVideoStream->streamState = STREAM_STATE_NEW;
 
-    //         // Early exit
-    //         //CHK(FALSE, retStatus);
-    //     }
-    // }
+            // Early exit
+            CHK(FALSE, retStatus);
+        }
+    }
 
     // Auto-prime the state machine
-    //CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+    pKinesisVideoStream->keepIterating = TRUE;
 
 CleanUp:
 
