@@ -164,6 +164,7 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
 
     // TODO: (nit) typo below, "to0" -> "to 0"
     // Check if we are changing the state
+    printf("localStateRetryCount: %d\n", pStateMachineImpl->context.localStateRetryCount);
     if (pState->state != pStateMachineImpl->context.pCurrentState->state) {
         // Since we're transitioning to a different state from this state, reset the local state retry count to0
         pStateMachineImpl->context.localStateRetryCount = 0;
