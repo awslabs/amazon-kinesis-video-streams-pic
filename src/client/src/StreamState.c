@@ -39,17 +39,13 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
 
 UINT32 STREAM_STATE_MACHINE_STATE_COUNT = SIZEOF(STREAM_STATE_MACHINE_STATES) / SIZEOF(StateMachineState);
 
-/**
- * States whose callbacks do not call stepState
- */
-UINT64 terminalStates[] = {STREAM_STATE_DESCRIBE, STREAM_STATE_CREATE, STREAM_STATE_TAG_STREAM, STREAM_STATE_GET_ENDPOINT,
-                            STREAM_STATE_GET_TOKEN, STREAM_STATE_READY, STREAM_STATE_PUT_STREAM, STREAM_STATE_STREAMING};
+// TODO: remove the following notes after review or PR initialization.
 
-UINT32 terminalStateCount = SIZEOF(terminalStates)/SIZEOF(terminalStates[0]);
-
-
-// States that always call stepState: NEW
-// States that sometimes call stepState: READY, STOPPED
+// For code reviewer reference:
+//
+// 1 State that always calls stepState: NEW
+// 2 States that sometimes call stepState: READY, STOPPED
+// 7 States that never call stepState: DESCRIBE, CREATE, TAG_STREAM, GET_ENDPOINT, GET_TOKEN, PUT_STREAM, STREAMING
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -58,29 +54,17 @@ UINT32 terminalStateCount = SIZEOF(terminalStates)/SIZEOF(terminalStates[0]);
 
 STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
 {
-    printf("*** ITERATING... ***\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PStateMachine pStateMachine = pKinesisVideoStream->base.pStateMachine;
 
     do
     {
-        //printf("---------------StepState call number:%llu\n", counter);
-
-        // TODO: Remove this getState - only doing it here for debugging
-        // CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppState));
-        // currentState = (*ppState)->state;
-        //printf("CurrentState before step: %d\n", (int)currentState);
-
         pKinesisVideoStream->keepIterating = FALSE;
-        CHK_STATUS(stepStateMachine(pStateMachine));
-
-        //printf("CurrentState after step: %d\n", (int)currentState);
-    
+        CHK_STATUS(stepStateMachine(pStateMachine));    
     } while(pKinesisVideoStream->keepIterating);
 
-    // TODO: let's break out of the loop after a certain amount of time? Can add a parameter to iterator
-    //       to allow for a custom timeout for every iterate() call
+    // TODO: Should we break out of the loop after a certain amount of time?
 
     CleanUp:
 
@@ -157,8 +141,6 @@ STATUS fromNewStreamState(UINT64 customData, PUINT64 pState)
     if (pKinesisVideoStream->streamState == STREAM_STATE_STOPPED) {
         state = STREAM_STATE_STOPPED;
     } else {
-        // TODO: remove this
-        //printf("TEST: Not changing to DESCRIBE state.\n");
         state = STREAM_STATE_DESCRIBE;
     }
 
