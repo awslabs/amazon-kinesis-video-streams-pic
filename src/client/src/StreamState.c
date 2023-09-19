@@ -48,10 +48,8 @@ UINT64 terminalStates[] = {STREAM_STATE_DESCRIBE, STREAM_STATE_CREATE, STREAM_ST
 UINT32 terminalStateCount = SIZEOF(terminalStates)/SIZEOF(terminalStates[0]);
 
 
-
 // States that always call stepState: NEW
 // States that sometimes call stepState: READY, STOPPED
-
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -60,12 +58,11 @@ UINT32 terminalStateCount = SIZEOF(terminalStates)/SIZEOF(terminalStates[0]);
 
 STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
 {
-    //printf("*** ITERATING... ***\n");
+    printf("*** ITERATING... ***\n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PStateMachine pStateMachine = pKinesisVideoStream->base.pStateMachine;
 
-    pKinesisVideoStream->keepIterating = FALSE;
     do
     {
         //printf("---------------StepState call number:%llu\n", counter);
@@ -75,6 +72,7 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
         // currentState = (*ppState)->state;
         //printf("CurrentState before step: %d\n", (int)currentState);
 
+        pKinesisVideoStream->keepIterating = FALSE;
         CHK_STATUS(stepStateMachine(pStateMachine));
 
         //printf("CurrentState after step: %d\n", (int)currentState);
