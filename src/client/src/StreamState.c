@@ -40,6 +40,28 @@ StateMachineState STREAM_STATE_MACHINE_STATES[] = {
 UINT32 STREAM_STATE_MACHINE_STATE_COUNT = SIZEOF(STREAM_STATE_MACHINE_STATES) / SIZEOF(StateMachineState);
 
 ///////////////////////////////////////////////////////////////////////////
+// State machine transition iterator
+///////////////////////////////////////////////////////////////////////////
+
+STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
+{
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    PStateMachine pStateMachine = pKinesisVideoStream->base.pStateMachine;
+
+    do
+    {
+        pKinesisVideoStream->keepIterating = FALSE;
+        CHK_STATUS(stepStateMachine(pStateMachine));    
+    } while(pKinesisVideoStream->keepIterating);
+
+    CleanUp:
+
+        LEAVES();
+        return retStatus;
+}
+
+///////////////////////////////////////////////////////////////////////////
 // State machine callback functions
 ///////////////////////////////////////////////////////////////////////////
 

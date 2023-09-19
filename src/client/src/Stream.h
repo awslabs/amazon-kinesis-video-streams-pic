@@ -377,6 +377,9 @@ struct __KinesisVideoStream {
     // Stream state for running/stopping
     UINT64 streamState;
 
+    // Whether to continue iterating the stream state machine
+    BOOL keepIterating;
+
     // Fragment ACK parser for streaming ACKs
     FragmentAckParser fragmentAckParser;
 
@@ -840,6 +843,11 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream, UINT64, UINT64, SERVICE_CALL_
 // Streaming event functions
 ///////////////////////////////////////////////////////////////////////////
 STATUS getStreamData(PKinesisVideoStream, UPLOAD_HANDLE, PBYTE, UINT32, PUINT32);
+
+///////////////////////////////////////////////////////////////////////////
+// State machine iterator
+///////////////////////////////////////////////////////////////////////////
+STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream);
 
 ///////////////////////////////////////////////////////////////////////////
 // State machine callback functionality
