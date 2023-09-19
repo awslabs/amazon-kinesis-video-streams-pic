@@ -48,11 +48,17 @@ PVOID threadpoolActor(PVOID data)
     // when the task is complete it will check if the we're beyond our min threshhold of threads
     // to determine whether it should exit or wait for another task.
     while (!finished) {
+        // This lock exists to protect the atomic increment after the terminate check.
+        // There is a data-race condition that can result in an increment after the Threadpool
+        // has been deleted
+        MUTEX_LOCK(pThreadData->dataMutex);
+
         // ThreadData is allocated separately from the Threadpool.
         // The Threadpool will set terminate to false before the threadpool is free.
         // This way the thread actors can avoid accessing the Threadpool after termination.
         if (!ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
             ATOMIC_INCREMENT(&pThreadData->pThreadpool->availableThreads);
+            MUTEX_UNLOCK(pThreadData->dataMutex);
             if (safeBlockingQueueDequeue(pQueue, &item) == STATUS_SUCCESS) {
                 pTask = (PTaskData) item;
                 ATOMIC_DECREMENT(&pThreadData->pThreadpool->availableThreads);
@@ -64,49 +70,63 @@ PVOID threadpoolActor(PVOID data)
             } else if (!ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
                 ATOMIC_DECREMENT(&pThreadData->pThreadpool->availableThreads);
             }
+        } else {
+            finished = TRUE;
+            MUTEX_UNLOCK(pThreadData->dataMutex);
+            break;
         }
 
+        // We use trylock to avoid a potential deadlock with the destructor. The destructor needs
+        // to lock listMutex and then dataMutex, but we're locking dataMutex and then listMutex.
+        //
+        // The destructor also uses trylock for the same reason.
         if (MUTEX_TRYLOCK(pThreadData->dataMutex)) {
-            // Threadpool is active - lock its mutex
-            MUTEX_LOCK(pThreadpool->listMutex);
+            if (ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
+                MUTEX_UNLOCK(pThreadData->dataMutex);
+            } else {
+                // Threadpool is active - lock its mutex
+                MUTEX_LOCK(pThreadpool->listMutex);
 
-            // Check that there aren't any pending tasks.
-            if (safeBlockingQueueIsEmpty(pQueue, &taskQueueEmpty) == STATUS_SUCCESS) {
-                if (taskQueueEmpty) {
-                    // Check if this thread is needed to maintain minimum thread count
-                    // otherwise exit loop and remove it.
-                    if (stackQueueGetCount(pThreadpool->threadList, &count) == STATUS_SUCCESS) {
-                        if (count > pThreadpool->minThreads) {
-                            finished = TRUE;
-                            if (stackQueueRemoveItem(pThreadpool->threadList, pThreadData) != STATUS_SUCCESS) {
-                                DLOGE("Failed to remove thread data from threadpool");
+                // Check that there aren't any pending tasks.
+                if (safeBlockingQueueIsEmpty(pQueue, &taskQueueEmpty) == STATUS_SUCCESS) {
+                    if (taskQueueEmpty) {
+                        // Check if this thread is needed to maintain minimum thread count
+                        // otherwise exit loop and remove it.
+                        if (stackQueueGetCount(pThreadpool->threadList, &count) == STATUS_SUCCESS) {
+                            if (count > pThreadpool->minThreads) {
+                                finished = TRUE;
+                                if (stackQueueRemoveItem(pThreadpool->threadList, pThreadData) != STATUS_SUCCESS) {
+                                    DLOGE("Failed to remove thread data from threadpool");
+                                }
                             }
                         }
                     }
                 }
-            }
-            // this is a redundant safety check. To get here the threadpool must be being
-            // actively being destroyed, but it was unable to acquire our lock so entered a
-            // sleep spin check to allow this thread to finish. However somehow the task queue
-            // was not empty, so we ended up here. This check forces us to still exit gracefully
-            // in the event somehow the queue is not empty.
-            else if (ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
-                finished = TRUE;
-                if (stackQueueRemoveItem(pThreadpool->threadList, pThreadData) != STATUS_SUCCESS) {
-                    DLOGE("Failed to remove thread data from threadpool");
+                // this is a redundant safety check. To get here the threadpool must be being
+                // actively being destroyed, but it was unable to acquire our lock so entered a
+                // sleep spin check to allow this thread to finish. However somehow the task queue
+                // was not empty, so we ended up here. This check forces us to still exit gracefully
+                // in the event somehow the queue is not empty.
+                else if (ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
+                    finished = TRUE;
+                    if (stackQueueRemoveItem(pThreadpool->threadList, pThreadData) != STATUS_SUCCESS) {
+                        DLOGE("Failed to remove thread data from threadpool");
+                    }
                 }
+                MUTEX_UNLOCK(pThreadpool->listMutex);
+                MUTEX_UNLOCK(pThreadData->dataMutex);
             }
-            MUTEX_UNLOCK(pThreadpool->listMutex);
-            MUTEX_UNLOCK(pThreadData->dataMutex);
         } else {
             // couldn't lock our mutex, which means Threadpool locked this mutex to indicate
             // Threadpool has been deleted.
-            //
-            // Unlock mutex and free ThreadData
-            MUTEX_UNLOCK(pThreadData->dataMutex);
             finished = TRUE;
         }
     }
+    // now that we've released the listMutex, we can do an actual MUTEX_LOCK to ensure the
+    // threadpool has finished using pThreadData
+    MUTEX_LOCK(pThreadData->dataMutex);
+    MUTEX_UNLOCK(pThreadData->dataMutex);
+
     // we assume we've already been removed from the threadList
     MUTEX_FREE(pThreadData->dataMutex);
     SAFE_MEMFREE(pThreadData);
@@ -189,6 +209,7 @@ STATUS threadpoolInternalCreateThread(PThreadpool pThreadpool)
 
     data->dataMutex = MUTEX_CREATE(FALSE);
     data->pThreadpool = pThreadpool;
+    ATOMIC_STORE_BOOL(&data->terminate, FALSE);
 
     CHK_STATUS(stackQueueEnqueue(pThreadpool->threadList, (UINT64) data));
 
@@ -300,15 +321,16 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
             }
             retStatus = stackQueueIteratorGetItem(iterator, &item);
 
-            // set terminate flag of item
-            ATOMIC_STORE_BOOL(&item->terminate, TRUE);
-
             // attempt to lock mutex of item
             if (MUTEX_TRYLOCK(item->dataMutex)) {
+                // set terminate flag of item
+                ATOMIC_STORE_BOOL(&item->terminate, TRUE);
+
                 // when we acquire the lock, remove the item from the list. Its thread will free it.
                 if (stackQueueRemoveItem(pThreadpool->threadList, item) != STATUS_SUCCESS) {
                     DLOGE("Failed to remove thread data from threadpool");
                 }
+                MUTEX_UNLOCK(item->dataMutex);
             } else {
                 // if the mutex is taken, unlock list mutex, sleep 10 ms and 'start over'
                 //
