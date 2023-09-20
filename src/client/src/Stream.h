@@ -378,7 +378,7 @@ struct __KinesisVideoStream {
     UINT64 streamState;
 
     // Whether to continue iterating the stream state machine
-    BOOL keepIterating;
+    BOOL keepIteratingStateMachine;
 
     // Fragment ACK parser for streaming ACKs
     FragmentAckParser fragmentAckParser;

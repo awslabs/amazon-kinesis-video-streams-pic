@@ -50,9 +50,9 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
     PStateMachine pStateMachine = pKinesisVideoStream->base.pStateMachine;
 
     do {
-        pKinesisVideoStream->keepIterating = FALSE;
+        pKinesisVideoStream->keepIteratingStateMachine = FALSE;
         CHK_STATUS(stepStateMachine(pStateMachine));
-    } while (pKinesisVideoStream->keepIterating);
+    } while (pKinesisVideoStream->keepIteratingStateMachine);
 
 CleanUp:
 
@@ -147,7 +147,7 @@ STATUS executeNewStreamState(UINT64 customData, UINT64 time)
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
 
     // Step the state machine to automatically invoke the Describe API
-    pKinesisVideoStream->keepIterating = TRUE;
+    pKinesisVideoStream->keepIteratingStateMachine = TRUE;
 
 CleanUp:
 
@@ -741,7 +741,7 @@ STATUS executeReadyStreamState(UINT64 customData, UINT64 time)
     // Check if we need to also call put stream API
     if (pKinesisVideoStream->streamState == STREAM_STATE_READY || pKinesisVideoStream->streamState == STREAM_STATE_STOPPED || viewByteSize != 0) {
         // Step the state machine to automatically invoke the PutStream API
-        pKinesisVideoStream->keepIterating = TRUE;
+        pKinesisVideoStream->keepIteratingStateMachine = TRUE;
     }
 
 CleanUp:
@@ -846,7 +846,7 @@ STATUS executeStoppedStreamState(UINT64 customData, UINT64 time)
     }
 
     // Auto-prime the state machine
-    pKinesisVideoStream->keepIterating = TRUE;
+    pKinesisVideoStream->keepIteratingStateMachine = TRUE;
 
 CleanUp:
 
