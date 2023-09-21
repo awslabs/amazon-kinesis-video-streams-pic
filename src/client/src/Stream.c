@@ -767,6 +767,10 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
                                       pKinesisVideoStream->streamInfo.streamCaps.trackInfoCount, pFrame->trackId, &pTrackInfo, &trackIndex));
     }
 
+    DLOGV("[%s] debug frame info pts: %" PRIu64 ", dts: %" PRIu64 ", duration: %" PRIu64 ", size: %u, trackId: %" PRIu64 ", isKey %d",
+          pKinesisVideoStream->streamInfo.name, pFrame->presentationTs, pFrame->decodingTs, pFrame->duration, pFrame->size, pFrame->trackId,
+          CHECK_FRAME_FLAG_KEY_FRAME(pFrame->flags));
+    
     // Check if the stream has been stopped
     CHK(!pKinesisVideoStream->streamStopped, STATUS_STREAM_HAS_BEEN_STOPPED);
 
