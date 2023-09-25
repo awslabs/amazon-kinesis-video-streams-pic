@@ -530,6 +530,7 @@ STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
     // Check if we need to call stream closed callback
     if (!notSent && viewByteSize == 0 && sessionCount == 0 && // If we have active handle, then eventually one of the handle will call streamClosedFn
         !pKinesisVideoStream->metadataTracker.send && !pKinesisVideoStream->eosTracker.send) {
+        DLOGI("Checking to notify in stop stream");
         CHK_STATUS(notifyStreamClosed(pKinesisVideoStream, pUploadHandleInfo == NULL ? INVALID_UPLOAD_HANDLE_VALUE : pUploadHandleInfo->handle));
     }
 
@@ -1216,7 +1217,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
 
     // Should indicate an abort for an invalid handle or handle that is not in the queue
     CHK(pUploadHandleInfo != NULL, STATUS_UPLOAD_HANDLE_ABORTED);
-
+    DLOGI("Upload handle state: %d", pUploadHandleInfo->state);
     switch (pUploadHandleInfo->state) {
         case UPLOAD_HANDLE_STATE_READY:
             // if we've created a new handle but has nothing to send
@@ -1516,6 +1517,7 @@ CleanUp:
 
             // If there is no more data to send and current handle is the last one, wrap up by calling streamClosedFn.
             if (viewByteSize == 0 && uploadHandleCount == 1) {
+                DLOGI("In getStreamData, notifying");
                 CHK_STATUS(notifyStreamClosed(pKinesisVideoStream, uploadHandle));
             }
         }
@@ -3404,6 +3406,7 @@ STATUS notifyStreamClosed(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE
     pKinesisVideoStream->streamClosed = TRUE;
 
     // Signal the stopped condition variable
+    DLOGI("Notifying stream has been closed");
     CHK_STATUS(pKinesisVideoClient->clientCallbacks.signalConditionVariableFn(pKinesisVideoClient->clientCallbacks.customData,
                                                                               pKinesisVideoStream->streamClosedCondition));
 

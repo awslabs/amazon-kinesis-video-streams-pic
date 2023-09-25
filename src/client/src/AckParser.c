@@ -326,7 +326,7 @@ STATUS processAckValue(PFragmentAckParser pFragmentAckParser)
     UINT64 value;
 
     CHK(pFragmentAckParser != NULL, STATUS_NULL_ARG);
-
+    DLOGI("Processing ack value");
     switch (pFragmentAckParser->curKeyName) {
         case FRAGMENT_ACK_KEY_NAME_EVENT_TYPE:
             // Check if we have seen it already
@@ -369,7 +369,7 @@ STATUS processAckValue(PFragmentAckParser pFragmentAckParser)
 
             // This will overwrite the value
             pFragmentAckParser->fragmentAck.result = getAckErrorTypeFromErrorId(value);
-
+            DLOGI("Got fragment ack result: %d", pFragmentAckParser->fragmentAck.result);
             break;
 
         default:
