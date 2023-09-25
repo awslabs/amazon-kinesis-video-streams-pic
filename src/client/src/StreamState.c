@@ -51,11 +51,11 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
 
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
     pStateMachine = pKinesisVideoStream->base.pStateMachine;
+    CHK(pStateMachine != NULL, STATUS_NULL_ARG);
 
     do {
         pKinesisVideoStream->keepIteratingStateMachine = FALSE;
         CHK_STATUS(stepStateMachine(pStateMachine));
-        CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
     } while (pKinesisVideoStream->keepIteratingStateMachine);
 
 CleanUp:
