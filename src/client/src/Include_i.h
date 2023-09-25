@@ -195,7 +195,7 @@ typedef STATUS (*KinesisVideoClientCallbackHookFunc)(UINT64);
  * This needs to be changed to TRUE when the backend processing is enabled or the value should be
  * removed entirely from the WAIT_FOR_PERSISTED_ACK macro.
  */
-#define AWAIT_FOR_PERSISTED_ACK TRUE
+#define AWAIT_FOR_PERSISTED_ACK FALSE
 
 /**
  * Macro that checks whether to wait for the persistent ACK or not

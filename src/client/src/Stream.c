@@ -1280,11 +1280,13 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
                 // if we've created a new handle but has nothing to send
                 if (pKinesisVideoStream->streamStopped) {
                     // Get the duration and the size
-
+                    DLOGI("In this state...sending EOS");
                     CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
 
                     if (viewByteSize != 0) {
                         contentViewRemoveAll(pKinesisVideoStream->pView);
+                        getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize);
+                        DLOGI("Did I clear it? %d", viewByteSize);
                         pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
                         CHK(FALSE, STATUS_END_OF_STREAM);
                     }
@@ -1519,6 +1521,8 @@ CleanUp:
 
     // Special handling for stopped stream when the retention period is zero or no more data available
     if (pKinesisVideoStream->streamStopped) {
+        DLOGI("Streaming to be stopped in getStream data...0x%08x", retStatus);
+        retStatus = STATUS_END_OF_STREAM;
         // Trigger stream closed function when we don't need to wait for the persisted ack
         // Or if we do need to wait for the ack and the state of the upload handler is terminated
         if (retStatus == STATUS_END_OF_STREAM &&
@@ -1526,6 +1530,7 @@ CleanUp:
              (pUploadHandleInfo != NULL && pUploadHandleInfo->state == UPLOAD_HANDLE_STATE_TERMINATED))) {
             // Get the duration and the size
             CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+            DLOGI("Available view size: %d, %d", viewByteSize, uploadHandleCount);
 
             // Get the number of non terminated handle.
             CHK_STATUS(stackQueueGetCount(pKinesisVideoStream->pUploadInfoQueue, &uploadHandleCount));
