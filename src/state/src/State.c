@@ -273,6 +273,7 @@ STATUS checkForStateTransition(PStateMachine pStateMachine, PBOOL pTransitionRea
     PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
     UINT64 errorStateTransitionWaitTime = 0;
     BOOL transitionReady = FALSE;
+    UINT32 i;
 
     CHK(pStateMachineImpl != NULL && pTransitionReady != NULL, STATUS_NULL_ARG);
     customData = pStateMachineImpl->customData;

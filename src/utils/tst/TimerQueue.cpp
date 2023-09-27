@@ -809,6 +809,8 @@ TEST_F(TimerQueueFunctionalityTest, kickTimerQueueTest)
     EXPECT_EQ(1, ATOMIC_LOAD(&invokeCount));
 
     EXPECT_EQ(STATUS_SUCCESS, timerQueueKick(handle, timerId));
+    EXPECT_NE(STATUS_SUCCESS, timerQueueKick(INVALID_TIMER_QUEUE_HANDLE_VALUE, timerId));
+    EXPECT_NE(STATUS_SUCCESS, timerQueueKick(handle, 0));
 
     //let kick happen
     THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);

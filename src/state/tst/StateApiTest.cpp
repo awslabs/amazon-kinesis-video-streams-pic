@@ -71,3 +71,13 @@ TEST_F(StateApiTest, resetStateMachineRetryCount_InvalidInput)
 
     EXPECT_EQ(STATUS_SUCCESS, resetStateMachineRetryCount(mStateMachine));
 }
+
+TEST_F(StateApiTest, checkForStateTransition_InvalidInput)
+{
+    BOOL testBool = FALSE;
+    EXPECT_NE(STATUS_SUCCESS, checkForStateTransition(NULL,NULL));
+    EXPECT_NE(STATUS_SUCCESS, checkForStateTransition(NULL,&testBool));
+    EXPECT_NE(STATUS_SUCCESS, checkForStateTransition(mStateMachine,NULL));
+
+    EXPECT_EQ(STATUS_SUCCESS, checkForStateTransition(mStateMachine, &testBool));
+}
