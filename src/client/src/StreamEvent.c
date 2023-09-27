@@ -706,7 +706,7 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                 // If the upload handle has not streamed any data, we can safely ignore this event.
                 // else the upload handle has streamed some data, set flag to trigger rollback in the next getStreamData call.
                 uploadHandleNotUsed = IS_UPLOAD_HANDLE_IN_STATE(pUploadHandleInfo, UPLOAD_HANDLE_STATE_NOT_IN_USE);
-
+                DLOGI("Received a terminated event");
                 // Set the state to terminated
                 pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
 

@@ -2859,6 +2859,7 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
     // We will proactively terminate the connection as the higher-level clients like CURL
     // might not terminate the connection as they are still streaming.
     if (NULL != pUploadHandleInfo) {
+        DLOGI("Received an ERROR ack!!!");
         CHK_STATUS(streamTerminatedEvent(pKinesisVideoStream, pUploadHandleInfo->handle, callResult, TRUE));
     }
 
