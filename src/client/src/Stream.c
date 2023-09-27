@@ -297,7 +297,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
         pKinesisVideoStream->diagnostics.createTime + pKinesisVideoClient->deviceInfo.clientInfo.metricLoggingPeriod;
 
     // Call to transition the state machine
-    CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+    CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
 
 CleanUp:
 
@@ -809,7 +809,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // NOTE: If the connection has been reset we need to start from a new header
     if (pKinesisVideoStream->streamState == STREAM_STATE_NEW && pKinesisVideoStream->streamReady) {
         // Step the state machine once to get out of the Ready state
-        CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+        CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
     }
 
     // if we need to reset the generator on the next key frame (during the rotation only)
@@ -1267,12 +1267,12 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
 
         case UPLOAD_HANDLE_STATE_TERMINATED:
             // This path get invoked if a connection get terminated by calling reset connection
-            DLOGW("[%s] Indicating an end-of-stream for a terminated stream upload handle %", PRIu64, pKinesisVideoStream->streamInfo.name,
+            DLOGW("[%s] Indicating an end-of-stream for a terminated stream upload handle %" PRIu64, pKinesisVideoStream->streamInfo.name,
                   uploadHandle);
             CHK(FALSE, STATUS_END_OF_STREAM);
 
         case UPLOAD_HANDLE_STATE_ERROR:
-            DLOGW("[%s] Indicating an abort for a errored stream upload handle %", PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
+            DLOGW("[%s] Indicating an abort for a errored stream upload handle %" PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
             CHK(FALSE, STATUS_UPLOAD_HANDLE_ABORTED);
         default:
             // no-op for other UPLOAD_HANDLE states
@@ -3544,7 +3544,7 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
     }
 
     // step out of stopped state
-    CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+    CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
 
     // Unlock the stream
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);

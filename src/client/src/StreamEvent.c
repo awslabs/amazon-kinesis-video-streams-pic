@@ -286,7 +286,7 @@ STATUS describeStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CAL
     }
 
     // Step the machine
-    CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+    CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
 
 CleanUp:
 
@@ -347,7 +347,7 @@ STATUS createStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_
     }
 
     // Step the machine
-    CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+    CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
 
 CleanUp:
 
@@ -432,7 +432,7 @@ STATUS getStreamingTokenResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_
     }
 
     // Step the machine
-    CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+    CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
 
 CleanUp:
 
@@ -493,7 +493,7 @@ STATUS getStreamingEndpointResult(PKinesisVideoStream pKinesisVideoStream, SERVI
     }
 
     // Step the machine
-    CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+    CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
 
 CleanUp:
 
@@ -568,7 +568,7 @@ STATUS putStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
     CHK_STATUS(stackQueueEnqueue(pKinesisVideoStream->pUploadInfoQueue, (UINT64) pUploadHandleInfo));
 
     // Step the machine
-    CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+    CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
 
 CleanUp:
 
@@ -625,7 +625,7 @@ STATUS tagStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
     pKinesisVideoStream->base.result = callResult;
 
     // Step the machine
-    retStatus = stepStateMachine(pKinesisVideoStream->base.pStateMachine);
+    retStatus = iterateStreamStateMachine(pKinesisVideoStream);
     CHK(retStatus == STATUS_SUCCESS || retStatus == STATUS_TAG_STREAM_CALL_FAILED, retStatus);
 
     // Override tagStream failure because it is not critical to streaming.
@@ -637,7 +637,7 @@ STATUS tagStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
                                                                  INVALID_TIMESTAMP_VALUE, STATUS_TAG_STREAM_CALL_FAILED);
 
         pKinesisVideoStream->base.result = SERVICE_CALL_RESULT_OK;
-        retStatus = stepStateMachine(pKinesisVideoStream->base.pStateMachine);
+        retStatus = iterateStreamStateMachine(pKinesisVideoStream);
     }
 
 CleanUp:
@@ -783,7 +783,7 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
         pKinesisVideoStream->base.result = callResult;
 
         // Step the machine
-        CHK_STATUS(stepStateMachine(pKinesisVideoStream->base.pStateMachine));
+        CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
     }
 
 CleanUp:

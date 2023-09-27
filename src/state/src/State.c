@@ -126,7 +126,7 @@ CleanUp:
 }
 
 /**
- * Transition the state machine given it's context
+ * Transition the state machine given its context
  */
 STATUS stepStateMachine(PStateMachine pStateMachine)
 {
@@ -161,7 +161,7 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
 
     // Check if we are changing the state
     if (pState->state != pStateMachineImpl->context.pCurrentState->state) {
-        // Since we're transitioning to a different state from this state, reset the local state retry count to0
+        // Since we're transitioning to a different state from this state, reset the local state retry count to 0
         pStateMachineImpl->context.localStateRetryCount = 0;
     } else {
         // Increment the local state retry count.
