@@ -564,6 +564,7 @@ STATUS putStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
         retStatus = STATUS_SUCCESS;
     }
 
+    DLOGI("Enqueing a new upload info");
     // Enqueue the stream upload info object
     CHK_STATUS(stackQueueEnqueue(pKinesisVideoStream->pUploadInfoQueue, (UINT64) pUploadHandleInfo));
 
