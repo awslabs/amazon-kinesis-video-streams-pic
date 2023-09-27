@@ -1276,22 +1276,22 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             DLOGW("[%s] Indicating an abort for a errored stream upload handle %", PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
             CHK(FALSE, STATUS_UPLOAD_HANDLE_ABORTED);
             break;
-        case UPLOAD_HANDLE_STATE_STREAMING:
-                // if we've created a new handle but has nothing to send
-                if (pKinesisVideoStream->streamStopped) {
-                    // Get the duration and the size
-                    DLOGI("In this state...sending EOS");
-                    CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
-                    DLOGI("View size now: %d", viewByteSize);
-                    if (viewByteSize != 0) {
-                        contentViewRemoveAll(pKinesisVideoStream->pView);
-                        getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize);
-                        DLOGI("Did I clear it? %d", viewByteSize);
-                    }
-                    pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
-                    CHK(FALSE, STATUS_END_OF_STREAM);
-                }
-                break;
+//        case UPLOAD_HANDLE_STATE_STREAMING:
+//                // if we've created a new handle but has nothing to send
+//                if (pKinesisVideoStream->streamStopped) {
+//                    // Get the duration and the size
+//                    DLOGI("In this state...sending EOS");
+//                    CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+//                    DLOGI("View size now: %d", viewByteSize);
+//                    if (viewByteSize != 0) {
+//                        contentViewRemoveAll(pKinesisVideoStream->pView);
+//                        getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize);
+//                        DLOGI("Did I clear it? %d", viewByteSize);
+//                    }
+//                    pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
+//                    CHK(FALSE, STATUS_END_OF_STREAM);
+//                }
+//                break;
         default:
             // no-op for other UPLOAD_HANDLE states
             break;
@@ -1522,7 +1522,7 @@ CleanUp:
     // Special handling for stopped stream when the retention period is zero or no more data available
     if (pKinesisVideoStream->streamStopped) {
         DLOGI("Streaming to be stopped in getStream data...0x%08x, %s, %d", retStatus, (pUploadHandleInfo != NULL) ? "Not null":"Null", pUploadHandleInfo->state);
-        retStatus = STATUS_END_OF_STREAM;
+//        retStatus = STATUS_END_OF_STREAM;
         // Trigger stream closed function when we don't need to wait for the persisted ack
         // Or if we do need to wait for the ack and the state of the upload handler is terminated
         if (retStatus == STATUS_END_OF_STREAM &&
