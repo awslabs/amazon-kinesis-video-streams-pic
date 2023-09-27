@@ -527,6 +527,7 @@ STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
         }
     }
 
+    DLOGI("Values: %d, %d, %d, %d, %d", notSent, viewByteSize, sessionCount, pKinesisVideoStream->metadataTracker.send, pKinesisVideoStream->eosTracker.send);
     // Check if we need to call stream closed callback
     if (!notSent && viewByteSize == 0 && sessionCount == 0 && // If we have active handle, then eventually one of the handle will call streamClosedFn
         !pKinesisVideoStream->metadataTracker.send && !pKinesisVideoStream->eosTracker.send) {
