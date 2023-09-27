@@ -178,8 +178,10 @@ STATUS fromDescribeStreamState(UINT64 customData, PUINT64 pState)
 
     CHK(pKinesisVideoStream != NULL && pState != NULL, STATUS_NULL_ARG);
 
+    DLOGI("In describe state");
     // Transition to states if not stopped
     if (pKinesisVideoStream->streamState == STREAM_STATE_STOPPED) {
+        DLOGI("In describe state encountered stream stop");
         state = STREAM_STATE_STOPPED;
     } else {
         // Check the previous results
@@ -334,8 +336,10 @@ STATUS fromPutStreamState(UINT64 customData, PUINT64 pState)
 
     CHK(pKinesisVideoStream != NULL && pState != NULL, STATUS_NULL_ARG);
 
+    DLOGI("Put stream state");
     // Transition to states if not stopped
     if (pKinesisVideoStream->streamState == STREAM_STATE_STOPPED) {
+        DLOGI("Stream stop in put stream");
         state = STREAM_STATE_STOPPED;
     } else {
         switch (pKinesisVideoStream->base.result) {
@@ -413,8 +417,10 @@ STATUS fromStreamingStreamState(UINT64 customData, PUINT64 pState)
 
     CHK(pKinesisVideoStream != NULL && pState != NULL, STATUS_NULL_ARG);
 
+    DLOGI("In streaming state");
     // Check the previous results
     if (pKinesisVideoStream->streamState == STREAM_STATE_STOPPED) {
+        DLOGI("Transitioning to stop state from streaming state");
         state = STREAM_STATE_STOPPED;
     }
 
@@ -441,6 +447,7 @@ STATUS fromStoppedStreamState(UINT64 customData, PUINT64 pState)
 
     retStatus = serviceCallResultCheck(pKinesisVideoStream->base.result);
 
+    DLOGI("Stopped stream state");
     // Terminate in case of no-recovery
     CHK(pKinesisVideoStream->streamInfo.streamCaps.recoverOnError, retStatus);
 
