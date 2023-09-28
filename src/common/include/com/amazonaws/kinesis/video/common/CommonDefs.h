@@ -428,7 +428,7 @@ typedef INT_PTR SSIZE_T, *PSSIZE_T;
 #define SAFE_DELETE_ARRAY(p)                                                                                                                         \
     do {                                                                                                                                             \
         if (p) {                                                                                                                                     \
-            delete[] (p);                                                                                                                            \
+            delete[](p);                                                                                                                             \
             (p) = NULL;                                                                                                                              \
         }                                                                                                                                            \
     } while (0)
