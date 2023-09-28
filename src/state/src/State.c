@@ -151,32 +151,32 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
     CHK_STATUS(acceptStateMachineState((PStateMachine) pStateMachineImpl, pState->acceptStates));
 
 
-    PStateMachineState pCurentState = NULL;
-    PStateMachineState* ppCurrentState = &pState;
-    UINT64 currentState;
-    CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppCurrentState));
-    currentState = (*ppCurrentState)->state;
-    switch(pStateMachineImpl->stateCount)
-    {
-        // Stream
-        case 10:
-        {
-            printf("TESTING Stream state stepping from %d to %d\n", currentState, nextState);
-            break;
-        }
+    // PStateMachineState pCurentState = NULL;
+    // PStateMachineState* ppCurrentState = &pState;
+    // UINT64 currentState;
+    // CHK_STATUS(getStateMachineCurrentState(pStateMachine, ppCurrentState));
+    // currentState = (*ppCurrentState)->state;
+    // switch(pStateMachineImpl->stateCount)
+    // {
+    //     // Stream
+    //     case 10:
+    //     {
+    //         printf("TESTING Stream state stepping from %d to %d\n", currentState, nextState);
+    //         break;
+    //     }
 
-        // Client
-        case 7:
-        {
-            printf("TESTING Client state stepping from %d to %d\n", currentState, nextState);
-            break;
-        }
+    //     // Client
+    //     case 7:
+    //     {
+    //         printf("TESTING Client state stepping from %d to %d\n", currentState, nextState);
+    //         break;
+    //     }
 
-        default:
-        {
-            printf("TESTING Failed switch case\n");
-        }
-    }
+    //     default:
+    //     {
+    //         printf("TESTING Failed switch case\n");
+    //     }
+    // }
 
     // Clear the iteration info if a different state and transition the state
     time = pStateMachineImpl->getCurrentTimeFunc(pStateMachineImpl->getCurrentTimeFuncCustomData);
