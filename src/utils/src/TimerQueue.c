@@ -313,7 +313,7 @@ CleanUp:
     return retStatus;
 }
 
-PUBLIC_API STATUS timerQueueKick(TIMER_QUEUE_HANDLE handle, UINT32 timerId) 
+PUBLIC_API STATUS timerQueueKick(TIMER_QUEUE_HANDLE handle, UINT32 timerId)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -326,7 +326,7 @@ PUBLIC_API STATUS timerQueueKick(TIMER_QUEUE_HANDLE handle, UINT32 timerId)
     MUTEX_LOCK(pTimerQueue->executorLock);
     locked = TRUE;
 
-    //change invoke time & signal to trigger timer.
+    // change invoke time & signal to trigger timer.
     pTimerQueue->pTimers[timerId].invokeTime = 0;
     CVAR_SIGNAL(pTimerQueue->executorCvar);
 

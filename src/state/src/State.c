@@ -263,7 +263,7 @@ CleanUp:
  * Calls the from function of the current state to determine if the state machine is ready to
  * move on to another state.
  */
-STATUS checkForStateTransition(PStateMachine pStateMachine, PBOOL pTransitionReady) 
+STATUS checkForStateTransition(PStateMachine pStateMachine, PBOOL pTransitionReady)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -277,7 +277,6 @@ STATUS checkForStateTransition(PStateMachine pStateMachine, PBOOL pTransitionRea
 
     CHK(pStateMachineImpl != NULL && pTransitionReady != NULL, STATUS_NULL_ARG);
     customData = pStateMachineImpl->customData;
-
 
     // Get the next state
     CHK(pStateMachineImpl->context.pCurrentState->getNextStateFn != NULL, STATUS_NULL_ARG);
