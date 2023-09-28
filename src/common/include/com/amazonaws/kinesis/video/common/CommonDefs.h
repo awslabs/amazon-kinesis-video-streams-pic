@@ -428,7 +428,7 @@ typedef INT_PTR SSIZE_T, *PSSIZE_T;
 #define SAFE_DELETE_ARRAY(p)                                                                                                                         \
     do {                                                                                                                                             \
         if (p) {                                                                                                                                     \
-            delete[](p);                                                                                                                             \
+            delete[] (p);                                                                                                                            \
             (p) = NULL;                                                                                                                              \
         }                                                                                                                                            \
     } while (0)
@@ -527,11 +527,11 @@ typedef INT_PTR SSIZE_T, *PSSIZE_T;
 #endif
 
 #ifndef S_ISDIR
-#define S_ISDIR(mode) (((mode) &S_IFMT) == S_IFDIR)
+#define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
 #endif
 
 #ifndef S_ISREG
-#define S_ISREG(mode) (((mode) &S_IFMT) == S_IFREG)
+#define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
 #endif
 
 // Definition of the mkdir for Windows with 1 param
@@ -1069,9 +1069,9 @@ typedef SIZE_T ATOMIC_BOOL;
 #define LOW_INT32(x)  ((INT32) (x))
 #define HIGH_INT32(x) ((INT32) (((INT64) (x) >> 32) & 0xFFFFFFFF))
 
-#define MAKE_INT16(a, b) ((INT16) (((UINT8) ((UINT16) (a) &0xff)) | ((UINT16) ((UINT8) ((UINT16) (b) &0xff))) << 8))
-#define MAKE_INT32(a, b) ((INT32) (((UINT16) ((UINT32) (a) &0xffff)) | ((UINT32) ((UINT16) ((UINT32) (b) &0xffff))) << 16))
-#define MAKE_INT64(a, b) ((INT64) (((UINT32) ((UINT64) (a) &0xffffffff)) | ((UINT64) ((UINT32) ((UINT64) (b) &0xffffffff))) << 32))
+#define MAKE_INT16(a, b) ((INT16) (((UINT8) ((UINT16) (a) & 0xff)) | ((UINT16) ((UINT8) ((UINT16) (b) & 0xff))) << 8))
+#define MAKE_INT32(a, b) ((INT32) (((UINT16) ((UINT32) (a) & 0xffff)) | ((UINT32) ((UINT16) ((UINT32) (b) & 0xffff))) << 16))
+#define MAKE_INT64(a, b) ((INT64) (((UINT32) ((UINT64) (a) & 0xffffffff)) | ((UINT64) ((UINT32) ((UINT64) (b) & 0xffffffff))) << 32))
 
 #define SWAP_INT16(x) MAKE_INT16(HIGH_BYTE(x), LOW_BYTE(x))
 
