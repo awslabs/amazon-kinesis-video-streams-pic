@@ -184,6 +184,7 @@ STATUS parseFragmentAck(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE u
                     CHK_STATUS(processAckValue(&pKinesisVideoStream->fragmentAckParser));
 
                     // Process the parsed ACK
+                    DLOGI("Processing parsed ack");
                     CHK_STATUS(processParsedAck(pKinesisVideoStream));
                 } else if (curChar == ACK_PARSER_QUOTE || curChar == ACK_PARSER_OPEN_BRACE || curChar == ACK_PARSER_OPEN_BRACKET ||
                            curChar == ACK_PARSER_CLOSE_BRACKET || curChar == ACK_PARSER_DELIMITER) {

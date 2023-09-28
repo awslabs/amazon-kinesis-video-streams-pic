@@ -1575,7 +1575,7 @@ STATUS kinesisVideoStreamParseFragmentAck(STREAM_HANDLE streamHandle, UPLOAD_HAN
     BOOL releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
 
-    DLOGS("Parsing stream fragment ACK.");
+    DLOGV("Parsing stream fragment ACK.");
     CHK(pKinesisVideoStream != NULL && ackSegment != NULL, STATUS_NULL_ARG);
 
     // Shutdown sequencer
@@ -1584,7 +1584,7 @@ STATUS kinesisVideoStreamParseFragmentAck(STREAM_HANDLE streamHandle, UPLOAD_HAN
 
     CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->base.shutdownSemaphore, INFINITE_TIME_VALUE));
     releaseStreamSemaphore = TRUE;
-
+    DLOGI("Parsing ack value");
     CHK_STATUS(parseFragmentAck(pKinesisVideoStream, uploadHandle, ackSegment, ackSegmentSize));
 
 CleanUp:

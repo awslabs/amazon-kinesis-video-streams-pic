@@ -788,7 +788,7 @@ STATUS executeStreamingStreamState(UINT64 customData, UINT64 time)
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
 
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
-
+    DLOGI("Executing streaming state");
     // Set the indicator state to streaming
     pKinesisVideoStream->streamState = STREAM_STATE_STREAMING;
 

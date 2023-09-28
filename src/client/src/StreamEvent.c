@@ -737,6 +737,7 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                 // In case of reset connection and error acks, need to ping the terminated upload handle so that it
                 // can unpause if paused and then call getStreamData and receive the end-of-stream status
                 if (connectionStillAlive) {
+                    DLOGI("Connection still alive...");
                     pKinesisVideoClient->clientCallbacks.streamDataAvailableFn(pKinesisVideoClient->clientCallbacks.customData,
                                                                                TO_STREAM_HANDLE(pKinesisVideoStream),
                                                                                pKinesisVideoStream->streamInfo.name, pUploadHandleInfo->handle, 0, 0);
@@ -751,6 +752,7 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                 pActiveUploadHandleInfo = getStreamUploadInfoWithState(pKinesisVideoStream, UPLOAD_HANDLE_STATE_ACTIVE);
 
                 if (pActiveUploadHandleInfo != NULL) {
+                    DLOGI("Active upload handle ongoing..no new session to be spawned");
                     // dont spawn new session since we already have a active one
                     spawnNewUploadSession = FALSE;
                     pKinesisVideoClient->clientCallbacks.streamDataAvailableFn(
@@ -773,7 +775,7 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
     if (spawnNewUploadSession) {
         // Stop the stream
         pKinesisVideoStream->streamState = STREAM_STATE_STOPPED;
-
+        DLOGI("Stop streaming in terminated event");
         // Get the accepted state
         CHK_STATUS(getStateMachineState(pKinesisVideoStream->base.pStateMachine, STREAM_STATE_STOPPED, &pState));
 
@@ -897,6 +899,7 @@ STATUS streamFragmentAckEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HA
 
             break;
         case FRAGMENT_ACK_TYPE_ERROR:
+            DLOGI("Processing error ack");
             if (!inView) {
                 // Apply to the earliest.
                 CHK_STATUS(contentViewGetTail(pKinesisVideoStream->pView, &pViewItem));
