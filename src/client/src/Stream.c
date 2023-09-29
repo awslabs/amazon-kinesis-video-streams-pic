@@ -1279,23 +1279,17 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             CHK(FALSE, STATUS_UPLOAD_HANDLE_ABORTED);
             break;
         case UPLOAD_HANDLE_STATE_STREAMING:
-            CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
-            DLOGI("In streaming state, view size is: %d", viewByteSize);
-//                // if we've created a new handle but has nothing to send
-//                if (pKinesisVideoStream->streamStopped) {
-//                    // Get the duration and the size
-//                    DLOGI("In this state...sending EOS");
-//                    CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
-//                    DLOGI("View size now: %d", viewByteSize);
-//                    if (viewByteSize != 0) {
-//                        contentViewRemoveAll(pKinesisVideoStream->pView);
-//                        getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize);
-//                        DLOGI("Did I clear it? %d", viewByteSize);
-//                    }
-//                    pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
-//                    CHK(FALSE, STATUS_END_OF_STREAM);
-//                }
-//                break;
+                // if we've created a new handle but has nothing to send
+                if (pKinesisVideoStream->streamStopped) {
+                    // Get the duration and the size
+                    DLOGI("In this state...sending EOS");
+                    CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+                    if(viewByteSize == 0) {
+                        pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
+                        CHK(FALSE, STATUS_END_OF_STREAM);
+                    }
+                }
+                break;
         default:
             // no-op for other UPLOAD_HANDLE states
             break;
