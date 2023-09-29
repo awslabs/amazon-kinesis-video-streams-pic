@@ -542,6 +542,7 @@ CleanUp:
 
 STATUS fromReadyStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("CALLING fromReadyStreamState \n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -566,6 +567,7 @@ CleanUp:
 
 STATUS executeGetEndpointStreamState(UINT64 customData, UINT64 time)
 {
+    printf("CALLING executeGetEndpointStreamState \n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -618,6 +620,7 @@ CleanUp:
 
 STATUS executeGetTokenStreamState(UINT64 customData, UINT64 time)
 {
+    printf("CALLING executeGetTokenStreamState \n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -654,6 +657,7 @@ CleanUp:
 
 STATUS executeCreateStreamState(UINT64 customData, UINT64 time)
 {
+    printf("CALLING executeCreateStreamState \n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -691,6 +695,7 @@ CleanUp:
 
 STATUS executeTagStreamState(UINT64 customData, UINT64 time)
 {
+    printf("CALLING executeTagStreamState \n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -728,6 +733,7 @@ CleanUp:
 
 STATUS executeReadyStreamState(UINT64 customData, UINT64 time)
 {
+    printf("CALLING executeReadyStreamState \n");
     ENTERS();
     UNUSED_PARAM(time);
     STATUS retStatus = STATUS_SUCCESS;
@@ -766,6 +772,7 @@ CleanUp:
 
 STATUS executePutStreamState(UINT64 customData, UINT64 time)
 {
+    printf("CALLING executePutStreamState \n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -810,6 +817,7 @@ CleanUp:
 
 STATUS executeStreamingStreamState(UINT64 customData, UINT64 time)
 {
+    printf("CALLING executeStreamingStreamState \n");
     ENTERS();
     UNUSED_PARAM(time);
     STATUS retStatus = STATUS_SUCCESS;
@@ -830,6 +838,7 @@ CleanUp:
 
 STATUS executeStoppedStreamState(UINT64 customData, UINT64 time)
 {
+    printf("CALLING executeStoppedStreamState \n");
     ENTERS();
     UNUSED_PARAM(time);
     STATUS retStatus = STATUS_SUCCESS;
