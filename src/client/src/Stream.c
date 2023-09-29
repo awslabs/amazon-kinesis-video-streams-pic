@@ -657,6 +657,7 @@ STATUS shutdownStream(PKinesisVideoStream pKinesisVideoStream, BOOL resetStream)
         pKinesisVideoClient->clientCallbacks.broadcastConditionVariableFn(pKinesisVideoClient->clientCallbacks.customData,
                                                                           pKinesisVideoStream->streamClosedCondition);
     }
+    DLOGI("Shut down stream done ");
 
     // Wait until drained
     semaphoreWaitUntilClear(pKinesisVideoStream->base.shutdownSemaphore, STREAM_SHUTDOWN_SEMAPHORE_TIMEOUT);
@@ -1277,7 +1278,9 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             DLOGW("[%s] Indicating an abort for a errored stream upload handle %", PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
             CHK(FALSE, STATUS_UPLOAD_HANDLE_ABORTED);
             break;
-//        case UPLOAD_HANDLE_STATE_STREAMING:
+        case UPLOAD_HANDLE_STATE_STREAMING:
+            CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+            DLOGI("In streaming state, view size is: %d", viewByteSize);
 //                // if we've created a new handle but has nothing to send
 //                if (pKinesisVideoStream->streamStopped) {
 //                    // Get the duration and the size
@@ -3474,12 +3477,12 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
 
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
     CHK(pKinesisVideoClient != NULL, STATUS_CLIENT_FREED_BEFORE_STREAM);
-
+    DLOGI("Resetting stream...");
     // Shutdown the processing
     // Prevent repeated resetStream call if one is in progress
     CHK(!pKinesisVideoStream->base.shutdown, retStatus);
     CHK_STATUS_CONTINUE(shutdownStream(pKinesisVideoStream, TRUE));
-
+    DLOGI("Done shutting stream in reset");
     // Lock the stream
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     streamLocked = TRUE;
