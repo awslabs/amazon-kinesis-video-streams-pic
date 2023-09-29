@@ -119,6 +119,7 @@ CleanUp:
 
 STATUS fromNewStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("CALLING fromNewStreamState \n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -143,6 +144,7 @@ CleanUp:
 
 STATUS executeNewStreamState(UINT64 customData, UINT64 time)
 {
+    printf("CALLING executeNewStreamState \n");
     ENTERS();
     UNUSED_PARAM(time);
     STATUS retStatus = STATUS_SUCCESS;
@@ -161,6 +163,7 @@ CleanUp:
 
 STATUS executeDescribeStreamState(UINT64 customData, UINT64 time)
 {
+    printf("CALLING executeDescribeStreamState \n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -196,6 +199,7 @@ CleanUp:
 
 STATUS fromDescribeStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("CALLING fromDescribeStreamState \n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -250,6 +254,7 @@ CleanUp:
 
 STATUS fromCreateStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("CALLING fromCreateStreamState \n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -278,6 +283,7 @@ CleanUp:
 
 STATUS fromTagStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("CALLING fromTagStreamState \n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -302,6 +308,7 @@ CleanUp:
 
 STATUS fromGetEndpointStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("CALLING fromGetEndpointStreamState \n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -326,6 +333,7 @@ CleanUp:
 
 STATUS fromGetTokenStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("CALLING fromGetTokenStreamState \n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -350,6 +358,7 @@ CleanUp:
 
 STATUS fromPutStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("CALLING fromPutStreamState \n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
@@ -431,6 +440,7 @@ CleanUp:
 
 STATUS fromStreamingStreamState(UINT64 customData, PUINT64 pState)
 {
+    printf("CALLING fromStreamingStreamState \n");
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
