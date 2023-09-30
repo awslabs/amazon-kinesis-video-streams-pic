@@ -342,8 +342,10 @@ STATUS fromPutStreamState(UINT64 customData, PUINT64 pState)
         DLOGI("Stream stop in put stream");
         state = STREAM_STATE_STOPPED;
     } else {
+        DLOGI("Service call result is: %d", pKinesisVideoStream->base.result);
         switch (pKinesisVideoStream->base.result) {
             case SERVICE_CALL_RESULT_OK:
+                DLOGI("Service call result ok somehow");
                 // find the handle in the new state and set it to ready
                 pUploadHandleInfo = getStreamUploadInfoWithState(pKinesisVideoStream, UPLOAD_HANDLE_STATE_NEW);
 

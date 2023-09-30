@@ -527,6 +527,7 @@ STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
         }
     }
 
+    CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
     DLOGI("Values: %d, %d, %d, %d, %d", notSent, viewByteSize, sessionCount, pKinesisVideoStream->metadataTracker.send, pKinesisVideoStream->eosTracker.send);
     // Check if we need to call stream closed callback
     if (!notSent && viewByteSize == 0 && sessionCount == 0 && // If we have active handle, then eventually one of the handle will call streamClosedFn
@@ -1278,18 +1279,18 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             DLOGW("[%s] Indicating an abort for a errored stream upload handle %", PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
             CHK(FALSE, STATUS_UPLOAD_HANDLE_ABORTED);
             break;
-        case UPLOAD_HANDLE_STATE_STREAMING:
-                // if we've created a new handle but has nothing to send
-                if (pKinesisVideoStream->streamStopped) {
-                    // Get the duration and the size
-                    DLOGI("In this state...sending EOS");
-                    CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
-                    if(viewByteSize == 0) {
-                        pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
-                        CHK(FALSE, STATUS_END_OF_STREAM);
-                    }
-                }
-                break;
+//        case UPLOAD_HANDLE_STATE_STREAMING:
+//                // if we've created a new handle but has nothing to send
+//                if (pKinesisVideoStream->streamStopped) {
+//                    // Get the duration and the size
+//                    DLOGI("In this state...sending EOS");
+//                    CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+//                    if(viewByteSize == 0) {
+//                        pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
+//                        CHK(FALSE, STATUS_END_OF_STREAM);
+//                    }
+//                }
+//                break;
         default:
             // no-op for other UPLOAD_HANDLE states
             break;
@@ -3508,6 +3509,7 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
         pKinesisVideoStream->streamState = STREAM_STATE_NEW;
         CHK_STATUS(setStateMachineCurrentState(pKinesisVideoStream->base.pStateMachine, STREAM_STATE_NEW));
     }
+    DLOGI("Stream state: 0x%08x", pKinesisVideoStream->streamState);
 
     pKinesisVideoStream->streamStatus = STREAM_STATUS_CREATING;
 
