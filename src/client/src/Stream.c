@@ -1270,10 +1270,28 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             DLOGW("[%s] Indicating an end-of-stream for a terminated stream upload handle %" PRIu64, pKinesisVideoStream->streamInfo.name,
                   uploadHandle);
             CHK(FALSE, STATUS_END_OF_STREAM);
-
+            // Not needed, but adding as a safety guard
+            break;
         case UPLOAD_HANDLE_STATE_ERROR:
             DLOGW("[%s] Indicating an abort for a errored stream upload handle %" PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
             CHK(FALSE, STATUS_UPLOAD_HANDLE_ABORTED);
+            // Not needed, but adding as a safety guard
+            break;
+        case UPLOAD_HANDLE_STATE_STREAMING:
+            // if we've moved to streaming state, but the stream stop request has come in
+            // and the buffer is empty
+            if (pKinesisVideoStream->streamStopped) {
+
+                // Get the duration and the size
+                CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+                DLOGW("[%s] Indicating a stop stream request in streaming state %", PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
+                if (viewByteSize == 0) {
+                    pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
+                    DLOGI("[%s] Buffer empty and stream stop request received, moving to TERMINATED state for %", PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
+                    CHK(FALSE, STATUS_END_OF_STREAM);
+                }
+            }
+            break;
         default:
             // no-op for other UPLOAD_HANDLE states
             break;
