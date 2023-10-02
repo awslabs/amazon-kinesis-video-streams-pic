@@ -789,3 +789,36 @@ TEST_F(TimerQueueFunctionalityTest, shutdownTimerQueueTest)
 
     EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
 }
+
+TEST_F(TimerQueueFunctionalityTest, kickTimerQueueTest)
+{
+    TIMER_QUEUE_HANDLE handle = INVALID_TIMER_QUEUE_HANDLE_VALUE;
+    UINT32 timerId;
+    UINT64 curTime;
+
+    // Make sure we don't check for the timer in the test callback
+    checkTimerId = FALSE;
+
+    // Create a valid timer queue
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
+
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, 0, 200 * HUNDREDS_OF_NANOS_IN_A_SECOND, testTimerCallback, (UINT64) this, &timerId));
+
+    //let timer start
+    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    EXPECT_EQ(1, ATOMIC_LOAD(&invokeCount));
+
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueKick(handle, timerId));
+    EXPECT_NE(STATUS_SUCCESS, timerQueueKick(INVALID_TIMER_QUEUE_HANDLE_VALUE, timerId));
+    EXPECT_NE(STATUS_SUCCESS, timerQueueKick(handle, 0));
+
+    //let kick happen
+    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    //check kick occurred
+    EXPECT_EQ(2, ATOMIC_LOAD(&invokeCount));
+
+    // Calling again has no effect
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueShutdown(handle));
+
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
+}

@@ -237,3 +237,15 @@ TEST_F(StateApiFunctionalityTest, checkStateErrorHandlerOnStateTransitions)
     // happening within this state.
     EXPECT_EQ(0, pStateMachineImpl->context.localStateRetryCount);
 }
+
+TEST_F(StateApiFunctionalityTest, checkForStateMachineTransitionBasicTest)
+{
+    PStateMachineState pStateMachineState = NULL;
+    PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) mStateMachine;
+    BOOL transition = FALSE;
+
+    EXPECT_EQ(STATUS_SUCCESS, stepStateMachine(mStateMachine));
+    EXPECT_EQ(STATUS_SUCCESS, checkForStateTransition(mStateMachine, &transition));
+    EXPECT_EQ(TRUE, transition);
+}
+

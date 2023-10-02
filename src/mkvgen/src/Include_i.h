@@ -284,7 +284,7 @@ extern UINT32 gMkvTagStringBitsSize;
 /**
  * To and from MKV timestamp conversion factoring in the timecode
  */
-#define TIMESTAMP_TO_MKV_TIMECODE(ts, tcs) ((ts) *DEFAULT_TIME_UNIT_IN_NANOS / (tcs))
+#define TIMESTAMP_TO_MKV_TIMECODE(ts, tcs) ((ts) * DEFAULT_TIME_UNIT_IN_NANOS / (tcs))
 #define MKV_TIMECODE_TO_TIMESTAMP(tc, tcs) ((tc) * ((tcs) / DEFAULT_TIME_UNIT_IN_NANOS))
 
 /**

@@ -39,7 +39,7 @@ TEST_F(ThreadpoolFunctionalityTest, CreateDestroyTest)
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
     // wait for threads to exit before test ends
-    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 }
 
 TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
@@ -59,7 +59,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
     // wait for threads to exit before test ends
-    THREAD_SLEEP(300 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 }
 
 TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
@@ -78,7 +78,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
     // wait for threads to exit before test ends
-    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 }
 
 TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
@@ -117,7 +117,7 @@ TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
     // wait for threads to exit before test ends
-    THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 }
 
 TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest)
@@ -141,7 +141,7 @@ TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest
     terminate = TRUE;
 
     // wait for threads to exit before test ends
-    THREAD_SLEEP(150 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 }
 
 typedef struct ThreadpoolUser {
@@ -190,5 +190,5 @@ TEST_F(ThreadpoolFunctionalityTest, MultithreadUseTest)
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
     // wait for threads to exit before test ends to avoid false memory leak alarm
-    THREAD_SLEEP(250 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 }

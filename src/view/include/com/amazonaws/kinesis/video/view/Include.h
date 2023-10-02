@@ -68,14 +68,14 @@ extern "C" {
 /**
  * Macros for checking/setting/clearing for various flags
  */
-#define CHECK_ITEM_FRAGMENT_START(f)     (((f) &ITEM_FLAG_FRAGMENT_START) != ITEM_FLAG_NONE)
-#define CHECK_ITEM_BUFFERING_ACK(f)      (((f) &ITEM_FLAG_BUFFERING_ACK) != ITEM_FLAG_NONE)
-#define CHECK_ITEM_RECEIVED_ACK(f)       (((f) &ITEM_FLAG_RECEIVED_ACK) != ITEM_FLAG_NONE)
-#define CHECK_ITEM_STREAM_START(f)       (((f) &ITEM_FLAG_STREAM_START) != ITEM_FLAG_NONE)
-#define CHECK_ITEM_FRAGMENT_END(f)       (((f) &ITEM_FLAG_FRAGMENT_END) != ITEM_FLAG_NONE)
-#define CHECK_ITEM_PERSISTED_ACK(f)      (((f) &ITEM_FLAG_PERSISTED_ACK) != ITEM_FLAG_NONE)
-#define CHECK_ITEM_SKIP_ITEM(f)          (((f) &ITEM_FLAG_SKIP_ITEM) != ITEM_FLAG_NONE)
-#define CHECK_ITEM_STREAM_START_DEBUG(f) (((f) &ITEM_FLAG_STREAM_START_DEBUG) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_FRAGMENT_START(f)     (((f) & ITEM_FLAG_FRAGMENT_START) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_BUFFERING_ACK(f)      (((f) & ITEM_FLAG_BUFFERING_ACK) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_RECEIVED_ACK(f)       (((f) & ITEM_FLAG_RECEIVED_ACK) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_STREAM_START(f)       (((f) & ITEM_FLAG_STREAM_START) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_FRAGMENT_END(f)       (((f) & ITEM_FLAG_FRAGMENT_END) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_PERSISTED_ACK(f)      (((f) & ITEM_FLAG_PERSISTED_ACK) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_SKIP_ITEM(f)          (((f) & ITEM_FLAG_SKIP_ITEM) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_STREAM_START_DEBUG(f) (((f) & ITEM_FLAG_STREAM_START_DEBUG) != ITEM_FLAG_NONE)
 
 #define SET_ITEM_FRAGMENT_START(f)     ((f) |= ITEM_FLAG_FRAGMENT_START)
 #define SET_ITEM_BUFFERING_ACK(f)      ((f) |= ITEM_FLAG_BUFFERING_ACK)
@@ -96,7 +96,7 @@ extern "C" {
 #define CLEAR_ITEM_STREAM_START_DEBUG(f) ((f) &= ~ITEM_FLAG_STREAM_START_DEBUG)
 
 #define GET_ITEM_DATA_OFFSET(f)    ((UINT16) ((f) >> 16))
-#define SET_ITEM_DATA_OFFSET(f, o) ((f) = ((f) &0x0000ffff) | (((UINT16) (o)) << 16))
+#define SET_ITEM_DATA_OFFSET(f, o) ((f) = ((f) & 0x0000ffff) | (((UINT16) (o)) << 16))
 
 /**
  * This is a sentinel indicating an invalid index value

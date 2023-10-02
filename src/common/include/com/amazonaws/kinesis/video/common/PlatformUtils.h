@@ -137,7 +137,8 @@ extern logPrintFunc globalCustomLogPrintFn;
 #endif
 #ifndef CHECK_EXT
 #define CHECK_EXT(x, fmt, ...)                                                                                                                       \
-    LOG_ALWAYS_FATAL_IF(!(x), "%s::%s: ASSERTION FAILED at %s:%d: " fmt, (const PCHAR) LOG_CLASS, __FUNCTION__, SANITIZED_FILE, __LINE__, ##__VA_ARGS__)
+    LOG_ALWAYS_FATAL_IF(!(x), "%s::%s: ASSERTION FAILED at %s:%d: " fmt, (const PCHAR) LOG_CLASS, __FUNCTION__, SANITIZED_FILE, __LINE__,            \
+                        ##__VA_ARGS__)
 #endif
 
 #ifndef LOG_GIT_HASH
