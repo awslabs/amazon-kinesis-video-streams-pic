@@ -285,6 +285,9 @@ STATUS describeStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CAL
         pKinesisVideoStream->retention = streamDescription.retention;
     }
 
+
+    printf("ITERATE from describeStreamResult()\n");
+
     // Step the machine
     CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
 
@@ -345,6 +348,8 @@ STATUS createStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_
         STRNCPY(pKinesisVideoStream->base.arn, streamArn, MAX_ARN_LEN);
         pKinesisVideoStream->base.arn[MAX_ARN_LEN] = '\0';
     }
+
+    printf("ITERATE from createStreamResult()\n");
 
     // Step the machine
     CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
@@ -431,6 +436,8 @@ STATUS getStreamingTokenResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_
         pKinesisVideoStream->gracePeriod = FALSE;
     }
 
+    printf("ITERATE from getStreamingTokenResult()\n");
+
     // Step the machine
     CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
 
@@ -491,6 +498,8 @@ STATUS getStreamingEndpointResult(PKinesisVideoStream pKinesisVideoStream, SERVI
         STRNCPY(pKinesisVideoStream->streamingEndpoint, pEndpoint, MAX_URI_CHAR_LEN);
         pKinesisVideoStream->streamingEndpoint[MAX_URI_CHAR_LEN] = '\0';
     }
+
+    printf("ITERATE from getStreamingEndpointResult()\n");
 
     // Step the machine
     CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
@@ -567,6 +576,8 @@ STATUS putStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
     // Enqueue the stream upload info object
     CHK_STATUS(stackQueueEnqueue(pKinesisVideoStream->pUploadInfoQueue, (UINT64) pUploadHandleInfo));
 
+    printf("ITERATE from putStreamResult()\n");
+
     // Step the machine
     CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
 
@@ -624,6 +635,8 @@ STATUS tagStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
     // store the result
     pKinesisVideoStream->base.result = callResult;
 
+    printf("ITERATE from tagStreamResult()\n");
+
     // Step the machine
     retStatus = iterateStreamStateMachine(pKinesisVideoStream);
     CHK(retStatus == STATUS_SUCCESS || retStatus == STATUS_TAG_STREAM_CALL_FAILED, retStatus);
@@ -635,6 +648,8 @@ STATUS tagStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
         pKinesisVideoClient->clientCallbacks.streamErrorReportFn(pKinesisVideoClient->clientCallbacks.customData,
                                                                  TO_STREAM_HANDLE(pKinesisVideoStream), INVALID_UPLOAD_HANDLE_VALUE,
                                                                  INVALID_TIMESTAMP_VALUE, STATUS_TAG_STREAM_CALL_FAILED);
+
+        printf("ITERATE from failed tagStreamResult()\n");
 
         pKinesisVideoStream->base.result = SERVICE_CALL_RESULT_OK;
         retStatus = iterateStreamStateMachine(pKinesisVideoStream);
@@ -781,6 +796,8 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
 
         // store the result
         pKinesisVideoStream->base.result = callResult;
+
+        printf("ITERATE from streamTerminatedEvent()\n");
 
         // Step the machine
         CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
