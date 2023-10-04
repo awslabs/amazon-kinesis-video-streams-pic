@@ -296,6 +296,8 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     pKinesisVideoStream->diagnostics.nextLoggingTime =
         pKinesisVideoStream->diagnostics.createTime + pKinesisVideoClient->deviceInfo.clientInfo.metricLoggingPeriod;
 
+    printf("ITERATE from createStream()\n");
+
     // Call to transition the state machine
     CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
 
@@ -809,6 +811,9 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // NOTE: If the connection has been reset we need to start from a new header
     if (pKinesisVideoStream->streamState == STREAM_STATE_NEW && pKinesisVideoStream->streamReady) {
         // Step the state machine once to get out of the Ready state
+
+        printf("ITERATE from putFrame()\n");
+
         CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
     }
 
@@ -3542,6 +3547,8 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
         pKinesisVideoClient->clientCallbacks.broadcastConditionVariableFn(pKinesisVideoClient->clientCallbacks.customData,
                                                                           pKinesisVideoStream->bufferAvailabilityCondition);
     }
+
+    printf("ITERATE from resetStream()\n");
 
     // step out of stopped state
     CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
