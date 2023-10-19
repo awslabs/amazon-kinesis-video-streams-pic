@@ -1464,8 +1464,8 @@ PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
 /**
  * File logger error values starting from 0x41300000
  */
-#define STATUS_FILE_LOGGER_BASE                    STATUS_UTILS_BASE + 0x01200000
-#define STATUS_FILE_LOGGER_INDEX_FILE_INVALID_SIZE STATUS_SEMAPHORE_BASE + 0x00000001
+#define STATUS_FILE_LOGGER_BASE                    STATUS_UTILS_BASE + 0x01300000
+#define STATUS_FILE_LOGGER_INDEX_FILE_INVALID_SIZE STATUS_FILE_LOGGER_BASE + 0x00000001
 
 /**
  * File based logger limit constants
