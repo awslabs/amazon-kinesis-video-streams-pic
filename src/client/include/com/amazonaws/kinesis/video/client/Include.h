@@ -2419,6 +2419,9 @@ PUBLIC_API STATUS kinesisVideoStreamResetStream(STREAM_HANDLE);
  */
 PUBLIC_API STATUS kinesisVideoStreamResetConnection(STREAM_HANDLE);
 
+PUBLIC_API STATUS kinesisVideoStreamResetConnection2(STREAM_HANDLE);
+
+
 ///////////////////////////////////////////////////
 // Default implementations of the platform callbacks
 ///////////////////////////////////////////////////

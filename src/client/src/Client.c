@@ -1877,6 +1877,22 @@ CleanUp:
     return retStatus;
 }
 
+STATUS kinesisVideoStreamResetConnection2(STREAM_HANDLE stream_handle)
+{
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(stream_handle);
+
+    CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+
+    CHK_STATUS(streamTerminatedEvent(pKinesisVideoStream, INVALID_UPLOAD_HANDLE_VALUE, SERVICE_CALL_STREAM_AUTH_IN_GRACE_PERIOD, TRUE));
+
+CleanUp:
+
+    LEAVES();
+    return retStatus;
+}
+
 PVOID contentStoreMemAlloc(SIZE_T size)
 {
     ENTERS();
