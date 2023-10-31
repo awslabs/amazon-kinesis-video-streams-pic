@@ -1886,7 +1886,7 @@ STATUS kinesisVideoStreamResetConnection2(STREAM_HANDLE stream_handle)
 
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
 
-    CHK_STATUS(streamTerminatedEvent(pKinesisVideoStream, INVALID_UPLOAD_HANDLE_VALUE, SERVICE_CALL_RESULT_OK, TRUE));
+    CHK_STATUS(streamTerminatedEvent(pKinesisVideoStream, INVALID_UPLOAD_HANDLE_VALUE, SERVICE_CALL_RESULT_OK, FALSE));
 
     
     while (pUploadHandleInfo->state != UPLOAD_HANDLE_STATE_TERMINATED) {
