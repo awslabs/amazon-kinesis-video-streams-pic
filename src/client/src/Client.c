@@ -1882,10 +1882,16 @@ STATUS kinesisVideoStreamResetConnection2(STREAM_HANDLE stream_handle)
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(stream_handle);
+    UPLOAD_HANDLE curr_upload_handle = getCurrentStreamUploadInfo(pKinesisVideoStream)->handle;
 
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
 
-    CHK_STATUS(streamTerminatedEvent(pKinesisVideoStream, INVALID_UPLOAD_HANDLE_VALUE, SERVICE_CALL_STREAM_AUTH_IN_GRACE_PERIOD, TRUE));
+    CHK_STATUS(streamTerminatedEvent(pKinesisVideoStream, INVALID_UPLOAD_HANDLE_VALUE, SERVICE_CALL_RESULT_OK, TRUE));
+
+    while (curr_upload_handle == getCurrentStreamUploadInfo(pKinesisVideoStream)->handle) {
+        THREAD_SLEEP(25 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+        DLOGD("Sleeping for 25ms, waiting for new upload handle");
+    }
 
 CleanUp:
 
