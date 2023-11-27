@@ -50,6 +50,20 @@ jobs:
           sh -c 'cmake .. -DBUILD_TEST=TRUE -DCOMPILER_WARNINGS=TRUE;cmake .. -DBUILD_TEST=TRUE -DCOMPILER_WARNINGS=TRUE'
           make
           ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+  mac-os-m1-build-clang:
+    runs-on: macos-13-xlarge
+    env:
+      AWS_KVS_LOG_LEVEL: 2
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Build repository
+        run: |
+          brew unlink openssl
+          mkdir build && cd build
+          sh -c 'cmake .. -DBUILD_TEST=TRUE -DCMAKE_C_COMPILER=$(brew --prefix llvm@15)/bin/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++;cmake .. -DBUILD_TEST=TRUE -DCMAKE_C_COMPILER=$(brew --prefix llvm@15)/bin/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++'
+          make
+          ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   linux-gcc-code-coverage:
     runs-on: ubuntu-latest
     env:
