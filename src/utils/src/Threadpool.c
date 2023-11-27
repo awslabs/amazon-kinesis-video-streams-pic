@@ -327,7 +327,7 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
                 ATOMIC_STORE_BOOL(&item->terminate, TRUE);
 
                 // when we acquire the lock, remove the item from the list. Its thread will free it.
-                if (stackQueueRemoveItem(pThreadpool->threadList, item) != STATUS_SUCCESS) {
+                if (stackQueueRemoveItem(pThreadpool->threadList, (UINT64) (item)) != STATUS_SUCCESS) {
                     DLOGE("Failed to remove thread data from threadpool");
                 }
                 MUTEX_UNLOCK(item->dataMutex);
