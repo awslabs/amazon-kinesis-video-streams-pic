@@ -95,7 +95,7 @@ PVOID threadpoolActor(PVOID data)
                         if (stackQueueGetCount(pThreadpool->threadList, &count) == STATUS_SUCCESS) {
                             if (count > pThreadpool->minThreads) {
                                 finished = TRUE;
-                                if (stackQueueRemoveItem(pThreadpool->threadList, (UINT64) (pThreadData)) != STATUS_SUCCESS) {
+                                if (stackQueueRemoveItem(pThreadpool->threadList, pThreadData) != STATUS_SUCCESS) {
                                     DLOGE("Failed to remove thread data from threadpool");
                                 }
                             }
@@ -109,7 +109,7 @@ PVOID threadpoolActor(PVOID data)
                 // in the event somehow the queue is not empty.
                 else if (ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
                     finished = TRUE;
-                    if (stackQueueRemoveItem(pThreadpool->threadList, (UINT64) (pThreadData)) != STATUS_SUCCESS) {
+                    if (stackQueueRemoveItem(pThreadpool->threadList, pThreadData) != STATUS_SUCCESS) {
                         DLOGE("Failed to remove thread data from threadpool");
                     }
                 }
@@ -327,7 +327,7 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
                 ATOMIC_STORE_BOOL(&item->terminate, TRUE);
 
                 // when we acquire the lock, remove the item from the list. Its thread will free it.
-                if (stackQueueRemoveItem(pThreadpool->threadList, (UINT64) (item)) != STATUS_SUCCESS) {
+                if (stackQueueRemoveItem(pThreadpool->threadList, item) != STATUS_SUCCESS) {
                     DLOGE("Failed to remove thread data from threadpool");
                 }
                 MUTEX_UNLOCK(item->dataMutex);
