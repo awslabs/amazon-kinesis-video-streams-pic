@@ -76,7 +76,7 @@ jobs:
       - name: Build repository
         run: |
           brew unlink openssl
-          ls /usr/local/bin
+          ls /opt/homebrew/bin
           mkdir build && cd build
           sh -c 'cmake .. -DBUILD_TEST=TRUE;cmake .. -DBUILD_TEST=TRUE'
           make
