@@ -76,7 +76,11 @@ extern "C" {
 #if defined __GNUC__ || defined __GNUG__
 #if defined __x86_64__ || defined __ppc64__
 #define SIZE_64
+#if defined __APPLE__
+#define __LLP64__
+#else
 #define __LP64__ // Linux uses LP64 data model
+#endif
 #else
 #define SIZE_32
 #endif
