@@ -201,6 +201,11 @@ typedef FLOAT* PFLOAT;
 #define TRUE 1
 #endif
 
+// Syslog
+#if !defined(_WIN32) && !defined(_WIN64)
+#include <syslog.h>
+#endif
+
 // Thread Id
 typedef UINT64 TID;
 typedef TID* PTID;
