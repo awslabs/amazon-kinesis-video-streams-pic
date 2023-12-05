@@ -39,7 +39,7 @@ VOID syslogLoggerLogPrintFn(UINT32 level, PCHAR tag, PCHAR fmt, ...)
                 // ignore unrecognized log levels
                 return;
         }
-        
+
         // Write to syslog
         va_start(valist, fmt);
         vsyslog(level, fmt, valist);
@@ -58,7 +58,7 @@ STATUS createSyslogLogger(UINT32 facility, BOOL printLog, BOOL setGlobalLogFn, l
     gSyslogLogger->printLog = printLog;
     gSyslogLogger->syslogLoggerLogPrintFn = syslogLoggerLogPrintFn;
 
-	// Open connection to syslog
+    // Open connection to syslog
     openlog(NULL, printLog ? LOG_PERROR : 0, facility);
 
     // See if we are required to set the global log function pointer as well
@@ -91,7 +91,7 @@ STATUS freeSyslogLogger()
         globalCustomLogPrintFn = gSyslogLogger->storedLoggerLogPrintFn;
     }
 
-	// Close connection to syslog
+    // Close connection to syslog
     closelog();
 
     MEMFREE(gSyslogLogger);
