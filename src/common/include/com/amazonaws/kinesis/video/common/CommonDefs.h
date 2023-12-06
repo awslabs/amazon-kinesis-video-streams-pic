@@ -76,7 +76,11 @@ extern "C" {
 #if defined __GNUC__ || defined __GNUG__
 #if defined __x86_64__ || defined __ppc64__
 #define SIZE_64
-#define __LLP64__ // win64 uses LLP64 data model
+#if defined __APPLE__
+#define __LLP64__
+#else
+#define __LP64__ // Linux uses LP64 data model
+#endif
 #else
 #define SIZE_32
 #endif
@@ -368,11 +372,11 @@ typedef INT_PTR SSIZE_T, *PSSIZE_T;
 // NOTE: Timer precision is in 100ns intervals. This is used in heuristics and in time functionality
 //
 #define DEFAULT_TIME_UNIT_IN_NANOS         100
-#define HUNDREDS_OF_NANOS_IN_A_MICROSECOND 10LL
-#define HUNDREDS_OF_NANOS_IN_A_MILLISECOND (HUNDREDS_OF_NANOS_IN_A_MICROSECOND * 1000LL)
-#define HUNDREDS_OF_NANOS_IN_A_SECOND      (HUNDREDS_OF_NANOS_IN_A_MILLISECOND * 1000LL)
-#define HUNDREDS_OF_NANOS_IN_A_MINUTE      (HUNDREDS_OF_NANOS_IN_A_SECOND * 60LL)
-#define HUNDREDS_OF_NANOS_IN_AN_HOUR       (HUNDREDS_OF_NANOS_IN_A_MINUTE * 60LL)
+#define HUNDREDS_OF_NANOS_IN_A_MICROSECOND ((INT64) 10)
+#define HUNDREDS_OF_NANOS_IN_A_MILLISECOND (HUNDREDS_OF_NANOS_IN_A_MICROSECOND * ((INT64) 1000))
+#define HUNDREDS_OF_NANOS_IN_A_SECOND      (HUNDREDS_OF_NANOS_IN_A_MILLISECOND * ((INT64) 1000))
+#define HUNDREDS_OF_NANOS_IN_A_MINUTE      (HUNDREDS_OF_NANOS_IN_A_SECOND * ((INT64) 60))
+#define HUNDREDS_OF_NANOS_IN_AN_HOUR       (HUNDREDS_OF_NANOS_IN_A_MINUTE * ((INT64) 60))
 
 //
 // Infinite time
