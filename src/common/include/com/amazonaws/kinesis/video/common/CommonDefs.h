@@ -866,6 +866,11 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 #define IS_EMPTY_STRING(str) ((str)[0] == '\0')
 
 //
+// Check if string is null or empty
+//
+#define IS_NULL_OR_EMPTY_STRING(str) (str == NULL || IS_EMPTY_STRING(str))
+
+//
 // Pseudo-random functionality
 //
 #ifndef SRAND
