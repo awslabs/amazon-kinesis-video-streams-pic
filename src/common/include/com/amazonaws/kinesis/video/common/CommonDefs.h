@@ -74,7 +74,7 @@ extern "C" {
 // 64/32 bit check on GCC
 //
 #if defined __GNUC__ || defined __GNUG__
-#if defined __x86_64__ || defined __ppc64__
+#if defined __x86_64__ || defined __ppc64__ || __aarch64__
 #define SIZE_64
 #if defined __APPLE__
 #define __LLP64__
