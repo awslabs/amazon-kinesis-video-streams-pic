@@ -325,7 +325,7 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
             CHK_STATUS(stackQueueIteratorGetItem(iterator, &data));
             item = (PThreadData) data;
             CHK(item != NULL, STATUS_INTERNAL_ERROR);
-            
+
             // attempt to lock mutex of item
             if (MUTEX_TRYLOCK(item->dataMutex)) {
                 // set terminate flag of item
@@ -361,12 +361,10 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
         }
     }
 
-
 CleanUp:
 
     if (listMutedLocked) {
         MUTEX_UNLOCK(pThreadpool->listMutex);
-
     }
 
     // now free all the memory
