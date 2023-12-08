@@ -291,7 +291,8 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
     STATUS retStatus = STATUS_SUCCESS;
     StackQueueIterator iterator;
     PThreadData item = NULL;
-    BOOL finished = FALSE, taskQueueEmpty = FALSE;
+    UINT64 data;
+    BOOL finished = FALSE, taskQueueEmpty = FALSE, listMutedLocked = FALSE;
     CHK(pThreadpool != NULL, STATUS_NULL_ARG);
 
     // Threads are not forced to finish their tasks. If the user has assigned
@@ -311,6 +312,7 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
     while (!finished) {
         // lock list mutex
         MUTEX_LOCK(pThreadpool->listMutex);
+        listMutedLocked = TRUE;
 
         do {
             // iterate on list
@@ -319,15 +321,18 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
                 finished = TRUE;
                 break;
             }
-            retStatus = stackQueueIteratorGetItem(iterator, &item);
 
+            CHK_STATUS(stackQueueIteratorGetItem(iterator, &data));
+            item = (PThreadData) data;
+            CHK(item != NULL, STATUS_INTERNAL_ERROR);
+            
             // attempt to lock mutex of item
             if (MUTEX_TRYLOCK(item->dataMutex)) {
                 // set terminate flag of item
                 ATOMIC_STORE_BOOL(&item->terminate, TRUE);
 
                 // when we acquire the lock, remove the item from the list. Its thread will free it.
-                if (stackQueueRemoveItem(pThreadpool->threadList, (UINT64) item) != STATUS_SUCCESS) {
+                if (stackQueueRemoveItem(pThreadpool->threadList, data) != STATUS_SUCCESS) {
                     DLOGE("Failed to remove thread data from threadpool");
                 }
                 MUTEX_UNLOCK(item->dataMutex);
@@ -349,10 +354,19 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
         } while (1);
 
         MUTEX_UNLOCK(pThreadpool->listMutex);
+        listMutedLocked = FALSE;
         if (!finished) {
             // the aforementioned sleep
             THREAD_SLEEP(10 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
         }
+    }
+
+
+CleanUp:
+
+    if (listMutedLocked) {
+        MUTEX_UNLOCK(pThreadpool->listMutex);
+
     }
 
     // now free all the memory
@@ -362,8 +376,6 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
     // this auto kicks out all blocking calls to it
     safeBlockingQueueFree(pThreadpool->taskQueue);
     SAFE_MEMFREE(pThreadpool);
-
-CleanUp:
 
     return retStatus;
 }
