@@ -324,9 +324,14 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
 
             CHK_STATUS(stackQueueIteratorGetItem(iterator, &data));
             item = (PThreadData) data;
-            CHK(item != NULL, STATUS_INTERNAL_ERROR);
 
-            if (MUTEX_TRYLOCK(item->dataMutex)) {
+            if (item == NULL) {
+                DLOGW("NULL thread data present on threadpool.");
+                if (stackQueueRemoveItem(pThreadpool->threadList, data) != STATUS_SUCCESS) {
+                    DLOGE("Failed to remove NULL thread data from threadpool");
+                }
+                // attempt to lock mutex of item
+            } else if (MUTEX_TRYLOCK(item->dataMutex)) {
                 // set terminate flag of item
                 ATOMIC_STORE_BOOL(&item->terminate, TRUE);
 
