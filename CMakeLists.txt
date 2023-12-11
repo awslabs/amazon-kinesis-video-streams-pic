@@ -20,6 +20,7 @@ option(BUILD_DEBUG_HEAP "Build debug heap with guard bands and validation." OFF)
 option(ALIGNED_MEMORY_MODEL "Aligned memory model ONLY." OFF)
 option(FIXUP_ANNEX_B_TRAILING_NALU_ZERO "Fix-up some bad encoder behavior leaving a trailing zero at the end of NALu" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+option(BUILD_OPENSSL_PLATFORM "If buildng OpenSSL what is the target platform" OFF)
 
 execute_process(
         COMMAND git rev-parse HEAD
@@ -79,6 +80,9 @@ if(BUILD_DEPENDENCIES)
     set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${OPEN_SRC_INSTALL_PREFIX}/lib/pkgconfig")
   endif()
 
+  set(BUILD_ARGS -DBUILD_STATIC=${BUILD_STATIC} -DBUILD_OPENSSL_PLATFORM=${BUILD_OPENSSL_PLATFORM})
+  build_dependency(openssl ${BUILD_ARGS})
+
   if(BUILD_TEST)
     build_dependency(gtest)
   endif()
@@ -88,6 +92,15 @@ set(KINESIS_VIDEO_PIC_SRC ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads)
+find_package(OpenSSL)
+if(NOT OPENSSL_FOUND AND NOT BUILD_DEPENDENCIES)
+  message(FATAL_ERROR "OpenSSL is not found. Make sure to export PKG_CONFIG_PATH to where OpenSSL's pc file is")
+endif()
+
+set(OPEN_SRC_INCLUDE_DIRS ${OPEN_SRC_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR})
+message(STATUS "Open source dir" ${OPEN_SRC_INCLUDE_DIRS})
+
+include_directories(${OPEN_SRC_INCLUDE_DIRS})
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 
