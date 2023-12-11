@@ -92,6 +92,7 @@ set(KINESIS_VIDEO_PIC_SRC ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads)
+
 find_package(OpenSSL)
 if(NOT OPENSSL_FOUND AND NOT BUILD_DEPENDENCIES)
   message(FATAL_ERROR "OpenSSL is not found. Make sure to export PKG_CONFIG_PATH to where OpenSSL's pc file is")
