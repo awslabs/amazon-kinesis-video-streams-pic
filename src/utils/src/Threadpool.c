@@ -326,7 +326,7 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
             item = (PThreadData) data;
 
             if (item == NULL) {
-                DLOGW("NULL thread data present on threadpool.");
+                printf("NULL thread data present on threadpool.\n");
                 if (stackQueueRemoveItem(pThreadpool->threadList, data) != STATUS_SUCCESS) {
                     DLOGE("Failed to remove NULL thread data from threadpool");
                 }
