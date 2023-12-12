@@ -171,18 +171,7 @@ STATUS threadpoolCreate(PThreadpool* ppThreadpool, UINT32 minThreads, UINT32 max
 
 CleanUp:
     if (STATUS_FAILED(retStatus)) {
-        if (mutexCreated) {
-            MUTEX_FREE(pThreadpool->listMutex);
-        }
-        if (listCreated) {
-            stackQueueFree(pThreadpool->threadList);
-        }
-        if (queueCreated) {
-            safeBlockingQueueFree(pThreadpool->taskQueue);
-        }
-        if (poolCreated) {
-            SAFE_MEMFREE(pThreadpool);
-        }
+        threadpoolFree(pThreadpool);
     }
     return retStatus;
 }
