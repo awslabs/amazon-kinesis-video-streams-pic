@@ -201,7 +201,7 @@ STATUS singleListDeleteHead(PSingleList pList)
     pList->count--;
 
     // Delete the node
-    MEMFREE(pNode);
+    SAFE_MEMFREE(pNode);
 
 CleanUp:
 
