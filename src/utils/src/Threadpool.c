@@ -206,8 +206,8 @@ STATUS threadpoolInternalCreateThread(PThreadpool pThreadpool)
     MUTEX_UNLOCK(pThreadpool->listMutex);
     locked = FALSE;
 
-    THREAD_CREATE(&thread, threadpoolActor, data);
-    THREAD_DETACH(thread);
+    CHK_STATUS(THREAD_CREATE(&thread, threadpoolActor, data));
+    CHK_STATUS(THREAD_DETACH(thread));
 
 CleanUp:
     if (locked) {
