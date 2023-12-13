@@ -45,7 +45,7 @@ PVOID threadpoolActor(PVOID data)
     }
 
     // This actor will now wait for a task to be added to the queue, and then execute that task
-    // when the task is complete it will check if the we're beyond our min threshhold of threads
+    // when the task is complete it will check if the we're beyond our min threshold of threads
     // to determine whether it should exit or wait for another task.
     while (!finished) {
         // This lock exists to protect the atomic increment after the terminate check.
@@ -171,18 +171,7 @@ STATUS threadpoolCreate(PThreadpool* ppThreadpool, UINT32 minThreads, UINT32 max
 
 CleanUp:
     if (STATUS_FAILED(retStatus)) {
-        if (mutexCreated) {
-            MUTEX_FREE(pThreadpool->listMutex);
-        }
-        if (listCreated) {
-            stackQueueFree(pThreadpool->threadList);
-        }
-        if (queueCreated) {
-            safeBlockingQueueFree(pThreadpool->taskQueue);
-        }
-        if (poolCreated) {
-            SAFE_MEMFREE(pThreadpool);
-        }
+        threadpoolFree(pThreadpool);
     }
     return retStatus;
 }
@@ -195,7 +184,7 @@ STATUS threadpoolInternalCreateThread(PThreadpool pThreadpool)
 {
     STATUS retStatus = STATUS_SUCCESS;
     PThreadData data = NULL;
-    BOOL locked = FALSE;
+    BOOL locked = FALSE, dataCreated = FALSE;
     TID thread;
     CHK(pThreadpool != NULL, STATUS_NULL_ARG);
 
@@ -206,6 +195,7 @@ STATUS threadpoolInternalCreateThread(PThreadpool pThreadpool)
 
     data = (PThreadData) MEMCALLOC(1, SIZEOF(ThreadData));
     CHK(data != NULL, STATUS_NOT_ENOUGH_MEMORY);
+    dataCreated = TRUE;
 
     data->dataMutex = MUTEX_CREATE(FALSE);
     data->pThreadpool = pThreadpool;
@@ -216,12 +206,18 @@ STATUS threadpoolInternalCreateThread(PThreadpool pThreadpool)
     MUTEX_UNLOCK(pThreadpool->listMutex);
     locked = FALSE;
 
-    THREAD_CREATE(&thread, threadpoolActor, data);
-    THREAD_DETACH(thread);
+    CHK_STATUS(THREAD_CREATE(&thread, threadpoolActor, data));
+    CHK_STATUS(THREAD_DETACH(thread));
 
 CleanUp:
     if (locked) {
         MUTEX_UNLOCK(pThreadpool->listMutex);
+    }
+
+    // If logic changes such that it's possible successfully enqueue data but not create the thread
+    // We may attempt a double free.  Right now it's fine.
+    if (STATUS_FAILED(retStatus) && dataCreated) {
+        SAFE_MEMFREE(data);
     }
 
     return retStatus;
