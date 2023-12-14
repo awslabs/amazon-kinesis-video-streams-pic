@@ -122,7 +122,7 @@ CleanUp:
 
 PUBLIC_API STATUS defaultGetThreadName(TID thread, PCHAR name, UINT32 len)
 {
-    UINT32 retValue;
+    INT32 retValue;
 
     if (NULL == name) {
         return STATUS_NULL_ARG;

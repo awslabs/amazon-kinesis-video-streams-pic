@@ -39,7 +39,7 @@ jobs:
       - name: Run tests
         run: |
           cd build
-          ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   mac-os-build-clang:
     runs-on: macos-latest
     env:
@@ -55,7 +55,7 @@ jobs:
       - name: Run tests
         run: |
           cd build
-          ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   mac-os-m1-build-clang:
     runs-on: macos-13-xlarge
     env:
@@ -72,7 +72,7 @@ jobs:
       - name: Run tests
         run: |
           cd build
-          ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          ./tstkvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   mac-os-m1-build-gcc:
     runs-on: macos-13-xlarge
     env:
@@ -91,7 +91,7 @@ jobs:
       - name: Run tests
         run: |
           cd build
-          ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   linux-gcc-code-coverage:
     runs-on: ubuntu-latest
     env:
@@ -108,7 +108,7 @@ jobs:
         run: |
           cd build          
           ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
       - name: Code coverage
         run: |
           for test_file in $(find CMakeFiles/kvspic.dir CMakeFiles/kvspicClient.dir CMakeFiles/kvspicState.dir CMakeFiles/kvspicUtils.dir -name '*.gcno'); do gcov $test_file; done
@@ -129,7 +129,7 @@ jobs:
         run: |
           cd build          
           ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   undefined-behavior-sanitizer:
     runs-on: ubuntu-latest
     env:
@@ -153,7 +153,7 @@ jobs:
         run: |
           cd build
           ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   linux-gcc-4_4:
     runs-on: ubuntu-20.04
     env:
@@ -180,7 +180,7 @@ jobs:
         run: |
           cd build
           ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   # memory-sanitizer:
   #   runs-on: ubuntu-18.04
   #   env:
@@ -233,7 +233,7 @@ jobs:
           .github/build_windows.bat
       - name: Run tests
         run: |       
-          D:\a\amazon-kinesis-video-streams-pic\amazon-kinesis-video-streams-pic\build\kvspic_test.exe --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:PermutatedStreamInfo/StateTransitionFunctionalityTest.ControlPlaneServiceCallExhaustRetry*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedBeforeTime*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedAfterFirstPeriod*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateLastUpdateTimeOfStreamUpdated*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.MultiTrackVerifyNoInvocationsWithSingleTrackProducer*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateNoConsecutiveEOFR*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateErrorOnForceConsecutiveEOFR*:*StreamStateTransitionsTest*:*PermutatedStreamInfo/StateTransitionFunctionalityTest.StreamTerminatedAndGoToGetEndpointState*:*PermutatedStreamInfo/StateTransitionFunctionalityTest.StreamTerminatedAndGoToDescribeState*:*PermutatedStreamInfo/StateTransitionFunctionalityTest*"
+          D:\a\amazon-kinesis-video-streams-pic\amazon-kinesis-video-streams-pic\build\tst\kvspic_test.exe --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:PermutatedStreamInfo/StateTransitionFunctionalityTest.ControlPlaneServiceCallExhaustRetry*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedBeforeTime*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedAfterFirstPeriod*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateLastUpdateTimeOfStreamUpdated*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.MultiTrackVerifyNoInvocationsWithSingleTrackProducer*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateNoConsecutiveEOFR*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateErrorOnForceConsecutiveEOFR*:*StreamStateTransitionsTest*:*PermutatedStreamInfo/StateTransitionFunctionalityTest.StreamTerminatedAndGoToGetEndpointState*:*PermutatedStreamInfo/StateTransitionFunctionalityTest.StreamTerminatedAndGoToDescribeState*:*PermutatedStreamInfo/StateTransitionFunctionalityTest*"
   arm64-cross-compilation:
     runs-on: ubuntu-latest
     env:
