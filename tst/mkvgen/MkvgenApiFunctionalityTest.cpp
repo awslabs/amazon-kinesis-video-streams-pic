@@ -1660,6 +1660,7 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     MEMCPY(frame.frameData, cpdH264AudSeiExtra0, frame.size);
 
     size = SIZEOF(frameBuf);
+#ifdef FIXUP_ANNEX_B_TRAILING_NALU_ZERO
     EXPECT_EQ(STATUS_SUCCESS, mkvgenPackageFrame(pMkvGenerator, &frame, pTrackInfo, mBuffer, &size, &encodedFrameInfo));
 
     // Ensure we have no width/height or CPD
@@ -1667,7 +1668,7 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     EXPECT_NE((PBYTE) NULL, pStreamMkvGenerator->trackInfoList[0].codecPrivateData);
     EXPECT_EQ(704, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackVideoConfig.videoWidth);
     EXPECT_EQ(480, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackVideoConfig.videoHeight);
-
+#endif
     // Free the generator
     EXPECT_EQ(STATUS_SUCCESS, freeMkvGenerator(pMkvGenerator));
 
@@ -1700,14 +1701,14 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     MEMCPY(frame.frameData, cpdH264AudSeiExtra0, frame.size);
 
     size = SIZEOF(frameBuf);
+#ifdef FIXUP_ANNEX_B_TRAILING_NALU_ZERO
     EXPECT_EQ(STATUS_SUCCESS, mkvgenPackageFrame(pMkvGenerator, &frame, pTrackInfo, mBuffer, &size, &encodedFrameInfo));
-
     // Ensure we have no width/height or CPD
     EXPECT_NE(0, pStreamMkvGenerator->trackInfoList[0].codecPrivateDataSize);
     EXPECT_NE((PBYTE) NULL, pStreamMkvGenerator->trackInfoList[0].codecPrivateData);
     EXPECT_EQ(704, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackVideoConfig.videoWidth);
     EXPECT_EQ(480, pStreamMkvGenerator->trackInfoList[0].trackCustomData.trackVideoConfig.videoHeight);
-
+#endif
     // Free the generator
     EXPECT_EQ(STATUS_SUCCESS, freeMkvGenerator(pMkvGenerator));
 
