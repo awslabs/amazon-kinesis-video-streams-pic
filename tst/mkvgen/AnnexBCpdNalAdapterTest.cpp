@@ -106,11 +106,11 @@ TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_FixedUpValidSpsPps)
     BYTE adaptedCpd[1000];
     UINT32 adaptedCpdSize = SIZEOF(adaptedCpd);
 
-    EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, NULL, &adaptedCpdSize));
+    ASSERT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, NULL, &adaptedCpdSize));
 #ifdef FIXUP_ANNEX_B_TRAILING_NALU_ZERO
-    EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, adaptedCpd, &adaptedCpdSize));
+    ASSERT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, adaptedCpd, &adaptedCpdSize));
 #else
-    EXPECT_EQ(STATUS_MKV_INVALID_ANNEXB_NALU_IN_FRAME_DATA, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, adaptedCpd, &adaptedCpdSize));
+    ASSERT_EQ(STATUS_MKV_INVALID_ANNEXB_NALU_IN_FRAME_DATA, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, adaptedCpd, &adaptedCpdSize));
 #endif
 }
 

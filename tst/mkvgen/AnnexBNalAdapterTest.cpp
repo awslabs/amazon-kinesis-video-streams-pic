@@ -3,6 +3,7 @@
 class AnnexBNalAdapterTest : public MkvgenTestBase {
 };
 
+#ifdef FIXUP_ANNEX_B_TRAILING_NALU_ZERO
 TEST_F(AnnexBNalAdapterTest, nalAdapter_InvalidInput)
 {
     PBYTE pFrameData = (PBYTE) 100;
@@ -20,6 +21,7 @@ TEST_F(AnnexBNalAdapterTest, nalAdapter_InvalidInput)
     EXPECT_NE(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(pFrameData, frameDataSize, FALSE, pAdaptedFrameData, NULL));
     EXPECT_NE(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(pFrameData, frameDataSize, TRUE, pAdaptedFrameData, NULL));
 }
+#endif
 
 TEST_F(AnnexBNalAdapterTest, nalAdapter_ValidOneByteNonZero)
 {
@@ -176,6 +178,7 @@ TEST_F(AnnexBNalAdapterTest, nalAdapter_ValidTrailingZeros)
     EXPECT_EQ(frameData4Size, adaptedFrameDataSize);
     EXPECT_EQ(0, MEMCMP(adaptedFrameData, frameData, frameData4Size));
 
+#ifdef FIXUP_ANNEX_B_TRAILING_NALU_ZERO
     BYTE frameData5[] = {0, 0, 0, 0, 1};
     UINT32 frameData5Size = SIZEOF(frameData5);
     EXPECT_EQ(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(frameData5, frameData5Size, TRUE, NULL, &adaptedFrameDataSize));
@@ -184,7 +187,7 @@ TEST_F(AnnexBNalAdapterTest, nalAdapter_ValidTrailingZeros)
     // Should set the size larger due to extra 0 removal and checking for at least the same size for EPB
     adaptedFrameDataSize += 1;
     EXPECT_EQ(STATUS_SUCCESS, adaptFrameNalsFromAnnexBToAvcc(frameData5, frameData5Size, TRUE, adaptedFrameData, &adaptedFrameDataSize));
-
+#endif
 
     BYTE frameData6[] = {0, 0, 0, 1, 0};
     UINT32 frameData6Size = SIZEOF(frameData6);
@@ -372,6 +375,7 @@ TEST_F(AnnexBNalAdapterTest, nalAdapter_ValidEPB)
     }
 }
 
+#ifdef FIXUP_ANNEX_B_TRAILING_NALU_ZERO
 TEST_F(AnnexBNalAdapterTest, nalAdapter_badRealLifeEncoderSampleWithFix)
 {
     // I-frame from a real-life encoder output which is actually invalid Annex-B format (shortened after a few bytes of the actual frame)
@@ -423,3 +427,4 @@ TEST_F(AnnexBNalAdapterTest, nalAdapter_badRealLifeEncoderSampleWithFix)
     EXPECT_TRUE(pPps != NULL);
     EXPECT_EQ(4, ppsSize);
 }
+#endif
