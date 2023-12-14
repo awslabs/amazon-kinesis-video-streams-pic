@@ -20,6 +20,11 @@ protected:
         mStreamInfo.streamCaps.streamingType = streamingType;
         mStreamInfo.streamCaps.fragmentAcks = enableAck;
         mStreamInfo.streamCaps.replayDuration = (UINT64) replayDuration;
+#ifndef ALIGNED_MEMORY_MODEL
+        if (storageType == DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC) {
+            storageType = DEVICE_STORAGE_TYPE_IN_MEM;
+        }
+#endif
         mDeviceInfo.storageInfo.storageType = storageType;
     }
 };

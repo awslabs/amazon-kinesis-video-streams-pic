@@ -419,13 +419,19 @@ TEST_F(ClientApiTest, kinesisVideoClientCreateSync_Store_Alloc)
 
     mClientSyncMode = TRUE;
     mDeviceInfo.clientInfo.createClientTimeout = 20 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+#ifdef ALIGNED_MEMORY_MODEL
     mDeviceInfo.storageInfo.storageType = DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC;
+#else
+    mDeviceInfo.storageInfo.storageType = DEVICE_STORAGE_TYPE_IN_MEM;
+#endif
     EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoClientSync(&mDeviceInfo, &mClientCallbacks, &clientHandle));
     EXPECT_TRUE(IS_VALID_CLIENT_HANDLE(clientHandle));
 
+#ifdef ALIGNED_MEMORY_MODEL
     // Allocating another should fail
     EXPECT_NE(STATUS_SUCCESS, createKinesisVideoClientSync(&mDeviceInfo, &mClientCallbacks, &failedClientHandle));
     EXPECT_FALSE(IS_VALID_CLIENT_HANDLE(failedClientHandle));
+#endif
 
     // Free the client and re-try
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&clientHandle));
