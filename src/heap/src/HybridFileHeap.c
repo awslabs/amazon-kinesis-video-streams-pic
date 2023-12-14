@@ -214,7 +214,8 @@ DEFINE_HEAP_ALLOC(hybridFileHeapAlloc)
     DLOGS("Allocating from File heap");
 
     // Try to allocate from file storage
-    retCode = SNPRINTF(filePath, MAX_PATH_LEN + 1, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, pHybridHeap->handleNum);
+    retCode =
+        SNPRINTF(filePath, MAX_PATH_LEN + 1, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, pHybridHeap->handleNum);
     CHK(retCode <= MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
 
     // Create a file with the overall size
@@ -483,7 +484,8 @@ DEFINE_HEAP_UNMAP(hybridFileHeapUnmap)
     }
 
     DLOGS("Indirect allocation");
-    retCode = SNPRINTF(filePath, MAX_PATH_LEN + 1, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, pHeader->fileHandle);
+    retCode =
+        SNPRINTF(filePath, MAX_PATH_LEN + 1, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, pHeader->fileHandle);
     CHK(retCode <= MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
 
     // Un-maping in this case is simply writing the content into the file storage and releasing the mapped memory
