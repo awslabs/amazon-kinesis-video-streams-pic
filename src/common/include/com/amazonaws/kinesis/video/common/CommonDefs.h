@@ -79,7 +79,9 @@ extern "C" {
 #if defined __APPLE__
 #define __LLP64__
 #else
+#ifndef __LP64__
 #define __LP64__ // Linux uses LP64 data model
+#endif
 #endif
 #else
 #define SIZE_32

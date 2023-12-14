@@ -104,6 +104,9 @@ jobs:
           mkdir build && cd build
           cmake .. -DCODE_COVERAGE=TRUE -DBUILD_TEST=TRUE
           make
+      - name: Run tests
+        run: |
+          cd build          
           ulimit -c unlimited -S
           timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
       - name: Code coverage
@@ -122,6 +125,9 @@ jobs:
           mkdir build && cd build
           cmake .. -DBUILD_TEST=TRUE -DADDRESS_SANITIZER=TRUE
           make
+      - name: Run tests
+        run: |
+          cd build          
           ulimit -c unlimited -S
           timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   undefined-behavior-sanitizer:
