@@ -89,10 +89,10 @@ TEST_F(ThreadsafeBlockingQueueFunctionalityTest, queueCountCorrectTest)
 }
 #define STATIC_NUMBER_OF_ITEMS 50
 
-typedef struct SafeQueueUser {
+typedef struct __SafeQueueUser {
     PSafeBlockingQueue pSafeQueue;
     volatile ATOMIC_BOOL usable;
-};
+} SafeQueueUser;
 
 void* writingThread(void* ptr) {
     SafeQueueUser * user = (SafeQueueUser*)ptr;

@@ -192,7 +192,7 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvFromJpegAsFo
                                                  mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator));
 
     for (i = 0, index = 0; i < 100; i++) {
-        SPRINTF(fileName, (PCHAR) "samples" FPATHSEPARATOR_STR "gif%03d.jpg", i);
+        SNPRINTF(fileName, 24, (PCHAR) "samples" FPATHSEPARATOR_STR "gif%03d.jpg", i);
         fileSize = MKV_TEST_BUFFER_SIZE;
         if (STATUS_FAILED(readFile(fileName, TRUE, NULL, &fileSize))) {
             break;
@@ -215,8 +215,8 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvFromJpegAsFo
     // Add tags
     for (i = 0; i < MKV_TEST_TAG_COUNT; i++) {
         packagedSize = size;
-        SPRINTF(tagName, (PCHAR) "testTag_%d", i);
-        SPRINTF(tagVal, (PCHAR) "testTag_%d_Value", i);
+        SNPRINTF(tagName, 16, (PCHAR) "testTag_%d", i);
+        SNPRINTF(tagVal, 16, (PCHAR) "testTag_%d_Value", i);
         EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mkvGenerator,
                                                     mkvBuffer + index,
                                                     tagName,
@@ -259,8 +259,8 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvTagsOnly)
     // Add tags
     for (i = 0; i < MKV_TEST_TAG_COUNT; i++) {
         packagedSize = size;
-        SPRINTF(tagName, (PCHAR) "testTag_%d", i);
-        SPRINTF(tagVal, (PCHAR) "testTag_%d_Value", i);
+        SNPRINTF(tagName, 16, (PCHAR) "testTag_%d", i);
+        SNPRINTF(tagVal, 24, (PCHAR) "testTag_%d_Value", i);
         EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mkvGenerator,
                                                     mkvBuffer + index,
                                                     tagName,
@@ -316,8 +316,8 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvMixedTags) {
         if ((frame.flags & FRAME_FLAG_KEY_FRAME) == FRAME_FLAG_KEY_FRAME) {
             for (i = 0; i < MKV_TEST_TAG_COUNT; i++) {
                 packagedSize = size;
-                SPRINTF(tagName, (PCHAR) "testTag_%d", i);
-                SPRINTF(tagVal, "(PCHAR) testTag_%d_Value", i);
+                SNPRINTF(tagName, 16, (PCHAR) "testTag_%d", i);
+                SNPRINTF(tagVal, 24, "(PCHAR) testTag_%d_Value", i);
                 EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mkvGenerator,
                                                             mkvBuffer + index,
                                                             tagName,
@@ -343,8 +343,8 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvMixedTags) {
     // Insert tags after the last cluster
     for (i = 0; i < MKV_TEST_TAG_COUNT; i++) {
         packagedSize = size;
-        SPRINTF(tagName, (PCHAR) "testTag_%d", i);
-        SPRINTF(tagVal, (PCHAR) "testTag_%d_Value", i);
+        SNPRINTF(tagName, 16, (PCHAR) "testTag_%d", i);
+        SNPRINTF(tagVal, 24, (PCHAR) "testTag_%d_Value", i);
         EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mkvGenerator,
                                                     mkvBuffer + index,
                                                     tagName,

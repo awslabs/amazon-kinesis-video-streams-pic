@@ -67,7 +67,7 @@ STATUS createSubDirStruct(PCHAR dirPath, UINT32 depth, UINT32 numberOfFiles, UIN
     // Create the files first
     for (UINT32 i = 0; i < numberOfFiles; i++) {
         // Create the file path
-        SPRINTF(temp, FPATHSEPARATOR_STR "file_%03d.tmp", i);
+        SNPRINTF(temp, 32, FPATHSEPARATOR_STR "file_%03d.tmp", i);
         STRCAT(dirPath, temp);
 
         // Create/write the file
@@ -83,7 +83,7 @@ STATUS createSubDirStruct(PCHAR dirPath, UINT32 depth, UINT32 numberOfFiles, UIN
     // Create the directories and iterate
     for (UINT32 i = 0; i < numberOfDirectories; i++) {
         // Create the file path
-        SPRINTF(temp, FPATHSEPARATOR_STR "tmp_dir_%03d", i);
+        SNPRINTF(temp, 32, FPATHSEPARATOR_STR "tmp_dir_%03d", i);
         STRCAT(dirPath, temp);
 
         // Create the dir

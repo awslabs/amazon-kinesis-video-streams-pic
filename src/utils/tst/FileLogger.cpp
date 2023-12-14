@@ -98,7 +98,7 @@ TEST_F(FileLoggerTest, checkFileRotation)
     // make sure the files dont exist
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogIndex");
     for(; i < logIterationCount; ++i) {
-        SPRINTF(filePath, TEST_TEMP_DIR_PATH "kvsFileLog.%u", i);
+        SNPRINTF(filePath, 1024, TEST_TEMP_DIR_PATH "kvsFileLog.%u", i);
         FREMOVE(filePath);
     }
 
@@ -115,7 +115,7 @@ TEST_F(FileLoggerTest, checkFileRotation)
     RELEASE_FILE_LOGGER();
 
     for(i = 0; i < logIterationCount; ++i) {
-        SPRINTF(filePath, TEST_TEMP_DIR_PATH "kvsFileLog.%u", i);
+        SNPRINTF(filePath, 1024, TEST_TEMP_DIR_PATH "kvsFileLog.%u", i);
         EXPECT_EQ(STATUS_SUCCESS, fileExists(filePath, &fileFound));
         // only log file with index from 6 to 11 should remain. The rest are rotated out.
         if (i < logIterationCount && i >= (logIterationCount - maxLogFileCount)) {

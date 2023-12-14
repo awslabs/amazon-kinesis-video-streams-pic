@@ -213,7 +213,7 @@ DEFINE_HEAP_ALLOC(hybridFileHeapAlloc)
     DLOGS("Allocating from File heap");
 
     // Try to allocate from file storage
-    SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, pHybridHeap->handleNum);
+    SNPRINTF(filePath, 1024, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, pHybridHeap->handleNum);
 
     // Create a file with the overall size
     CHK_STATUS(createFile(filePath, allocationSize));
@@ -268,7 +268,7 @@ DEFINE_HEAP_FREE(hybridFileHeapFree)
     DLOGS("Indirect allocation");
     // Convert the handle and create the file path
     fileHandle = TO_FILE_HANDLE(handle);
-    SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
+    SNPRINTF(filePath, 1024, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
 
     retCode = FREMOVE(filePath);
 
@@ -320,7 +320,7 @@ DEFINE_HEAP_GET_ALLOC_SIZE(hybridFileHeapGetAllocSize)
     fileHandle = TO_FILE_HANDLE(handle);
     DLOGS("File heap allocation. Handle 0x%016" PRIx64 " File handle 0x%08x", handle, fileHandle);
 
-    SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
+    SNPRINTF(filePath, 1024, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
     CHK_STATUS(readFileSegment(filePath, TRUE, (PBYTE) &allocationHeader, 0, FILE_ALLOCATION_HEADER_SIZE));
 
     // Set the values and return
@@ -369,7 +369,7 @@ DEFINE_HEAP_SET_ALLOC_SIZE(hybridFileHeapSetAllocSize)
     fileHandle = TO_FILE_HANDLE(handle);
     DLOGS("Sets new allocation size %\" PRIu64 \" for handle 0x%016" PRIx64, newSize, handle);
 
-    SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
+    SNPRINTF(filePath, 1024, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
 
     // Set the file size
     CHK_STATUS(setFileLength(filePath, overallSize));
@@ -422,7 +422,7 @@ DEFINE_HEAP_MAP(hybridFileHeapMap)
     fileHandle = TO_FILE_HANDLE(handle);
     DLOGS("File heap allocation. Handle 0x%016" PRIx64 " File handle 0x%08x", handle, fileHandle);
 
-    SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
+    SNPRINTF(filePath, 1024, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
 
     // Get the file size, allocate and read the entire file into memory
     CHK_STATUS(getFileLength(filePath, &fileLength));
@@ -473,7 +473,7 @@ DEFINE_HEAP_UNMAP(hybridFileHeapUnmap)
     }
 
     DLOGS("Indirect allocation");
-    SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, pHeader->fileHandle);
+    SNPRINTF(filePath, 1024, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, pHeader->fileHandle);
 
     // Un-maping in this case is simply writing the content into the file storage and releasing the mapped memory
     CHK_STATUS(writeFile(filePath, TRUE, FALSE, (PBYTE) pHeader, pHeader->size + FILE_ALLOCATION_HEADER_SIZE));
@@ -521,7 +521,7 @@ DEFINE_ALLOC_SIZE(hybridFileGetAllocationSize)
 
     // In case of File allocation we need to read the header and get the size
     fileHandle = TO_FILE_HANDLE(handle);
-    SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
+    SNPRINTF(filePath, 1024, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
 
     // Read the header to get the size info so we can allocate enough storage
     if (STATUS_FAILED(readFileSegment(filePath, TRUE, (PBYTE) &allocationHeader, 0, FILE_ALLOCATION_HEADER_SIZE))) {

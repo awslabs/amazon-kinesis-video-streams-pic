@@ -144,10 +144,12 @@ TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest
     THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 }
 
-typedef struct ThreadpoolUser {
+
+
+typedef struct __ThreadpoolUser {
     PThreadpool pThreadpool;
     volatile ATOMIC_BOOL usable;
-};
+} ThreadpoolUser;
 
 PVOID createTasks(PVOID customData)
 {
