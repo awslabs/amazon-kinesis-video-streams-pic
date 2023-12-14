@@ -3,6 +3,7 @@
 class AnnexBCpdNalAdapterTest : public MkvgenTestBase {
 };
 
+#ifdef FIXUP_ANNEX_B_TRAILING_NALU_ZERO
 TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_InvalidInput)
 {
     PBYTE pCpd = (PBYTE) 100;
@@ -18,6 +19,7 @@ TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_InvalidInput)
     EXPECT_NE(STATUS_SUCCESS,
               adaptH264CpdNalsFromAnnexBToAvcc(pCpd, MIN_H264_ANNEXB_CPD_SIZE - 1, pAdaptedCpd, &adaptedCpdSize));
 }
+#endif
 
 TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_InvalidNoStartCode)
 {
@@ -105,7 +107,11 @@ TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_FixedUpValidSpsPps)
     UINT32 adaptedCpdSize = SIZEOF(adaptedCpd);
 
     EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, NULL, &adaptedCpdSize));
+#ifdef FIXUP_ANNEX_B_TRAILING_NALU_ZERO
     EXPECT_EQ(STATUS_SUCCESS, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, adaptedCpd, &adaptedCpdSize));
+#else
+    EXPECT_EQ(STATUS_MKV_INVALID_ANNEXB_NALU_IN_FRAME_DATA, adaptH264CpdNalsFromAnnexBToAvcc(cpd, cpdSize, adaptedCpd, &adaptedCpdSize));
+#endif
 }
 
 TEST_F(AnnexBCpdNalAdapterTest, nalAdapter_ValidH265) {
