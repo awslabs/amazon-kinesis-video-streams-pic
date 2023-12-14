@@ -72,7 +72,7 @@ jobs:
       - name: Run tests
         run: |
           cd build
-          ./tstkvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   mac-os-m1-build-gcc:
     runs-on: macos-13-xlarge
     env:
@@ -200,7 +200,7 @@ jobs:
   #         cmake .. -DBUILD_TEST=TRUE -DMEMORY_SANITIZER=TRUE
   #         make
   #         ulimit -c unlimited -S
-  #         timeout --signal=SIGABRT 40m ./kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+  #         timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   # thread-sanitizer:
   #   runs-on: ubuntu-18.04
   #   env:
@@ -220,7 +220,7 @@ jobs:
   #         mkdir build && cd build
   #         cmake .. -DBUILD_TEST=TRUE -DTHREAD_SANITIZER=TRUE
   #         make
-  #         ./kvspic_test --gtest_break_on_failure --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:ThreadFunctionalityTest.ThreadCreateAndCancel"
+  #         ./tst/kvspic_test --gtest_break_on_failure --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:ThreadFunctionalityTest.ThreadCreateAndCancel"
   windows-msvc:
     runs-on: windows-2022
     env:
