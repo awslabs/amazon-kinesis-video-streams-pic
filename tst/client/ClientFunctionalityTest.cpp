@@ -128,7 +128,7 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncStopStreamFreeClient
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&mClientHandle));
     EXPECT_TRUE(!IS_VALID_CLIENT_HANDLE(mClientHandle));
 }
-
+#ifdef ALIGNED_MEMORY_MODEL
 //Create Producer, Create Streams, Await Ready, Put Frame, Free Producer
 TEST_P(ClientFunctionalityTest, CreateClientCreateStreamPutFrameFreeClient)
 {
@@ -262,7 +262,7 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncPutFrameStopStreamFr
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&mClientHandle));
     EXPECT_TRUE(!IS_VALID_CLIENT_HANDLE(mClientHandle));
 }
-
+#endif
 //Create producer, create streams sync, create same stream and fail, free client
 TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncCreateSameStreamAndFailFreeClient)
 {

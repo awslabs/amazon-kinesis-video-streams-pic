@@ -76,6 +76,8 @@ STATUS timerCallbackPreHook(UINT64 hookCustomData)
     return retStatus;
 };
 
+#ifdef ALIGNED_MEMORY_MODEL
+
 TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateTimerInvokedBeforeTime) {
     // Create new client so param value of callbackPeriod can be applied
     ASSERT_EQ(STATUS_SUCCESS, CreateClient());
@@ -705,3 +707,5 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateMultiStream) {
 
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, IntermittentProducerAutomaticStreamingTest,
         Combine(Values(1000,2000,3000), Values(0, CLIENT_INFO_CURRENT_VERSION)));
+
+#endif

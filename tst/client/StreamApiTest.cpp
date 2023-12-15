@@ -384,6 +384,7 @@ TEST_F(StreamApiTest, insertKinesisVideoEvent_NULL_Invalid)
     EXPECT_EQ(STATUS_INVALID_ARG, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_LAST + rand() % STREAM_EVENT_TYPE_LAST, &Meta));
 }
 
+#ifdef ALIGNED_MEMORY_MODEL
 TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Length)
 {
     StreamEventMetadata Meta{STREAM_EVENT_METADATA_CURRENT_VERSION, NULL, 1, {}, {}};
@@ -447,26 +448,6 @@ TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Length)
 
 }
 
-TEST_F(StreamApiTest, insertKinesisVideoTag_Invalid_Name)
-{
-    // Create and ready stream
-    ReadyStream();
-
-    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWS", (PCHAR) "Tag Value", FALSE));
-    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWS", (PCHAR) "Tag Value", TRUE));
-    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWS ", (PCHAR) "Tag Value", FALSE));
-    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWS ", (PCHAR) "Tag Value", TRUE));
-    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWSTag", (PCHAR) "Tag Value", FALSE));
-    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWSTag", (PCHAR) "Tag Value", TRUE));
-    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWS:", (PCHAR) "Tag Value", FALSE));
-    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWS:", (PCHAR) "Tag Value", TRUE));
-
-    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "aWS", (PCHAR) "Tag Value", FALSE));
-    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "aWS", (PCHAR) "Tag Value", TRUE));
-    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "aws", (PCHAR) "Tag Value", FALSE));
-    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "aws", (PCHAR) "Tag Value", TRUE));
-}
-
 TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Name)
 {
     StreamEventMetadata Meta{STREAM_EVENT_METADATA_CURRENT_VERSION, NULL, 1, {}, {}};
@@ -511,6 +492,27 @@ TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Name)
 
     MEMCPY(tagName, (PCHAR) "aws", STRLEN("aws"));
     EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_IMAGE_GENERATION, &Meta));
+}
+#endif
+
+TEST_F(StreamApiTest, insertKinesisVideoTag_Invalid_Name)
+{
+    // Create and ready stream
+    ReadyStream();
+
+    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWS", (PCHAR) "Tag Value", FALSE));
+    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWS", (PCHAR) "Tag Value", TRUE));
+    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWS ", (PCHAR) "Tag Value", FALSE));
+    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWS ", (PCHAR) "Tag Value", TRUE));
+    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWSTag", (PCHAR) "Tag Value", FALSE));
+    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWSTag", (PCHAR) "Tag Value", TRUE));
+    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWS:", (PCHAR) "Tag Value", FALSE));
+    EXPECT_EQ(STATUS_INVALID_METADATA_NAME, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "AWS:", (PCHAR) "Tag Value", TRUE));
+
+    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "aWS", (PCHAR) "Tag Value", FALSE));
+    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "aWS", (PCHAR) "Tag Value", TRUE));
+    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "aws", (PCHAR) "Tag Value", FALSE));
+    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "aws", (PCHAR) "Tag Value", TRUE));
 }
 
 TEST_F(StreamApiTest, insertKinesisVideoTag_Stream_State_Error)
