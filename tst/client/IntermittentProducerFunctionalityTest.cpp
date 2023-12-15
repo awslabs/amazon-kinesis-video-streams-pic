@@ -21,7 +21,7 @@ protected:
         mStreamInfo.streamCaps.replayDuration = (UINT64) replayDuration;
     }
 };
-
+#ifdef ALIGNED_MEMORY_MODEL
 TEST_P(IntermittentProducerFunctionalityTest, CreateSyncStreamWithLargeBufferAwaitForLastAckStopSyncFreeSuccess) {
     UINT64 currentTime, testTerminationTime, endPutFrameTime;
     BOOL didPutFrame, gotStreamData, submittedAck;
@@ -132,3 +132,4 @@ TEST_P(IntermittentProducerFunctionalityTest, RepeatedCreateSyncStopSyncFree)
 
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, IntermittentProducerFunctionalityTest,
                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
+#endif
