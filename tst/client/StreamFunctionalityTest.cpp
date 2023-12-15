@@ -58,7 +58,7 @@ TEST_P(StreamFunctionalityTest, CreateSyncStopSyncFreePutFrameFail) {
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
     EXPECT_NE(STATUS_SUCCESS, mockProducer.putFrame());
 }
-
+#ifdef ALIGNED_MEMORY_MODEL
 TEST_P(StreamFunctionalityTest, CreateAwaitReadyPutFrameFree)
 {
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
@@ -298,6 +298,7 @@ TEST_P(StreamFunctionalityTest, CreateSyncPutFrameEoFRFirstForceNotSkipping)
     EXPECT_EQ(0, streamMetrics.skippedFrames);
     // There should be no mem leaks
 }
+#endif
 
 // Validate StreamDescription_V0 structure handling
 TEST_P(StreamFunctionalityTest, StreamDescription_V0_Test)
