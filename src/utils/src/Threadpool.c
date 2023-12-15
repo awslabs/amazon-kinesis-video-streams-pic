@@ -418,6 +418,7 @@ STATUS threadpoolInternalInactiveThreadCount(PThreadpool pThreadpool, PSIZE_T pC
 
     CHK_STATUS(safeBlockingQueueGetCount(pThreadpool->taskQueue, &pendingTasks));
     unblockedThreads = (SIZE_T) ATOMIC_LOAD(&pThreadpool->availableThreads);
+    CHK_ERR(unblockedThreads >= (SIZE_T) pendingTasks, STATUS_THREADPOOL_INTERNAL_ERROR, "Pending tasks is greater than unblocked threads");
     *pCount = unblockedThreads - (SIZE_T) pendingTasks;
 
 CleanUp:

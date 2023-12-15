@@ -134,6 +134,7 @@ TEST_F(StreamApiFunctionalityTest, streamFormatChange_stateCheck)
     // Ensure we can successfully set the CPD
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamFormatChanged(mStreamHandle, SIZEOF(cpd), cpd, TEST_TRACKID));
 
+#ifdef ALIGNED_MEMORY_MODEL
     for (i = 0, timestamp = 0; i < 20; timestamp += TEST_FRAME_DURATION, i++) {
         frame.index = i;
         frame.decodingTs = timestamp;
@@ -155,6 +156,7 @@ TEST_F(StreamApiFunctionalityTest, streamFormatChange_stateCheck)
         // Setting CPD should fail
         EXPECT_NE(STATUS_SUCCESS, kinesisVideoStreamFormatChanged(mStreamHandle, SIZEOF(cpd), cpd, TEST_TRACKID));
     }
+#endif
 }
 
 TEST_F(StreamApiFunctionalityTest, setNalAdaptionFlags_stateCheck)
@@ -211,6 +213,7 @@ TEST_F(StreamApiFunctionalityTest, setNalAdaptionFlags_stateCheck)
     EXPECT_EQ(nalFlags, pKinesisVideoStream->streamInfo.streamCaps.nalAdaptationFlags);
     EXPECT_EQ(MKV_NALS_ADAPT_NONE, ((PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator)->nalsAdaptation);
 
+#ifdef ALIGNED_MEMORY_MODEL
     for (i = 0, timestamp = 0; i < 20; timestamp += TEST_FRAME_DURATION, i++) {
         frame.index = i;
         frame.decodingTs = timestamp;
@@ -232,8 +235,10 @@ TEST_F(StreamApiFunctionalityTest, setNalAdaptionFlags_stateCheck)
         // Setting NAL flags should fail
         EXPECT_NE(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptationFlags(mStreamHandle, nalFlags));
     }
+#endif
 }
 
+#ifdef ALIGNED_MEMORY_MODEL
 TEST_F(StreamApiFunctionalityTest, putFrame_BasicPutTestItemLimit)
 {
     UINT32 i, maxIteration;
@@ -1747,29 +1752,6 @@ TEST_F(StreamApiFunctionalityTest, submitAck_shouldBeInWindowAfterErrorAck)
     MEMFREE(getDataBuffer);
 }
 
-TEST_F(StreamApiFunctionalityTest, putFrame_AdaptAnnexB)
-{
-    BYTE frameData[] = {0x00, 0x00, 0x00, 0x01, 0x67, 0x42, 0x00, 0x1e,
-                        0xa9, 0x50, 0x14, 0x07, 0xb4, 0x20, 0x00, 0x00,
-                        0x7d, 0x00, 0x00, 0x1d, 0x4c, 0x00, 0x80, 0x00,
-                        0x00, 0x00, 0x01, 0x68, 0xce, 0x3c, 0x80};
-    UINT32 frameDataSize = SIZEOF(frameData);
-    Frame frame;
-
-    // Create and ready a stream
-    ReadyStream();
-
-    frame.index = 0;
-    frame.decodingTs = 0;
-    frame.presentationTs = 0;
-    frame.duration = TEST_FRAME_DURATION;
-    frame.size = frameDataSize;
-    frame.trackId = TEST_TRACKID;
-    frame.frameData = frameData;
-    frame.flags = FRAME_FLAG_KEY_FRAME;
-    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
-}
-
 TEST_F(StreamApiFunctionalityTest, PutGet_ConnectionStaleNotification)
 {
     UINT32 i, filledSize;
@@ -1826,6 +1808,8 @@ TEST_F(StreamApiFunctionalityTest, PutGet_ConnectionStaleNotification)
         }
     }
 }
+
+#endif
 
 extern UINT64 gPresetCurrentTime;
 TEST_F(StreamApiFunctionalityTest, streamingTokenJitter_none)
@@ -1984,4 +1968,27 @@ TEST_F(StreamApiFunctionalityTest, streamingTokenJitter_preset_max)
               pKinesisVideoStream->streamingAuthInfo.expiration / HUNDREDS_OF_NANOS_IN_A_MINUTE);
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&clientHandle));
+}
+
+TEST_F(StreamApiFunctionalityTest, putFrame_AdaptAnnexB)
+{
+    BYTE frameData[] = {0x00, 0x00, 0x00, 0x01, 0x67, 0x42, 0x00, 0x1e,
+                        0xa9, 0x50, 0x14, 0x07, 0xb4, 0x20, 0x00, 0x00,
+                        0x7d, 0x00, 0x00, 0x1d, 0x4c, 0x00, 0x80, 0x00,
+                        0x00, 0x00, 0x01, 0x68, 0xce, 0x3c, 0x80};
+    UINT32 frameDataSize = SIZEOF(frameData);
+    Frame frame;
+
+    // Create and ready a stream
+    ReadyStream();
+
+    frame.index = 0;
+    frame.decodingTs = 0;
+    frame.presentationTs = 0;
+    frame.duration = TEST_FRAME_DURATION;
+    frame.size = frameDataSize;
+    frame.trackId = TEST_TRACKID;
+    frame.frameData = frameData;
+    frame.flags = FRAME_FLAG_KEY_FRAME;
+    EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
 }
