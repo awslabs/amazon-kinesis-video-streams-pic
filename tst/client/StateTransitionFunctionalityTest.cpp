@@ -247,7 +247,7 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallExhaustRetry)
                                                                                    TEST_AUTH_EXPIRATION));
     freeKinesisVideoStream(&mStreamHandle);
 }
-
+#ifdef ALIGNED_MEMORY_MODEL
 // check that kinesisVideoStreamTerminated with certain service call results should move to getEndpoint state
 TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToGetEndpointState)
 {
@@ -573,6 +573,7 @@ TEST_P(StateTransitionFunctionalityTest, basicResetConnectionTest) {
 
     VerifyStopStreamSyncAndFree();
 }
+#endif
 
 TEST_P(StateTransitionFunctionalityTest, TestExecutionOfStreamStateMachineErrorHandlerOnErrors)
 {
