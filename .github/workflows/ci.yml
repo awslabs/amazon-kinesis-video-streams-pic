@@ -135,7 +135,7 @@ jobs:
     env:
       CC: clang
       CXX: clang++
-      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1:suppressions=../tst/suppressions/UBSAN.supp
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1:suppressions=suppressions/UBSAN.supp
       AWS_KVS_LOG_LEVEL: 2
     steps:
       - name: Clone repository
@@ -207,7 +207,7 @@ jobs:
   #     CC: clang-7
   #     CXX: clang++-7
   #     AWS_KVS_LOG_LEVEL: 2
-  #     TSAN_OPTIONS: halt_on_error=1:suppressions=../src/utils/tst/suppressions/TSAN.supp
+  #     TSAN_OPTIONS: halt_on_error=1:suppressions=suppressions/TSAN.supp
   #   steps:
   #     - name: Clone repository
   #       uses: actions/checkout@v2

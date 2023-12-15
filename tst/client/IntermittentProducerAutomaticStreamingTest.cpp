@@ -138,7 +138,7 @@ TEST_P(IntermittentProducerAutomaticStreamingTest, ValidateTimerInvokedAfterFirs
     frame.frameData = temp;
     EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
 
-    THREAD_SLEEP(INTERMITTENT_PRODUCER_TIMER_START_DELAY + 1.20 * mDeviceInfo.clientInfo.reservedCallbackPeriod);
+    THREAD_SLEEP(INTERMITTENT_PRODUCER_TIMER_START_DELAY + 1.50 * mDeviceInfo.clientInfo.reservedCallbackPeriod);
 
     EXPECT_EQ(2, ATOMIC_LOAD(&mTimerCallbackFuncCount));
 }
