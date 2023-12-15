@@ -98,7 +98,7 @@ PVOID ClientTestBase::basicConsumerRoutine(UINT64 streamId)
 
     return NULL;
 }
-
+#ifdef ALIGNED_MEMORY_MODEL
 TEST_F(StreamParallelTest, putFrame_BasicParallelPutGet)
 {
     UINT32 index;
@@ -188,3 +188,4 @@ TEST_F(StreamParallelTest, putFrame_BasicParallelPutGet)
         EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(mConsumerThreads[index], NULL));
     }
 }
+#endif

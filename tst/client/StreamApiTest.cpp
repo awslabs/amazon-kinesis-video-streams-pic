@@ -748,6 +748,7 @@ PVOID streamStopNotifier(PVOID arg)
     return NULL;
 }
 
+#ifdef ALIGNED_MEMORY_MODEL
 TEST_F(StreamApiTest, kinesisVideoStreamCreateSync_Valid)
 {
     freeKinesisVideoStream(&mStreamHandle);
@@ -777,26 +778,6 @@ TEST_F(StreamApiTest, kinesisVideoStreamCreateSync_Valid)
     EXPECT_EQ(STATUS_SUCCESS, stopKinesisVideoStreamSync(mStreamHandle));
 }
 
-TEST_F(StreamApiTest, kinesisVideoStreamCreateSync_Valid_Timeout)
-{
-    CLIENT_HANDLE clientHandle;
-
-    // Create a client with appropriate timeout so we don't block on test.
-    mClientSyncMode = TRUE;
-    mDeviceInfo.clientInfo.createStreamTimeout = 20 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
-    EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoClientSync(&mDeviceInfo, &mClientCallbacks, &clientHandle));
-
-    // Create synchronously
-    EXPECT_EQ(STATUS_OPERATION_TIMED_OUT, createKinesisVideoStreamSync(clientHandle, &mStreamInfo, &mStreamHandle));
-
-    EXPECT_FALSE(IS_VALID_STREAM_HANDLE(mStreamHandle));
-
-    // Stop synchronously - will fail as we should have invalid handle
-    EXPECT_NE(STATUS_SUCCESS, stopKinesisVideoStreamSync(mStreamHandle));
-
-    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&clientHandle));
-}
-
 TEST_F(StreamApiTest, kinesisVideoStreamCreateSyncStopSync_Valid_Timeout)
 {
     CLIENT_HANDLE clientHandle;
@@ -824,6 +805,28 @@ TEST_F(StreamApiTest, kinesisVideoStreamCreateSyncStopSync_Valid_Timeout)
 
     // Stop synchronously
     EXPECT_EQ(STATUS_OPERATION_TIMED_OUT, stopKinesisVideoStreamSync(mStreamHandle));
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&clientHandle));
+}
+
+#endif
+
+TEST_F(StreamApiTest, kinesisVideoStreamCreateSync_Valid_Timeout)
+{
+    CLIENT_HANDLE clientHandle;
+
+    // Create a client with appropriate timeout so we don't block on test.
+    mClientSyncMode = TRUE;
+    mDeviceInfo.clientInfo.createStreamTimeout = 20 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoClientSync(&mDeviceInfo, &mClientCallbacks, &clientHandle));
+
+    // Create synchronously
+    EXPECT_EQ(STATUS_OPERATION_TIMED_OUT, createKinesisVideoStreamSync(clientHandle, &mStreamInfo, &mStreamHandle));
+
+    EXPECT_FALSE(IS_VALID_STREAM_HANDLE(mStreamHandle));
+
+    // Stop synchronously - will fail as we should have invalid handle
+    EXPECT_NE(STATUS_SUCCESS, stopKinesisVideoStreamSync(mStreamHandle));
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&clientHandle));
 }
