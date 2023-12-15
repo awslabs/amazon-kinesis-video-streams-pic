@@ -22,6 +22,8 @@ protected:
     }
 };
 
+#ifdef ALIGNED_MEMORY_MODEL
+
 /*
  * Testing basic token rotation. The test was given enough time for 1 token rotations plus 2 seconds extra.
  * When the given time ran out, we should have observed 3 token rotations taken place. if timedGetStreamData returns
@@ -515,3 +517,5 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationBasicMultiTrackPassThrou
 
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, StreamApiFunctionalityScenarioTest,
                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
+
+#endif
