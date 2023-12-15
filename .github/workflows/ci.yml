@@ -40,6 +40,16 @@ jobs:
         run: |
           cd build
           ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+        run: |
+          rm -rf build
+          mkdir build && cd build
+          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+          make
+      - name: Run tests
+        run: |
+          cd build
+          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   mac-os-build-clang:
     runs-on: macos-latest
     env:
@@ -51,6 +61,16 @@ jobs:
         run: |
           mkdir build && cd build
           cmake .. -DBUILD_TEST=TRUE -DCOMPILER_WARNINGS=TRUE
+          make
+      - name: Run tests
+        run: |
+          cd build
+          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+        run: |
+          rm -rf build
+          mkdir build && cd build
+          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
           make
       - name: Run tests
         run: |
@@ -68,6 +88,16 @@ jobs:
           brew unlink openssl
           mkdir build && cd build
           cmake .. -DBUILD_TEST=TRUE -DCMAKE_C_COMPILER=$(brew --prefix llvm@15)/bin/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++
+          make
+      - name: Run tests
+        run: |
+          cd build
+          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+        run: |
+          rm -rf build
+          mkdir build && cd build
+          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE -DCMAKE_C_COMPILER=$(brew --prefix llvm@15)/bin/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++
           make
       - name: Run tests
         run: |
@@ -92,6 +122,16 @@ jobs:
         run: |
           cd build
           ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+        run: |
+          rm -rf build
+          mkdir build && cd build
+          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+          make
+      - name: Run tests
+        run: |
+          cd build
+          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   linux-gcc-code-coverage:
     runs-on: ubuntu-latest
     env:
@@ -107,6 +147,17 @@ jobs:
       - name: Run tests
         run: |
           cd build          
+          ulimit -c unlimited -S
+          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+        run: |
+          rm -rf build
+          mkdir build && cd build
+          cmake .. -DCODE_COVERAGE=TRUE -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+          make
+      - name: Run tests
+        run: |
+          cd build
           ulimit -c unlimited -S
           timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
       - name: Code coverage
@@ -129,6 +180,16 @@ jobs:
         run: |
           cd build          
           ulimit -c unlimited -S
+          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+        run: |
+          rm -rf build
+          mkdir build && cd build
+          cmake .. -DBUILD_TEST=TRUE -DADDRESS_SANITIZER=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+          make
+      - name: Run tests
+        run: |
+          cd build
           timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   undefined-behavior-sanitizer:
     runs-on: ubuntu-latest
@@ -153,6 +214,16 @@ jobs:
         run: |
           cd build
           ulimit -c unlimited -S
+          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+        run: |
+          rm -rf build
+          mkdir build && cd build
+          cmake .. -DBUILD_TEST=TRUE -DUNDEFINED_BEHAVIOR_SANITIZER=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+          make
+      - name: Run tests
+        run: |
+          cd build
           timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   linux-gcc-4_4:
     runs-on: ubuntu-20.04
@@ -180,6 +251,16 @@ jobs:
         run: |
           cd build
           ulimit -c unlimited -S
+          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+        run: |
+          rm -rf build
+          mkdir build && cd build
+          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+          make
+      - name: Run tests
+        run: |
+          cd build
           timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   # memory-sanitizer:
   #   runs-on: ubuntu-18.04
