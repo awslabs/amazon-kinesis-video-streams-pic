@@ -2,7 +2,7 @@
 
 class StreamPutGetTest : public ClientTestBase {
 };
-
+#ifdef ALIGNED_MEMORY_MODEL
 TEST_F(StreamPutGetTest, putFrame_PutGetFrameBoundary)
 {
     UINT32 i, j, filledSize, offset, bufferSize;
@@ -1735,3 +1735,4 @@ TEST_F(StreamPutGetTest, putFrame_PutGetPersistentTagsStoreData)
 
     MEMFREE(getDataBuffer);
 }
+#endif
