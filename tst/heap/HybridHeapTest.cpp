@@ -16,6 +16,12 @@ protected:
 
         HEAP_BEHAVIOR_FLAGS primaryHeapType;
         std::tie(primaryHeapType) = GetParam();
+#ifndef ALIGNED_MEMORY_MODEL
+        if (primaryHeapType == FLAGS_USE_AIV_HEAP) {
+            primaryHeapType = FLAGS_USE_SYSTEM_HEAP;
+        }
+#endif
+
         mHeapType = primaryHeapType | FLAGS_USE_HYBRID_VRAM_HEAP;
 
         // Set the invalid allocation handles
