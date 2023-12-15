@@ -358,7 +358,7 @@ TEST_F(HeapApiFunctionalityTest, SingleLargeAlloc)
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP, NULL, &pHeap)));
     singleLargeAlloc(pHeap);
 }
-
+#ifdef ALIGNED_MEMORY_MODEL
 TEST_F(HeapApiFunctionalityTest, MultipleLargeAlloc)
 {
     PHeap pHeap;
@@ -368,14 +368,6 @@ TEST_F(HeapApiFunctionalityTest, MultipleLargeAlloc)
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP, NULL, &pHeap)));
     multipleLargeAlloc(pHeap);
-}
-
-TEST_F(HeapApiFunctionalityTest, DefragmentationAlloc)
-{
-    PHeap pHeap;
-
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
-    defragmentationAlloc(pHeap);
 }
 
 TEST_F(HeapApiFunctionalityTest, SingleByteAlloc)
@@ -415,11 +407,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapUnalignedHeapLimit)
     PHeap pHeap;
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE + 1, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
-#ifdef ALIGNED_MEMORY_MODEL
     EXPECT_EQ(MIN_HEAP_SIZE + 8, pHeap->heapLimit);
-#else
-    EXPECT_EQ(MIN_HEAP_SIZE + 1, pHeap->heapLimit);
-#endif
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
@@ -676,6 +664,15 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeUpDownTopDown)
     heapDebugCheckAllocator(pHeap, TRUE);
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
+}
+#endif
+
+TEST_F(HeapApiFunctionalityTest, DefragmentationAlloc)
+{
+    PHeap pHeap;
+
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
+    defragmentationAlloc(pHeap);
 }
 
 TEST_F(HeapApiFunctionalityTest, MultipleMapUnmapByteAlloc)

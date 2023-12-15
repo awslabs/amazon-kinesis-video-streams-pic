@@ -70,7 +70,6 @@ extern "C" {
 #define STATUS_THREADPOOL_MAX_COUNT                  STATUS_UTILS_BASE + 0x0000002c
 #define STATUS_THREADPOOL_INTERNAL_ERROR             STATUS_UTILS_BASE + 0x0000002d
 
-
 /**
  * Base64 encode/decode functionality
  */

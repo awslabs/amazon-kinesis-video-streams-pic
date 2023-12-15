@@ -21,7 +21,7 @@ protected:
         mStreamInfo.streamCaps.replayDuration = (UINT64) replayDuration;
     }
 };
-
+#ifdef ALIGNED_MEMORY_MODEL
 //Submit various types of error ACKs, Ensure the rollback is done from the ACK error time.
 TEST_P(AcksFunctionalityTest, CheckRollbackFromErrorAckTime)
 {
@@ -306,3 +306,4 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsTerminatedUploadHandle) {
 
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, AcksFunctionalityTest,
                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
+#endif

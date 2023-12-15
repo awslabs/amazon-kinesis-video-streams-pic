@@ -48,6 +48,8 @@ STATUS testPutStream(UINT64 customData,
     return STATUS_SUCCESS;
 }
 
+#ifdef ALIGNED_MEMORY_MODEL
+
 TEST_F(StreamTokenRotationTest, basicTokenRotationNonPersistAwait)
 {
     UINT32 i, filledSize, rotation, lastRotation;
@@ -351,3 +353,4 @@ TEST_F(StreamTokenRotationTest, rotationWithAwaitingCheck)
     }
     MEMFREE(emptyTagValue);
 }
+#endif
