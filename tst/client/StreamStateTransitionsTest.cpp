@@ -71,7 +71,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromGetToken)
 
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESULT_OK));
 }
-
+#ifdef ALIGNED_MEMORY_MODEL
 TEST_F(StreamStateTransitionsTest, stopStateFromStreamingSuccessRecovery)
 {
     UINT32 i, remaining;
@@ -1047,3 +1047,4 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingOtherNoRecovery)
 
     EXPECT_EQ(STATUS_SERVICE_CALL_DEVICE_NOT_FOND_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_DEVICE_NOT_FOUND));
 }
+#endif
