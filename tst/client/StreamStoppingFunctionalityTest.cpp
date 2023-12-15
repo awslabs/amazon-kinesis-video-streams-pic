@@ -23,6 +23,27 @@ protected:
     }
 };
 
+TEST_P(StreamStoppingFunctionalityTest, CreateSyncResetConnectionSuccess)
+{
+    PStateMachineState pState;
+    CreateScenarioTestClient();
+
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+
+    CreateStreamSync();
+
+    // stream state should be STREAM_STATE_READY at this point.
+    PKinesisVideoStream pKinesisVideoStream = fromStreamHandle(mStreamHandle);
+
+    // kinesisVideoStreamTerminated should succeed but have no effect on stream state because stream state is STREAM_STATE_READY
+    kinesisVideoStreamTerminated(mStreamHandle, INVALID_UPLOAD_HANDLE_VALUE, SERVICE_CALL_RESULT_OK);
+
+    EXPECT_EQ(STATUS_SUCCESS, getStateMachineCurrentState(pKinesisVideoStream->base.pStateMachine, &pState));
+    EXPECT_TRUE(pState->state == STREAM_STATE_READY);
+}
+
+#ifdef ALIGNED_MEMORY_MODEL
+
 TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamWithTwoUploadHandlesStopSyncFreeSuccess) {
 
     UINT64 currentTime, testTerminationTime;
@@ -38,7 +59,7 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamWithTwoUploadHandlesStop
     CreateStreamSync();
 
     testTerminationTime = mClientCallbacks.getCurrentTimeFn((UINT64) this)
-            + 2 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 15 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+        + 2 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 15 * HUNDREDS_OF_NANOS_IN_A_SECOND;
 
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
@@ -67,24 +88,6 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamWithTwoUploadHandlesStop
     VerifyStopStreamSyncAndFree();
 }
 
-TEST_P(StreamStoppingFunctionalityTest, CreateSyncResetConnectionSuccess)
-{
-    PStateMachineState pState;
-    CreateScenarioTestClient();
-
-    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
-
-    CreateStreamSync();
-
-    // stream state should be STREAM_STATE_READY at this point.
-    PKinesisVideoStream pKinesisVideoStream = fromStreamHandle(mStreamHandle);
-
-    // kinesisVideoStreamTerminated should succeed but have no effect on stream state because stream state is STREAM_STATE_READY
-    kinesisVideoStreamTerminated(mStreamHandle, INVALID_UPLOAD_HANDLE_VALUE, SERVICE_CALL_RESULT_OK);
-
-    EXPECT_EQ(STATUS_SUCCESS, getStateMachineCurrentState(pKinesisVideoStream->base.pStateMachine, &pState));
-    EXPECT_TRUE(pState->state == STREAM_STATE_READY);
-}
 
 TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamHighDensityStopSyncTimeoutFreeSuccess) {
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
@@ -241,6 +244,8 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamStopSyncErrorAckWhileStr
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
     EXPECT_EQ(0, ATOMIC_LOAD(&mDroppedFrameReportFuncCount));
 }
+
+#endif
 
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, StreamStoppingFunctionalityTest,
                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));

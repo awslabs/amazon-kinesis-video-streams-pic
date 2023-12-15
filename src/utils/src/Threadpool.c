@@ -141,25 +141,20 @@ STATUS threadpoolCreate(PThreadpool* ppThreadpool, UINT32 minThreads, UINT32 max
     STATUS retStatus = STATUS_SUCCESS;
     UINT32 i = 0;
     PThreadpool pThreadpool = NULL;
-    BOOL poolCreated = FALSE, mutexCreated = FALSE, listCreated = FALSE, queueCreated = FALSE;
     CHK(ppThreadpool != NULL, STATUS_NULL_ARG);
     CHK(minThreads <= maxThreads && minThreads > 0 && maxThreads > 0, STATUS_INVALID_ARG);
 
     pThreadpool = (PThreadpool) MEMCALLOC(1, SIZEOF(Threadpool));
     CHK(pThreadpool != NULL, STATUS_NOT_ENOUGH_MEMORY);
-    poolCreated = TRUE;
 
     ATOMIC_STORE_BOOL(&pThreadpool->terminate, FALSE);
     ATOMIC_STORE(&pThreadpool->availableThreads, 0);
 
     pThreadpool->listMutex = MUTEX_CREATE(FALSE);
-    mutexCreated = TRUE;
 
     CHK_STATUS(safeBlockingQueueCreate(&pThreadpool->taskQueue));
-    queueCreated = TRUE;
 
     CHK_STATUS(stackQueueCreate(&pThreadpool->threadList));
-    listCreated = TRUE;
 
     pThreadpool->minThreads = minThreads;
     pThreadpool->maxThreads = maxThreads;
