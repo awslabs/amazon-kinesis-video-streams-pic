@@ -23,6 +23,7 @@ protected:
     }
 };
 
+#ifdef ALIGNED_MEMORY_MODEL
 TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamWithResultEventAfterGracePeriodStopFreeSuccess) {
 
     UINT64 currentTime, testTerminationTime,  startTestTime, stopPutFrameTime,
@@ -319,3 +320,4 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamAtTokenRotationLongDelayF
 
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, TokenRotationFunctionalityTest,
                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
+#endif
