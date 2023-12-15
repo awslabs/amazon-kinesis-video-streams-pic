@@ -234,7 +234,7 @@ typedef UINT64 MUTEX;
 #if defined __WINDOWS_BUILD__
 typedef PCONDITION_VARIABLE CVAR;
 #else
-#ifdef __linux__
+#if defined(__linux__) && !defined(_GNU_SOURCE)
 #define _GNU_SOURCE
 #endif
 #include <pthread.h>
