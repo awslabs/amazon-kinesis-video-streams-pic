@@ -303,6 +303,7 @@ CleanUp:
 STATUS setStateMachineTag(PStateMachine pStateMachine, PCHAR stateTag) {
     STATUS retStatus = STATUS_SUCCESS;
     PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
+    DLOGI("Here");
     CHK_WARN(pStateMachineImpl != NULL, STATUS_NULL_ARG, "State machine object not created. Cannot set tag");
     STRCPY(pStateMachineImpl->stateTag, stateTag);
 CleanUp:
