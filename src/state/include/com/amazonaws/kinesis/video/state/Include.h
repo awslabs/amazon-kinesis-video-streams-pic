@@ -113,6 +113,7 @@ PUBLIC_API STATUS getStateMachineCurrentState(PStateMachine, PStateMachineState*
 PUBLIC_API STATUS setStateMachineCurrentState(PStateMachine, UINT64);
 PUBLIC_API STATUS resetStateMachineRetryCount(PStateMachine);
 PUBLIC_API STATUS checkForStateTransition(PStateMachine, PBOOL);
+PUBLIC_API STATUS setStateMachineTag(PStateMachine, PCHAR);
 
 static const ExponentialBackoffRetryStrategyConfig DEFAULT_STATE_MACHINE_EXPONENTIAL_BACKOFF_RETRY_CONFIGURATION = {
     /* Exponential wait times with this config will look like following -

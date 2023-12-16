@@ -169,9 +169,9 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
         pStateMachineImpl->context.localStateRetryCount++;
     }
 
-    DLOGV("State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64 ", "
+    DLOGD("[%s] State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64 ", "
           "Current local state retry count [%u], Max local state retry count [%u], State transition wait time [%u] ms",
-          pStateMachineImpl->context.pCurrentState->state, nextState, pStateMachineImpl->context.localStateRetryCount,
+          pStateMachineImpl->stateTag, pStateMachineImpl->context.pCurrentState->state, nextState, pStateMachineImpl->context.localStateRetryCount,
           pState->maxLocalStateRetryCount, errorStateTransitionWaitTime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 
     // Check if we have tried enough times within the same state
@@ -297,5 +297,14 @@ STATUS checkForStateTransition(PStateMachine pStateMachine, PBOOL pTransitionRea
 CleanUp:
 
     LEAVES();
+    return retStatus;
+}
+
+STATUS setStateMachineTag(PStateMachine pStateMachine, PCHAR stateTag) {
+    STATUS retStatus = STATUS_SUCCESS;
+    PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
+    CHK_WARN(pStateMachineImpl != NULL, STATUS_NULL_ARG, "State machine object not created. Cannot set tag");
+    STRCPY(pStateMachineImpl->stateTag, stateTag);
+CleanUp:
     return retStatus;
 }
