@@ -53,7 +53,7 @@ VOID dumpMemoryHex(PVOID pMem, UINT32 size)
     PCHAR pCur = buf;
     PBYTE pByte = (PBYTE) pMem;
     for (UINT32 i = 0; i < size; i++) {
-        SNPRINTF(pCur, 2, "%02x ", *pByte++);
+        SNPRINTF(pCur, 4, "%02x ", *pByte++);
         pCur += 3;
         if ((i + 1) % 16 == 0) {
             DLOGS("%s", buf);
