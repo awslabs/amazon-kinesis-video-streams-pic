@@ -79,7 +79,9 @@ extern "C" {
 #if defined __APPLE__
 #define __LLP64__
 #else
+#ifndef __LP64__
 #define __LP64__ // Linux uses LP64 data model
+#endif
 #endif
 #else
 #define SIZE_32
@@ -232,6 +234,9 @@ typedef UINT64 MUTEX;
 #if defined __WINDOWS_BUILD__
 typedef PCONDITION_VARIABLE CVAR;
 #else
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE
+#endif
 #include <pthread.h>
 #include <signal.h>
 typedef pthread_cond_t* CVAR;

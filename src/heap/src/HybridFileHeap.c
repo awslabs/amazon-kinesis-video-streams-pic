@@ -186,6 +186,7 @@ DEFINE_HEAP_ALLOC(hybridFileHeapAlloc)
     CHAR filePath[MAX_PATH_LEN + 1];
     ALLOCATION_HEADER allocationHeader;
     ALLOCATION_HANDLE handle;
+    INT32 retCode;
 
     // Call the base class for the accounting
     retStatus = commonHeapAlloc(pHeap, size, pHandle);
@@ -213,7 +214,9 @@ DEFINE_HEAP_ALLOC(hybridFileHeapAlloc)
     DLOGS("Allocating from File heap");
 
     // Try to allocate from file storage
-    SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, pHybridHeap->handleNum);
+    retCode =
+        SNPRINTF(filePath, MAX_PATH_LEN + 1, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, pHybridHeap->handleNum);
+    CHK(retCode <= MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
 
     // Create a file with the overall size
     CHK_STATUS(createFile(filePath, allocationSize));
@@ -268,7 +271,8 @@ DEFINE_HEAP_FREE(hybridFileHeapFree)
     DLOGS("Indirect allocation");
     // Convert the handle and create the file path
     fileHandle = TO_FILE_HANDLE(handle);
-    SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
+    retCode = SNPRINTF(filePath, MAX_PATH_LEN + 1, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
+    CHK(retCode <= MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
 
     retCode = FREMOVE(filePath);
 
@@ -303,6 +307,7 @@ DEFINE_HEAP_GET_ALLOC_SIZE(hybridFileHeapGetAllocSize)
     ALLOCATION_HEADER allocationHeader;
     CHAR filePath[MAX_PATH_LEN + 1];
     UINT32 fileHandle;
+    INT32 retCode;
 
     // Call the base class to ensure the params are ok and set the default ret values
     CHK_STATUS(commonHeapGetAllocSize(pHeap, handle, pAllocSize));
@@ -320,7 +325,9 @@ DEFINE_HEAP_GET_ALLOC_SIZE(hybridFileHeapGetAllocSize)
     fileHandle = TO_FILE_HANDLE(handle);
     DLOGS("File heap allocation. Handle 0x%016" PRIx64 " File handle 0x%08x", handle, fileHandle);
 
-    SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
+    retCode = SNPRINTF(filePath, MAX_PATH_LEN + 1, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
+    CHK(retCode <= MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
+
     CHK_STATUS(readFileSegment(filePath, TRUE, (PBYTE) &allocationHeader, 0, FILE_ALLOCATION_HEADER_SIZE));
 
     // Set the values and return
@@ -344,6 +351,7 @@ DEFINE_HEAP_SET_ALLOC_SIZE(hybridFileHeapSetAllocSize)
     CHAR filePath[MAX_PATH_LEN + 1];
     UINT32 fileHandle;
     UINT64 overallSize;
+    INT32 retCode;
 
     // Call the base class to ensure the params are ok and set the default ret values
     CHK_STATUS(commonHeapSetAllocSize(pHeap, pHandle, size, newSize));
@@ -369,8 +377,8 @@ DEFINE_HEAP_SET_ALLOC_SIZE(hybridFileHeapSetAllocSize)
     fileHandle = TO_FILE_HANDLE(handle);
     DLOGS("Sets new allocation size %\" PRIu64 \" for handle 0x%016" PRIx64, newSize, handle);
 
-    SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
-
+    retCode = SNPRINTF(filePath, MAX_PATH_LEN + 1, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
+    CHK(retCode <= MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
     // Set the file size
     CHK_STATUS(setFileLength(filePath, overallSize));
 
@@ -405,6 +413,7 @@ DEFINE_HEAP_MAP(hybridFileHeapMap)
     UINT32 fileHandle;
     PALLOCATION_HEADER pAllocation = NULL;
     UINT64 fileLength;
+    INT32 retCode;
 
     // Call the base class to ensure the params are ok and set the default ret values
     CHK_STATUS(commonHeapMap(pHeap, handle, ppAllocation, pSize));
@@ -422,7 +431,8 @@ DEFINE_HEAP_MAP(hybridFileHeapMap)
     fileHandle = TO_FILE_HANDLE(handle);
     DLOGS("File heap allocation. Handle 0x%016" PRIx64 " File handle 0x%08x", handle, fileHandle);
 
-    SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
+    retCode = SNPRINTF(filePath, MAX_PATH_LEN + 1, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
+    CHK(retCode <= MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
 
     // Get the file size, allocate and read the entire file into memory
     CHK_STATUS(getFileLength(filePath, &fileLength));
@@ -457,6 +467,7 @@ DEFINE_HEAP_UNMAP(hybridFileHeapUnmap)
     PHybridFileHeap pHybridHeap = (PHybridFileHeap) pHeap;
     PALLOCATION_HEADER pHeader = (PALLOCATION_HEADER) pAllocation - 1;
     CHAR filePath[MAX_PATH_LEN + 1];
+    INT32 retCode;
 
     // Call the base class to ensure the params are ok
     CHK_STATUS(commonHeapUnmap(pHeap, pAllocation));
@@ -473,7 +484,9 @@ DEFINE_HEAP_UNMAP(hybridFileHeapUnmap)
     }
 
     DLOGS("Indirect allocation");
-    SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, pHeader->fileHandle);
+    retCode =
+        SNPRINTF(filePath, MAX_PATH_LEN + 1, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, pHeader->fileHandle);
+    CHK(retCode <= MAX_PATH_LEN, STATUS_PATH_TOO_LONG);
 
     // Un-maping in this case is simply writing the content into the file storage and releasing the mapped memory
     CHK_STATUS(writeFile(filePath, TRUE, FALSE, (PBYTE) pHeader, pHeader->size + FILE_ALLOCATION_HEADER_SIZE));
@@ -507,6 +520,7 @@ DEFINE_ALLOC_SIZE(hybridFileGetAllocationSize)
     UINT32 fileHandle;
     ALLOCATION_HEADER allocationHeader;
     UINT64 memSizes, fileSizes, memHeapAllocationSize;
+    INT32 retCode;
 
     CHECK_EXT(pHeap != NULL, "Internal error with file heap being null");
 
@@ -521,7 +535,10 @@ DEFINE_ALLOC_SIZE(hybridFileGetAllocationSize)
 
     // In case of File allocation we need to read the header and get the size
     fileHandle = TO_FILE_HANDLE(handle);
-    SPRINTF(filePath, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
+    retCode = SNPRINTF(filePath, MAX_PATH_LEN + 1, "%s%c%u" FILE_HEAP_FILE_EXTENSION, pHybridHeap->rootDirectory, FPATHSEPARATOR, fileHandle);
+    if (retCode > MAX_PATH_LEN) {
+        DLOGW("filepath length has exceeded the maximum allowed");
+    }
 
     // Read the header to get the size info so we can allocate enough storage
     if (STATUS_FAILED(readFileSegment(filePath, TRUE, (PBYTE) &allocationHeader, 0, FILE_ALLOCATION_HEADER_SIZE))) {
