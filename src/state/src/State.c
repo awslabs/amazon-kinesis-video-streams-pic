@@ -31,6 +31,8 @@ STATUS createStateMachine(PStateMachineState pStates, UINT32 stateCount, UINT64 
     pStateMachine->getCurrentTimeFuncCustomData = getCurrentTimeFuncCustomData;
     pStateMachine->stateCount = stateCount;
     pStateMachine->customData = customData;
+    STRNCPY(pStateMachine->stateTag, DEFAULT_STATE_MACHINE_TAG, MAX_STATE_TAG_LENGTH - 1);
+    pStateMachine->stateTag[MAX_STATE_TAG_LENGTH - 1] = '\0';
 
     // Set the states pointer and copy the globals
     pStateMachine->states = (PStateMachineState) (pStateMachine + 1);
@@ -303,9 +305,9 @@ CleanUp:
 STATUS setStateMachineTag(PStateMachine pStateMachine, PCHAR stateTag) {
     STATUS retStatus = STATUS_SUCCESS;
     PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
-    DLOGI("Here");
     CHK_WARN(pStateMachineImpl != NULL, STATUS_NULL_ARG, "State machine object not created. Cannot set tag");
-    STRCPY(pStateMachineImpl->stateTag, stateTag);
+    STRNCPY(pStateMachineImpl->stateTag, stateTag, MAX_STATE_TAG_LENGTH - 1);
+    pStateMachineImpl->stateTag[MAX_STATE_TAG_LENGTH - 1] = '\0';
 CleanUp:
     return retStatus;
 }
