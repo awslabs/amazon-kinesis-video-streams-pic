@@ -108,7 +108,7 @@ typedef STATUS (*KinesisVideoClientCallbackHookFunc)(UINT64);
  */
 #define KINESIS_VIDEO_CLIENT_CURRENT_VERSION 0
 
-#define CLIENT_STATE_MACHINE_TAG (PCHAR) "wbrHJpxXZKAlXWPJzEEDUFlxeQOLAzjw"
+#define CLIENT_STATE_MACHINE_TAG (PCHAR) "CLIENT"
 #define STREAM_STATE_MACHINE_TAG (PCHAR) "STREAM"
 /**
  * Kinesis Video client states definitions
