@@ -54,20 +54,17 @@ CleanUp:
     return retStatus;
 }
 
-/**
- * Creates a state machine with a tag string to identify the state machine. Tag string is mandatory if using this API and cannot exceed 32 characters
- */
-STATUS createStateMachineWithTag(PStateMachineState pStates, UINT32 stateCount, UINT64 customData, GetCurrentTimeFunc getCurrentTimeFunc,
-                                 UINT64 getCurrentTimeFuncCustomData, PCHAR pStateTag, PStateMachine* ppStateMachine)
+STATUS createStateMachineWithName(PStateMachineState pStates, UINT32 stateCount, UINT64 customData, GetCurrentTimeFunc getCurrentTimeFunc,
+                                  UINT64 getCurrentTimeFuncCustomData, PCHAR pStateMachineName, PStateMachine* ppStateMachine)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PStateMachineImpl pStateMachine = NULL;
     UINT32 allocationSize = 0;
 
-    CHK(pStates != NULL && ppStateMachine != NULL && getCurrentTimeFunc != NULL && pStateTag != NULL, STATUS_NULL_ARG);
+    CHK(pStates != NULL && ppStateMachine != NULL && getCurrentTimeFunc != NULL && pStateMachineName != NULL, STATUS_NULL_ARG);
     CHK(stateCount > 0, STATUS_INVALID_ARG);
-    CHK(STRLEN(pStateTag) <= MAX_STATE_TAG_LENGTH, STATUS_STATE_MACHINE_TAG_NAME_LEN);
+    CHK(STRLEN(pStateMachineName) <= MAX_STATE_MACHINE_NAME_LENGTH, STATUS_STATE_MACHINE_NAME_LEN);
 
     // Allocate the main struct with an array of stream pointers at the end
     // NOTE: The calloc will Zero the fields
@@ -81,8 +78,8 @@ STATUS createStateMachineWithTag(PStateMachineState pStates, UINT32 stateCount, 
     pStateMachine->getCurrentTimeFuncCustomData = getCurrentTimeFuncCustomData;
     pStateMachine->stateCount = stateCount;
     pStateMachine->customData = customData;
-    STRNCPY(pStateMachine->stateTag, pStateTag, MAX_STATE_TAG_LENGTH);
-    pStateMachine->stateTag[MAX_STATE_TAG_LENGTH] = '\0';
+    STRNCPY(pStateMachine->stateMachineName, pStateMachineName, MAX_STATE_MACHINE_NAME_LENGTH);
+    pStateMachine->stateMachineName[MAX_STATE_MACHINE_NAME_LENGTH] = '\0';
 
     // Set the states pointer and copy the globals
     pStateMachine->states = (PStateMachineState) (pStateMachine + 1);
@@ -221,7 +218,7 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
         pStateMachineImpl->context.localStateRetryCount++;
     }
 
-    if (IS_EMPTY_STRING(pStateMachineImpl->stateTag)) {
+    if (IS_EMPTY_STRING(pStateMachineImpl->stateMachineName)) {
         DLOGV("State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64 ", "
               "Current local state retry count [%u], Max local state retry count [%u], State transition wait time [%u] ms",
               pStateMachineImpl->context.pCurrentState->state, nextState, pStateMachineImpl->context.localStateRetryCount,
@@ -229,7 +226,7 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
     } else {
         DLOGV("[%s] State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64 ", "
               "Current local state retry count [%u], Max local state retry count [%u], State transition wait time [%u] ms",
-              pStateMachineImpl->stateTag, pStateMachineImpl->context.pCurrentState->state, nextState,
+              pStateMachineImpl->stateMachineName, pStateMachineImpl->context.pCurrentState->state, nextState,
               pStateMachineImpl->context.localStateRetryCount, pState->maxLocalStateRetryCount,
               errorStateTransitionWaitTime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     }
@@ -361,13 +358,13 @@ CleanUp:
 }
 
 // This function is useful for unit tests
-PCHAR getStateMachineTag(PStateMachine pStateMachine)
+const PCHAR getStateMachineName(PStateMachine pStateMachine)
 {
     PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
-    if (pStateMachineImpl != NULL) {
-        return pStateMachineImpl->stateTag;
-    } else {
-        DLOGW("State machine object not created. Cannot retrieve tag");
+    if (pStateMachineImpl == NULL) {
+        DLOGW("State machine object not created. Cannot retrieve name");
         return NULL;
+    } else {
+        return pStateMachineImpl->stateMachineName;
     }
 }

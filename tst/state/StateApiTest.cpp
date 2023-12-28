@@ -82,32 +82,32 @@ TEST_F(StateApiTest, checkForStateTransition_InvalidInput)
     EXPECT_EQ(STATUS_SUCCESS, checkForStateTransition(mStateMachine, &testBool));
 }
 
-TEST_F(StateApiTest, createStateMachineWithTag_InvalidArg)
+TEST_F(StateApiTest, createStateMachineWithName_InvalidArg)
 {
     PStateMachine pStateMachine = NULL;
-    CHAR longRandomTag[34] = "abcdefghijklmnopqrstuvwxyzABCDEFG";
-    EXPECT_EQ(STATUS_NULL_ARG, createStateMachineWithTag(TEST_STATE_MACHINE_STATES, TEST_STATE_MACHINE_STATE_COUNT,
+    CHAR longRandomName[34] = "abcdefghijklmnopqrstuvwxyzABCDEFG";
+    EXPECT_EQ(STATUS_NULL_ARG, createStateMachineWithName(TEST_STATE_MACHINE_STATES, TEST_STATE_MACHINE_STATE_COUNT,
                                                         (UINT64) this, kinesisVideoStreamDefaultGetCurrentTime,
                                                         (UINT64) this, NULL, &pStateMachine));
-    EXPECT_EQ(NULL, getStateMachineTag(pStateMachine));
-    EXPECT_EQ(STATUS_STATE_MACHINE_TAG_NAME_LEN, createStateMachineWithTag(TEST_STATE_MACHINE_STATES, TEST_STATE_MACHINE_STATE_COUNT,
+    EXPECT_EQ(NULL, getStateMachineName(pStateMachine));
+    EXPECT_EQ(STATUS_STATE_MACHINE_NAME_LEN, createStateMachineWithName(TEST_STATE_MACHINE_STATES, TEST_STATE_MACHINE_STATE_COUNT,
                                                                            (UINT64) this, kinesisVideoStreamDefaultGetCurrentTime,
-                                                                           (UINT64) this, longRandomTag, &pStateMachine));
+                                                                           (UINT64) this, longRandomName, &pStateMachine));
     EXPECT_EQ(STATUS_SUCCESS, freeStateMachine(pStateMachine));
 }
 
-TEST_F(StateApiTest, createStateMachineWithTag_ValidArg)
+TEST_F(StateApiTest, createStateMachineWithName_ValidArg)
 {
     PStateMachine pStateMachine;
-    CHAR maxLengthRandomTag[33] = "abcdefghijklmnopqrstuvwxyzABCDEF";
-    EXPECT_EQ(STATUS_SUCCESS, createStateMachineWithTag(TEST_STATE_MACHINE_STATES, TEST_STATE_MACHINE_STATE_COUNT,
+    CHAR maxLengthRandomName[33] = "abcdefghijklmnopqrstuvwxyzABCDEF";
+    EXPECT_EQ(STATUS_SUCCESS, createStateMachineWithName(TEST_STATE_MACHINE_STATES, TEST_STATE_MACHINE_STATE_COUNT,
                                                  (UINT64) this, kinesisVideoStreamDefaultGetCurrentTime,
                                                  (UINT64) this, (PCHAR) "Test", &pStateMachine));
-    EXPECT_STREQ("Test", getStateMachineTag(pStateMachine));
+    EXPECT_STREQ("Test", getStateMachineName(pStateMachine));
     EXPECT_EQ(STATUS_SUCCESS, freeStateMachine(pStateMachine));
-    EXPECT_EQ(STATUS_SUCCESS, createStateMachineWithTag(TEST_STATE_MACHINE_STATES, TEST_STATE_MACHINE_STATE_COUNT,
+    EXPECT_EQ(STATUS_SUCCESS, createStateMachineWithName(TEST_STATE_MACHINE_STATES, TEST_STATE_MACHINE_STATE_COUNT,
                                                         (UINT64) this, kinesisVideoStreamDefaultGetCurrentTime,
-                                                        (UINT64) this, maxLengthRandomTag, &pStateMachine));
-    EXPECT_STREQ(maxLengthRandomTag, getStateMachineTag(pStateMachine));
+                                                        (UINT64) this, maxLengthRandomName, &pStateMachine));
+    EXPECT_STREQ(maxLengthRandomName, getStateMachineName(pStateMachine));
     EXPECT_EQ(STATUS_SUCCESS, freeStateMachine(pStateMachine));
 }
