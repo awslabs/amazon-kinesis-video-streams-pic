@@ -286,10 +286,9 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
         pKinesisVideoClient->clientCallbacks.createMutexFn(pKinesisVideoClient->clientCallbacks.customData, TRUE);
 
     // Create the state machine and step it
-    CHK_STATUS(createStateMachine(CLIENT_STATE_MACHINE_STATES, CLIENT_STATE_MACHINE_STATE_COUNT, TO_CUSTOM_DATA(pKinesisVideoClient),
-                                  pKinesisVideoClient->clientCallbacks.getCurrentTimeFn, pKinesisVideoClient->clientCallbacks.customData,
-                                  &pStateMachine));
-    setStateMachineTag(pStateMachine, CLIENT_STATE_MACHINE_TAG);
+    CHK_STATUS(createStateMachineWithTag(CLIENT_STATE_MACHINE_STATES, CLIENT_STATE_MACHINE_STATE_COUNT, TO_CUSTOM_DATA(pKinesisVideoClient),
+                                         pKinesisVideoClient->clientCallbacks.getCurrentTimeFn, pKinesisVideoClient->clientCallbacks.customData,
+                                         CLIENT_STATE_MACHINE_TAG, &pStateMachine));
     pKinesisVideoClient->base.pStateMachine = pStateMachine;
 
     if (pKinesisVideoClient->deviceInfo.clientInfo.automaticStreamingFlags == AUTOMATIC_STREAMING_INTERMITTENT_PRODUCER) {

@@ -25,6 +25,7 @@ extern "C" {
 #define STATUS_STATE_BASE                    0x52000000
 #define STATUS_INVALID_STREAM_STATE          STATUS_STATE_BASE + 0x0000000e
 #define STATUS_STATE_MACHINE_STATE_NOT_FOUND STATUS_STATE_BASE + 0x00000056
+#define STATUS_STATE_MACHINE_TAG_NAME_LEN    STATUS_STATE_BASE + 0x0000009a // 0x00000057 to 0x0000008f used with STATUS_CLIENT_BASE
 
 ////////////////////////////////////////////////////
 // Main structure declarations
@@ -43,11 +44,6 @@ extern "C" {
  * State machine current version
  */
 #define STATE_MACHINE_CURRENT_VERSION 0
-
-/**
- * Default state machine tag
- */
-#define DEFAULT_STATE_MACHINE_TAG (PCHAR) "KVS_STATE"
 
 /**
  * Maximum state tag length
@@ -115,6 +111,7 @@ typedef struct __StateMachine* PStateMachine;
 ////////////////////////////////////////////////////
 
 PUBLIC_API STATUS createStateMachine(PStateMachineState, UINT32, UINT64, GetCurrentTimeFunc, UINT64, PStateMachine*);
+PUBLIC_API STATUS createStateMachineWithTag(PStateMachineState, UINT32, UINT64, GetCurrentTimeFunc, UINT64, PCHAR, PStateMachine*);
 PUBLIC_API STATUS freeStateMachine(PStateMachine);
 PUBLIC_API STATUS stepStateMachine(PStateMachine);
 PUBLIC_API STATUS acceptStateMachineState(PStateMachine, UINT64);
@@ -123,7 +120,6 @@ PUBLIC_API STATUS getStateMachineCurrentState(PStateMachine, PStateMachineState*
 PUBLIC_API STATUS setStateMachineCurrentState(PStateMachine, UINT64);
 PUBLIC_API STATUS resetStateMachineRetryCount(PStateMachine);
 PUBLIC_API STATUS checkForStateTransition(PStateMachine, PBOOL);
-PUBLIC_API STATUS setStateMachineTag(PStateMachine, PCHAR);
 PUBLIC_API PCHAR getStateMachineTag(PStateMachine);
 
 static const ExponentialBackoffRetryStrategyConfig DEFAULT_STATE_MACHINE_EXPONENTIAL_BACKOFF_RETRY_CONFIGURATION = {

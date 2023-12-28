@@ -31,8 +31,58 @@ STATUS createStateMachine(PStateMachineState pStates, UINT32 stateCount, UINT64 
     pStateMachine->getCurrentTimeFuncCustomData = getCurrentTimeFuncCustomData;
     pStateMachine->stateCount = stateCount;
     pStateMachine->customData = customData;
-    STRNCPY(pStateMachine->stateTag, DEFAULT_STATE_MACHINE_TAG, MAX_STATE_TAG_LENGTH - 1);
-    pStateMachine->stateTag[MAX_STATE_TAG_LENGTH - 1] = '\0';
+
+    // Set the states pointer and copy the globals
+    pStateMachine->states = (PStateMachineState) (pStateMachine + 1);
+
+    // Copy the states over
+    MEMCPY(pStateMachine->states, pStates, SIZEOF(StateMachineState) * stateCount);
+
+    // NOTE: Set the initial state as the first state.
+    pStateMachine->context.pCurrentState = pStateMachine->states;
+
+    // Assign the created object
+    *ppStateMachine = (PStateMachine) pStateMachine;
+
+CleanUp:
+
+    if (STATUS_FAILED(retStatus)) {
+        freeStateMachine((PStateMachine) pStateMachine);
+    }
+
+    LEAVES();
+    return retStatus;
+}
+
+/**
+ * Creates a state machine with a tag string to identify the state machine. Tag string is mandatory if using this API and cannot exceed 32 characters
+ */
+STATUS createStateMachineWithTag(PStateMachineState pStates, UINT32 stateCount, UINT64 customData, GetCurrentTimeFunc getCurrentTimeFunc,
+                                 UINT64 getCurrentTimeFuncCustomData, PCHAR pStateTag, PStateMachine* ppStateMachine)
+{
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    PStateMachineImpl pStateMachine = NULL;
+    UINT32 allocationSize = 0;
+
+    CHK(pStates != NULL && ppStateMachine != NULL && getCurrentTimeFunc != NULL && pStateTag != NULL, STATUS_NULL_ARG);
+    CHK(stateCount > 0, STATUS_INVALID_ARG);
+    CHK(STRLEN(pStateTag) <= MAX_STATE_TAG_LENGTH, STATUS_STATE_MACHINE_TAG_NAME_LEN);
+
+    // Allocate the main struct with an array of stream pointers at the end
+    // NOTE: The calloc will Zero the fields
+    allocationSize = SIZEOF(StateMachineImpl) + SIZEOF(StateMachineState) * stateCount;
+    pStateMachine = (PStateMachineImpl) MEMCALLOC(1, allocationSize);
+    CHK(pStateMachine != NULL, STATUS_NOT_ENOUGH_MEMORY);
+
+    // Set the values
+    pStateMachine->stateMachine.version = STATE_MACHINE_CURRENT_VERSION;
+    pStateMachine->getCurrentTimeFunc = getCurrentTimeFunc;
+    pStateMachine->getCurrentTimeFuncCustomData = getCurrentTimeFuncCustomData;
+    pStateMachine->stateCount = stateCount;
+    pStateMachine->customData = customData;
+    STRNCPY(pStateMachine->stateTag, pStateTag, MAX_STATE_TAG_LENGTH);
+    pStateMachine->stateTag[MAX_STATE_TAG_LENGTH] = '\0';
 
     // Set the states pointer and copy the globals
     pStateMachine->states = (PStateMachineState) (pStateMachine + 1);
@@ -171,10 +221,18 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
         pStateMachineImpl->context.localStateRetryCount++;
     }
 
-    DLOGV("[%s] State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64 ", "
-          "Current local state retry count [%u], Max local state retry count [%u], State transition wait time [%u] ms",
-          pStateMachineImpl->stateTag, pStateMachineImpl->context.pCurrentState->state, nextState, pStateMachineImpl->context.localStateRetryCount,
-          pState->maxLocalStateRetryCount, errorStateTransitionWaitTime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    if (IS_EMPTY_STRING(pStateMachineImpl->stateTag)) {
+        DLOGV("State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64 ", "
+              "Current local state retry count [%u], Max local state retry count [%u], State transition wait time [%u] ms",
+              pStateMachineImpl->context.pCurrentState->state, nextState, pStateMachineImpl->context.localStateRetryCount,
+              pState->maxLocalStateRetryCount, errorStateTransitionWaitTime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    } else {
+        DLOGV("[%s] State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64 ", "
+              "Current local state retry count [%u], Max local state retry count [%u], State transition wait time [%u] ms",
+              pStateMachineImpl->stateTag, pStateMachineImpl->context.pCurrentState->state, nextState,
+              pStateMachineImpl->context.localStateRetryCount, pState->maxLocalStateRetryCount,
+              errorStateTransitionWaitTime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    }
 
     // Check if we have tried enough times within the same state
     if (pState->maxLocalStateRetryCount != INFINITE_RETRY_COUNT_SENTINEL) {
@@ -299,17 +357,6 @@ STATUS checkForStateTransition(PStateMachine pStateMachine, PBOOL pTransitionRea
 CleanUp:
 
     LEAVES();
-    return retStatus;
-}
-
-STATUS setStateMachineTag(PStateMachine pStateMachine, PCHAR stateTag)
-{
-    STATUS retStatus = STATUS_SUCCESS;
-    PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
-    CHK_WARN(pStateMachineImpl != NULL, STATUS_NULL_ARG, "State machine object not created. Cannot set tag");
-    STRNCPY(pStateMachineImpl->stateTag, stateTag, MAX_STATE_TAG_LENGTH - 1);
-    pStateMachineImpl->stateTag[MAX_STATE_TAG_LENGTH - 1] = '\0';
-CleanUp:
     return retStatus;
 }
 
