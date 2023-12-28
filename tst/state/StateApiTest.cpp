@@ -100,4 +100,5 @@ TEST_F(StateApiTest, setStateMachineTag_ValidArg)
     EXPECT_STREQ("Test", getStateMachineTag(pStateMachine));
     EXPECT_EQ(STATUS_SUCCESS, setStateMachineTag(pStateMachine, longRandomTag));
     EXPECT_STRNE(longRandomTag, getStateMachineTag(pStateMachine));
+    EXPECT_EQ(STATUS_SUCCESS, freeStateMachine(pStateMachine));
 }
