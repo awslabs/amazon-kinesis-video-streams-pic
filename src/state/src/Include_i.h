@@ -62,7 +62,7 @@ struct __StateMachineImpl {
     // State machine state count
     UINT32 stateCount;
 
-    PCHAR stateTag;
+    CHAR stateTag[32];
 
     // State machine states following the main structure
     PStateMachineState states;
