@@ -45,6 +45,16 @@ extern "C" {
 #define STATE_MACHINE_CURRENT_VERSION 0
 
 /**
+ * Default state machine tag
+ */
+#define DEFAULT_STATE_MACHINE_TAG (PCHAR) "KVS_STATE"
+
+/**
+ * Maximum state tag length
+ */
+#define MAX_STATE_TAG_LENGTH 32
+
+/**
  * State transition function definitions
  *
  * @param 1 UINT64 - IN - Custom data passed in
@@ -114,6 +124,7 @@ PUBLIC_API STATUS setStateMachineCurrentState(PStateMachine, UINT64);
 PUBLIC_API STATUS resetStateMachineRetryCount(PStateMachine);
 PUBLIC_API STATUS checkForStateTransition(PStateMachine, PBOOL);
 PUBLIC_API STATUS setStateMachineTag(PStateMachine, PCHAR);
+PUBLIC_API PCHAR getStateMachineTag(PStateMachine);
 
 static const ExponentialBackoffRetryStrategyConfig DEFAULT_STATE_MACHINE_EXPONENTIAL_BACKOFF_RETRY_CONFIGURATION = {
     /* Exponential wait times with this config will look like following -

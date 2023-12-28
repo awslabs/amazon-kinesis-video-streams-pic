@@ -171,7 +171,7 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
         pStateMachineImpl->context.localStateRetryCount++;
     }
 
-    DLOGD("[%s] State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64 ", "
+    DLOGV("[%s] State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64 ", "
           "Current local state retry count [%u], Max local state retry count [%u], State transition wait time [%u] ms",
           pStateMachineImpl->stateTag, pStateMachineImpl->context.pCurrentState->state, nextState, pStateMachineImpl->context.localStateRetryCount,
           pState->maxLocalStateRetryCount, errorStateTransitionWaitTime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
@@ -311,4 +311,16 @@ STATUS setStateMachineTag(PStateMachine pStateMachine, PCHAR stateTag)
     pStateMachineImpl->stateTag[MAX_STATE_TAG_LENGTH - 1] = '\0';
 CleanUp:
     return retStatus;
+}
+
+// This function is useful for unit tests
+PCHAR getStateMachineTag(PStateMachine pStateMachine)
+{
+    PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
+    if (pStateMachineImpl != NULL) {
+        return pStateMachineImpl->stateTag;
+    } else {
+        DLOGW("State machine object not created. Cannot retrieve tag");
+        return NULL;
+    }
 }
