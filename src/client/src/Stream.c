@@ -249,6 +249,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     CHK_STATUS(createStateMachine(STREAM_STATE_MACHINE_STATES, STREAM_STATE_MACHINE_STATE_COUNT, TO_CUSTOM_DATA(pKinesisVideoStream),
                                   pKinesisVideoClient->clientCallbacks.getCurrentTimeFn, pKinesisVideoClient->clientCallbacks.customData,
                                   &pStateMachine));
+    setStateMachineTag(pStateMachine, STREAM_STATE_MACHINE_TAG);
     pKinesisVideoStream->base.pStateMachine = pStateMachine;
 
     // Create the stream upload handle queue

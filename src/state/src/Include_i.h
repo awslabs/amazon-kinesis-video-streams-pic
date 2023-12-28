@@ -23,8 +23,8 @@ extern "C" {
  */
 #define NEXT_SERVICE_CALL_RETRY_DELAY(r) (((UINT64) 1 << (r)) * SERVICE_CALL_RETRY_TIMEOUT)
 
-#define DEFAULT_STATE_MACHINE_TAG   (PCHAR) "KVS_STATE"
-#define MAX_STATE_TAG_LENGTH        32
+#define DEFAULT_STATE_MACHINE_TAG (PCHAR) "KVS_STATE"
+#define MAX_STATE_TAG_LENGTH      32
 /**
  * State Machine context
  */

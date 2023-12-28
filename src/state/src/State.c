@@ -302,7 +302,8 @@ CleanUp:
     return retStatus;
 }
 
-STATUS setStateMachineTag(PStateMachine pStateMachine, PCHAR stateTag) {
+STATUS setStateMachineTag(PStateMachine pStateMachine, PCHAR stateTag)
+{
     STATUS retStatus = STATUS_SUCCESS;
     PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
     CHK_WARN(pStateMachineImpl != NULL, STATUS_NULL_ARG, "State machine object not created. Cannot set tag");
