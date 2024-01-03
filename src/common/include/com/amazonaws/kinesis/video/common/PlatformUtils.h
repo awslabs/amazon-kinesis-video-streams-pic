@@ -52,6 +52,8 @@ extern logPrintFunc globalCustomLogPrintFn;
 #define LOG_LEVEL_ERROR   5
 #define LOG_LEVEL_FATAL   6
 #define LOG_LEVEL_SILENT  7
+
+// Adding this after LOG_LEVEL_SILENT to ensure we do not break backward compat
 #define LOG_LEVEL_PROFILE 8
 
 #define LOG_LEVEL_VERBOSE_STR (const PCHAR) "VERBOSE"
