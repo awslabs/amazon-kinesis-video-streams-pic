@@ -59,46 +59,17 @@ STATUS createStateMachineWithName(PStateMachineState pStates, UINT32 stateCount,
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
-    PStateMachineImpl pStateMachine = NULL;
-    UINT32 allocationSize = 0;
-
-    CHK(pStates != NULL && ppStateMachine != NULL && getCurrentTimeFunc != NULL && pStateMachineName != NULL, STATUS_NULL_ARG);
-    CHK(stateCount > 0, STATUS_INVALID_ARG);
-    CHK(STRLEN(pStateMachineName) <= MAX_STATE_MACHINE_NAME_LENGTH, STATUS_STATE_MACHINE_NAME_LEN);
-
-    // Allocate the main struct with an array of stream pointers at the end
-    // NOTE: The calloc will Zero the fields
-    allocationSize = SIZEOF(StateMachineImpl) + SIZEOF(StateMachineState) * stateCount;
-    pStateMachine = (PStateMachineImpl) MEMCALLOC(1, allocationSize);
-    CHK(pStateMachine != NULL, STATUS_NOT_ENOUGH_MEMORY);
-
-    // Set the values
-    pStateMachine->stateMachine.version = STATE_MACHINE_CURRENT_VERSION;
-    pStateMachine->getCurrentTimeFunc = getCurrentTimeFunc;
-    pStateMachine->getCurrentTimeFuncCustomData = getCurrentTimeFuncCustomData;
-    pStateMachine->stateCount = stateCount;
-    pStateMachine->customData = customData;
-    STRNCPY(pStateMachine->stateMachineName, pStateMachineName, MAX_STATE_MACHINE_NAME_LENGTH);
-    pStateMachine->stateMachineName[MAX_STATE_MACHINE_NAME_LENGTH] = '\0';
-
-    // Set the states pointer and copy the globals
-    pStateMachine->states = (PStateMachineState) (pStateMachine + 1);
-
-    // Copy the states over
-    MEMCPY(pStateMachine->states, pStates, SIZEOF(StateMachineState) * stateCount);
-
-    // NOTE: Set the initial state as the first state.
-    pStateMachine->context.pCurrentState = pStateMachine->states;
-
-    // Assign the created object
-    *ppStateMachine = (PStateMachine) pStateMachine;
-
+    PStateMachineImpl pStateMachineImpl;
+    CHK_ERR(pStateMachineName != NULL, STATUS_NULL_ARG, "State machine name is NULL");
+    CHK_ERR(!IS_EMPTY_STRING(pStateMachineName), STATUS_STATE_MACHINE_NAME_LEN_INVALID, "State machine name is empty");
+    CHK(STRNLEN(pStateMachineName, MAX_STATE_MACHINE_NAME_LENGTH + 1) <= MAX_STATE_MACHINE_NAME_LENGTH, STATUS_STATE_MACHINE_NAME_LEN_INVALID);
+    CHK_STATUS(createStateMachine(pStates, stateCount, customData, getCurrentTimeFunc, getCurrentTimeFuncCustomData, ppStateMachine));
+    pStateMachineImpl = (PStateMachineImpl) *ppStateMachine;
+    CHK(pStateMachineImpl != NULL, STATUS_NULL_ARG);
+    STRNCPY(pStateMachineImpl->stateMachineName, pStateMachineName, MAX_STATE_MACHINE_NAME_LENGTH);
+    pStateMachineImpl->stateMachineName[MAX_STATE_MACHINE_NAME_LENGTH] = '\0';
+    *ppStateMachine = (PStateMachine) pStateMachineImpl;
 CleanUp:
-
-    if (STATUS_FAILED(retStatus)) {
-        freeStateMachine((PStateMachine) pStateMachine);
-    }
-
     LEAVES();
     return retStatus;
 }

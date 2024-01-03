@@ -22,10 +22,10 @@ extern "C" {
 ////////////////////////////////////////////////////
 // Status return codes
 ////////////////////////////////////////////////////
-#define STATUS_STATE_BASE                    0x52000000
-#define STATUS_INVALID_STREAM_STATE          STATUS_STATE_BASE + 0x0000000e
-#define STATUS_STATE_MACHINE_STATE_NOT_FOUND STATUS_STATE_BASE + 0x00000056
-#define STATUS_STATE_MACHINE_NAME_LEN        STATUS_STATE_BASE + 0x0000009a // 0x00000057 to 0x0000008f used with STATUS_CLIENT_BASE
+#define STATUS_STATE_BASE                     0x52000000
+#define STATUS_INVALID_STREAM_STATE           STATUS_STATE_BASE + 0x0000000e
+#define STATUS_STATE_MACHINE_STATE_NOT_FOUND  STATUS_STATE_BASE + 0x00000056
+#define STATUS_STATE_MACHINE_NAME_LEN_INVALID STATUS_STATE_BASE + 0x0000009a // 0x00000057 to 0x0000008f used with STATUS_CLIENT_BASE
 
 ////////////////////////////////////////////////////
 // Main structure declarations
@@ -126,7 +126,7 @@ PUBLIC_API STATUS createStateMachine(PStateMachineState, UINT32, UINT64, GetCurr
 
 /**
  * Creates a state machine with a state machine name string to identify the state machine. State machine name is mandatory
- * if using this API and cannot exceed 32 characters
+ * if using this API and cannot exceed 32 characters and cannot be an empty string
  *
  * @param 1 PStateMachineState - IN - List of state machine details on states, state transition functions and valid state transition list (mandatory)
  * @param 2 UINT32 - IN - stateCount - Number of entries in the PStateMachineState list (mandatory)

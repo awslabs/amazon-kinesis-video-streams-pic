@@ -90,7 +90,11 @@ TEST_F(StateApiTest, createStateMachineWithName_InvalidArg)
                                                         (UINT64) this, kinesisVideoStreamDefaultGetCurrentTime,
                                                         (UINT64) this, NULL, &pStateMachine));
     EXPECT_EQ(NULL, getStateMachineName(pStateMachine));
-    EXPECT_EQ(STATUS_STATE_MACHINE_NAME_LEN, createStateMachineWithName(TEST_STATE_MACHINE_STATES, TEST_STATE_MACHINE_STATE_COUNT,
+    EXPECT_EQ(STATUS_STATE_MACHINE_NAME_LEN_INVALID, createStateMachineWithName(TEST_STATE_MACHINE_STATES, TEST_STATE_MACHINE_STATE_COUNT,
+                                                          (UINT64) this, kinesisVideoStreamDefaultGetCurrentTime,
+                                                          (UINT64) this, (PCHAR)"", &pStateMachine));
+    EXPECT_EQ(NULL, getStateMachineName(pStateMachine));
+    EXPECT_EQ(STATUS_STATE_MACHINE_NAME_LEN_INVALID, createStateMachineWithName(TEST_STATE_MACHINE_STATES, TEST_STATE_MACHINE_STATE_COUNT,
                                                                            (UINT64) this, kinesisVideoStreamDefaultGetCurrentTime,
                                                                            (UINT64) this, longRandomName, &pStateMachine));
     EXPECT_EQ(STATUS_SUCCESS, freeStateMachine(pStateMachine));
