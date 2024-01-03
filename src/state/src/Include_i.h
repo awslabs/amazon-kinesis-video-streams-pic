@@ -62,6 +62,8 @@ struct __StateMachineImpl {
     // State machine state count
     UINT32 stateCount;
 
+    CHAR stateMachineName[MAX_STATE_MACHINE_NAME_LENGTH + 1];
+
     // State machine states following the main structure
     PStateMachineState states;
 };

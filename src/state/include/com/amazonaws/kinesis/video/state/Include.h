@@ -22,9 +22,10 @@ extern "C" {
 ////////////////////////////////////////////////////
 // Status return codes
 ////////////////////////////////////////////////////
-#define STATUS_STATE_BASE                    0x52000000
-#define STATUS_INVALID_STREAM_STATE          STATUS_STATE_BASE + 0x0000000e
-#define STATUS_STATE_MACHINE_STATE_NOT_FOUND STATUS_STATE_BASE + 0x00000056
+#define STATUS_STATE_BASE                     0x52000000
+#define STATUS_INVALID_STREAM_STATE           STATUS_STATE_BASE + 0x0000000e
+#define STATUS_STATE_MACHINE_STATE_NOT_FOUND  STATUS_STATE_BASE + 0x00000056
+#define STATUS_STATE_MACHINE_NAME_LEN_INVALID STATUS_STATE_BASE + 0x0000009a // 0x00000057 to 0x0000008f used with STATUS_CLIENT_BASE
 
 ////////////////////////////////////////////////////
 // Main structure declarations
@@ -43,6 +44,11 @@ extern "C" {
  * State machine current version
  */
 #define STATE_MACHINE_CURRENT_VERSION 0
+
+/**
+ * Maximum state machine name length
+ */
+#define MAX_STATE_MACHINE_NAME_LENGTH 32
 
 /**
  * State transition function definitions
@@ -104,15 +110,114 @@ typedef struct __StateMachine* PStateMachine;
 // Public functions
 ////////////////////////////////////////////////////
 
+/**
+ * Creates the state machine object
+ *
+ * @param 1 PStateMachineState - IN - List of state machine details on states, state transition functions and valid state transition list (mandatory)
+ * @param 2 UINT32 - IN - stateCount - Number of entries in the PStateMachineState list (mandatory)
+ * @param 3 UINT64 - IN - customData - application specific data that needs to be passed around (optional)
+ * @param 4 GetCurrentTimeFunc - IN - custom get time function that the state machine should use to state transition wait time (optional)
+ * @param 5 UINT64 - IN - getCurrentTimeFuncCustomData - custom data for getCurrentTimeFunc (optional)
+ * @param 6 PStateMachine - OUT - Allocated state machine object
+ *
+ * @return - STATUS code of the execution
+ */
 PUBLIC_API STATUS createStateMachine(PStateMachineState, UINT32, UINT64, GetCurrentTimeFunc, UINT64, PStateMachine*);
+
+/**
+ * Creates a state machine with a state machine name string to identify the state machine. State machine name is mandatory
+ * if using this API and cannot exceed 32 characters and cannot be an empty string
+ *
+ * @param 1 PStateMachineState - IN - List of state machine details on states, state transition functions and valid state transition list (mandatory)
+ * @param 2 UINT32 - IN - stateCount - Number of entries in the PStateMachineState list (mandatory)
+ * @param 3 UINT64 - IN - customData - application specific data that needs to be passed around (optional)
+ * @param 4 GetCurrentTimeFunc - IN - custom get time function that the state machine should use to state transition wait time (optional)
+ * @param 5 UINT64 - IN - getCurrentTimeFuncCustomData - custom data for getCurrentTimeFunc (optional)
+ * @param 6 PCHAR - IN - pStateMachineName - name for the state machine. This will be used in the logs to uniquely identify a state machine (useful
+ * when there are multiple state machines running simultaneously
+ * @param 6 PStateMachine - OUT - Allocated state machine object
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS createStateMachineWithName(PStateMachineState, UINT32, UINT64, GetCurrentTimeFunc, UINT64, PCHAR, PStateMachine*);
+
+/**
+ * Free the state machine object
+ * @param 1 PStateMachine - IN - State machine object to be deallocated
+ *
+ * @return - STATUS code of the execution
+ */
 PUBLIC_API STATUS freeStateMachine(PStateMachine);
+
+/**
+ * Step to next valid state in a state machine.
+ * @param 1 PStateMachine - IN - State machine object
+ *
+ * @return - STATUS code of the execution
+ */
 PUBLIC_API STATUS stepStateMachine(PStateMachine);
+
+/**
+ * Checks whether the next state machine state is in the list of accepted states
+ * @param 1 PStateMachine - IN - State machine object
+ * @param 2 UINT64 - IN - requiredStates - ORed list of allowed states to transition to a particular state
+ *
+ * @return - STATUS code of the execution
+ */
 PUBLIC_API STATUS acceptStateMachineState(PStateMachine, UINT64);
+
+/**
+ * Validate if the next state can accept the current state before transitioning
+ * @param 1 PStateMachine - IN - State machine object
+ * @param 2 UINT64 - IN - state - The next state to transition to
+ * @param 3 PStateMachineState - OUT - Pointer to the state object given it's state
+ *
+ * @return - STATUS code of the execution
+ */
 PUBLIC_API STATUS getStateMachineState(PStateMachine, UINT64, PStateMachineState*);
+
+/**
+ * Gets a pointer to the current state object
+ * @param 1 PStateMachine - IN - State machine object
+ * @param 3 PStateMachineState - OUT - Pointer to the state object for the current state
+ *
+ * @return - STATUS code of the execution
+ */
 PUBLIC_API STATUS getStateMachineCurrentState(PStateMachine, PStateMachineState*);
+
+/**
+ * Force sets a pointer to the current state object
+ * @param 1 PStateMachine - IN - State machine object
+ * @param 3 UINT64 - IN - state - Set state machine to a particular state
+ *
+ * @return - STATUS code of the execution
+ */
 PUBLIC_API STATUS setStateMachineCurrentState(PStateMachine, UINT64);
+
+/**
+ * Resets the state machine retry count
+ * @param 1 PStateMachine - IN - State machine object to be deallocated
+ *
+ * @return - STATUS code of the execution
+ */
 PUBLIC_API STATUS resetStateMachineRetryCount(PStateMachine);
+
+/**
+ * Calls the from function of the current state to determine if the state machine is ready to
+ * move on to another state.
+ * @param 1 PStateMachine - IN - State machine object to be deallocated
+ * @param 2 PBOOL - OUT - Returns TRUE if state machine is ready to transition, else false
+ *
+ * @return - STATUS code of the execution
+ */
 PUBLIC_API STATUS checkForStateTransition(PStateMachine, PBOOL);
+
+/**
+ * Return state machine name set up
+ * @param 1 PStateMachine - IN - State machine object to be deallocated
+ * @return - Returns the name set for the state machine
+ */
+PUBLIC_API const PCHAR getStateMachineName(PStateMachine);
 
 static const ExponentialBackoffRetryStrategyConfig DEFAULT_STATE_MACHINE_EXPONENTIAL_BACKOFF_RETRY_CONFIGURATION = {
     /* Exponential wait times with this config will look like following -
