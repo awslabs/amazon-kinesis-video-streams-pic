@@ -846,6 +846,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         CHK_STATUS(appendValidatedMetadata(pKinesisVideoStream, pSerializedMetadata));
 
         // Package the not-applied metadata as the frame bits
+        DLOGI("EEEEEEE: %d", __LINE__);
         CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, TRUE, NULL, &packagedSize));
     } else {
         // Get the size of the packaged frame
@@ -892,6 +893,8 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // Check if we are packaging special EoFr
     if (CHECK_FRAME_FLAG_END_OF_FRAGMENT(pFrame->flags)) {
         // Store the metadata at the beginning of the allocation
+
+        DLOGI("EEEEEEE: %d", __LINE__);
         CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, TRUE, pAlloc, &packagedSize));
 
         // Synthesize the encodedFrameInfo
@@ -923,6 +926,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
                     packagedSize - encodedFrameInfo.dataOffset);
 
             // Metadata will be packaged after the MKV header but before the cluster
+            DLOGI("EEEEEEE: %d", __LINE__);
             CHK_STATUS(packageStreamMetadata(pKinesisVideoStream, MKV_STATE_START_CLUSTER, FALSE, pAlloc + encodedFrameInfo.dataOffset,
                                              &packagedMetadataSize));
         }
@@ -2084,6 +2088,8 @@ STATUS putFragmentMetadata(PKinesisVideoStream pKinesisVideoStream, PCHAR name, 
 
     // Ensure we don't have more than MAX size of the metadata queue
     CHK_STATUS(stackQueueGetCount(pKinesisVideoStream->pMetadataQueue, &metadataQueueSize));
+
+    DLOGI("Queue size: %d Name: %s Value: %s Persistent: %d", metadataQueueSize, name, value, persistent);
     CHK(metadataQueueSize < MAX_FRAGMENT_METADATA_COUNT, STATUS_MAX_FRAGMENT_METADATA_COUNT);
 
     CHK_STATUS(createSerializedMetadata(name, value, persistent, packagedSize, STREAM_EVENT_TYPE_NONE, MKV_TREE_TAGS, &pSerializedMetadata));
@@ -2992,6 +2998,8 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
 
     // Get the count of metadata
     CHK_STATUS(stackQueueGetCount(pKinesisVideoStream->pMetadataQueue, &metadataCount));
+
+    DLOGI("WWWWWWW: %d", metadataCount);
 
     // Iterate to get the required size if we only need the size
     if (pBuffer == NULL) {
