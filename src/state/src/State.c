@@ -329,7 +329,7 @@ CleanUp:
 }
 
 // This function is useful for unit tests
-const PCHAR getStateMachineName(PStateMachine pStateMachine)
+PCHAR getStateMachineName(PStateMachine pStateMachine)
 {
     PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
     if (pStateMachineImpl == NULL) {
