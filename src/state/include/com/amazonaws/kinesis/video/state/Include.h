@@ -217,7 +217,7 @@ PUBLIC_API STATUS checkForStateTransition(PStateMachine, PBOOL);
  * @param 1 PStateMachine - IN - State machine object to be deallocated
  * @return - Returns the name set for the state machine
  */
-PUBLIC_API const PCHAR getStateMachineName(PStateMachine);
+PUBLIC_API const CHAR* getStateMachineName(PStateMachine);
 
 static const ExponentialBackoffRetryStrategyConfig DEFAULT_STATE_MACHINE_EXPONENTIAL_BACKOFF_RETRY_CONFIGURATION = {
     /* Exponential wait times with this config will look like following -
