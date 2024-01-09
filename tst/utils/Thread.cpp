@@ -54,7 +54,10 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheck)
         EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(threads[index], NULL));
     }
 
+    MUTEX_LOCK(gThreadMutex);
     EXPECT_EQ(0, gThreadCurrentCount);
+    MUTEX_UNLOCK(gThreadMutex);
+
 
     for (index = 0; index < TEST_THREAD_COUNT; index++) {
         EXPECT_TRUE(gThreadVisited[index]) << "Thread didn't visit index " << index;
@@ -94,13 +97,19 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndCancel)
     }
 
     // Validate that threads have been killed and didn't finish successfully
+    MUTEX_LOCK(gThreadMutex);
     EXPECT_EQ(TEST_THREAD_COUNT, gThreadCurrentCount);
+    MUTEX_UNLOCK(gThreadMutex);
+
 
     for (index = 0; index < TEST_THREAD_COUNT; index++) {
         EXPECT_TRUE(gThreadVisited[index]) << "Thread didn't visit index " << index;
         EXPECT_FALSE(gThreadCleared[index]) << "Thread shouldn't have cleared index " << index;
     }
 
+    MUTEX_LOCK(gThreadMutex);
     gThreadCurrentCount = 0;
+    MUTEX_UNLOCK(gThreadMutex);
+
     MUTEX_FREE(gThreadMutex);
 }
