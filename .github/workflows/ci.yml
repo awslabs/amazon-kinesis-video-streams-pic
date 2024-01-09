@@ -282,26 +282,40 @@ jobs:
   #         make
   #         ulimit -c unlimited -S
   #         timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-  # thread-sanitizer:
-  #   runs-on: ubuntu-18.04
-  #   env:
-  #     CC: clang-7
-  #     CXX: clang++-7
-  #     AWS_KVS_LOG_LEVEL: 2
-  #     TSAN_OPTIONS: halt_on_error=1:suppressions=../../tst/suppressions/TSAN.supp
-  #   steps:
-  #     - name: Clone repository
-  #       uses: actions/checkout@v2
-  #     - name: Install dependencies
-  #       run: |
-  #         sudo apt-get update
-  #         sudo apt-get -y install clang-7
-  #     - name: Build repository
-  #       run: |
-  #         mkdir build && cd build
-  #         cmake .. -DBUILD_TEST=TRUE -DTHREAD_SANITIZER=TRUE
-  #         make
-  #         ./tst/kvspic_test --gtest_break_on_failure --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:ThreadFunctionalityTest.ThreadCreateAndCancel"
+  thread-sanitizer:
+    runs-on: ubuntu-latest
+    env:
+      CC: clang
+      CXX: clang++
+      TSAN_OPTIONS: halt_on_error=1:suppressions=../../tst/suppressions/TSAN.supp
+      AWS_KVS_LOG_LEVEL: 2
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install clang
+      - name: Build repository
+        run: |
+          mkdir build && cd build
+          cmake .. -DBUILD_TEST=TRUE -DTHREAD_SANITIZER=TRUE
+          make
+      - name: Run tests
+        run: |
+          cd build
+          ulimit -c unlimited -S
+          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+        run: |
+          rm -rf build
+          mkdir build && cd build
+          cmake .. -DBUILD_TEST=TRUE -DTHREAD_SANITIZER=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+          make
+      - name: Run tests
+        run: |
+          cd build
+          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   windows-msvc:
     runs-on: windows-2022
     env:
