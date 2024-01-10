@@ -71,6 +71,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
 
     // wait for threads to exit before test ends
     THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    MUTEX_FREE(gTerminateMutex);
 }
 
 TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
@@ -93,6 +94,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
 
     // wait for threads to exit before test ends
     THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    MUTEX_FREE(gTerminateMutex);
 }
 
 TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
@@ -136,6 +138,7 @@ TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
 
     // wait for threads to exit before test ends
     THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    MUTEX_FREE(gTerminateMutex);
 }
 
 TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest)
@@ -163,6 +166,7 @@ TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest
 
     // wait for threads to exit before test ends
     THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    MUTEX_FREE(gTerminateMutex);
 }
 
 
