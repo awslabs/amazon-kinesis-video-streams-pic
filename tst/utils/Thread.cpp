@@ -18,20 +18,22 @@ PVOID testThreadRoutine(PVOID arg)
 {
     MUTEX_LOCK(gThreadMutex);
     gThreadCount++;
-    MUTEX_UNLOCK(gThreadMutex);
     struct sleep_times* st = (struct sleep_times*) arg;
 
     // Mark as visited
     st->threadVisited = TRUE;
+    MUTEX_UNLOCK(gThreadMutex);
+
 
     UINT64 sleepTime = st->threadSleepTime;
     // Just sleep for some time
     THREAD_SLEEP(sleepTime);
 
+    MUTEX_LOCK(gThreadMutex);
+
     // Mark as cleared
     st->threadCleared = TRUE;
 
-    MUTEX_LOCK(gThreadMutex);
     gThreadCount--;
     MUTEX_UNLOCK(gThreadMutex);
     return NULL;
@@ -105,12 +107,13 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndCancel)
     // Validate that threads have been killed and didn't finish successfully
     MUTEX_LOCK(gThreadMutex);
     EXPECT_EQ(TEST_THREAD_COUNT, gThreadCount);
-    MUTEX_UNLOCK(gThreadMutex);
 
     for (index = 0; index < TEST_THREAD_COUNT; index++) {
         EXPECT_TRUE(st[index].threadVisited) << "Thread didn't visit index " << index;
         EXPECT_FALSE(st[index].threadCleared) << "Thread shouldn't have cleared index " << index;
     }
 
+    MUTEX_UNLOCK(gThreadMutex);
+    
     MUTEX_FREE(gThreadMutex);
 }
