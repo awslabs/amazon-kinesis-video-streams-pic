@@ -114,6 +114,6 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndCancel)
     }
 
     MUTEX_UNLOCK(gThreadMutex);
-    
+
     MUTEX_FREE(gThreadMutex);
 }

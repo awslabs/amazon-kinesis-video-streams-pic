@@ -5,6 +5,9 @@
 class ThreadpoolFunctionalityTest : public UtilTestBase {
 };
 
+MUTEX gTerminateMutex;
+
+
 PVOID randomishTask(PVOID customData)
 {
     THREAD_SLEEP((rand() % 20 + 100) * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
@@ -14,9 +17,14 @@ PVOID randomishTask(PVOID customData)
 PVOID exitOnTeardownTask(PVOID customData)
 {
     BOOL* pTerminate = (BOOL*) customData;
-    while (!*pTerminate) {
+    BOOL terminate;
+    do {
         THREAD_SLEEP(20 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
-    }
+        MUTEX_LOCK(gTerminateMutex);
+        terminate = *pTerminate;
+        MUTEX_UNLOCK(gTerminateMutex);
+    } while(!terminate);
+
     return 0;
 }
 
@@ -44,6 +52,7 @@ TEST_F(ThreadpoolFunctionalityTest, CreateDestroyTest)
 
 TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
 {
+    gTerminateMutex = MUTEX_CREATE(FALSE);
     PThreadpool pThreadpool = NULL;
     BOOL terminate = FALSE;
     srand(GETTIME());
@@ -55,7 +64,9 @@ TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
 
     EXPECT_EQ(STATUS_SUCCESS, threadpoolTryAdd(pThreadpool, exitOnTeardownTask, &terminate));
     EXPECT_EQ(STATUS_THREADPOOL_MAX_COUNT, threadpoolTryAdd(pThreadpool, exitOnTeardownTask, &terminate));
+    MUTEX_LOCK(gTerminateMutex);
     terminate = TRUE;
+    MUTEX_UNLOCK(gTerminateMutex);
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
     // wait for threads to exit before test ends
@@ -64,6 +75,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
 
 TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
 {
+    gTerminateMutex = MUTEX_CREATE(FALSE);
     PThreadpool pThreadpool = NULL;
     BOOL terminate = FALSE;
     UINT32 count = 0;
@@ -74,7 +86,9 @@ TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
     EXPECT_EQ(STATUS_SUCCESS, threadpoolPush(pThreadpool, exitOnTeardownTask, &terminate));
     EXPECT_EQ(STATUS_SUCCESS, threadpoolTotalThreadCount(pThreadpool, &count));
     EXPECT_EQ(count, 2);
+    MUTEX_LOCK(gTerminateMutex);
     terminate = TRUE;
+    MUTEX_UNLOCK(gTerminateMutex);
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
     // wait for threads to exit before test ends
@@ -83,6 +97,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
 
 TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
 {
+    gTerminateMutex = MUTEX_CREATE(FALSE);
     PThreadpool pThreadpool = NULL;
     UINT32 count = 0;
     BOOL terminate = FALSE;
@@ -113,7 +128,10 @@ TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
     EXPECT_EQ(STATUS_SUCCESS, threadpoolTotalThreadCount(pThreadpool, &count));
     EXPECT_EQ(count, min + 1);
 
+    MUTEX_LOCK(gTerminateMutex);
     terminate = TRUE;
+    MUTEX_UNLOCK(gTerminateMutex);
+
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
     // wait for threads to exit before test ends
@@ -122,6 +140,7 @@ TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
 
 TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest)
 {
+    gTerminateMutex = MUTEX_CREATE(FALSE);
     PThreadpool pThreadpool = NULL;
     UINT32 count = 0;
     BOOL terminate = FALSE;
@@ -138,7 +157,9 @@ TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest
     THREAD_SLEEP(110 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
     // now threads will exit after threadpoolFree
+    MUTEX_LOCK(gTerminateMutex);
     terminate = TRUE;
+    MUTEX_UNLOCK(gTerminateMutex);
 
     // wait for threads to exit before test ends
     THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
@@ -176,7 +197,6 @@ TEST_F(ThreadpoolFunctionalityTest, MultithreadUseTest)
     PThreadpool pThreadpool = NULL;
     ThreadpoolUser user;
     UINT32 count = 0;
-    BOOL terminate = FALSE;
     srand(GETTIME());
     const UINT32 max = 10;
     UINT32 min = rand() % (max / 2) + 2;
