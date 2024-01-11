@@ -334,14 +334,14 @@ STATUS fromGetTokenStreamState(UINT64 customData, PUINT64 pState)
 
     CHK(pKinesisVideoStream != NULL && pState != NULL, STATUS_NULL_ARG);
 
-    DLOGI("I: %d", i);
-    if(i > 0) {
-        DLOGI("Here");
-        pKinesisVideoStream->base.result = SERVICE_CALL_FORBIDDEN;
-    } else {
-        i++;
-    }
-
+//    DLOGI("I: %d", i);
+//    if(i > 0) {
+//        DLOGI("Here");
+//        pKinesisVideoStream->base.result = SERVICE_CALL_FORBIDDEN;
+//    } else {
+//        i++;
+//    }
+    DLOGI("CHecking for transition");
     // Transition to states if not stopped
     if (pKinesisVideoStream->streamState == STREAM_STATE_STOPPED) {
         state = STREAM_STATE_STOPPED;
