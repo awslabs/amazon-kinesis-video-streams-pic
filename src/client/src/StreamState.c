@@ -329,9 +329,17 @@ STATUS fromGetTokenStreamState(UINT64 customData, PUINT64 pState)
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
+    static int i = 0;
     UINT64 state = STREAM_STATE_GET_TOKEN;
 
     CHK(pKinesisVideoStream != NULL && pState != NULL, STATUS_NULL_ARG);
+
+    DLOGI("I: %d", i);
+    if(i > 0) {
+        DLOGI("Here");
+        pKinesisVideoStream->base.result = SERVICE_CALL_FORBIDDEN;
+        i++;
+    }
 
     // Transition to states if not stopped
     if (pKinesisVideoStream->streamState == STREAM_STATE_STOPPED) {
