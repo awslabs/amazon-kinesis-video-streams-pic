@@ -409,6 +409,7 @@ STATUS getStreamingTokenResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_
 
         currentTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
 
+        DLOGI("Expiration: %llu, %llu", expiration, currentTime);
         // Validate the minimum duration for the token expiration
         CHK(expiration > currentTime && (expiration - currentTime) >= MIN_STREAMING_TOKEN_EXPIRATION_DURATION, STATUS_INVALID_TOKEN_EXPIRATION);
 
@@ -418,11 +419,13 @@ STATUS getStreamingTokenResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_
         // Introduce jitter to the expiration time
         pKinesisVideoStream->streamingAuthInfo.expiration =
             randomizeAuthInfoExpiration(pKinesisVideoClient, pKinesisVideoStream->streamingAuthInfo.expiration, currentTime);
-
+        DLOGI("Rotating creds");
         // If we don't have a token we assume there is no auth.
         if (pToken == NULL || tokenSize == 0) {
+            DLOGI("Auth info none");
             pKinesisVideoStream->streamingAuthInfo.type = AUTH_INFO_NONE;
         } else {
+            DLOGI("Auth info STS");
             pKinesisVideoStream->streamingAuthInfo.type = AUTH_INFO_TYPE_STS;
             MEMCPY(pKinesisVideoStream->streamingAuthInfo.data, pToken, tokenSize);
         }

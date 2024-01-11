@@ -337,6 +337,7 @@ STATUS fromGetTokenStreamState(UINT64 customData, PUINT64 pState)
     if (pKinesisVideoStream->streamState == STREAM_STATE_STOPPED) {
         state = STREAM_STATE_STOPPED;
     } else if (pKinesisVideoStream->base.result == SERVICE_CALL_RESULT_OK) {
+        DLOGI("Transitioning to ready");
         state = STREAM_STATE_READY;
     }
 
@@ -619,7 +620,7 @@ STATUS executeGetTokenStreamState(UINT64 customData, UINT64 time)
 
     // Step the client state machine first
     CHK_STATUS(stepClientStateMachine(pKinesisVideoClient));
-
+    DLOGI("Refreshing here");
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
@@ -635,7 +636,7 @@ STATUS executeGetTokenStreamState(UINT64 customData, UINT64 time)
     CHK_STATUS(pKinesisVideoClient->clientCallbacks.getStreamingTokenFn(pKinesisVideoClient->clientCallbacks.customData,
                                                                         pKinesisVideoStream->streamInfo.name, STREAM_ACCESS_MODE_READ,
                                                                         &pKinesisVideoStream->base.serviceCallContext));
-
+    DLOGI("Refreshing done");
 CleanUp:
 
     LEAVES();

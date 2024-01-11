@@ -154,6 +154,7 @@ STATUS fromAuthClientState(UINT64 customData, PUINT64 pState)
 
         case AUTH_INFO_TYPE_STS:
             currentTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
+            DLOGI("Timestamp: %llu %llu", currentTime, pKinesisVideoClient->tokenAuthInfo.expiration);
             if (currentTime >= pKinesisVideoClient->tokenAuthInfo.expiration ||
                 (pKinesisVideoClient->tokenAuthInfo.expiration - currentTime) < MIN_STREAMING_TOKEN_EXPIRATION_DURATION) {
                 DLOGW("Invalid auth token as it is expiring in less than %u seconds",
