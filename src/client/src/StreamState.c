@@ -338,6 +338,7 @@ STATUS fromGetTokenStreamState(UINT64 customData, PUINT64 pState)
     if(i > 0) {
         DLOGI("Here");
         pKinesisVideoStream->base.result = SERVICE_CALL_FORBIDDEN;
+    } else {
         i++;
     }
 
