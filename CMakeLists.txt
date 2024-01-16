@@ -31,6 +31,11 @@ add_definitions(-DSDK_VERSION=\"${GIT_COMMIT_HASH}\")
 add_definitions(-DDETECTED_GIT_HASH)
 
 
+if(NOT CMAKE_BUILD_TYPE)
+  message(STATUS "Setting CMAKE_BUILD_TYPE to Release by default")
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
+endif()
+
 if(BUILD_SHARED_LIBS)
   set(LIBTYPE SHARED)
 elseif()
