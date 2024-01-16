@@ -380,8 +380,6 @@ class ClientTestBase : public ::testing::Test {
             ASSERT_EQ(retStatus, STATUS_SUCCESS);
         }
 
-        printf("Log string in init: %s\n", logLevelStr);
-
         // Zero things out
         mClientHandle = INVALID_CLIENT_HANDLE_VALUE;
         MEMSET(&mDeviceInfo, 0x00, SIZEOF(DeviceInfo));
@@ -602,7 +600,6 @@ class ClientTestBase : public ::testing::Test {
         // Set the random number generator seed for reproducibility
         SRAND(12345);
         // Create the client
-        DLOGW("In set up: log level: %d", mDeviceInfo.clientInfo.loggerLogLevel);
         STATUS status = createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &mClientHandle);
 
         DLOGI("Create client returned status code is %08x\n", status);
