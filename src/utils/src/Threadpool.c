@@ -61,14 +61,27 @@ PVOID threadpoolActor(PVOID data)
             MUTEX_UNLOCK(pThreadData->dataMutex);
             if (safeBlockingQueueDequeue(pQueue, &item) == STATUS_SUCCESS) {
                 pTask = (PTaskData) item;
-                ATOMIC_DECREMENT(&pThreadData->pThreadpool->availableThreads);
-                if (pTask != NULL) {
-                    pTask->function(pTask->customData);
-                    SAFE_MEMFREE(pTask);
+
+                // must lock ThreadData mutex in order to interact with pThreadpool
+                MUTEX_LOCK(pThreadData->dataMutex);
+                if (!ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
+                    ATOMIC_DECREMENT(&pThreadData->pThreadpool->availableThreads);
+                    MUTEX_UNLOCK(pThreadData->dataMutex);
+                    if (pTask != NULL) {
+                        pTask->function(pTask->customData);
+                        SAFE_MEMFREE(pTask);
+                    }
+                } else {
+                    finished = TRUE;
+                    MUTEX_UNLOCK(pThreadData->dataMutex);
                 }
                 // got an error, but not terminating, so fixup available thread count
-            } else if (!ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
-                ATOMIC_DECREMENT(&pThreadData->pThreadpool->availableThreads);
+            } else {
+                MUTEX_LOCK(pThreadData->dataMutex);
+                if (!ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
+                    ATOMIC_DECREMENT(&pThreadData->pThreadpool->availableThreads);
+                }
+                MUTEX_UNLOCK(pThreadData->dataMutex);
             }
         } else {
             finished = TRUE;
