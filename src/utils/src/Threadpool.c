@@ -18,7 +18,7 @@ typedef struct TaskData {
 
 PVOID threadpoolTermination(PVOID data)
 {
-    THREAD_SLEEP(50 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(20 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     return 0;
 }
 
@@ -358,7 +358,7 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
         listMutexLocked = FALSE;
         if (!finished) {
             // the aforementioned sleep
-            THREAD_SLEEP(10 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+            THREAD_SLEEP(5 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
         }
     }
 
