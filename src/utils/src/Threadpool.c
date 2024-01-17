@@ -35,7 +35,7 @@ PVOID threadpoolActor(PVOID data)
 
     if (pThreadData == NULL) {
         DLOGE("Threadpool actor unable to start, threaddata is NULL");
-        return 0;
+        return NULL;
     }
 
     // attempt to acquire thread mutex, if we cannot it means the threadpool has already been
@@ -45,7 +45,7 @@ PVOID threadpoolActor(PVOID data)
 
         if (pThreadpool == NULL) {
             DLOGE("Threadpool actor unable to start, threadpool is NULL");
-            return 0;
+            return NULL;
         }
 
         pQueue = pThreadpool->taskQueue;
@@ -120,7 +120,7 @@ PVOID threadpoolActor(PVOID data)
     // we assume we've already been removed from the threadList
     MUTEX_FREE(pThreadData->dataMutex);
     SAFE_MEMFREE(pThreadData);
-    return 0;
+    return NULL;
 }
 
 /**
@@ -300,7 +300,7 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
     while (!finished) {
         // lock list mutex
         MUTEX_LOCK(pThreadpool->listMutex);
-        listMutedLocked = TRUE;
+        listMutexLocked = TRUE;
 
         do {
             // iterate on list
@@ -355,7 +355,7 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
         } while (1);
 
         MUTEX_UNLOCK(pThreadpool->listMutex);
-        listMutedLocked = FALSE;
+        listMutexLocked = FALSE;
         if (!finished) {
             // the aforementioned sleep
             THREAD_SLEEP(10 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
@@ -364,7 +364,7 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
 
 CleanUp:
 
-    if (listMutedLocked) {
+    if (listMutexLocked) {
         MUTEX_UNLOCK(pThreadpool->listMutex);
     }
 

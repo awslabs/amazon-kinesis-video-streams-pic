@@ -373,9 +373,11 @@ class ClientTestBase : public ::testing::Test {
     void initTestMembers()
     {
         UINT32 logLevel = 0;
+        STATUS retStatus = STATUS_SUCCESS;
         auto logLevelStr = GETENV("AWS_KVS_LOG_LEVEL");
         if (logLevelStr != NULL) {
-            assert(STRTOUI32(logLevelStr, NULL, 10, &logLevel) == STATUS_SUCCESS);
+            retStatus = STRTOUI32(logLevelStr, NULL, 10, &logLevel);
+            ASSERT_EQ(retStatus, STATUS_SUCCESS);
         }
 
         // Zero things out
@@ -924,9 +926,11 @@ class ClientTestBase : public ::testing::Test {
     virtual void SetUpWithoutClientCreation()
     {
         UINT32 logLevel = 0;
+        STATUS retStatus = STATUS_SUCCESS;
         auto logLevelStr = GETENV("AWS_KVS_LOG_LEVEL");
         if (logLevelStr != NULL) {
-            assert(STRTOUI32(logLevelStr, NULL, 10, &logLevel) == STATUS_SUCCESS);
+            retStatus = STRTOUI32(logLevelStr, NULL, 10, &logLevel);
+            ASSERT_EQ(retStatus, STATUS_SUCCESS);
             SET_LOGGER_LOG_LEVEL(logLevel);
         }
 

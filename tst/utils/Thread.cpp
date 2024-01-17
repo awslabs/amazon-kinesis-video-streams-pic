@@ -5,33 +5,37 @@ class ThreadFunctionalityTest : public UtilTestBase {
 
 #define TEST_THREAD_COUNT       500
 
-UINT64 gThreadCurrentCount = 0;
-UINT64 gThreadSleepTimes[TEST_THREAD_COUNT];
-BOOL gThreadVisited[TEST_THREAD_COUNT];
-BOOL gThreadCleared[TEST_THREAD_COUNT];
 MUTEX gThreadMutex;
+UINT64 gThreadCount;
+
+struct sleep_times {
+    BOOL threadSleepTime;
+    BOOL threadVisited;
+    BOOL threadCleared;
+};
 
 PVOID testThreadRoutine(PVOID arg)
 {
     MUTEX_LOCK(gThreadMutex);
-    gThreadCurrentCount++;
-    MUTEX_UNLOCK(gThreadMutex);
-
-    UINT64 index = (UINT64) arg;
+    gThreadCount++;
+    struct sleep_times* st = (struct sleep_times*) arg;
 
     // Mark as visited
-    gThreadVisited[index] = TRUE;
-
-    // Just sleep for some time
-    THREAD_SLEEP(gThreadSleepTimes[index]);
-
-    // Mark as cleared
-    gThreadCleared[index] = TRUE;
-
-    MUTEX_LOCK(gThreadMutex);
-    gThreadCurrentCount--;
+    st->threadVisited = TRUE;
     MUTEX_UNLOCK(gThreadMutex);
 
+
+    UINT64 sleepTime = st->threadSleepTime;
+    // Just sleep for some time
+    THREAD_SLEEP(sleepTime);
+
+    MUTEX_LOCK(gThreadMutex);
+
+    // Mark as cleared
+    st->threadCleared = TRUE;
+
+    gThreadCount--;
+    MUTEX_UNLOCK(gThreadMutex);
     return NULL;
 }
 
@@ -40,13 +44,14 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheck)
     UINT64 index;
     TID threads[TEST_THREAD_COUNT];
     gThreadMutex = MUTEX_CREATE(FALSE);
+    struct sleep_times st[TEST_THREAD_COUNT];
 
     // Create the threads
     for (index = 0; index < TEST_THREAD_COUNT; index++) {
-        gThreadVisited[index] = FALSE;
-        gThreadCleared[index] = FALSE;
-        gThreadSleepTimes[index] = index * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
-        EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threads[index], testThreadRoutine, (PVOID)index));
+        st[index].threadVisited = FALSE;
+        st[index].threadCleared = FALSE;
+        st[index].threadSleepTime = index * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threads[index], testThreadRoutine, (PVOID)&st[index]));
     }
 
     // Await for the threads to finish
@@ -54,11 +59,13 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheck)
         EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(threads[index], NULL));
     }
 
-    EXPECT_EQ(0, gThreadCurrentCount);
+    MUTEX_LOCK(gThreadMutex);
+    EXPECT_EQ(0, gThreadCount);
+    MUTEX_UNLOCK(gThreadMutex);
 
     for (index = 0; index < TEST_THREAD_COUNT; index++) {
-        EXPECT_TRUE(gThreadVisited[index]) << "Thread didn't visit index " << index;
-        EXPECT_TRUE(gThreadCleared[index]) << "Thread didn't clear index " << index;
+        EXPECT_TRUE(st[index].threadVisited) << "Thread didn't visit index " << index;
+        EXPECT_TRUE(st[index].threadCleared) << "Thread didn't clear index " << index;
     }
 
     MUTEX_FREE(gThreadMutex);
@@ -69,14 +76,17 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndCancel)
     UINT64 index;
     TID threads[TEST_THREAD_COUNT];
     gThreadMutex = MUTEX_CREATE(FALSE);
+    struct sleep_times st[TEST_THREAD_COUNT];
 
     // Create the threads
     for (index = 0; index < TEST_THREAD_COUNT; index++) {
-        gThreadVisited[index] = FALSE;
-        gThreadCleared[index] = FALSE;
+
+        st[index].threadVisited = FALSE;
+        st[index].threadCleared = FALSE;
         // Long sleep
-        gThreadSleepTimes[index] = 20 * HUNDREDS_OF_NANOS_IN_A_SECOND;
-        EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threads[index], testThreadRoutine, (PVOID)index));
+        st[index].threadSleepTime = 20 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threads[index], testThreadRoutine, (PVOID)&st[index]));
 #if !(defined _WIN32 || defined _WIN64 || defined __CYGWIN__)
         // We should detach thread for non-windows platforms only
         // Windows implementation would cancel the handle and the
@@ -93,14 +103,17 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndCancel)
         EXPECT_EQ(STATUS_SUCCESS, THREAD_CANCEL(threads[index]));
     }
 
+
     // Validate that threads have been killed and didn't finish successfully
-    EXPECT_EQ(TEST_THREAD_COUNT, gThreadCurrentCount);
+    MUTEX_LOCK(gThreadMutex);
+    EXPECT_EQ(TEST_THREAD_COUNT, gThreadCount);
 
     for (index = 0; index < TEST_THREAD_COUNT; index++) {
-        EXPECT_TRUE(gThreadVisited[index]) << "Thread didn't visit index " << index;
-        EXPECT_FALSE(gThreadCleared[index]) << "Thread shouldn't have cleared index " << index;
+        EXPECT_TRUE(st[index].threadVisited) << "Thread didn't visit index " << index;
+        EXPECT_FALSE(st[index].threadCleared) << "Thread shouldn't have cleared index " << index;
     }
 
-    gThreadCurrentCount = 0;
+    MUTEX_UNLOCK(gThreadMutex);
+
     MUTEX_FREE(gThreadMutex);
 }
