@@ -279,7 +279,7 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
     StackQueueIterator iterator;
     PThreadData item = NULL;
     UINT64 data;
-    BOOL finished = FALSE, taskQueueEmpty = FALSE, listMutedLocked = FALSE;
+    BOOL finished = FALSE, taskQueueEmpty = FALSE, listMutexLocked = FALSE;
     SIZE_T threadCount = 0, i = 0;
     CHK(pThreadpool != NULL, STATUS_NULL_ARG);
 
