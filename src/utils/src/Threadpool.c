@@ -41,14 +41,18 @@ PVOID threadpoolActor(PVOID data)
     // attempt to acquire thread mutex, if we cannot it means the threadpool has already been
     // destroyed. Quickly exit
     if (MUTEX_TRYLOCK(pThreadData->dataMutex)) {
-        pThreadpool = pThreadData->pThreadpool;
+        if (!ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
+            pThreadpool = pThreadData->pThreadpool;
 
-        if (pThreadpool == NULL) {
-            DLOGE("Threadpool actor unable to start, threadpool is NULL");
-            return NULL;
+            if (pThreadpool == NULL) {
+                DLOGE("Threadpool actor unable to start, threadpool is NULL");
+                return NULL;
+            }
+
+            pQueue = pThreadpool->taskQueue;
+        } else {
+            finished = TRUE;
         }
-
-        pQueue = pThreadpool->taskQueue;
         MUTEX_UNLOCK(pThreadData->dataMutex);
     } else {
         finished = TRUE;
