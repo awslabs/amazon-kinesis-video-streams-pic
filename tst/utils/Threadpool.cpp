@@ -54,7 +54,7 @@ TEST_F(ThreadpoolFunctionalityTest, CreateDestroyTest)
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
     // wait for threads to exit before test ends
-    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 }
 
 TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
@@ -89,7 +89,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
     }
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
     MUTEX_FREE(gTerminateMutex);
-    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 }
 
 TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
@@ -122,7 +122,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
     }
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
     MUTEX_FREE(gTerminateMutex);
-    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 }
 
 TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
@@ -176,7 +176,7 @@ TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
     }
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
     MUTEX_FREE(gTerminateMutex);
-    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 }
 
 TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest)
@@ -214,7 +214,7 @@ TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest
     }
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
     MUTEX_FREE(gTerminateMutex);
-    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 }
 
 
@@ -263,6 +263,9 @@ TEST_F(ThreadpoolFunctionalityTest, MultithreadUseTest)
     ATOMIC_STORE_BOOL(&user.usable, FALSE);
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
+    THREAD_JOIN(thread1, NULL);
+    THREAD_JOIN(thread2, NULL);
+
     // wait for threads to exit before test ends to avoid false memory leak alarm
-    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 }
