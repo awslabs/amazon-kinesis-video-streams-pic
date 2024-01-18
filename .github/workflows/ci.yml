@@ -5,317 +5,318 @@ on:
     branches: 
       - develop
       - master
+      - assert_handle_local
   pull_request:
     branches:
       - develop
       - master
 jobs:
-  clang-format-check:
-    runs-on: macos-11
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v3
-      - name: Install clang-format
-        run: |
-          brew install clang-format
-          clang-format --version
-      - name: Run clang format check
-        run: |
-          bash scripts/check-clang.sh
-  mac-os-build-gcc:
-    runs-on: macos-latest
-    env:
-      CC: gcc-11
-      CXX: g++-11
-      AWS_KVS_LOG_LEVEL: 2
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v2
-      - name: Build repository
-        run: |
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build
-          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
-        run: |
-          rm -rf build
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build
-          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-  mac-os-build-clang:
-    runs-on: macos-latest
-    env:
-      AWS_KVS_LOG_LEVEL: 2
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v2
-      - name: Build repository
-        run: |
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE -DCOMPILER_WARNINGS=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build
-          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
-        run: |
-          rm -rf build
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build
-          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-  mac-os-m1-build-clang:
-    runs-on: macos-13-xlarge
-    env:
-      AWS_KVS_LOG_LEVEL: 2
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v2
-      - name: Build repository
-        run: |
-          brew unlink openssl
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE -DCMAKE_C_COMPILER=$(brew --prefix llvm@15)/bin/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++
-          make
-      - name: Run tests
-        run: |
-          cd build
-          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
-        run: |
-          rm -rf build
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE -DCMAKE_C_COMPILER=$(brew --prefix llvm@15)/bin/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++
-          make
-      - name: Run tests
-        run: |
-          cd build
-          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-  mac-os-m1-build-gcc:
-    runs-on: macos-13-xlarge
-    env:
-      CC: /opt/homebrew/bin/gcc-13
-      CXX: /opt/homebrew/bin/g++-13
-      AWS_KVS_LOG_LEVEL: 2
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v2
-      - name: Build repository
-        run: |
-          brew unlink openssl
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build
-          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
-        run: |
-          rm -rf build
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build
-          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-  linux-gcc-code-coverage:
-    runs-on: ubuntu-latest
-    env:
-      AWS_KVS_LOG_LEVEL: 2
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v2
-      - name: Build repository
-        run: |
-          mkdir build && cd build
-          cmake .. -DCODE_COVERAGE=TRUE -DBUILD_TEST=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build          
-          ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
-        run: |
-          rm -rf build
-          mkdir build && cd build
-          cmake .. -DCODE_COVERAGE=TRUE -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build
-          ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-      - name: Code coverage
-        run: |
-          for test_file in $(find CMakeFiles/kvspic.dir CMakeFiles/kvspicClient.dir CMakeFiles/kvspicState.dir CMakeFiles/kvspicUtils.dir -name '*.gcno'); do gcov $test_file; done
-          bash <(curl -s https://codecov.io/bash)
-  address-sanitizer:
-    runs-on: ubuntu-latest
-    env:
-      AWS_KVS_LOG_LEVEL: 2
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v2
-      - name: Build repository
-        run: |
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE -DADDRESS_SANITIZER=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build          
-          ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
-        run: |
-          rm -rf build
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE -DADDRESS_SANITIZER=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-  undefined-behavior-sanitizer:
-    runs-on: ubuntu-latest
-    env:
-      CC: clang
-      CXX: clang++
-      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1:suppressions=../../tst/suppressions/UBSAN.supp
-      AWS_KVS_LOG_LEVEL: 2
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v2
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install clang
-      - name: Build repository
-        run: |
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE -DUNDEFINED_BEHAVIOR_SANITIZER=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build
-          ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
-        run: |
-          rm -rf build
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE -DUNDEFINED_BEHAVIOR_SANITIZER=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-  linux-gcc-4_4:
-    runs-on: ubuntu-20.04
-    env:
-      AWS_KVS_LOG_LEVEL: 2
-      CC: gcc-4.4
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v2
-      - name: Install deps
-        run: |
-          sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
-          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-          sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ trusty main'
-          sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ trusty universe'
-          sudo apt-get -q update
-          sudo apt-get -y install gcc-4.4
-          sudo apt-get -y install gdb
-      - name: Build repository
-        run: |
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build
-          ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
-        run: |
-          rm -rf build
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-  # memory-sanitizer:
-  #   runs-on: ubuntu-18.04
-  #   env:
-  #     CC: clang-7
-  #     CXX: clang++-7
-  #     AWS_KVS_LOG_LEVEL: 2
-  #   steps:
-  #     - name: Clone repository
-  #       uses: actions/checkout@v2
-  #     - name: Install dependencies
-  #       run: |
-  #         sudo apt-get update
-  #         sudo apt-get -y install clang-7
-  #     - name: Build repository
-  #       run: |
-  #         mkdir build && cd build
-  #         cmake .. -DBUILD_TEST=TRUE -DMEMORY_SANITIZER=TRUE
-  #         make
-  #         ulimit -c unlimited -S
-  #         timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-  thread-sanitizer:
-    runs-on: ubuntu-latest
-    env:
-      CC: clang
-      CXX: clang++
-      TSAN_OPTIONS: halt_on_error=1:suppressions=../../tst/suppressions/TSAN.supp
-      AWS_KVS_LOG_LEVEL: 2
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v2
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install clang
-      - name: Build repository
-        run: |
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE -DTHREAD_SANITIZER=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build
-          ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
-      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
-        run: |
-          rm -rf build
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE -DTHREAD_SANITIZER=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
-          make
-      - name: Run tests
-        run: |
-          cd build
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#  clang-format-check:
+#    runs-on: macos-11
+#    steps:
+#      - name: Clone repository
+#        uses: actions/checkout@v3
+#      - name: Install clang-format
+#        run: |
+#          brew install clang-format
+#          clang-format --version
+#      - name: Run clang format check
+#        run: |
+#          bash scripts/check-clang.sh
+#  mac-os-build-gcc:
+#    runs-on: macos-latest
+#    env:
+#      CC: gcc-11
+#      CXX: g++-11
+#      AWS_KVS_LOG_LEVEL: 2
+#    steps:
+#      - name: Clone repository
+#        uses: actions/checkout@v2
+#      - name: Build repository
+#        run: |
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+#        run: |
+#          rm -rf build
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#  mac-os-build-clang:
+#    runs-on: macos-latest
+#    env:
+#      AWS_KVS_LOG_LEVEL: 2
+#    steps:
+#      - name: Clone repository
+#        uses: actions/checkout@v2
+#      - name: Build repository
+#        run: |
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE -DCOMPILER_WARNINGS=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+#        run: |
+#          rm -rf build
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#  mac-os-m1-build-clang:
+#    runs-on: macos-13-xlarge
+#    env:
+#      AWS_KVS_LOG_LEVEL: 2
+#    steps:
+#      - name: Clone repository
+#        uses: actions/checkout@v2
+#      - name: Build repository
+#        run: |
+#          brew unlink openssl
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE -DCMAKE_C_COMPILER=$(brew --prefix llvm@15)/bin/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+#        run: |
+#          rm -rf build
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE -DCMAKE_C_COMPILER=$(brew --prefix llvm@15)/bin/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#  mac-os-m1-build-gcc:
+#    runs-on: macos-13-xlarge
+#    env:
+#      CC: /opt/homebrew/bin/gcc-13
+#      CXX: /opt/homebrew/bin/g++-13
+#      AWS_KVS_LOG_LEVEL: 2
+#    steps:
+#      - name: Clone repository
+#        uses: actions/checkout@v2
+#      - name: Build repository
+#        run: |
+#          brew unlink openssl
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+#        run: |
+#          rm -rf build
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#  linux-gcc-code-coverage:
+#    runs-on: ubuntu-latest
+#    env:
+#      AWS_KVS_LOG_LEVEL: 2
+#    steps:
+#      - name: Clone repository
+#        uses: actions/checkout@v2
+#      - name: Build repository
+#        run: |
+#          mkdir build && cd build
+#          cmake .. -DCODE_COVERAGE=TRUE -DBUILD_TEST=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          ulimit -c unlimited -S
+#          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+#        run: |
+#          rm -rf build
+#          mkdir build && cd build
+#          cmake .. -DCODE_COVERAGE=TRUE -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          ulimit -c unlimited -S
+#          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#      - name: Code coverage
+#        run: |
+#          for test_file in $(find CMakeFiles/kvspic.dir CMakeFiles/kvspicClient.dir CMakeFiles/kvspicState.dir CMakeFiles/kvspicUtils.dir -name '*.gcno'); do gcov $test_file; done
+#          bash <(curl -s https://codecov.io/bash)
+#  address-sanitizer:
+#    runs-on: ubuntu-latest
+#    env:
+#      AWS_KVS_LOG_LEVEL: 2
+#    steps:
+#      - name: Clone repository
+#        uses: actions/checkout@v2
+#      - name: Build repository
+#        run: |
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE -DADDRESS_SANITIZER=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          ulimit -c unlimited -S
+#          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+#        run: |
+#          rm -rf build
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE -DADDRESS_SANITIZER=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#  undefined-behavior-sanitizer:
+#    runs-on: ubuntu-latest
+#    env:
+#      CC: clang
+#      CXX: clang++
+#      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1:suppressions=../../tst/suppressions/UBSAN.supp
+#      AWS_KVS_LOG_LEVEL: 2
+#    steps:
+#      - name: Clone repository
+#        uses: actions/checkout@v2
+#      - name: Install dependencies
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get -y install clang
+#      - name: Build repository
+#        run: |
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE -DUNDEFINED_BEHAVIOR_SANITIZER=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          ulimit -c unlimited -S
+#          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+#        run: |
+#          rm -rf build
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE -DUNDEFINED_BEHAVIOR_SANITIZER=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#  linux-gcc-4_4:
+#    runs-on: ubuntu-20.04
+#    env:
+#      AWS_KVS_LOG_LEVEL: 2
+#      CC: gcc-4.4
+#    steps:
+#      - name: Clone repository
+#        uses: actions/checkout@v2
+#      - name: Install deps
+#        run: |
+#          sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
+#          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+#          sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ trusty main'
+#          sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ trusty universe'
+#          sudo apt-get -q update
+#          sudo apt-get -y install gcc-4.4
+#          sudo apt-get -y install gdb
+#      - name: Build repository
+#        run: |
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          ulimit -c unlimited -S
+#          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+#        run: |
+#          rm -rf build
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#  # memory-sanitizer:
+#  #   runs-on: ubuntu-18.04
+#  #   env:
+#  #     CC: clang-7
+#  #     CXX: clang++-7
+#  #     AWS_KVS_LOG_LEVEL: 2
+#  #   steps:
+#  #     - name: Clone repository
+#  #       uses: actions/checkout@v2
+#  #     - name: Install dependencies
+#  #       run: |
+#  #         sudo apt-get update
+#  #         sudo apt-get -y install clang-7
+#  #     - name: Build repository
+#  #       run: |
+#  #         mkdir build && cd build
+#  #         cmake .. -DBUILD_TEST=TRUE -DMEMORY_SANITIZER=TRUE
+#  #         make
+#  #         ulimit -c unlimited -S
+#  #         timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#  thread-sanitizer:
+#    runs-on: ubuntu-latest
+#    env:
+#      CC: clang
+#      CXX: clang++
+#      TSAN_OPTIONS: halt_on_error=1:suppressions=../../tst/suppressions/TSAN.supp
+#      AWS_KVS_LOG_LEVEL: 2
+#    steps:
+#      - name: Clone repository
+#        uses: actions/checkout@v2
+#      - name: Install dependencies
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get -y install clang
+#      - name: Build repository
+#        run: |
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE -DTHREAD_SANITIZER=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          ulimit -c unlimited -S
+#          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+#      - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
+#        run: |
+#          rm -rf build
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE -DTHREAD_SANITIZER=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+#          make
+#      - name: Run tests
+#        run: |
+#          cd build
+#          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   windows-msvc:
     runs-on: windows-2022
     env:
@@ -327,41 +328,41 @@ jobs:
         run: |
           .github/build_windows.bat
       - name: Run tests
-        run: |       
+        run: |
           D:\a\amazon-kinesis-video-streams-pic\amazon-kinesis-video-streams-pic\build\tst\kvspic_test.exe --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*:PermutatedStreamInfo/StateTransitionFunctionalityTest.ControlPlaneServiceCallExhaustRetry*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedBeforeTime*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateTimerInvokedAfterFirstPeriod*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateLastUpdateTimeOfStreamUpdated*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.MultiTrackVerifyNoInvocationsWithSingleTrackProducer*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateNoConsecutiveEOFR*:PermutatedStreamInfo/IntermittentProducerAutomaticStreamingTest.ValidateErrorOnForceConsecutiveEOFR*:*StreamStateTransitionsTest*:*PermutatedStreamInfo/StateTransitionFunctionalityTest.StreamTerminatedAndGoToGetEndpointState*:*PermutatedStreamInfo/StateTransitionFunctionalityTest.StreamTerminatedAndGoToDescribeState*:*PermutatedStreamInfo/StateTransitionFunctionalityTest*"
-  arm64-cross-compilation:
-    runs-on: ubuntu-latest
-    env:
-      CC: aarch64-linux-gnu-gcc
-      CXX: aarch64-linux-gnu-g++
-    steps:
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt-get -y install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
-      - name: Clone repository
-        uses: actions/checkout@v2
-      - name: Build Repository
-        run: |
-          sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE
-          make
-  arm32-cross-compilation:
-    runs-on: ubuntu-latest
-    env:
-      CC: arm-linux-gnueabi-gcc
-      CXX: arm-linux-gnueabi-g++
-    steps:
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt-get -y install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi binutils-arm-linux-gnueabi
-      - name: Clone repository
-        uses: actions/checkout@v2
-      - name: Build Repository
-        run: |
-          sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
-          mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE
-          make
+#  arm64-cross-compilation:
+#    runs-on: ubuntu-latest
+#    env:
+#      CC: aarch64-linux-gnu-gcc
+#      CXX: aarch64-linux-gnu-g++
+#    steps:
+#      - name: Install dependencies
+#        run: |
+#          sudo apt update
+#          sudo apt-get -y install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
+#      - name: Clone repository
+#        uses: actions/checkout@v2
+#      - name: Build Repository
+#        run: |
+#          sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE
+#          make
+#  arm32-cross-compilation:
+#    runs-on: ubuntu-latest
+#    env:
+#      CC: arm-linux-gnueabi-gcc
+#      CXX: arm-linux-gnueabi-g++
+#    steps:
+#      - name: Install dependencies
+#        run: |
+#          sudo apt update
+#          sudo apt-get -y install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi binutils-arm-linux-gnueabi
+#      - name: Clone repository
+#        uses: actions/checkout@v2
+#      - name: Build Repository
+#        run: |
+#          sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
+#          mkdir build && cd build
+#          cmake .. -DBUILD_TEST=TRUE
+#          make

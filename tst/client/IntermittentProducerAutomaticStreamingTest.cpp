@@ -71,6 +71,7 @@ STATUS timerCallbackPreHook(UINT64 hookCustomData)
 {
     STATUS retStatus = STATUS_SUCCESS;
     IntermittentProducerAutomaticStreamingTest* pTest = (IntermittentProducerAutomaticStreamingTest*) hookCustomData;
+    pTest = NULL;
     CHECK(pTest != NULL);
     ATOMIC_INCREMENT(&pTest->mTimerCallbackFuncCount);
     return retStatus;
