@@ -61,6 +61,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
 {
     PThreadpool pThreadpool = NULL;
     BOOL terminate = FALSE;
+    auto count = 0;
     gTerminateCount = 0;
     gTerminateMutex = MUTEX_CREATE(FALSE);
     EXPECT_EQ(STATUS_SUCCESS, semaphoreEmptyCreate(10, &gTerminateSemaphore));
@@ -78,8 +79,12 @@ TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
     MUTEX_UNLOCK(gTerminateMutex);
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
+    MUTEX_LOCK(gTerminateMutex);
+    count = gTerminateCount;
+    MUTEX_UNLOCK(gTerminateMutex);
+
     // wait for threads to exit before test ends
-    for(auto i = 0; i < gTerminateCount; i++) {
+    for(auto i = 0; i < count; i++) {
         EXPECT_EQ(STATUS_SUCCESS, semaphoreAcquire(gTerminateSemaphore, INFINITE_TIME_VALUE));
     }
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
@@ -107,8 +112,12 @@ TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
     MUTEX_UNLOCK(gTerminateMutex);
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
+    MUTEX_LOCK(gTerminateMutex);
+    auto enteredThreadCount = gTerminateCount;
+    MUTEX_UNLOCK(gTerminateMutex);
+
     // wait for threads to exit before test ends
-    for(auto i = 0; i < gTerminateCount; i++) {
+    for(auto i = 0; i < enteredThreadCount; i++) {
         EXPECT_EQ(STATUS_SUCCESS, semaphoreAcquire(gTerminateSemaphore, INFINITE_TIME_VALUE));
     }
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
@@ -157,8 +166,12 @@ TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
 
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
+    MUTEX_LOCK(gTerminateMutex);
+    auto enteredThreadCount = gTerminateCount;
+    MUTEX_UNLOCK(gTerminateMutex);
+
     // wait for threads to exit before test ends
-    for(auto i = 0; i < gTerminateCount; i++) {
+    for(auto i = 0; i < enteredThreadCount; i++) {
         EXPECT_EQ(STATUS_SUCCESS, semaphoreAcquire(gTerminateSemaphore, INFINITE_TIME_VALUE));
     }
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
@@ -191,8 +204,12 @@ TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest
     terminate = TRUE;
     MUTEX_UNLOCK(gTerminateMutex);
 
+    MUTEX_LOCK(gTerminateMutex);
+    auto enteredThreadCount = gTerminateCount;
+    MUTEX_UNLOCK(gTerminateMutex);
+
     // wait for threads to exit before test ends
-    for(auto i = 0; i < gTerminateCount; i++) {
+    for(auto i = 0; i < enteredThreadCount; i++) {
         EXPECT_EQ(STATUS_SUCCESS, semaphoreAcquire(gTerminateSemaphore, INFINITE_TIME_VALUE));
     }
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
