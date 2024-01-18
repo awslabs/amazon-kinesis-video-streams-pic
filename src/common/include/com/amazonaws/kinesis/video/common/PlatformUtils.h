@@ -35,7 +35,7 @@ extern logPrintFunc globalCustomLogPrintFn;
 // Compiling with NDK
 #include <android/log.h>
 #define __LOG(p1, p2, p3, ...)    __android_log_print(p1, p2, p3, ##__VA_ARGS__)
-#define __ASSERT(p1, p2, p3, ...) __android_log_assert(p1, p2, p3, ##__VA_ARGS__)
+#define __ASSERT(p1, p2, p3, ...) __android_log_assert(p1, p2, p3, ##__VA_ARGS__) // This is unaffected by release vs debug build unlike C assert().
 #else
 // Compiling under non-NDK
 #include <stddef.h>
@@ -45,8 +45,8 @@ extern logPrintFunc globalCustomLogPrintFn;
 #ifdef DEBUG_BUILD
 #define __ASSERT(p1, p2, p3, ...) assert(p1)
 #else
-PUBLIC_API VOID customAssert(int condition, const char* fileName, int lineNumber, const char* functionName, const char* format, ...);
-#define __ASSERT(p1, p2, p3, ...) customAssert((p1), __FILE__, __LINE__, __FUNCTION__, (p3))
+PUBLIC_API VOID customAssert(INT32 condition, const CHAR* fileName, int lineNumber, const CHAR* functionName);
+#define __ASSERT(p1, p2, p3, ...) customAssert((p1), __FILE__, __LINE__, __FUNCTION__)
 #endif
 
 #define __LOG                     globalCustomLogPrintFn
