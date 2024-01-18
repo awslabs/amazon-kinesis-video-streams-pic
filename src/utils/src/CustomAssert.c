@@ -1,9 +1,9 @@
 #include "Include_i.h"
 
-VOID customAssert(INT32 condition, const CHAR* fileName, INT32 lineNumber, const CHAR* functionName, const CHAR* message) {
+VOID customAssert(INT32 condition, const CHAR* fileName, INT32 lineNumber, const CHAR* functionName, const CHAR* format, ...) {
     printf("Using customAssert\n");
     if (!condition) {
-        fprintf(stderr, "%s\n  In file: %s\n  Function: %s\n  Line: %d\n", message, fileName, functionName, lineNumber);
+        fprintf(stderr, "Assertion failed in %s (%s:%d)\nFunction: %s\nMessage: ", fileName, functionName, lineNumber);
         abort();
     }
 }

@@ -45,8 +45,7 @@ extern logPrintFunc globalCustomLogPrintFn;
 #ifdef DEBUG_BUILD
 #define __ASSERT(p1, p2, p3, ...) assert(p1)
 #else
-PUBLIC_API VOID customAssert(int condition, const char* fileName, int lineNumber, const char* functionName, const char* message);
-#define CUSTOM_ASSERT(COND, LOG_CLASS, ...) customAssert((COND), (LOG_CLASS), __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
+PUBLIC_API VOID customAssert(int condition, const char* fileName, int lineNumber, const char* functionName, const char* format, ...);
 #define __ASSERT(p1, p2, p3, ...) customAssert((p1), __FILE__, __LINE__, __FUNCTION__, (p3))
 #endif
 
