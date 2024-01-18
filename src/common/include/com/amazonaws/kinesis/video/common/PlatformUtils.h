@@ -41,7 +41,7 @@ extern logPrintFunc globalCustomLogPrintFn;
 #include <stddef.h>
 #include <stdlib.h>
 #include <assert.h>
-#define __ASSERT(p1, p2, p3, ...) assert(p1)
+#define __ASSERT(p1, p2, p3, ...) abort()
 #define __LOG                     globalCustomLogPrintFn
 #endif // ANDROID_BUILD
 
