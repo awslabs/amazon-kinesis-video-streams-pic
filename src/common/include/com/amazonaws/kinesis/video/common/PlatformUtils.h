@@ -45,11 +45,11 @@ extern logPrintFunc globalCustomLogPrintFn;
 #ifdef DEBUG_BUILD
 #define __ASSERT(p1, p2, p3, ...) assert(p1)
 #else
-PUBLIC_API VOID customAssert(INT32 condition, const CHAR* fileName, int lineNumber, const CHAR* functionName);
+PUBLIC_API VOID customAssert(INT64 condition, const CHAR* fileName, int lineNumber, const CHAR* functionName);
 #define __ASSERT(p1, p2, p3, ...) customAssert((p1), __FILE__, __LINE__, __FUNCTION__)
 #endif
 
-#define __LOG                     globalCustomLogPrintFn
+#define __LOG globalCustomLogPrintFn
 #endif // ANDROID_BUILD
 
 #define LOG_LEVEL_VERBOSE 1
