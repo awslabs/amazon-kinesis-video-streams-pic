@@ -2788,7 +2788,7 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
     }
     // The state and the params are validated. Get the item with the timestamp of the failed fragment
     CHK_STATUS(contentViewGetItemWithTimestamp(pKinesisVideoStream->pView, timestamp, TRUE, &pCurItem));
-    DLOGI("Received Error ack: get item with timestamp...%llu", timstamp);
+    DLOGI("Received Error ack: get item with timestamp...%llu", timestamp);
     CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
     if(viewByteSize == 0) {
         DLOGI("2. Received Error ack: view is empty");
