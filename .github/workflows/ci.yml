@@ -77,7 +77,7 @@ jobs:
           cd build
           ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   mac-os-m1-build-clang:
-    runs-on: macos-13-xlarge
+    runs-on: macos-13-xl
     env:
       AWS_KVS_LOG_LEVEL: 2
     steps:
