@@ -1287,6 +1287,12 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
                 if (viewByteSize == 0) {
                     DLOGI("[%s] Buffer empty and stream stop request received",
                           pKinesisVideoStream->streamInfo.name);
+                    if(pUploadHandleInfo->lastPersistedAckTs == INVALID_TIMESTAMP_VALUE) {
+                        DLOGI("last pack, invalid ts value");
+                    }
+                    if(pUploadHandleInfo->lastFragmentTs == INVALID_TIMESTAMP_VALUE) {
+                        DLOGI("last fts, invalud ts value");
+                    }
                     if (pUploadHandleInfo->lastPersistedAckTs == pUploadHandleInfo->lastFragmentTs) {
                         DLOGI("[%s] Last ack received, moving to TERMINATED state ", pKinesisVideoStream->streamInfo.name);
                         pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
@@ -1445,6 +1451,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             // Set the key frame indicator on fragment or session start to track the persist ACKs
             if (CHECK_ITEM_FRAGMENT_START(pKinesisVideoStream->curViewItem.viewItem.flags) ||
                 CHECK_ITEM_STREAM_START(pKinesisVideoStream->curViewItem.viewItem.flags)) {
+                DLOGI("New fragment encountered");
                 pUploadHandleInfo->lastFragmentTs = pKinesisVideoStream->curViewItem.viewItem.ackTimestamp;
             }
 
@@ -2657,7 +2664,7 @@ STATUS streamFragmentPersistedAck(PKinesisVideoStream pKinesisVideoStream, UINT6
     // We need to find the next fragment to the persistent one and
     // trim the window to that fragment - i.e. move the tail position to the fragment.
     // As we move the tail, the callbacks will be fired to process the items falling out of the window.
-
+    DLOGI("Here in persisted ack");
     // Update last persistedAck timestamp
     pUploadHandleInfo->lastPersistedAckTs = timestamp;
 
@@ -2773,17 +2780,19 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
 
     // Store for metrics purposes
     pKinesisVideoStream->diagnostics.errorAcks++;
-
+    DLOGI("Received Error ack");
     // The state and the params are validated. Get the item with the timestamp of the failed fragment
     CHK_STATUS(contentViewGetItemWithTimestamp(pKinesisVideoStream->pView, timestamp, TRUE, &pCurItem));
+    DLOGI("Received Error ack: get item with timestamp");
     // Set the latest to the timestamp of the failed fragment for re-transmission
     CHK_STATUS(contentViewSetCurrentIndex(pKinesisVideoStream->pView, pCurItem->index));
-
+    DLOGI("Received Error ack: set current index");
     // Store the item to be returned with the error callback
     pErrItem = pCurItem;
 
     // IMPORTANT!!! We are going to mark non-retriable fragments
     if (!serviceCallResultRetry(callResult)) {
+        DLOGI("Received Error ack: No retrying");
         // Need to mark from the start
         if (startTimestamp != timestamp) {
             // We need to move back marking the frames as bad first
@@ -2810,7 +2819,7 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
             // No need to iterate further
             iterate = FALSE;
         }
-
+        DLOGI("Received Error ack: iterating");
         // Need to mark the entire fragment as bad.
         while (iterate) {
             // Indicate an errored item and advance the current
@@ -2818,7 +2827,7 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
             pKinesisVideoStream->diagnostics.skippedFrames++;
             retStatus = contentViewGetNext(pKinesisVideoStream->pView, &pCurItem);
             CHK(retStatus == STATUS_CONTENT_VIEW_NO_MORE_ITEMS || retStatus == STATUS_SUCCESS, retStatus);
-
+            DLOGI("Received Error ack: Still have some view items");
             if (retStatus == STATUS_CONTENT_VIEW_NO_MORE_ITEMS) {
                 // NOTE: This is the case when the non-recoverable error ACK comes for a fragment
                 // that has not yet been completed.
@@ -2841,7 +2850,7 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
             retStatus = STATUS_SUCCESS;
         }
     }
-
+    DLOGI("Received Error ack: getCurrentStreamUploadInfo");
     pUploadHandleInfo = getCurrentStreamUploadInfo(pKinesisVideoStream);
     if (NULL != pUploadHandleInfo) {
         uploadHandle = pUploadHandleInfo->handle;
@@ -2861,7 +2870,9 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
     // We will proactively terminate the connection as the higher-level clients like CURL
     // might not terminate the connection as they are still streaming.
     if (NULL != pUploadHandleInfo) {
+        DLOGI("Received Error ack: stream termination");
         CHK_STATUS(streamTerminatedEvent(pKinesisVideoStream, pUploadHandleInfo->handle, callResult, TRUE));
+        DLOGI("Received Error ack: stream temrination successful");
     }
 
 CleanUp:
