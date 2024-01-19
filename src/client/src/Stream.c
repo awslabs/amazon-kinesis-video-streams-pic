@@ -1285,10 +1285,16 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
                 CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
                 DLOGW("[%s] Indicating a stop stream request in streaming state %", PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
                 if (viewByteSize == 0) {
-                    pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
-                    DLOGI("[%s] Buffer empty and stream stop request received, moving to TERMINATED state for %", PRIu64,
+                    DLOGI("[%s] Buffer empty and stream stop request received for %", PRIu64,
                           pKinesisVideoStream->streamInfo.name, uploadHandle);
-                    CHK(FALSE, STATUS_END_OF_STREAM);
+                    if (pUploadHandleInfo->lastPersistedAckTs == pUploadHandleInfo->lastFragmentTs) {
+                        DLOGI("[%s] Last ack received, , moving to TERMINATED state for ", pKinesisVideoStream->streamInfo.name, uploadHandle);
+                        pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
+                        CHK(FALSE, STATUS_END_OF_STREAM);
+                    } else {
+                        DLOGI("[%s] Stay in streaming state till we receive last ack");
+                        pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_STREAMING;
+                    }
                 }
             }
             break;
@@ -3466,11 +3472,6 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
     pKinesisVideoStream->curViewItem.viewItem.handle = INVALID_ALLOCATION_HANDLE_VALUE;
 
     getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize);
-    if(viewByteSize == 0) {
-        DLOGI("Empty...safe to clear");
-    } else {
-        DLOGI("Not empty");
-    }
     // Trim all the buffer to head
     CHK_STATUS_CONTINUE(contentViewRemoveAll(pKinesisVideoStream->pView));
 
