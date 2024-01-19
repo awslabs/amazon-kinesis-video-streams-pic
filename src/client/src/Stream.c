@@ -2672,7 +2672,7 @@ STATUS streamFragmentPersistedAck(PKinesisVideoStream pKinesisVideoStream, UINT6
     CHK_STATUS(stackQueueGetIterator(pKinesisVideoStream->pUploadInfoQueue, &iterator));
     while (IS_VALID_ITERATOR(iterator)) {
         CHK_STATUS(stackQueueIteratorGetItem(iterator, &data));
-
+        DLOGI("Upload handle being investigated: %d", pCurHandleInfo->handle);
         pCurHandleInfo = (PUploadHandleInfo) data;
         CHK(pCurHandleInfo != NULL, STATUS_INTERNAL_ERROR);
         if (pCurHandleInfo->handle == pUploadHandleInfo->handle) {
