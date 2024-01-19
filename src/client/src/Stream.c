@@ -2776,6 +2776,7 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
     PUploadHandleInfo pUploadHandleInfo;
     PKinesisVideoClient pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
     UPLOAD_HANDLE uploadHandle = INVALID_UPLOAD_HANDLE_VALUE;
+    UINT64 duration, viewByteSize;
     BOOL iterate = TRUE;
 
     // Store for metrics purposes
@@ -2872,7 +2873,12 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
     if (NULL != pUploadHandleInfo) {
         DLOGI("Received Error ack: stream termination");
         CHK_STATUS(streamTerminatedEvent(pKinesisVideoStream, pUploadHandleInfo->handle, callResult, TRUE));
-        DLOGI("Received Error ack: stream temrination successful");
+        DLOGI("Received Error ack: stream termination successful");
+    }
+
+    CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+    if(viewByteSize == 0) {
+        DLOGI("Received Error ack: view is empty");
     }
 
 CleanUp:

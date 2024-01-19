@@ -554,7 +554,7 @@ STATUS putStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
         pUploadHandleInfo->timestamp = INVALID_TIMESTAMP_VALUE;
         pUploadHandleInfo->lastPersistedAckTs = INVALID_TIMESTAMP_VALUE;
         pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_NEW;
-
+        DLOGI("New fragment result");
         pUploadHandleInfo->createTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
 
         // Increment the total session count in diagnostics
