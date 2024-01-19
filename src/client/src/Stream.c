@@ -1288,7 +1288,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
                     pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
                     DLOGI("[%s] Buffer empty and stream stop request received, moving to TERMINATED state for %", PRIu64,
                           pKinesisVideoStream->streamInfo.name, uploadHandle);
-//                    CHK(FALSE, STATUS_END_OF_STREAM);
+                    CHK(FALSE, STATUS_END_OF_STREAM);
                 }
             }
             break;
