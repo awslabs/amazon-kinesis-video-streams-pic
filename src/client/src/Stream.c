@@ -1283,16 +1283,16 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             if (pKinesisVideoStream->streamStopped) {
                 // Get the duration and the size
                 CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
-                DLOGW("[%s] Indicating a stop stream request in streaming state %", PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
+                DLOGW("[%s] Indicating a stop stream request in streaming state", pKinesisVideoStream->streamInfo.name);
                 if (viewByteSize == 0) {
-                    DLOGI("[%s] Buffer empty and stream stop request received for %", PRIu64,
-                          pKinesisVideoStream->streamInfo.name, uploadHandle);
+                    DLOGI("[%s] Buffer empty and stream stop request received",
+                          pKinesisVideoStream->streamInfo.name);
                     if (pUploadHandleInfo->lastPersistedAckTs == pUploadHandleInfo->lastFragmentTs) {
-                        DLOGI("[%s] Last ack received, , moving to TERMINATED state for ", pKinesisVideoStream->streamInfo.name, uploadHandle);
+                        DLOGI("[%s] Last ack received, moving to TERMINATED state ", pKinesisVideoStream->streamInfo.name);
                         pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
                         CHK(FALSE, STATUS_END_OF_STREAM);
                     } else {
-                        DLOGI("[%s] Stay in streaming state till we receive last ack");
+                        DLOGI("[%s] Stay in streaming state till we receive last ack", pKinesisVideoStream->streamInfo.name);
                         pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_STREAMING;
                     }
                 }
@@ -1612,7 +1612,6 @@ CleanUp:
     if (STATUS_FAILED(stalenessCheckStatus)) {
         retStatus = stalenessCheckStatus;
     }
-
     LEAVES();
     return retStatus;
 }
@@ -2692,6 +2691,7 @@ STATUS streamFragmentPersistedAck(PKinesisVideoStream pKinesisVideoStream, UINT6
     // n-1 until upload handle n-1 has received its last persisted ack. If handle n-1 is in
     // UPLOAD_HANDLE_STATE_ACK_RECEIVED or UPLOAD_HANDLE_STATE_TERMINATED state, then it has received the last
     // ack and is safe to trim off.
+
     CHK(trimTail, retStatus);
 
     // Remember the current index
