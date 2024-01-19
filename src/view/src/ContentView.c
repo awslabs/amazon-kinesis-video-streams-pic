@@ -447,7 +447,7 @@ STATUS contentViewAddItem(PContentView pContentView, UINT64 timestamp, UINT64 ac
     // Check the input params
     CHK(pContentView != NULL, STATUS_NULL_ARG);
     CHK(length > 0, STATUS_INVALID_CONTENT_VIEW_LENGTH);
-
+    DLOGI("Adding item: %llu", timestamp);
     // If we have any items in the buffer
     if (pRollingView->head != pRollingView->tail) {
         pHead = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->head - 1);
@@ -521,7 +521,7 @@ STATUS contentViewRemoveAll(PContentView pContentView)
     PRollingContentView pRollingView = (PRollingContentView) pContentView;
     PViewItem pTail = NULL;
     BOOL currentRemoved;
-
+    DLOGI("Remove all items");
     // Check the input params
     CHK(pContentView != NULL, STATUS_NULL_ARG);
 
@@ -562,7 +562,7 @@ STATUS contentViewTrimTail(PContentView pContentView, UINT64 itemIndex)
     PRollingContentView pRollingView = (PRollingContentView) pContentView;
     PViewItem pTail = NULL;
     BOOL currentRemoved;
-
+    DLOGI("Trimming tail");
     // Check the input params
     CHK(pContentView != NULL, STATUS_NULL_ARG);
     CHK(itemIndex >= pRollingView->tail && itemIndex <= pRollingView->head, STATUS_CONTENT_VIEW_INVALID_INDEX);
@@ -603,7 +603,7 @@ STATUS contentViewTrimTailItems(PContentView pContentView)
     BOOL viewItemDropped = FALSE;
     UINT64 currentStreamingItem = MAX_UINT64;
     UINT32 dropFrameCount = 0;
-
+    DLOGI("Trim tail items");
     // Check the input params
     CHK(pContentView != NULL, STATUS_NULL_ARG);
 

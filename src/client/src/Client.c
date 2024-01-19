@@ -1746,7 +1746,7 @@ VOID viewItemRemoved(PContentView pContentView, UINT64 customData, PViewItem pVi
     PKinesisVideoStream pKinesisVideoStream = STREAM_FROM_CUSTOM_DATA(customData);
     PKinesisVideoClient pKinesisVideoClient = NULL;
     BOOL streamLocked = FALSE;
-
+    DLOGI("View item removed");
     // Validate the input just in case
     CHK(pContentView != NULL && pViewItem != NULL && pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL,
         STATUS_NULL_ARG);
