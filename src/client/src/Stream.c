@@ -3443,6 +3443,7 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     BOOL streamLocked = FALSE;
+    UINT64 duration, viewByteSize;
 
     PKinesisVideoClient pKinesisVideoClient = NULL;
 
@@ -3464,6 +3465,12 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
     MEMSET(&pKinesisVideoStream->curViewItem, 0x00, SIZEOF(CurrentViewItem));
     pKinesisVideoStream->curViewItem.viewItem.handle = INVALID_ALLOCATION_HANDLE_VALUE;
 
+    getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize);
+    if(viewByteSize == 0) {
+        DLOGI("Empty...safe to clear");
+    } else {
+        DLOGI("Not empty");
+    }
     // Trim all the buffer to head
     CHK_STATUS_CONTINUE(contentViewRemoveAll(pKinesisVideoStream->pView));
 
