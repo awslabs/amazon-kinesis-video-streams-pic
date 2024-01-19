@@ -23,7 +23,7 @@ STATUS createContentView(UINT32 maxItemCount, UINT64 bufferDuration, ContentView
     CHK(ppContentView != NULL, STATUS_NULL_ARG);
     CHK(maxItemCount > MIN_CONTENT_VIEW_ITEMS, STATUS_MIN_CONTENT_VIEW_ITEMS);
     CHK(bufferDuration > MIN_CONTENT_VIEW_BUFFER_DURATION, STATUS_INVALID_CONTENT_VIEW_DURATION);
-
+    DLOGI("Details of content view: %d, %llu", maxItemCount, bufferDuration);
     // Allocate the main struct
     // NOTE: The calloc will Zero the fields
     // NOTE: The actual rolling buffer follows the structure
@@ -521,7 +521,6 @@ STATUS contentViewRemoveAll(PContentView pContentView)
     PRollingContentView pRollingView = (PRollingContentView) pContentView;
     PViewItem pTail = NULL;
     BOOL currentRemoved;
-    DLOGI("Remove all items");
     // Check the input params
     CHK(pContentView != NULL, STATUS_NULL_ARG);
 
@@ -562,7 +561,6 @@ STATUS contentViewTrimTail(PContentView pContentView, UINT64 itemIndex)
     PRollingContentView pRollingView = (PRollingContentView) pContentView;
     PViewItem pTail = NULL;
     BOOL currentRemoved;
-    DLOGI("Trimming tail");
     // Check the input params
     CHK(pContentView != NULL, STATUS_NULL_ARG);
     CHK(itemIndex >= pRollingView->tail && itemIndex <= pRollingView->head, STATUS_CONTENT_VIEW_INVALID_INDEX);
