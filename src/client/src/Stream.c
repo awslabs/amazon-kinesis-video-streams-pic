@@ -2782,18 +2782,34 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
     // Store for metrics purposes
     pKinesisVideoStream->diagnostics.errorAcks++;
     DLOGI("Received Error ack");
+    CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+    if(viewByteSize == 0) {
+        DLOGI("1.Received Error ack: view is empty");
+    }
     // The state and the params are validated. Get the item with the timestamp of the failed fragment
     CHK_STATUS(contentViewGetItemWithTimestamp(pKinesisVideoStream->pView, timestamp, TRUE, &pCurItem));
     DLOGI("Received Error ack: get item with timestamp");
+    CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+    if(viewByteSize == 0) {
+        DLOGI("2. Received Error ack: view is empty");
+    }
     // Set the latest to the timestamp of the failed fragment for re-transmission
     CHK_STATUS(contentViewSetCurrentIndex(pKinesisVideoStream->pView, pCurItem->index));
     DLOGI("Received Error ack: set current index");
+    CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+    if(viewByteSize == 0) {
+        DLOGI("3.Received Error ack: view is empty");
+    }
     // Store the item to be returned with the error callback
     pErrItem = pCurItem;
 
     // IMPORTANT!!! We are going to mark non-retriable fragments
     if (!serviceCallResultRetry(callResult)) {
         DLOGI("Received Error ack: No retrying");
+        CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+        if(viewByteSize == 0) {
+            DLOGI("4.Received Error ack: view is empty");
+        }
         // Need to mark from the start
         if (startTimestamp != timestamp) {
             // We need to move back marking the frames as bad first
@@ -2821,6 +2837,10 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
             iterate = FALSE;
         }
         DLOGI("Received Error ack: iterating");
+        CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+        if(viewByteSize == 0) {
+            DLOGI("5. Received Error ack: view is empty");
+        }
         // Need to mark the entire fragment as bad.
         while (iterate) {
             // Indicate an errored item and advance the current
@@ -2829,6 +2849,10 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
             retStatus = contentViewGetNext(pKinesisVideoStream->pView, &pCurItem);
             CHK(retStatus == STATUS_CONTENT_VIEW_NO_MORE_ITEMS || retStatus == STATUS_SUCCESS, retStatus);
             DLOGI("Received Error ack: Still have some view items");
+            CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+            if(viewByteSize == 0) {
+                DLOGI("6. Received Error ack: view is empty");
+            }
             if (retStatus == STATUS_CONTENT_VIEW_NO_MORE_ITEMS) {
                 // NOTE: This is the case when the non-recoverable error ACK comes for a fragment
                 // that has not yet been completed.
@@ -2852,6 +2876,10 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
         }
     }
     DLOGI("Received Error ack: getCurrentStreamUploadInfo");
+    CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+    if(viewByteSize == 0) {
+        DLOGI("7.Received Error ack: view is empty");
+    }
     pUploadHandleInfo = getCurrentStreamUploadInfo(pKinesisVideoStream);
     if (NULL != pUploadHandleInfo) {
         uploadHandle = pUploadHandleInfo->handle;
@@ -2872,13 +2900,17 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
     // might not terminate the connection as they are still streaming.
     if (NULL != pUploadHandleInfo) {
         DLOGI("Received Error ack: stream termination");
+        CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
+        if(viewByteSize == 0) {
+            DLOGI("8.Received Error ack: view is empty");
+        }
         CHK_STATUS(streamTerminatedEvent(pKinesisVideoStream, pUploadHandleInfo->handle, callResult, TRUE));
         DLOGI("Received Error ack: stream termination successful");
     }
 
     CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
     if(viewByteSize == 0) {
-        DLOGI("Received Error ack: view is empty");
+        DLOGI("9.Received Error ack: view is empty");
     }
 
 CleanUp:
