@@ -1285,8 +1285,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
                 CHK_STATUS(getAvailableViewSize(pKinesisVideoStream, &duration, &viewByteSize));
                 DLOGW("[%s] Indicating a stop stream request in streaming state", pKinesisVideoStream->streamInfo.name);
                 if (viewByteSize == 0) {
-                    DLOGI("[%s] Buffer empty and stream stop request received",
-                          pKinesisVideoStream->streamInfo.name);
+                    DLOGI("[%s] Buffer empty and stream stop request received", pKinesisVideoStream->streamInfo.name);
                     if (pUploadHandleInfo->lastPersistedAckTs == pUploadHandleInfo->lastFragmentTs) {
                         DLOGI("[%s] Last ack received, moving to TERMINATED state ", pKinesisVideoStream->streamInfo.name);
                         pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
