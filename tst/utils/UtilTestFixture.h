@@ -113,7 +113,7 @@ class UtilTestBase : public ::testing::Test {
         }
         DLOGI("Final remaining allocation size is %llu\n", gTotalUtilsMemoryUsage);
 
-        if (gTotalUtilsMemoryUsage != 0) {
+        while (gTotalUtilsMemoryUsage != 0) {
             if (allocatorsSet) {
                 MUTEX_UNLOCK(gUtilityMemMutex);
             }
