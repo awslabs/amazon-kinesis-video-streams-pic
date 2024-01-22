@@ -16,9 +16,23 @@ typedef struct TaskData {
     PVOID customData;
 } TaskData, *PTaskData;
 
+typedef struct TerminationTask {
+    MUTEX mutex;
+    PSIZE_T pCount;
+    SEMAPHORE_HANDLE semaphore;
+} TerminationTask, *PTerminationTask;
+
 PVOID threadpoolTermination(PVOID data)
 {
-    THREAD_SLEEP(20 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    PTerminationTask task = (PTerminationTask) data;
+    PSIZE_T pCount = NULL;
+    if (task != NULL) {
+        pCount = task->pCount;
+        MUTEX_LOCK(task->mutex);
+        semaphoreRelease(task->semaphore);
+        (*pCount)++;
+        MUTEX_UNLOCK(task->mutex);
+    }
     return 0;
 }
 
@@ -96,6 +110,15 @@ PVOID threadpoolActor(PVOID data)
         } else {
             // Threadpool is active - lock its mutex
             MUTEX_LOCK(pThreadpool->listMutex);
+
+            // if threadpool is in teardown, release this mutex and go to queue.
+            // We don't want to be the one to remove this actor from the list in the event
+            // of teardown.
+            if (ATOMIC_LOAD_BOOL(&pThreadpool->terminate)) {
+                MUTEX_UNLOCK(pThreadpool->listMutex);
+                MUTEX_UNLOCK(pThreadData->dataMutex);
+                continue;
+            }
 
             // Check that there aren't any pending tasks.
             if (safeBlockingQueueIsEmpty(pQueue, &taskQueueEmpty) == STATUS_SUCCESS) {
@@ -283,8 +306,13 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
     StackQueueIterator iterator;
     PThreadData item = NULL;
     UINT64 data;
-    BOOL finished = FALSE, taskQueueEmpty = FALSE, listMutexLocked = FALSE;
-    SIZE_T threadCount = 0, i = 0;
+    BOOL finished = FALSE, taskQueueEmpty = FALSE, listMutexLocked = FALSE, tempMutexLocked = FALSE;
+    ;
+    SIZE_T threadCount = 0, i = 0, sentTerminationTasks = 0, finishedTerminationTasks = 0;
+    MUTEX tempMutex;
+    SEMAPHORE_HANDLE tempSemaphore;
+    TerminationTask terminateTask;
+    PTaskData pTask = NULL;
     CHK(pThreadpool != NULL, STATUS_NULL_ARG);
 
     // Threads are not forced to finish their tasks. If the user has assigned
@@ -295,6 +323,17 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
 
     // set terminate flag of pool -- no new threads/items can be added now
     ATOMIC_STORE_BOOL(&pThreadpool->terminate, TRUE);
+
+    // This is used to block threadpool actors on a task so that they release all
+    // mutexes the destructor will need to acquire to teardown gracefully.
+    tempMutex = MUTEX_CREATE(FALSE);
+    MUTEX_LOCK(tempMutex);
+    CHK_STATUS(semaphoreEmptyCreate(pThreadpool->maxThreads, &tempSemaphore));
+    tempMutexLocked = TRUE;
+
+    terminateTask.mutex = tempMutex;
+    terminateTask.semaphore = tempSemaphore;
+    terminateTask.pCount = &finishedTerminationTasks;
 
     CHK_STATUS(safeBlockingQueueIsEmpty(pThreadpool->taskQueue, &taskQueueEmpty));
     if (!taskQueueEmpty) {
@@ -352,7 +391,8 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
                 // When we unlock and sleep we give them
                 CHK_STATUS(stackQueueGetCount(pThreadpool->threadList, &threadCount));
                 for (i = 0; i < threadCount; i++) {
-                    threadpoolInternalCreateTask(pThreadpool, threadpoolTermination, 0);
+                    CHK_STATUS(threadpoolInternalCreateTask(pThreadpool, threadpoolTermination, &terminateTask));
+                    sentTerminationTasks++;
                 }
                 break;
             }
@@ -366,13 +406,40 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
         }
     }
 
+    // in the event that we sent termination tasks, we now need to clean up all those
+    // tasks so we can safely free the associated mutex.
+    while (finishedTerminationTasks < sentTerminationTasks) {
+        MUTEX_UNLOCK(tempMutex);
+        tempMutexLocked = FALSE;
+
+        // if there are still items in the queue, then we need to clear them
+        CHK_STATUS(safeBlockingQueueGetCount(pThreadpool->taskQueue, &i));
+
+        if (i > 0 && safeBlockingQueueDequeue(pThreadpool->taskQueue, &data) == STATUS_SUCCESS) {
+            pTask = (PTaskData) data;
+            if (pTask != NULL) {
+                pTask->function(pTask->customData);
+                SAFE_MEMFREE(pTask);
+            }
+        }
+        semaphoreAcquire(tempSemaphore, INFINITE_TIME_VALUE);
+        MUTEX_LOCK(tempMutex);
+        tempMutexLocked = TRUE;
+    }
+
 CleanUp:
+
+    if (tempMutexLocked) {
+        MUTEX_UNLOCK(tempMutex);
+    }
 
     if (listMutexLocked) {
         MUTEX_UNLOCK(pThreadpool->listMutex);
     }
 
     // now free all the memory
+    MUTEX_FREE(tempMutex);
+    semaphoreFree(&tempSemaphore);
     MUTEX_FREE(pThreadpool->listMutex);
     stackQueueFree(pThreadpool->threadList);
 
