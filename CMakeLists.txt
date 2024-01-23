@@ -34,6 +34,11 @@ add_definitions(-DDETECTED_GIT_HASH)
 if(NOT CMAKE_BUILD_TYPE)
   message(STATUS "Setting CMAKE_BUILD_TYPE to Release by default")
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
+elseif()
+  string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER) # To ensure consistency
+  if(CMAKE_BUILD_TYPE_UPPER STREQUAL "DEBUG")
+    add_definitions(-DDEBUG_BUILD)
+  endif()
 endif()
 
 if(BUILD_SHARED_LIBS)
