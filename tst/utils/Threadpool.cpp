@@ -6,6 +6,8 @@ class ThreadpoolFunctionalityTest : public UtilTestBase {
 };
 
 MUTEX gTerminateMutex;
+SEMAPHORE_HANDLE gTerminateSemaphore;
+UINT8 gTerminateCount = 0;
 
 
 PVOID randomishTask(PVOID customData)
@@ -18,12 +20,17 @@ PVOID exitOnTeardownTask(PVOID customData)
 {
     BOOL* pTerminate = (BOOL*) customData;
     BOOL terminate;
+    MUTEX_LOCK(gTerminateMutex);
+    gTerminateCount++;
+    MUTEX_UNLOCK(gTerminateMutex);
     do {
         THREAD_SLEEP(20 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
         MUTEX_LOCK(gTerminateMutex);
         terminate = *pTerminate;
         MUTEX_UNLOCK(gTerminateMutex);
     } while(!terminate);
+
+    semaphoreRelease(gTerminateSemaphore);
 
     return 0;
 }
@@ -47,14 +54,17 @@ TEST_F(ThreadpoolFunctionalityTest, CreateDestroyTest)
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
     // wait for threads to exit before test ends
-    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 }
 
 TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
 {
-    gTerminateMutex = MUTEX_CREATE(FALSE);
     PThreadpool pThreadpool = NULL;
     BOOL terminate = FALSE;
+    auto count = 0;
+    gTerminateCount = 0;
+    gTerminateMutex = MUTEX_CREATE(FALSE);
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreEmptyCreate(10, &gTerminateSemaphore));
     srand(GETTIME());
     EXPECT_EQ(STATUS_SUCCESS, threadpoolCreate(&pThreadpool, 1, 1));
 
@@ -69,14 +79,24 @@ TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
     MUTEX_UNLOCK(gTerminateMutex);
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
+    MUTEX_LOCK(gTerminateMutex);
+    count = gTerminateCount;
+    MUTEX_UNLOCK(gTerminateMutex);
+
     // wait for threads to exit before test ends
-    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    for(auto i = 0; i < count; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, semaphoreAcquire(gTerminateSemaphore, INFINITE_TIME_VALUE));
+    }
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
     MUTEX_FREE(gTerminateMutex);
+    THREAD_SLEEP(1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 }
 
 TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
 {
+    gTerminateCount = 0;
     gTerminateMutex = MUTEX_CREATE(FALSE);
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreEmptyCreate(10, &gTerminateSemaphore));
     PThreadpool pThreadpool = NULL;
     BOOL terminate = FALSE;
     UINT32 count = 0;
@@ -92,14 +112,24 @@ TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
     MUTEX_UNLOCK(gTerminateMutex);
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
+    MUTEX_LOCK(gTerminateMutex);
+    auto enteredThreadCount = gTerminateCount;
+    MUTEX_UNLOCK(gTerminateMutex);
+
     // wait for threads to exit before test ends
-    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    for(auto i = 0; i < enteredThreadCount; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, semaphoreAcquire(gTerminateSemaphore, INFINITE_TIME_VALUE));
+    }
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
     MUTEX_FREE(gTerminateMutex);
+    THREAD_SLEEP(1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 }
 
 TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
 {
+    gTerminateCount = 0;
     gTerminateMutex = MUTEX_CREATE(FALSE);
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreEmptyCreate(10, &gTerminateSemaphore));
     PThreadpool pThreadpool = NULL;
     UINT32 count = 0;
     BOOL terminate = FALSE;
@@ -136,14 +166,24 @@ TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
 
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
+    MUTEX_LOCK(gTerminateMutex);
+    auto enteredThreadCount = gTerminateCount;
+    MUTEX_UNLOCK(gTerminateMutex);
+
     // wait for threads to exit before test ends
-    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    for(auto i = 0; i < enteredThreadCount; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, semaphoreAcquire(gTerminateSemaphore, INFINITE_TIME_VALUE));
+    }
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
     MUTEX_FREE(gTerminateMutex);
+    THREAD_SLEEP(1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 }
 
 TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest)
 {
+    gTerminateCount = 0;
     gTerminateMutex = MUTEX_CREATE(FALSE);
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreEmptyCreate(10, &gTerminateSemaphore));
     PThreadpool pThreadpool = NULL;
     UINT32 count = 0;
     BOOL terminate = FALSE;
@@ -164,9 +204,17 @@ TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest
     terminate = TRUE;
     MUTEX_UNLOCK(gTerminateMutex);
 
+    MUTEX_LOCK(gTerminateMutex);
+    auto enteredThreadCount = gTerminateCount;
+    MUTEX_UNLOCK(gTerminateMutex);
+
     // wait for threads to exit before test ends
-    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    for(auto i = 0; i < enteredThreadCount; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, semaphoreAcquire(gTerminateSemaphore, INFINITE_TIME_VALUE));
+    }
+    EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
     MUTEX_FREE(gTerminateMutex);
+    THREAD_SLEEP(1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 }
 
 
@@ -215,6 +263,9 @@ TEST_F(ThreadpoolFunctionalityTest, MultithreadUseTest)
     ATOMIC_STORE_BOOL(&user.usable, FALSE);
     EXPECT_EQ(STATUS_SUCCESS, threadpoolFree(pThreadpool));
 
+    THREAD_JOIN(thread1, NULL);
+    THREAD_JOIN(thread2, NULL);
+
     // wait for threads to exit before test ends to avoid false memory leak alarm
-    THREAD_SLEEP(500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 }

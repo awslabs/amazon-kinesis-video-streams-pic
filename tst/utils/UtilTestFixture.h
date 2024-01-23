@@ -108,9 +108,25 @@ class UtilTestBase : public ::testing::Test {
         DLOGI("\nTearing down test: %s\n", GetTestName());
 
         // Validate the allocations cleanup
+        if (allocatorsSet) {
+            MUTEX_LOCK(gUtilityMemMutex);
+        }
         DLOGI("Final remaining allocation size is %llu\n", gTotalUtilsMemoryUsage);
 
+        while (gTotalUtilsMemoryUsage != 0) {
+            if (allocatorsSet) {
+                MUTEX_UNLOCK(gUtilityMemMutex);
+            }
+            THREAD_SLEEP(1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
+            if (allocatorsSet) {
+                MUTEX_LOCK(gUtilityMemMutex);
+            }
+        }
+
         EXPECT_EQ((UINT64) 0, gTotalUtilsMemoryUsage);
+        if (allocatorsSet) {
+            MUTEX_UNLOCK(gUtilityMemMutex);
+        }
 
         if (allocatorsSet) {
             globalMemAlloc = storedMemAlloc;
