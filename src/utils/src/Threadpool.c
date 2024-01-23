@@ -202,6 +202,7 @@ STATUS threadpoolInternalCreateThread(PThreadpool pThreadpool)
     locked = FALSE;
 
     CHK_STATUS(THREAD_CREATE(&thread, threadpoolActor, (PVOID) data));
+    printf("Created a thread\n");
     CHK_STATUS(THREAD_DETACH(thread));
 
 CleanUp:
