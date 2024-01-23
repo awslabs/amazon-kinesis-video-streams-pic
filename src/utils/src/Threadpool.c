@@ -202,7 +202,6 @@ STATUS threadpoolInternalCreateThread(PThreadpool pThreadpool)
     locked = FALSE;
 
     CHK_STATUS(THREAD_CREATE(&thread, threadpoolActor, (PVOID) data));
-    printf("Created a thread\n");
     CHK_STATUS(THREAD_DETACH(thread));
 
 CleanUp:
@@ -471,6 +470,7 @@ STATUS threadpoolPush(PThreadpool pThreadpool, startRoutine function, PVOID cust
 
     // only create a thread if there are no available threads and not maxed
     if (count <= 0 && spaceAvailable) {
+        printf("Adding new thread\n");
         CHK_STATUS(threadpoolInternalCreateThread(pThreadpool));
     }
 
