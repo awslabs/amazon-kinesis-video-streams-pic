@@ -1279,8 +1279,15 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             break;
     }
 
+    // [DEBUG] Let's see why what happens in this do-while loop that causes us to get stuck in it repeating
+    //      the (!IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->curViewItem.viewItem.handle)) case. Also adding logs to
+    //      the other cases to ensure we're not jumping between cases.
+    //      
+
     // Continue filling the buffer from the point we left off
     do {
+        DLOGI("[DEBUG] [%s] Entering do, remainingSize: %i", pKinesisVideoStream->streamInfo.name, remainingSize);
+        
         // First and foremost, we need to check whether we need to
         // send the packaged not-yet sent metadata, then
         // we need to check whether we need to send the packaged EOS metadata
@@ -1288,6 +1295,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
         // This could happen in case when we start getting the data out or
         // when the last time we got the data the item fell off the view window.
         if (IS_UPLOAD_HANDLE_IN_SENDING_EOS_STATE(pUploadHandleInfo) && pKinesisVideoStream->metadataTracker.send) {
+            DLOGI("[DEBUG] [%s] Upload handle is in sending eos state AND metadataTracker.send is true.", pKinesisVideoStream->streamInfo.name);
             // Check if we have finished sending the packaged metadata and reset the values
             if (pKinesisVideoStream->metadataTracker.offset == pKinesisVideoStream->metadataTracker.size) {
                 pKinesisVideoStream->metadataTracker.offset = 0;
@@ -1307,6 +1315,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
                 *pFillSize += size;
             }
         } else if (IS_UPLOAD_HANDLE_IN_SENDING_EOS_STATE(pUploadHandleInfo) && pKinesisVideoStream->eosTracker.send) {
+            DLOGI("[DEBUG] [%s] Upload handle is in sending eos state AND eosTracker.send is true.", pKinesisVideoStream->streamInfo.name);
             if (pKinesisVideoStream->eosTracker.offset == pKinesisVideoStream->eosTracker.size) {
                 pKinesisVideoStream->eosTracker.offset = 0;
                 pKinesisVideoStream->eosTracker.send = FALSE;
@@ -1343,6 +1352,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             remainingSize -= size;
             *pFillSize += size;
         } else if (!IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->curViewItem.viewItem.handle)) {
+            DLOGI("[DEBUG] [%s] ViewItem does not have a valid allocation handle - it's NULL.", pKinesisVideoStream->streamInfo.name);
             // Reset the current view item
             pKinesisVideoStream->curViewItem.offset = pKinesisVideoStream->curViewItem.viewItem.length = 0;
 
@@ -1352,7 +1362,9 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             // Need to find the next key frame boundary in case of the current rolling out of the window
             CHK_STATUS(getNextBoundaryViewItem(pKinesisVideoStream, &pViewItem));
 
+            // [DEBUG] At this point do we have a next item that is non-null? If so, will it's upload handle be null in the next loop's iteration?
             if (pViewItem != NULL) {
+                DLOGI("[DEBUG] [%s] Found non-null next boundary view item.", pKinesisVideoStream->streamInfo.name);
                 // Reset the item ACK flags as this might be replay after rollback
                 CLEAR_ITEM_BUFFERING_ACK(pViewItem->flags);
                 CLEAR_ITEM_RECEIVED_ACK(pViewItem->flags);
@@ -1360,9 +1372,12 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
                 pKinesisVideoStream->curViewItem.viewItem = *pViewItem;
             } else {
                 // Couldn't find any boundary items, default to empty - early return
+                DLOGI("[DEBUG] [%s] Couldn't find any boundary items, default to empty - early return.", pKinesisVideoStream->streamInfo.name);
                 CHK(FALSE, STATUS_NO_MORE_DATA_AVAILABLE);
             }
         } else if (pKinesisVideoStream->curViewItem.offset == pKinesisVideoStream->curViewItem.viewItem.length) {
+            DLOGI("[DEBUG] [%s] ViewItem offset is equal to the viewItem length.", pKinesisVideoStream->streamInfo.name);
+
             // Check if the current was a special EoFr in which case we don't need to send EoS
             eosSent = CHECK_ITEM_FRAGMENT_END(pKinesisVideoStream->curViewItem.viewItem.flags) ? TRUE : FALSE;
 
@@ -1415,6 +1430,8 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
                 }
             }
         } else {
+            DLOGI("[DEBUG] [%s] Defualt case.", pKinesisVideoStream->streamInfo.name);
+
             // Now, we can stream enough data out if we don't have a zero item
             CHK(pKinesisVideoStream->curViewItem.offset != pKinesisVideoStream->curViewItem.viewItem.length, STATUS_NO_MORE_DATA_AVAILABLE);
 
@@ -1448,6 +1465,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
             clientLocked = FALSE;
 
+            DLOGI("[DEBUG] [%s] Decrementing remainingSize.", pKinesisVideoStream->streamInfo.name);
             // Set the values
             pKinesisVideoStream->curViewItem.offset += size;
             pCurPnt += size;
@@ -2241,11 +2259,15 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     streamLocked = TRUE;
 
+    DLOGI("[DEBUG] [%s] Checking whether stream start is applicable, exiting early if not.", pKinesisVideoStream->streamInfo.name);
+
     // Quick check if we need to do anything by checking the current view items allocation handle
     // and whether it has a stream start indicator. Early exit if it's not a stream start.
     CHK(IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->curViewItem.viewItem.handle) &&
             CHECK_ITEM_STREAM_START(pKinesisVideoStream->curViewItem.viewItem.flags),
         retStatus);
+
+    DLOGI("[DEBUG] [%s] Not exiting early...", pKinesisVideoStream->streamInfo.name);
 
     // Get the view item corresponding to the current item
     CHK_STATUS(contentViewGetItemAt(pKinesisVideoStream->pView, pKinesisVideoStream->curViewItem.viewItem.index, &pViewItem));
@@ -2356,6 +2378,8 @@ STATUS getNextBoundaryViewItem(PKinesisVideoStream pKinesisVideoStream, PViewIte
         }
     }
 
+    DLOGI("[DEBUG] [%s] Got next boundary view item.", pKinesisVideoStream->streamInfo.name);
+
     // Assign the return value
     *ppViewItem = pViewItem;
 
@@ -2387,6 +2411,8 @@ STATUS getNextViewItem(PKinesisVideoStream pKinesisVideoStream, PViewItem* ppVie
             iterate = FALSE;
         }
     }
+
+    DLOGI("[DEBUG] [%s] Got next view item.", pKinesisVideoStream->streamInfo.name);
 
     // Assign the return value
     *ppViewItem = pViewItem;
