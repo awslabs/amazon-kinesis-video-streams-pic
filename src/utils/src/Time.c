@@ -3,6 +3,19 @@
 getTime globalGetTime = defaultGetTime;
 getTime globalGetRealTime = defaultGetTime;
 
+#if !(defined _WIN32 || defined _WIN64)
+getTmTime globalGetTmTime = defaultGetTmTime;
+
+pthread_mutex_t globalGmTimeMutex = PTHREAD_MUTEX_INITIALIZER;
+struct tm* defaultGetTmTime(const time_t *timer) {
+    struct tm* retVal;
+    pthread_mutex_lock(&globalGmTimeMutex);
+    retVal = GMTIME(timer);
+    pthread_mutex_unlock(&globalGmTimeMutex);
+    return retVal;
+}
+#endif
+
 STATUS generateTimestampStrInMilliseconds(PCHAR formatStr, PCHAR pDestBuffer, UINT32 destBufferLen, PUINT32 pFormattedStrLen)
 {
     STATUS retStatus = STATUS_SUCCESS;
@@ -31,7 +44,7 @@ STATUS generateTimestampStrInMilliseconds(PCHAR formatStr, PCHAR pDestBuffer, UI
     time_t seconds = milliseconds100ns / 1000;
 
     // Convert time_t to UTC tm struct
-    timeinfo = GMTIME(&seconds);
+    timeinfo = GMTIME_SAFE(&seconds);
 
     millisecondVal = milliseconds100ns % 1000;
 
@@ -39,7 +52,7 @@ STATUS generateTimestampStrInMilliseconds(PCHAR formatStr, PCHAR pDestBuffer, UI
     struct timeval tv;
     gettimeofday(&tv, NULL); // Get current time
 
-    timeinfo = GMTIME(&(tv.tv_sec)); // Convert to broken-down time
+    timeinfo = GMTIME_SAFE(&(tv.tv_sec)); // Convert to broken-down time
 
     millisecondVal = tv.tv_usec / 1000; // Convert microseconds to milliseconds
 
@@ -47,7 +60,7 @@ STATUS generateTimestampStrInMilliseconds(PCHAR formatStr, PCHAR pDestBuffer, UI
     struct timespec nowTime;
     clock_gettime(CLOCK_REALTIME, &nowTime);
 
-    timeinfo = GMTIME(&(nowTime.tv_sec));
+    timeinfo = GMTIME_SAFE(&(nowTime.tv_sec));
     millisecondVal = nowTime.tv_nsec / (HUNDREDS_OF_NANOS_IN_A_MILLISECOND * DEFAULT_TIME_UNIT_IN_NANOS); // Convert nanoseconds to milliseconds
 
 #endif
@@ -79,7 +92,7 @@ STATUS generateTimestampStr(UINT64 timestamp, PCHAR formatStr, PCHAR pDestBuffer
     formattedStrLen = 0;
     *pFormattedStrLen = 0;
 
-    formattedStrLen = (UINT32) STRFTIME(pDestBuffer, destBufferLen, formatStr, GMTIME(&timestampSeconds));
+    formattedStrLen = (UINT32) STRFTIME(pDestBuffer, destBufferLen, formatStr, GMTIME_SAFE(&timestampSeconds));
     CHK(formattedStrLen != 0, STATUS_STRFTIME_FALIED);
 
     pDestBuffer[formattedStrLen] = '\0';

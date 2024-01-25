@@ -686,18 +686,22 @@ extern getTName globalGetThreadName;
 //
 typedef UINT64 (*getTime)();
 
+typedef struct tm* (*getTmTime)(const time_t*);
+
 //
 // Default time library functions
 //
 #define TIME_DIFF_UNIX_WINDOWS_TIME 116444736000000000ULL
 
 PUBLIC_API UINT64 defaultGetTime();
+PUBLIC_API struct tm* defaultGetTmTime(const time_t*);
 
 //
 // Thread related functionality
 //
 extern getTime globalGetTime;
 extern getTime globalGetRealTime;
+extern getTmTime globalGetTmTime;
 
 //
 // Thread library function definitions
@@ -992,6 +996,12 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 #define GETREALTIME globalGetRealTime
 #define STRFTIME    strftime
 #define GMTIME      gmtime
+
+#if defined _WIN32 || defined _WIN64
+#define GMTIME_SAFE GMTIME
+#else
+#define GMTIME_SAFE globalGetTmTime
+#endif
 
 //
 // Mutex functionality
