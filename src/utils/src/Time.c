@@ -7,7 +7,8 @@ getTime globalGetRealTime = defaultGetTime;
 getTmTime globalGetTmTime = defaultGetTmTime;
 
 pthread_mutex_t globalGmTimeMutex = PTHREAD_MUTEX_INITIALIZER;
-struct tm* defaultGetTmTime(const time_t *timer) {
+struct tm* defaultGetTmTime(const time_t* timer)
+{
     struct tm* retVal;
     pthread_mutex_lock(&globalGmTimeMutex);
     retVal = GMTIME(timer);

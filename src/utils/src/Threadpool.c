@@ -307,7 +307,6 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
     PThreadData item = NULL;
     UINT64 data;
     BOOL finished = FALSE, taskQueueEmpty = FALSE, listMutexLocked = FALSE, tempMutexLocked = FALSE;
-    ;
     SIZE_T threadCount = 0, i = 0, sentTerminationTasks = 0, finishedTerminationTasks = 0;
     MUTEX tempMutex;
     SEMAPHORE_HANDLE tempSemaphore;
