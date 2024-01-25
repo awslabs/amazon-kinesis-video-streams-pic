@@ -161,6 +161,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     // Reset the current view item
     MEMSET(&pKinesisVideoStream->curViewItem, 0x00, SIZEOF(CurrentViewItem));
     pKinesisVideoStream->curViewItem.viewItem.handle = INVALID_ALLOCATION_HANDLE_VALUE;
+    DLOGI("[DEBUG] [%s] Set allocation handle to NULL.", pKinesisVideoStream->streamInfo.name);
 
     // Copy the structures in their entirety
     MEMCPY(&pKinesisVideoStream->streamInfo, pStreamInfo, SIZEOF(StreamInfo));
@@ -1761,6 +1762,8 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
     // Set to invalid whether we failed to allocate or we don't have content view availability
     *pAllocationHandle = INVALID_ALLOCATION_HANDLE_VALUE;
 
+    DLOGI("[DEBUG] [%s] Set allocationHandle to INVALID_ALLOCATION_HANDLE_VALUE.", pKinesisVideoStream->streamInfo.name);
+
     // check view availability only if in offline mode
     if (IS_OFFLINE_STREAMING_MODE(pKinesisVideoStream->streamInfo.streamCaps.streamingType)) {
         // Check to see if we have availability in the content view. This will set the availability
@@ -1775,8 +1778,10 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
     clientLocked = TRUE;
 
     // Get the heap size
+    DLOGI("[DEBUG] [%s] Getting heap size.", pKinesisVideoStream->streamInfo.name);
     CHK_STATUS(heapGetSize(pKinesisVideoClient->pHeap, &heapSize));
 
+    DLOGI("[DEBUG] [%s] Checking for underflow.", pKinesisVideoStream->streamInfo.name);
     // Check for underflow
     CHK(pKinesisVideoClient->deviceInfo.storageInfo.storageSize >
             heapSize + MAX_ALLOCATION_OVERHEAD_SIZE + pKinesisVideoStream->maxFrameSizeSeen * FRAME_ALLOC_FRAGMENTATION_FACTOR,
@@ -1787,12 +1792,23 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
     availableHeapSize = pKinesisVideoClient->deviceInfo.storageInfo.storageSize - heapSize - MAX_ALLOCATION_OVERHEAD_SIZE -
         (UINT64) (pKinesisVideoStream->maxFrameSizeSeen * FRAME_ALLOC_FRAGMENTATION_FACTOR);
 
+    DLOGI("[DEBUG] [%s] Checking for available storage space.", pKinesisVideoStream->streamInfo.name);
     // Early return if storage space is unavailable.
     CHK(availableHeapSize >= allocationSize, STATUS_SUCCESS);
 
+    DLOGI("[DEBUG] [%s] Allocating to heap.", pKinesisVideoStream->streamInfo.name);
     // Get the heap size. Do not need to check status. If heapAlloc failed then pAllocationHandle would remain invalid.
     retStatus = heapAlloc(pKinesisVideoClient->pHeap, allocationSize, pAllocationHandle);
+    DLOGI("[DEBUG] [%s] Checking for enough memory.", pKinesisVideoStream->streamInfo.name);
     CHK(retStatus == STATUS_SUCCESS || retStatus == STATUS_NOT_ENOUGH_MEMORY, retStatus);
+
+    if (retStatus == STATUS_NOT_ENOUGH_MEMORY) {DLOGI("[DEBUG] [%s] Not enough memory.", pKinesisVideoStream->streamInfo.name); }
+    else {DLOGI("[DEBUG] [%s] Enough memory.", pKinesisVideoStream->streamInfo.name); }
+
+    if (*pAllocationHandle == INVALID_ALLOCATION_HANDLE_VALUE) {
+        DLOGI("[DEBUG] [%s] Upload handle is stil invalid value (null).", pKinesisVideoStream->streamInfo.name);
+    }
+
     retStatus = STATUS_SUCCESS;
 
     // Unlock the client
@@ -2145,6 +2161,7 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
     // Reset the current view item on connection reset
     MEMSET(&pKinesisVideoStream->curViewItem, 0x00, SIZEOF(CurrentViewItem));
     pKinesisVideoStream->curViewItem.viewItem.handle = INVALID_ALLOCATION_HANDLE_VALUE;
+    DLOGI("[DEBUG] [%s] Set allocation handle to NULL.", pKinesisVideoStream->streamInfo.name);
 
     // Reset the EOS tracker
     pKinesisVideoStream->eosTracker.send = FALSE;
@@ -2185,7 +2202,9 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
     // Allocate storage for the frame
     overallSize = packagedSize + headerSize;
     CHK_STATUS(heapAlloc(pKinesisVideoClient->pHeap, overallSize, &allocationHandle));
-
+    if (!IS_VALID_ALLOCATION_HANDLE(allocationHandle)) {
+        DLOGI("[DEBUG] [%s] AllocationHandle null after heapAlloc - store is out of memory, ", pKinesisVideoStream->streamInfo.name);
+    }
     // Ensure we have space and if not then bail
     CHK(IS_VALID_ALLOCATION_HANDLE(allocationHandle), STATUS_STORE_OUT_OF_MEMORY);
 
@@ -2201,6 +2220,7 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
 
     // At this stage we are done and need to swap the allocation handle with the old one so it can be freed later
     // in the cleanup clause. The idea is to free either old one if all OK or the new one if something failed.
+    DLOGI("[DEBUG] [%s] Switching to oldAllocationHandle...", pKinesisVideoStream->streamInfo.name);
     oldAllocationHandle = pViewItem->handle;
     pViewItem->handle = allocationHandle;
     allocationHandle = oldAllocationHandle;
@@ -2229,7 +2249,10 @@ CleanUp:
 
     // Clear up the previous allocation handle
     if (IS_VALID_ALLOCATION_HANDLE(allocationHandle)) {
+        DLOGI("[DEBUG] [%s] Old/current (depending on whether switched above) is NOT null, freeing.", pKinesisVideoStream->streamInfo.name);
         heapFree(pKinesisVideoClient->pHeap, allocationHandle);
+    } else {
+         DLOGI("[DEBUG] [%s] Old/current (depending on whether switched above) is null, not freeing.", pKinesisVideoStream->streamInfo.name);
     }
 
     LEAVES();
@@ -3471,6 +3494,7 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
     // Reset the current view item
     MEMSET(&pKinesisVideoStream->curViewItem, 0x00, SIZEOF(CurrentViewItem));
     pKinesisVideoStream->curViewItem.viewItem.handle = INVALID_ALLOCATION_HANDLE_VALUE;
+    DLOGI("[DEBUG] [%s] Set allocation handle to NULL.", pKinesisVideoStream->streamInfo.name);
 
     // Trim all the buffer to head
     CHK_STATUS_CONTINUE(contentViewRemoveAll(pKinesisVideoStream->pView));
