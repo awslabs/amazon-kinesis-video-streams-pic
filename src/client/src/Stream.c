@@ -1162,7 +1162,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
     PViewItem pViewItem = NULL;
     PBYTE pAlloc = NULL;
     UINT32 size = 0, remainingSize = bufferSize, uploadHandleCount;
-    UINT64 allocSize, currentTime, duration, viewByteSize;
+    UINT64 allocSize, currentTime, duration, viewByteSize, doWhileCounter = 0;
     PBYTE pCurPnt = pBuffer;
     BOOL streamLocked = FALSE, clientLocked = FALSE, rollbackToLastAck, restarted = FALSE, eosSent = FALSE;
     DOUBLE transferRate, deltaInSeconds;
@@ -1283,10 +1283,18 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
     // [DEBUG] Let's see why what happens in this do-while loop that causes us to get stuck in it repeating
     //      the (!IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->curViewItem.viewItem.handle)) case. Also adding logs to
     //      the other cases to ensure we're not jumping between cases.
-    //      
+    //
+
 
     // Continue filling the buffer from the point we left off
+
+    pKinesisVideoStream->printLogs = FALSE;
     do {
+        doWhileCounter++;
+        if (doWhileCounter > 1000) {
+            pKinesisVideoStream->printLogs = TRUE;
+        }
+
         DLOGI("[DEBUG] [%s] Entering do, remainingSize: %i", pKinesisVideoStream->streamInfo.name, remainingSize);
         
         // First and foremost, we need to check whether we need to
@@ -2429,7 +2437,7 @@ STATUS getNextViewItem(PKinesisVideoStream pKinesisVideoStream, PViewItem* ppVie
 
     // Get next skipping over the errored items
     while (iterate) {
-        CHK_STATUS(contentViewGetNext(pKinesisVideoStream->pView, &pViewItem));
+        CHK_STATUS(contentViewGetNext(pKinesisVideoStream->pView, &pViewItem, pKinesisVideoStream->printLogs));
         if (!CHECK_ITEM_SKIP_ITEM(pViewItem->flags)) {
             iterate = FALSE;
         }
@@ -2826,7 +2834,7 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
         iterate = TRUE;
 
         // Advance the current to the next one
-        retStatus = contentViewGetNext(pKinesisVideoStream->pView, &pCurItem);
+        retStatus = contentViewGetNext(pKinesisVideoStream->pView, &pCurItem, FALSE);
         CHK(retStatus == STATUS_CONTENT_VIEW_NO_MORE_ITEMS || retStatus == STATUS_SUCCESS, retStatus);
         if (retStatus == STATUS_CONTENT_VIEW_NO_MORE_ITEMS) {
             // Reset the status
@@ -2841,7 +2849,7 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
             // Indicate an errored item and advance the current
             SET_ITEM_SKIP_ITEM(pCurItem->flags);
             pKinesisVideoStream->diagnostics.skippedFrames++;
-            retStatus = contentViewGetNext(pKinesisVideoStream->pView, &pCurItem);
+            retStatus = contentViewGetNext(pKinesisVideoStream->pView, &pCurItem, FALSE);
             CHK(retStatus == STATUS_CONTENT_VIEW_NO_MORE_ITEMS || retStatus == STATUS_SUCCESS, retStatus);
 
             if (retStatus == STATUS_CONTENT_VIEW_NO_MORE_ITEMS) {

@@ -140,15 +140,24 @@ CleanUp:
 /**
  * Gets the current item and advances the index
  */
-STATUS contentViewGetNext(PContentView pContentView, PViewItem* ppItem)
+STATUS contentViewGetNext(PContentView pContentView, PViewItem* ppItem, BOOL printLogs)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PRollingContentView pRollingView = (PRollingContentView) pContentView;
     PViewItem pCurrent;
 
+    if (printLogs) { DLOGI("[DEBUG] Calling contentViewGetNext, doWhile iteration > 1000."); }
+
     // Check the input params
     CHK(pContentView != NULL && ppItem != NULL, STATUS_NULL_ARG);
+
+    if (printLogs) {
+        DLOGI("[DEBUG] Checking for STATUS_CONTENT_VIEW_NO_MORE_ITEMS with the following parameters...");
+        DLOGI("[DEBUG] pRollingView->current: %" PRIu64, pRollingView->current);
+        DLOGI("[DEBUG] pRollingView->tail: %" PRIu64, pRollingView->tail);
+        DLOGI("[DEBUG] pRollingView->head: %" PRIu64, pRollingView->head);
+    }
 
     // Quick check if any items exist - early return
     CHK((pRollingView->head != pRollingView->tail) && (pRollingView->current != pRollingView->head), STATUS_CONTENT_VIEW_NO_MORE_ITEMS);
@@ -162,6 +171,16 @@ STATUS contentViewGetNext(PContentView pContentView, PViewItem* ppItem)
     *ppItem = pCurrent;
 
 CleanUp:
+    if (printLogs) { 
+        if (retStatus == STATUS_CONTENT_VIEW_NO_MORE_ITEMS) {
+            DLOGI("[DEBUG] Exiting contentViewGetNext with STATUS_CONTENT_VIEW_NO_MORE_ITEMS.");
+        } else if (retStatus != STATUS_SUCCESS) {
+            DLOGI("[DEBUG] Exiting contentViewGetNext with failing status, not equal to STATUS_CONTENT_VIEW_NO_MORE_ITEMS.");
+        } else {
+            DLOGI("[DEBUG] Exiting contentViewGetNext with STATUS_SUCCESS.");
+        }
+    
+    }
 
     LEAVES();
     return retStatus;
