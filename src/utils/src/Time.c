@@ -3,10 +3,11 @@
 getTime globalGetTime = defaultGetTime;
 getTime globalGetRealTime = defaultGetTime;
 
-#if !(defined _WIN32 || defined _WIN64)
-getTmTime globalGetTmTime = defaultGetTmTime;
+#if !(defined _WIN32 || defined _WIN64 || defined __CYGWIN__)
 
+getTmTime globalGetTmTime = defaultGetTmTime;
 pthread_mutex_t globalGmTimeMutex = PTHREAD_MUTEX_INITIALIZER;
+
 struct tm* defaultGetTmTime(const time_t* timer)
 {
     struct tm* retVal;

@@ -997,7 +997,7 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 #define STRFTIME    strftime
 #define GMTIME      gmtime
 
-#if defined _WIN32 || defined _WIN64
+#if defined _WIN32 || defined _WIN64 || defined __CYGWIN__
 #define GMTIME_SAFE GMTIME
 #else
 #define GMTIME_SAFE globalGetTmTime
