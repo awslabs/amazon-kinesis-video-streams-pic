@@ -3,10 +3,11 @@
 //
 // Default allocator functions
 //
+#define JAMES_MINIMUM_CHECK     20000
 PVOID defaultMemAlloc(SIZE_T size)
 {
-    if(size > 1000) {
-        DLOGD("1k allocation");
+    if(size > JAMES_MINIMUM_CHECK) {
+        DLOGP("MemAlloc: %u", size);
     }
     return malloc(size);
 }
@@ -26,16 +27,16 @@ PVOID defaultMemAlignAlloc(SIZE_T size, SIZE_T alignment)
 
 PVOID defaultMemCalloc(SIZE_T num, SIZE_T size)
 {
-    if(size > 1000) {
-        DLOGD("1k allocation");
+    if(size > JAMES_MINIMUM_CHECK) {
+        DLOGP("MemCalloc: %u", size);
     }
     return calloc(num, size);
 }
 
 PVOID defaultMemRealloc(PVOID ptr, SIZE_T size)
 {
-    if(size > 1000) {
-        DLOGD("1k allocation");
+    if(size > JAMES_MINIMUM_CHECK) {
+        DLOGP("MemRealloc: %u", size);
     }
     return realloc(ptr, size);
 }
