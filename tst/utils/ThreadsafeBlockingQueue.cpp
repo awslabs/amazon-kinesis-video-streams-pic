@@ -144,13 +144,13 @@ TEST_F(ThreadsafeBlockingQueueFunctionalityTest, multithreadQueueDequeueTest)
     user.pSafeQueue = pSafeQueue;
     ATOMIC_STORE_BOOL(&user.usable, TRUE);
     for(UINT64 i = 0; i < totalThreads/2; i++) {
-        THREAD_CREATE(&threads[threadCount++], readingThread, &user);
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threads[threadCount++], readingThread, &user));
     }
     for(UINT64 i = 0; i < totalThreads/2; i++) {
-        THREAD_CREATE(&threads[threadCount++], writingThread, &user);
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threads[threadCount++], writingThread, &user));
     }
     for(UINT64 i = 0; i < totalThreads; i++) {
-        THREAD_JOIN(threads[i], NULL);
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(threads[i], NULL));
     }
     ATOMIC_STORE_BOOL(&user.usable, FALSE);
     EXPECT_EQ(STATUS_SUCCESS, safeBlockingQueueFree(pSafeQueue));
@@ -171,12 +171,12 @@ TEST_F(ThreadsafeBlockingQueueFunctionalityTest, multithreadTeardownTest)
     user.pSafeQueue = pSafeQueue;
     ATOMIC_STORE_BOOL(&user.usable, TRUE);
     for(UINT64 i = 0; i < totalThreads; i++) {
-        THREAD_CREATE(&threads[threadCount++], readingThread, &user);
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threads[threadCount++], readingThread, &user));
     }
     THREAD_SLEEP(125 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     ATOMIC_STORE_BOOL(&user.usable, FALSE);
     EXPECT_EQ(STATUS_SUCCESS, safeBlockingQueueFree(pSafeQueue));
     for(UINT64 i = 0; i < totalThreads; i++) {
-        THREAD_JOIN(threads[i], NULL);
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(threads[i], NULL));
     }
 }

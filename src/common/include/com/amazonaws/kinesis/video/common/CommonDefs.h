@@ -686,6 +686,8 @@ extern getTName globalGetThreadName;
 //
 typedef UINT64 (*getTime)();
 
+typedef struct tm* (*getTmTime)(const time_t*);
+
 //
 // Default time library functions
 //
@@ -694,10 +696,20 @@ typedef UINT64 (*getTime)();
 PUBLIC_API UINT64 defaultGetTime();
 
 //
+// The C library function gmtime is not threadsafe, but we need a thread
+// safe impl.  This provides that by wrapping the gmtime call around
+// a global mutex specific for gmtime calls.  All instances of GMTIME
+// can be safely replaced with the new GMTIME_THREAD_SAFE.
+// On Windows gmtime is threadsafe so no impact there.
+//
+PUBLIC_API struct tm* defaultGetThreadSafeTmTime(const time_t*);
+
+//
 // Thread related functionality
 //
 extern getTime globalGetTime;
 extern getTime globalGetRealTime;
+extern getTmTime globalGetThreadSafeTmTime;
 
 //
 // Thread library function definitions
@@ -992,6 +1004,12 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 #define GETREALTIME globalGetRealTime
 #define STRFTIME    strftime
 #define GMTIME      gmtime
+
+#if defined _WIN32 || defined _WIN64 || defined __CYGWIN__
+#define GMTIME_THREAD_SAFE GMTIME
+#else
+#define GMTIME_THREAD_SAFE globalGetThreadSafeTmTime
+#endif
 
 //
 // Mutex functionality
