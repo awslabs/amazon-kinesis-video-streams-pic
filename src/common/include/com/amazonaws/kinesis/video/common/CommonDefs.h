@@ -694,7 +694,15 @@ typedef struct tm* (*getTmTime)(const time_t*);
 #define TIME_DIFF_UNIX_WINDOWS_TIME 116444736000000000ULL
 
 PUBLIC_API UINT64 defaultGetTime();
-PUBLIC_API struct tm* defaultGetTmTime(const time_t*);
+
+//
+// The C library function gmtime is not threadsafe, but we need a thread
+// safe impl.  This provides that by wrapping the gmtime call around
+// a global mutex specific for gmtime calls.  All instances of GMTIME
+// can be safely replaced with the new GMTIME_THREAD_SAFE.
+// On Windows gmtime is threadsafe so no impact there.
+//
+PUBLIC_API struct tm* defaultGetThreadSafeTmTime(const time_t*);
 
 //
 // Thread related functionality
@@ -998,9 +1006,9 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 #define GMTIME      gmtime
 
 #if defined _WIN32 || defined _WIN64 || defined __CYGWIN__
-#define GMTIME_SAFE GMTIME
+#define GMTIME_THREAD_SAFE GMTIME
 #else
-#define GMTIME_SAFE globalGetTmTime
+#define GMTIME_THREAD_SAFE globalGetThreadSafeTmTime
 #endif
 
 //

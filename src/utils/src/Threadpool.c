@@ -306,8 +306,9 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
     StackQueueIterator iterator;
     PThreadData item = NULL;
     UINT64 data;
+    UINT32 threadCount, i = 0;
     BOOL finished = FALSE, taskQueueEmpty = FALSE, listMutexLocked = FALSE, tempMutexLocked = FALSE;
-    SIZE_T threadCount = 0, i = 0, sentTerminationTasks = 0, finishedTerminationTasks = 0;
+    SIZE_T sentTerminationTasks = 0, finishedTerminationTasks = 0;
     MUTEX tempMutex;
     SEMAPHORE_HANDLE tempSemaphore;
     TerminationTask terminateTask;
@@ -389,6 +390,7 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
                 //
                 // When we unlock and sleep we give them
                 CHK_STATUS(stackQueueGetCount(pThreadpool->threadList, &threadCount));
+
                 for (i = 0; i < threadCount; i++) {
                     CHK_STATUS(threadpoolInternalCreateTask(pThreadpool, threadpoolTermination, &terminateTask));
                     sentTerminationTasks++;
