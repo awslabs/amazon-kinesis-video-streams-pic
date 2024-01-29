@@ -5,6 +5,9 @@
 //
 PVOID defaultMemAlloc(SIZE_T size)
 {
+    if(size > 1000) {
+        DLOGD("1k allocation");
+    }
     return malloc(size);
 }
 
@@ -23,11 +26,17 @@ PVOID defaultMemAlignAlloc(SIZE_T size, SIZE_T alignment)
 
 PVOID defaultMemCalloc(SIZE_T num, SIZE_T size)
 {
+    if(size > 1000) {
+        DLOGD("1k allocation");
+    }
     return calloc(num, size);
 }
 
 PVOID defaultMemRealloc(PVOID ptr, SIZE_T size)
 {
+    if(size > 1000) {
+        DLOGD("1k allocation");
+    }
     return realloc(ptr, size);
 }
 
