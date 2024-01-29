@@ -709,7 +709,7 @@ PUBLIC_API struct tm* defaultGetThreadSafeTmTime(const time_t*);
 //
 extern getTime globalGetTime;
 extern getTime globalGetRealTime;
-extern getTmTime globalGetTmTime;
+extern getTmTime globalGetThreadSafeTmTime;
 
 //
 // Thread library function definitions
