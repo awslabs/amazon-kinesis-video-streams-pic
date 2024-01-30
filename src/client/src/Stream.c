@@ -1733,7 +1733,7 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
-    BOOL streamLocked = FALSE, streamListLocked = FALSE;
+    BOOL streamLocked = FALSE, streamListLocked = FALSE, handleLocking = FALSE;
     PKinesisVideoClient pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
     PFrameOrderCoordinator pFrameOrderCoordinator = pKinesisVideoStream->pFrameOrderCoordinator;
 
@@ -1756,6 +1756,7 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
                 pKinesisVideoClient->deviceInfo.clientInfo.offlineBufferAvailabilityTimeout));
         } else {
             // Need to evict the tail frames by trimming the tail
+            handleLocking = TRUE;
 
             // unlock the stream
             pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
@@ -1786,6 +1787,8 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
             // lock the stream
             pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
             streamLocked = TRUE;
+
+            handleLocking = FALSE;
         }
 
         // Check for the stream termination
@@ -1793,6 +1796,23 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
     }
 
 CleanUp:
+
+    if (handleLocking) {
+        if (streamListLocked) {
+            pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                               pKinesisVideoClient->base.streamListLock);
+        }
+
+        // lock frame order coordinator
+        if (pFrameOrderCoordinator != NULL) {
+            pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
+        }
+
+        // lock the stream
+        if (!streamLocked) {
+            pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+        }
+    }
 
     LEAVES();
     return retStatus;
