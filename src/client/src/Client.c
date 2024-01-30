@@ -724,7 +724,8 @@ STATUS createKinesisVideoStream(CLIENT_HANDLE clientHandle, PStreamInfo pStreamI
 CleanUp:
 
     if (clientStreamsListLocked) {
-        pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
+        clientStreamsListLocked = FALSE;
     }
 
     if (releaseClientSemaphore) {
