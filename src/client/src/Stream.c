@@ -745,7 +745,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     UINT64 remainingSize = 0, remainingDuration = 0, thresholdPercent = 0, duration = 0, viewByteSize = 0, allocSize = 0;
     PBYTE pAlloc = NULL;
     UINT32 trackIndex, packagedSize = 0, packagedMetadataSize = 0, overallSize = 0, itemFlags = ITEM_FLAG_NONE;
-    BOOL streamLocked = FALSE, clientLocked = FALSE, freeOnError = TRUE;
+    BOOL streamLocked = FALSE, clientLocked = FALSE, streamListLocked = FALSE, freeOnError = TRUE;
     EncodedFrameInfo encodedFrameInfo;
     MKV_STREAM_STATE generatorState = MKV_STATE_START_BLOCK;
     UINT64 currentTime = INVALID_TIMESTAMP_VALUE;
@@ -1034,9 +1034,48 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     // NOTE: The size of the actual data might be smaller than the allocated size due to the fact that
     // calculating the packaged metadata and frame might have preserved the MKV header twice as the calculation
     // of the size doesn't mutate the state of the generator. We will use the actual packaged size.
+
+    // contentViewAddItem eventually calls `viewItemRemove` which needs the streams list lock because it calls the
+    // TO_STREAM_HANDLE macro which access the streams list at an index.  But we need to unlock the client/stream
+    // and possibly frame order coordinator mutexes in order to avoid deadlock possibility, then we will lock them again.
+
+    // unlock the client
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
+    clientLocked = FALSE;
+
+    // unlock the stream
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+    streamLocked = FALSE;
+
+    // unlock frame order coordinator
+    if (pFrameOrderCoordinator != NULL) {
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
+    }
+
+    // Lock the client streams list lock
+    // Inside `contentViewAddItem` the TO_STREAM_HANDLE macro is used which access the streams list at an index
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
+    streamListLocked = TRUE;
+
     CHK_STATUS(contentViewAddItem(pKinesisVideoStream->pView, encodedFrameInfo.clusterDts + encodedFrameInfo.frameDts,
                                   encodedFrameInfo.clusterPts + encodedFrameInfo.framePts, encodedFrameInfo.duration, allocHandle,
                                   encodedFrameInfo.dataOffset, overallSize, itemFlags));
+
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
+    streamListLocked = FALSE;
+
+    // lock frame order coordinator
+    if (pFrameOrderCoordinator != NULL) {
+        pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
+    }
+
+    // lock the stream
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+    streamLocked = TRUE;
+
+    // lock the client
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
+    clientLocked = TRUE;
 
     // From now on we don't need to free the allocation as it's in the view already and will be collected
     freeOnError = FALSE;
@@ -1690,7 +1729,10 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
+    BOOL streamLocked = FALSE, streamListLocked = FALSE;
     PKinesisVideoClient pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+
+    PFrameOrderCoordinator pFrameOrderCoordinator = pKinesisVideoStream->pFrameOrderCoordinator;
 
     while (TRUE) {
         // Check if we have enough space to proceed - the stream should be locked
@@ -1711,7 +1753,36 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
                 pKinesisVideoClient->deviceInfo.clientInfo.offlineBufferAvailabilityTimeout));
         } else {
             // Need to evict the tail frames by trimming the tail
+
+            // unlock the stream
+            pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+            streamLocked = FALSE;
+
+            // unlock frame order coordinator
+            if (pFrameOrderCoordinator != NULL) {
+                pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
+            }
+
+            // Lock the client streams list lock
+            // Inside `contentViewAddItem` the TO_STREAM_HANDLE macro is used which access the streams list at an index
+            pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                             pKinesisVideoClient->base.streamListLock);
+            streamListLocked = TRUE;
+
             CHK_STATUS(contentViewTrimTailItems(pKinesisVideoStream->pView));
+
+            pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
+                                                               pKinesisVideoClient->base.streamListLock);
+            streamListLocked = FALSE;
+
+            // lock frame order coordinator
+            if (pFrameOrderCoordinator != NULL) {
+                pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pFrameOrderCoordinator->lock);
+            }
+
+            // lock the stream
+            pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+            streamLocked = TRUE;
         }
 
         // Check for the stream termination
