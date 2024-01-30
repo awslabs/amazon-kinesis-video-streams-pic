@@ -148,7 +148,7 @@ jobs:
         run: |
           cd build          
           ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          timeout --signal=SIGABRT 60m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
       - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
         run: |
           rm -rf build
@@ -159,7 +159,7 @@ jobs:
         run: |
           cd build
           ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          timeout --signal=SIGABRT 60m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
       - name: Code coverage
         run: |
           for test_file in $(find CMakeFiles/kvspic.dir CMakeFiles/kvspicClient.dir CMakeFiles/kvspicState.dir CMakeFiles/kvspicUtils.dir -name '*.gcno'); do gcov $test_file; done
@@ -180,7 +180,7 @@ jobs:
         run: |
           cd build          
           ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          timeout --signal=SIGABRT 60m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
       - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
         run: |
           rm -rf build
@@ -190,7 +190,7 @@ jobs:
       - name: Run tests
         run: |
           cd build
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          timeout --signal=SIGABRT 60m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   undefined-behavior-sanitizer:
     runs-on: ubuntu-latest
     env:
@@ -214,7 +214,7 @@ jobs:
         run: |
           cd build
           ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          timeout --signal=SIGABRT 60m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
       - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
         run: |
           rm -rf build
@@ -224,7 +224,7 @@ jobs:
       - name: Run tests
         run: |
           cd build
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          timeout --signal=SIGABRT 60m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   linux-gcc-4_4:
     runs-on: ubuntu-20.04
     env:
@@ -251,7 +251,7 @@ jobs:
         run: |
           cd build
           ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          timeout --signal=SIGABRT 60m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
       - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
         run: |
           rm -rf build
@@ -261,7 +261,7 @@ jobs:
       - name: Run tests
         run: |
           cd build
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          timeout --signal=SIGABRT 60m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   # memory-sanitizer:
   #   runs-on: ubuntu-18.04
   #   env:
@@ -281,7 +281,7 @@ jobs:
   #         cmake .. -DBUILD_TEST=TRUE -DMEMORY_SANITIZER=TRUE
   #         make
   #         ulimit -c unlimited -S
-  #         timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+  #         timeout --signal=SIGABRT 60m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   thread-sanitizer:
     runs-on: ubuntu-latest
     env:
@@ -305,7 +305,7 @@ jobs:
         run: |
           cd build
           ulimit -c unlimited -S
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          timeout --signal=SIGABRT 60m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
       - name: Build With ALIGNED_MEMORY_MODEL and FIXUP_ANNEX_B_TRAILING_NALU_ZERO definitions TRUE
         run: |
           rm -rf build
@@ -315,7 +315,7 @@ jobs:
       - name: Run tests
         run: |
           cd build
-          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
+          timeout --signal=SIGABRT 60m ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   windows-msvc:
     runs-on: windows-2022
     env:

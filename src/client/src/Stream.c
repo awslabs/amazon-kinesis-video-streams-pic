@@ -1177,6 +1177,10 @@ CleanUp:
         heapFree(pKinesisVideoClient->pHeap, allocHandle);
     }
 
+    if (streamListLocked) {
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
+    }
+
     if (clientLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     }
@@ -1731,7 +1735,6 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
     STATUS retStatus = STATUS_SUCCESS;
     BOOL streamLocked = FALSE, streamListLocked = FALSE;
     PKinesisVideoClient pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
-
     PFrameOrderCoordinator pFrameOrderCoordinator = pKinesisVideoStream->pFrameOrderCoordinator;
 
     while (TRUE) {
