@@ -1288,12 +1288,11 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
 
     // Continue filling the buffer from the point we left off
 
+    pKinesisVideoStream->printLogs = FALSE;
     do {
-        pKinesisVideoStream->printLogs = FALSE;
         doWhileCounter++;
         if (doWhileCounter > 1000) {
             pKinesisVideoStream->printLogs = TRUE;
-            doWhileCounter = 0;
         }
 
         DLOGI("[DEBUG] [%s] Entering do, remainingSize: %i", pKinesisVideoStream->streamInfo.name, remainingSize);
