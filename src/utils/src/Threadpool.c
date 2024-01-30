@@ -139,6 +139,7 @@ PVOID threadpoolActor(PVOID data)
             MUTEX_UNLOCK(pThreadData->dataMutex);
         }
     }
+    printf("%p: Terminating the thread\n", pThreadData);
     // now that we've released the listMutex, we can do an actual MUTEX_LOCK to ensure the
     // threadpool has finished using pThreadData
     MUTEX_LOCK(pThreadData->dataMutex);
