@@ -230,7 +230,7 @@ PUBLIC_API STATUS contentViewTimestampInRange(PContentView, UINT64, BOOL, PBOOL)
  * PViewItem* - The current item pointer
  *
  */
-PUBLIC_API STATUS contentViewGetNext(PContentView, PViewItem*, BOOL);
+PUBLIC_API STATUS contentViewGetNext(PContentView, PViewItem*);
 
 /**
  * Gets an item from the given index. Current remains untouched.

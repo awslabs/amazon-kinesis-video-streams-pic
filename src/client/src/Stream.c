@@ -1162,7 +1162,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
     PViewItem pViewItem = NULL;
     PBYTE pAlloc = NULL;
     UINT32 size = 0, remainingSize = bufferSize, uploadHandleCount;
-    UINT64 allocSize, currentTime, duration, viewByteSize, doWhileCounter = 0;
+    UINT64 allocSize, currentTime, duration, viewByteSize;
     PBYTE pCurPnt = pBuffer;
     BOOL streamLocked = FALSE, clientLocked = FALSE, rollbackToLastAck, restarted = FALSE, eosSent = FALSE;
     DOUBLE transferRate, deltaInSeconds;
@@ -1287,15 +1287,10 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
 
 
     // Continue filling the buffer from the point we left off
+    DLOGI("[DEBUG] [%s] About to enter do loop, remainingSize: %i", pKinesisVideoStream->streamInfo.name, remainingSize);
 
-    pKinesisVideoStream->printLogs = FALSE;
     do {
-        doWhileCounter++;
-        if (doWhileCounter > 1000) {
-            pKinesisVideoStream->printLogs = TRUE;
-        }
-
-        DLOGI("[DEBUG] [%s] Entering do, remainingSize: %i", pKinesisVideoStream->streamInfo.name, remainingSize);
+        DLOGI("[DEBUG] [%s] Iterating do loop, remainingSize: %i", pKinesisVideoStream->streamInfo.name, remainingSize);
         
         // First and foremost, we need to check whether we need to
         // send the packaged not-yet sent metadata, then
@@ -2437,7 +2432,7 @@ STATUS getNextViewItem(PKinesisVideoStream pKinesisVideoStream, PViewItem* ppVie
 
     // Get next skipping over the errored items
     while (iterate) {
-        CHK_STATUS(contentViewGetNext(pKinesisVideoStream->pView, &pViewItem, pKinesisVideoStream->printLogs));
+        CHK_STATUS(contentViewGetNext(pKinesisVideoStream->pView, &pViewItem));
         if (!CHECK_ITEM_SKIP_ITEM(pViewItem->flags)) {
             iterate = FALSE;
         }
@@ -2834,7 +2829,7 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
         iterate = TRUE;
 
         // Advance the current to the next one
-        retStatus = contentViewGetNext(pKinesisVideoStream->pView, &pCurItem, FALSE);
+        retStatus = contentViewGetNext(pKinesisVideoStream->pView, &pCurItem);
         CHK(retStatus == STATUS_CONTENT_VIEW_NO_MORE_ITEMS || retStatus == STATUS_SUCCESS, retStatus);
         if (retStatus == STATUS_CONTENT_VIEW_NO_MORE_ITEMS) {
             // Reset the status
@@ -2849,7 +2844,7 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
             // Indicate an errored item and advance the current
             SET_ITEM_SKIP_ITEM(pCurItem->flags);
             pKinesisVideoStream->diagnostics.skippedFrames++;
-            retStatus = contentViewGetNext(pKinesisVideoStream->pView, &pCurItem, FALSE);
+            retStatus = contentViewGetNext(pKinesisVideoStream->pView, &pCurItem);
             CHK(retStatus == STATUS_CONTENT_VIEW_NO_MORE_ITEMS || retStatus == STATUS_SUCCESS, retStatus);
 
             if (retStatus == STATUS_CONTENT_VIEW_NO_MORE_ITEMS) {

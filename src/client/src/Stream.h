@@ -441,8 +441,6 @@ struct __KinesisVideoStream {
 
     // Last PutFrame timestamp
     UINT64 lastPutFrameTimestamp;
-
-    BOOL printLogs;
 };
 
 /**
