@@ -698,6 +698,7 @@ STATUS createKinesisVideoStream(CLIENT_HANDLE clientHandle, PStreamInfo pStreamI
     BOOL releaseClientSemaphore = FALSE;
     PKinesisVideoStream pKinesisVideoStream = NULL;
     PKinesisVideoClient pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);
+    BOOL clientStreamsListLocked = FALSE;
 
     DLOGI("Creating Kinesis Video Stream.");
 
@@ -713,10 +714,19 @@ STATUS createKinesisVideoStream(CLIENT_HANDLE clientHandle, PStreamInfo pStreamI
     // Create the actual stream
     CHK_STATUS(createStream(pKinesisVideoClient, pStreamInfo, &pKinesisVideoStream));
 
+    // Lock the client streams list lock because the macro TO_STREAM_HANDLE accesses the stream list at an index
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
+    clientStreamsListLocked = TRUE;
+
     // Convert to handle
     *pStreamHandle = TO_STREAM_HANDLE(pKinesisVideoStream);
 
 CleanUp:
+
+    if (clientStreamsListLocked) {
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
+        clientStreamsListLocked = FALSE;
+    }
 
     if (releaseClientSemaphore) {
         semaphoreRelease(pKinesisVideoClient->base.shutdownSemaphore);
