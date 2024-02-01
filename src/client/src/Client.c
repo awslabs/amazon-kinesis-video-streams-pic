@@ -1596,12 +1596,9 @@ STATUS kinesisVideoStreamParseFragmentAck(STREAM_HANDLE streamHandle, UPLOAD_HAN
     STATUS retStatus = STATUS_SUCCESS;
     BOOL releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
-    BOOL streamListLocked = FALSE;
-    PKinesisVideoClient pKinesisVideoClient = NULL;
 
     DLOGS("Parsing stream fragment ACK.");
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL && ackSegment != NULL, STATUS_NULL_ARG);
-    pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     // Shutdown sequencer
     CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore, INFINITE_TIME_VALUE));
@@ -1610,18 +1607,9 @@ STATUS kinesisVideoStreamParseFragmentAck(STREAM_HANDLE streamHandle, UPLOAD_HAN
     CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->base.shutdownSemaphore, INFINITE_TIME_VALUE));
     releaseStreamSemaphore = TRUE;
 
-    // Lock the client streams list lock
-    // Inside `parseFragmentAck` the TO_STREAM_HANDLE macro is used which access the streams list at an index
-    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
-    streamListLocked = TRUE;
-
     CHK_STATUS(parseFragmentAck(pKinesisVideoStream, uploadHandle, ackSegment, ackSegmentSize));
 
 CleanUp:
-
-    if (streamListLocked) {
-        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
-    }
 
     if (releaseStreamSemaphore) {
         semaphoreRelease(pKinesisVideoStream->base.shutdownSemaphore);
