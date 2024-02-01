@@ -1753,9 +1753,7 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
-    BOOL streamLocked = FALSE, streamListLocked = FALSE;
     PKinesisVideoClient pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
-    PFrameOrderCoordinator pFrameOrderCoordinator = pKinesisVideoStream->pFrameOrderCoordinator;
 
     while (TRUE) {
         // Check if we have enough space to proceed - the stream should be locked
@@ -1778,15 +1776,7 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
             // Need to evict the tail frames by trimming the tail
             // Lock the client streams list lock
             // Inside `contentViewAddItem` the TO_STREAM_HANDLE macro is used which access the streams list at an index
-            pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                             pKinesisVideoClient->base.streamListLock);
-            streamListLocked = TRUE;
-
             CHK_STATUS(contentViewTrimTailItems(pKinesisVideoStream->pView));
-
-            pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData,
-                                                               pKinesisVideoClient->base.streamListLock);
-            streamListLocked = FALSE;
         }
 
         // Check for the stream termination
@@ -1794,10 +1784,6 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
     }
 
 CleanUp:
-
-    if (streamListLocked) {
-        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
-    }
 
     LEAVES();
     return retStatus;
