@@ -264,7 +264,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
 
     CHK_STATUS(semaphoreCreate(MAX_PIC_REENTRANCY_COUNT, &pKinesisVideoStream->base.shutdownSemaphore));
 
-    pKinesisVideoStream->base.shutdown = FALSE;
+    ATOMIC_STORE(&pKinesisVideoStream->base.shutdown, FALSE);
 
     // Reset the ACK parser
     CHK_STATUS(resetAckParserState(pKinesisVideoStream));
@@ -581,7 +581,7 @@ STATUS stopStreamSync(PKinesisVideoStream pKinesisVideoStream)
             break;
         }
 
-        if (pKinesisVideoStream->base.shutdown) {
+        if (ATOMIC_LOAD(&pKinesisVideoStream->base.shutdown)) {
             DLOGW("[%s] Kinesis Video Stream is being shut down.", pKinesisVideoStream->streamInfo.name);
             break;
         }
@@ -626,8 +626,8 @@ STATUS shutdownStream(PKinesisVideoStream pKinesisVideoStream, BOOL resetStream)
     // while on a separate thread a stream freeing could skip the main sequence
     // based on the flag that was just set by the reset
     if (!resetStream) {
-        CHK(!pKinesisVideoStream->base.shutdown, retStatus);
-        pKinesisVideoStream->base.shutdown = TRUE;
+        CHK(!ATOMIC_LOAD(&pKinesisVideoStream->base.shutdown), retStatus);
+        ATOMIC_STORE(&pKinesisVideoStream->base.shutdown, TRUE);
     }
 
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
@@ -1803,7 +1803,8 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
         }
 
         // Check for the stream termination
-        CHK(!pKinesisVideoStream->streamStopped && !pKinesisVideoStream->base.shutdown, STATUS_BLOCKING_PUT_INTERRUPTED_STREAM_TERMINATED);
+        CHK(!pKinesisVideoStream->streamStopped && !ATOMIC_LOAD(&pKinesisVideoStream->base.shutdown),
+            STATUS_BLOCKING_PUT_INTERRUPTED_STREAM_TERMINATED);
     }
 
 CleanUp:
@@ -3561,7 +3562,7 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
     pKinesisVideoStream->maxFrameSizeSeen = 0;
 
     // reset shutdown status
-    pKinesisVideoStream->base.shutdown = FALSE;
+    ATOMIC_STORE(&pKinesisVideoStream->base.shutdown, FALSE);
     pKinesisVideoStream->base.result = SERVICE_CALL_RESULT_NOT_SET;
 
     // If stream is already ready, set streamState to STREAM_STATE_STOPPED. Because pKinesisVideoStream->base.result

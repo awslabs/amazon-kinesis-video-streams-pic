@@ -59,7 +59,7 @@ struct __KinesisVideoBase {
     CVAR ready;
 
     // Indicating whether shutdown has been triggered
-    BOOL shutdown;
+    volatile ATOMIC_BOOL shutdown;
 
     // Shutdown sequencing semaphore
     SEMAPHORE_HANDLE shutdownSemaphore;

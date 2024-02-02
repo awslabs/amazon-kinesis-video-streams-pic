@@ -306,7 +306,7 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     // Set the call result to unknown to start
     pKinesisVideoClient->base.result = SERVICE_CALL_RESULT_NOT_SET;
 
-    pKinesisVideoClient->base.shutdown = FALSE;
+    ATOMIC_STORE(&pKinesisVideoClient->base.shutdown, FALSE);
 
     // Create sequencing semaphore
     CHK_STATUS(semaphoreCreate(MAX_PIC_REENTRANCY_COUNT, &pKinesisVideoClient->base.shutdownSemaphore));
@@ -805,7 +805,7 @@ STATUS createKinesisVideoStreamSync(CLIENT_HANDLE clientHandle, PStreamInfo pStr
             break;
         }
 
-        if (pKinesisVideoStream->base.shutdown) {
+        if (ATOMIC_LOAD(&pKinesisVideoStream->base.shutdown)) {
             DLOGW("Kinesis Video Stream is being shut down.");
             break;
         }
@@ -1682,10 +1682,16 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
 {
     STATUS retStatus = STATUS_SUCCESS, freeStreamStatus = STATUS_SUCCESS, freeStateMachineStatus = STATUS_SUCCESS, freeHeapStatus = STATUS_SUCCESS;
     UINT32 i = 0;
-    BOOL locked = FALSE;
+    BOOL locked = FALSE, putFrameLocked = TRUE;
 
     // Call is idempotent
-    CHK(pKinesisVideoClient != NULL && !pKinesisVideoClient->base.shutdown, retStatus);
+    CHK(pKinesisVideoClient != NULL && !ATOMIC_LOAD(&pKinesisVideoClient->base.shutdown), retStatus);
+
+    // Lock the streamListLock for iteration
+    if (IS_VALID_MUTEX_VALUE(pKinesisVideoClient->base.putFrameLock)) {
+        pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.putFrameLock);
+        putFrameLocked = TRUE;
+    }
 
     pKinesisVideoClient->base.shutdown = TRUE;
 
@@ -1707,6 +1713,12 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
     if (locked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
         locked = FALSE;
+    }
+
+    // unlock the streamListLock after iteration
+    if (putFrameLocked) {
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.putFrameLock);
+        putFrameLocked = FALSE;
     }
 
     // Shutdown client
@@ -1765,6 +1777,8 @@ STATUS freeKinesisVideoClientInternal(PKinesisVideoClient pKinesisVideoClient, S
     }
 
     if (IS_VALID_MUTEX_VALUE(pKinesisVideoClient->base.putFrameLock)) {
+        pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.putFrameLock);
+        pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.putFrameLock);
         pKinesisVideoClient->clientCallbacks.freeMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.putFrameLock);
     }
 
