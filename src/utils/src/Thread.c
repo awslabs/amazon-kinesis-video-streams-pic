@@ -156,22 +156,20 @@ PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID 
     pthread_t threadId;
     INT32 result;
     pthread_attr_t* pAttr = NULL;
+    size_t stacksize;
 
     CHK(pThreadId != NULL, STATUS_NULL_ARG);
 
 #ifdef CONSTRAINED_DEVICE
     pthread_attr_t attr;
     pAttr = &attr;
-    SIZE_T stacksize;
     result = pthread_attr_init(pAttr);
     CHK_ERR(result == 0, STATUS_THREAD_ATTR_INIT_FAILED, "pthread_attr_init failed with %d", result);
     result = pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE_ON_CONSTRAINED_DEVICE);
-    pthread_attr_getstacksize(&attr, &stacksize);
-    DLOGI("Stack size set to: %zu", stacksize);
-    printf("Stack size set to: %zu\n", stacksize);
     CHK_ERR(result == 0, STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED, "pthread_attr_setstacksize failed with %d", result);
 #endif
-
+    pthread_attr_getstacksize(pAttr, &stacksize);
+    DLOGI("Stack size set to: %llu", stacksize);
     result = pthread_create(&threadId, pAttr, start, args);
     switch (result) {
         case 0:
