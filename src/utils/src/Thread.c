@@ -168,7 +168,9 @@ PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID 
     result = pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE_ON_CONSTRAINED_DEVICE);
     CHK_ERR(result == 0, STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED, "pthread_attr_setstacksize failed with %d", result);
 #endif
-    pthread_attr_getstacksize(pAttr, &stacksize);
+    pthread_attr_t attr_non_constrained;
+    pthread_attr_init(&attr_non_constrained);
+    pthread_attr_getstacksize(&attr_non_constrained, &stacksize);
     DLOGI("Stack size set to: %llu", stacksize);
     result = pthread_create(&threadId, pAttr, start, args);
     switch (result) {
