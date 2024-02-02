@@ -25,7 +25,7 @@ class AckItemComparator {
     }
 };
 
-// Mimics a putMedia session that calls getKinesisVideoStreamData and kinesisVideoStreamFragmentAck periodlically
+// Mimics a putMedia session that calls getKinesisVideoStreamData and kinesisVideoStreamFragmentAck periodically
 class MockConsumer {
     volatile ATOMIC_BOOL mDataAvailable; // where getKinesisVideoStreamData should be called.
     BOOL mCurrentInitialized;
