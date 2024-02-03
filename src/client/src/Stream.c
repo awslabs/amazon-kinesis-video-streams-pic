@@ -363,8 +363,15 @@ STATUS freeStream(PKinesisVideoStream pKinesisVideoStream)
     freeMetadataTracker(&pKinesisVideoStream->eosTracker);
     freeMetadataTracker(&pKinesisVideoStream->metadataTracker);
 
+    // unlock the stream freeFrameOrderCoordinator acquires the FrameOrderCoordinator mutex, we cannot acquire this
+    // mutex while holding the stream mutex or else we will deadlock with putFrame which first acquires
+    // FrameOrderCoordinator mutex and then the stream mutex
+    pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
+
     // Free FrameOrderCoordinator
     freeFrameOrderCoordinator(pKinesisVideoStream, &pKinesisVideoStream->pFrameOrderCoordinator);
+
+    pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
 
     // Lock the client to update the streams
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
