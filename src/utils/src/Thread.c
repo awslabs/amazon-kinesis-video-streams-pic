@@ -232,7 +232,14 @@ PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID 
 
     CHK(pThreadId != NULL, STATUS_NULL_ARG);
 
-#ifdef CONSTRAINED_DEVICE
+#if defined(KVS_DEFAULT_STACK_SIZE)
+    pthread_attr_t attr;
+    pAttr = &attr;
+    result = pthread_attr_init(pAttr);
+    CHK_ERR(result == 0, STATUS_THREAD_ATTR_INIT_FAILED, "pthread_attr_init failed with %d", result);
+    result = pthread_attr_setstacksize(&attr, KVS_DEFAULT_STACK_SIZE);
+    CHK_ERR(result == 0, STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED, "pthread_attr_setstacksize failed with %d", result);
+#elif defined(CONSTRAINED_DEVICE)
     pthread_attr_t attr;
     pAttr = &attr;
     result = pthread_attr_init(pAttr);
