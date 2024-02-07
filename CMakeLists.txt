@@ -58,6 +58,10 @@ function(enableSanitizer SANITIZER)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${SANITIZER}" PARENT_SCOPE)
 endfunction()
 
+if(KVS_DEFAULT_STACK_SIZE)
+  add_compile_definitions(KVS_DEFAULT_STACK_SIZE=${KVS_DEFAULT_STACK_SIZE})
+endif()
+
 if(ADDRESS_SANITIZER)
   enableSanitizer("address")
 endif()
