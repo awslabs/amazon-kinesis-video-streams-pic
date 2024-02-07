@@ -721,6 +721,7 @@ typedef VOID (*unlockMutex)(MUTEX);
 typedef BOOL (*tryLockMutex)(MUTEX);
 typedef VOID (*freeMutex)(MUTEX);
 typedef STATUS (*createThread)(PTID, startRoutine, PVOID);
+typedef STATUS (*createThreadWithParams)(PTID, startRoutine, SIZE_T, PVOID);
 typedef STATUS (*joinThread)(TID, PVOID*);
 typedef VOID (*threadSleep)(UINT64);
 typedef VOID (*threadSleepUntil)(UINT64);
@@ -763,6 +764,7 @@ extern unlockMutex globalUnlockMutex;
 extern tryLockMutex globalTryLockMutex;
 extern freeMutex globalFreeMutex;
 extern createThread globalCreateThread;
+extern createThreadWithParams globalCreateThreadWithParams;
 extern joinThread globalJoinThread;
 extern threadSleep globalThreadSleep;
 extern threadSleepUntil globalThreadSleepUntil;
@@ -1032,12 +1034,13 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 //
 // Thread functionality
 //
-#define THREAD_CREATE      globalCreateThread
-#define THREAD_JOIN        globalJoinThread
-#define THREAD_SLEEP       globalThreadSleep
-#define THREAD_SLEEP_UNTIL globalThreadSleepUntil
-#define THREAD_CANCEL      globalCancelThread
-#define THREAD_DETACH      globalDetachThread
+#define THREAD_CREATE             globalCreateThread
+#define THREAD_CREATE_WITH_PARAMS globalCreateThreadWithParams
+#define THREAD_JOIN               globalJoinThread
+#define THREAD_SLEEP              globalThreadSleep
+#define THREAD_SLEEP_UNTIL        globalThreadSleepUntil
+#define THREAD_CANCEL             globalCancelThread
+#define THREAD_DETACH             globalDetachThread
 
 //
 // Static initializers

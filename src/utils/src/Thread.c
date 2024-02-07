@@ -37,6 +37,33 @@ PUBLIC_API DWORD WINAPI startWrapperRoutine(LPVOID data)
     return retVal;
 }
 
+PUBLIC_API STATUS defaultCreateThreadWithParams(PTID pThreadId, startRoutine start, SIZE_T stackSize, PVOID args)
+{
+    STATUS retStatus = STATUS_SUCCESS;
+    HANDLE threadHandle;
+    PWindowsThreadRoutineWrapper pWrapper = NULL;
+
+    CHK(pThreadId != NULL, STATUS_NULL_ARG);
+
+    // Allocate temporary wrapper and store it
+    pWrapper = (PWindowsThreadRoutineWrapper) MEMALLOC(SIZEOF(WindowsThreadRoutineWrapper));
+    CHK(pWrapper != NULL, STATUS_NOT_ENOUGH_MEMORY);
+    pWrapper->storedArgs = args;
+    pWrapper->storedStartRoutine = start;
+
+    threadHandle = CreateThread(NULL, stackSize, startWrapperRoutine, pWrapper, 0, NULL);
+    CHK(threadHandle != NULL, STATUS_CREATE_THREAD_FAILED);
+
+    *pThreadId = (TID) threadHandle;
+
+CleanUp:
+    if (STATUS_FAILED(retStatus) && pWrapper != NULL) {
+        MEMFREE(pWrapper);
+    }
+
+    return retStatus;
+}
+
 PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID args)
 {
     STATUS retStatus = STATUS_SUCCESS;
@@ -148,6 +175,52 @@ PUBLIC_API STATUS defaultGetThreadName(TID thread, PCHAR name, UINT32 len)
 PUBLIC_API TID defaultGetThreadId()
 {
     return (TID) pthread_self();
+}
+
+PUBLIC_API STATUS defaultCreateThreadWithParams(PTID pThreadId, startRoutine start, SIZE_T stackSize, PVOID args)
+{
+    STATUS retStatus = STATUS_SUCCESS;
+    pthread_t threadId;
+    INT32 result;
+    pthread_attr_t* pAttr = NULL;
+
+    CHK(pThreadId != NULL, STATUS_NULL_ARG);
+
+    pthread_attr_t attr;
+    pAttr = &attr;
+    result = pthread_attr_init(pAttr);
+    CHK_ERR(result == 0, STATUS_THREAD_ATTR_INIT_FAILED, "pthread_attr_init failed with %d", result);
+    result = pthread_attr_setstacksize(&attr, stackSize);
+    CHK_ERR(result == 0, STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED, "pthread_attr_setstacksize failed with %d", result);
+
+    result = pthread_create(&threadId, pAttr, start, args);
+    switch (result) {
+        case 0:
+            // Successful case
+            break;
+        case EAGAIN:
+            CHK(FALSE, STATUS_THREAD_NOT_ENOUGH_RESOURCES);
+        case EINVAL:
+            CHK(FALSE, STATUS_THREAD_INVALID_ARG);
+        case EPERM:
+            CHK(FALSE, STATUS_THREAD_PERMISSIONS);
+        default:
+            // Generic error
+            CHK(FALSE, STATUS_CREATE_THREAD_FAILED);
+    }
+
+    *pThreadId = (TID) threadId;
+
+CleanUp:
+
+    if (pAttr != NULL) {
+        result = pthread_attr_destroy(pAttr);
+        if (result != 0) {
+            DLOGW("pthread_attr_destroy failed with %u", result);
+        }
+    }
+
+    return retStatus;
 }
 
 PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID args)
@@ -330,6 +403,7 @@ PUBLIC_API VOID defaultThreadSleepUntil(UINT64 time)
 getTId globalGetThreadId = defaultGetThreadId;
 getTName globalGetThreadName = defaultGetThreadName;
 createThread globalCreateThread = defaultCreateThread;
+createThreadWithParams globalCreateThreadWithParams = defaultCreateThreadWithParams;
 threadSleep globalThreadSleep = defaultThreadSleep;
 threadSleepUntil globalThreadSleepUntil = defaultThreadSleepUntil;
 joinThread globalJoinThread = defaultJoinThread;
