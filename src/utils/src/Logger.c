@@ -2,7 +2,7 @@
 
 static volatile SIZE_T gLoggerLogLevel = LOG_LEVEL_WARN;
 
-PCHAR getLogLevelStr(UINT32 loglevel)
+const PCHAR getLogLevelStr(UINT32 loglevel)
 {
     switch (loglevel) {
         case LOG_LEVEL_VERBOSE:
@@ -24,7 +24,7 @@ PCHAR getLogLevelStr(UINT32 loglevel)
     }
 }
 
-VOID addLogMetadata(PCHAR buffer, UINT32 bufferLen, PCHAR fmt, UINT32 logLevel)
+VOID addLogMetadata(const PCHAR buffer, UINT32 bufferLen, const PCHAR fmt, UINT32 logLevel)
 {
     UINT32 timeStrLen = 0;
     /* space for "yyyy-mm-dd HH:MM:SS.MMMMMM" + space + null */
@@ -56,12 +56,12 @@ VOID addLogMetadata(PCHAR buffer, UINT32 bufferLen, PCHAR fmt, UINT32 logLevel)
 //
 // Default logger function
 //
-VOID defaultLogPrint(UINT32 level, PCHAR tag, PCHAR fmt, ...)
+VOID defaultLogPrint(UINT32 level, const PCHAR tag, const PCHAR fmt, ...)
 {
     CHAR logFmtString[MAX_LOG_FORMAT_LENGTH + 1];
     UINT32 logLevel = GET_LOGGER_LOG_LEVEL();
     UNUSED_PARAM(tag);
-    if (level >= logLevel) {
+    if (logLevel != LOG_LEVEL_SILENT && level >= logLevel) {
         addLogMetadata(logFmtString, (UINT32) ARRAY_SIZE(logFmtString), fmt, level);
 
         va_list valist;

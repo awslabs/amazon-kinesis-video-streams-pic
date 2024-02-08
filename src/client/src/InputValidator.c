@@ -372,7 +372,7 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
         pClientInfo->offlineBufferAvailabilityTimeout = MAX_BLOCKING_PUT_WAIT;
     }
 
-    if (pClientInfo->loggerLogLevel == 0 || pClientInfo->loggerLogLevel > LOG_LEVEL_SILENT) {
+    if (pClientInfo->loggerLogLevel == 0 || pClientInfo->loggerLogLevel > LOG_LEVEL_PROFILE) {
         pClientInfo->loggerLogLevel = LOG_LEVEL_WARN;
     }
 
