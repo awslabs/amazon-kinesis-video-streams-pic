@@ -111,7 +111,7 @@ jobs:
       AWS_KVS_LOG_LEVEL: 2
     steps:
       - name: Setup XCode version 15.2
-      - uses: maxim-lobanov/setup-xcode@v1
+        uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: '15.2'
       - name: Clone repository
