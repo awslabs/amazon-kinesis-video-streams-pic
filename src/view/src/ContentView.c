@@ -153,6 +153,15 @@ STATUS contentViewGetNext(PContentView pContentView, PViewItem* ppItem)
     // Quick check if any items exist - early return
     CHK((pRollingView->head != pRollingView->tail) && (pRollingView->current != pRollingView->head), STATUS_CONTENT_VIEW_NO_MORE_ITEMS);
 
+    // current is greater than the header & head isn't currently in an overflow state.
+    if (pRollingView->current > pRollingView->head && pRollingView->head > pRollingView->tail) {
+        // current index has broken outside the rolling buffer
+        // reset the index, and return error
+        DLOGI("Current index overflow state discovered! Resetting");
+        pRollingView->current = pRollingView->tail;
+        CHK(FALSE, STATUS_CONTENT_VIEW_INVALID_INDEX);
+    }
+
     // Get the current item
     pCurrent = GET_VIEW_ITEM_FROM_INDEX(pRollingView, pRollingView->current);
 
@@ -322,16 +331,16 @@ STATUS contentViewRollbackCurrent(PContentView pContentView, UINT64 duration, BO
             break;
         }
 
+        // Terminate the loop if we reached the head
+        if (curIndex == pRollingView->head) {
+            break;
+        }
+
         // Iterate forward
         curIndex++;
 
         // Set the current
         pRollingView->current = curIndex;
-
-        // Terminate the loop if we reached the head
-        if (curIndex == pRollingView->head) {
-            break;
-        }
     }
 
 CleanUp:
