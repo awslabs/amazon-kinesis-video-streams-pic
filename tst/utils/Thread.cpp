@@ -126,6 +126,8 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheckWithStack)
     SIZE_T threadStack = 16 * 1024;
     struct sleep_times st[TEST_THREAD_COUNT];
 
+    gThreadCount = 0;
+
     // Create the threads
     for (index = 0; index < TEST_THREAD_COUNT; index++) {
         st[index].threadVisited = FALSE;
