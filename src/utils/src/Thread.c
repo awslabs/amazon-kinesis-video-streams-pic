@@ -165,6 +165,8 @@ PUBLIC_API TID defaultGetThreadId()
     return (TID) pthread_self();
 }
 
+#define PTHREAD_MIN_STACK_SIZE 16 * 1024
+
 PUBLIC_API STATUS defaultCreateThreadWithParams(PTID pThreadId, startRoutine start, SIZE_T stackSize, PVOID args)
 {
     STATUS retStatus = STATUS_SUCCESS;
@@ -176,6 +178,9 @@ PUBLIC_API STATUS defaultCreateThreadWithParams(PTID pThreadId, startRoutine sta
 
     pthread_attr_t attr;
     if (stackSize != 0) {
+        if (stackSize < (SIZE_T) PTHREAD_MIN_STACK_SIZE) {
+            stackSize = (SIZE_T) PTHREAD_MIN_STACK_SIZE;
+        }
         pAttr = &attr;
         result = pthread_attr_init(pAttr);
         CHK_ERR(result == 0, STATUS_THREAD_ATTR_INIT_FAILED, "pthread_attr_init failed with %d", result);
