@@ -67,26 +67,14 @@ CleanUp:
 PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID args)
 {
     STATUS retStatus = STATUS_SUCCESS;
-    HANDLE threadHandle;
-    PWindowsThreadRoutineWrapper pWrapper = NULL;
 
-    CHK(pThreadId != NULL, STATUS_NULL_ARG);
-
-    // Allocate temporary wrapper and store it
-    pWrapper = (PWindowsThreadRoutineWrapper) MEMALLOC(SIZEOF(WindowsThreadRoutineWrapper));
-    CHK(pWrapper != NULL, STATUS_NOT_ENOUGH_MEMORY);
-    pWrapper->storedArgs = args;
-    pWrapper->storedStartRoutine = start;
-
-    threadHandle = CreateThread(NULL, 0, startWrapperRoutine, pWrapper, 0, NULL);
-    CHK(threadHandle != NULL, STATUS_CREATE_THREAD_FAILED);
-
-    *pThreadId = (TID) threadHandle;
+#if defined(KVS_DEFAULT_STACK_SIZE)
+    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, KVS_DEFAULT_STACK_SIZE, args);
+#else
+    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, 0, args);
+#endif
 
 CleanUp:
-    if (STATUS_FAILED(retStatus) && pWrapper != NULL) {
-        MEMFREE(pWrapper);
-    }
 
     return retStatus;
 }
@@ -187,11 +175,13 @@ PUBLIC_API STATUS defaultCreateThreadWithParams(PTID pThreadId, startRoutine sta
     CHK(pThreadId != NULL, STATUS_NULL_ARG);
 
     pthread_attr_t attr;
-    pAttr = &attr;
-    result = pthread_attr_init(pAttr);
-    CHK_ERR(result == 0, STATUS_THREAD_ATTR_INIT_FAILED, "pthread_attr_init failed with %d", result);
-    result = pthread_attr_setstacksize(&attr, stackSize);
-    CHK_ERR(result == 0, STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED, "pthread_attr_setstacksize failed with %d", result);
+    if (stackSize != 0) {
+        pAttr = &attr;
+        result = pthread_attr_init(pAttr);
+        CHK_ERR(result == 0, STATUS_THREAD_ATTR_INIT_FAILED, "pthread_attr_init failed with %d", result);
+        result = pthread_attr_setstacksize(&attr, stackSize);
+        CHK_ERR(result == 0, STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED, "pthread_attr_setstacksize failed with %d", result);
+    }
 
     result = pthread_create(&threadId, pAttr, start, args);
     switch (result) {
@@ -226,56 +216,16 @@ CleanUp:
 PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID args)
 {
     STATUS retStatus = STATUS_SUCCESS;
-    pthread_t threadId;
-    INT32 result;
-    pthread_attr_t* pAttr = NULL;
-    SIZE_T stackSize = 0;
-
-    CHK(pThreadId != NULL, STATUS_NULL_ARG);
 
 #if defined(KVS_DEFAULT_STACK_SIZE)
-    pthread_attr_t attr;
-    pAttr = &attr;
-    result = pthread_attr_init(pAttr);
-    CHK_ERR(result == 0, STATUS_THREAD_ATTR_INIT_FAILED, "pthread_attr_init failed with %d", result);
-    stackSize = KVS_DEFAULT_STACK_SIZE;
-    result = pthread_attr_setstacksize(&attr, stackSize);
-    CHK_ERR(result == 0, STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED, "pthread_attr_setstacksize failed with %d", result);
+    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, KVS_DEFAULT_STACK_SIZE, args));
 #elif defined(CONSTRAINED_DEVICE)
-    pthread_attr_t attr;
-    pAttr = &attr;
-    result = pthread_attr_init(pAttr);
-    CHK_ERR(result == 0, STATUS_THREAD_ATTR_INIT_FAILED, "pthread_attr_init failed with %d", result);
-    result = pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE_ON_CONSTRAINED_DEVICE);
-    CHK_ERR(result == 0, STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED, "pthread_attr_setstacksize failed with %d", result);
+    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, THREAD_STACK_SIZE_ON_CONSTRAINED_DEVICE, args));
+#else
+    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, 0, args);
 #endif
 
-    result = pthread_create(&threadId, pAttr, start, args);
-    switch (result) {
-        case 0:
-            // Successful case
-            break;
-        case EAGAIN:
-            CHK(FALSE, STATUS_THREAD_NOT_ENOUGH_RESOURCES);
-        case EINVAL:
-            CHK(FALSE, STATUS_THREAD_INVALID_ARG);
-        case EPERM:
-            CHK(FALSE, STATUS_THREAD_PERMISSIONS);
-        default:
-            // Generic error
-            CHK(FALSE, STATUS_CREATE_THREAD_FAILED);
-    }
-
-    *pThreadId = (TID) threadId;
-
 CleanUp:
-
-    if (pAttr != NULL) {
-        result = pthread_attr_destroy(pAttr);
-        if (result != 0) {
-            DLOGW("pthread_attr_destroy failed with %u", result);
-        }
-    }
 
     return retStatus;
 }
