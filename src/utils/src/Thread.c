@@ -68,8 +68,8 @@ PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID 
 {
     STATUS retStatus = STATUS_SUCCESS;
 
-#if defined(KVS_DEFAULT_STACK_SIZE)
-    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, (SIZE_T) KVS_DEFAULT_STACK_SIZE, args));
+#if defined(KVS_DEFAULT_STACK_SIZE_BYTES)
+    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, (SIZE_T) KVS_DEFAULT_STACK_SIZE_BYTES, args));
 #else
     CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, 0, args));
 #endif
@@ -222,8 +222,8 @@ PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID 
 {
     STATUS retStatus = STATUS_SUCCESS;
 
-#if defined(KVS_DEFAULT_STACK_SIZE)
-    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, (SIZE_T) KVS_DEFAULT_STACK_SIZE, args));
+#if defined(KVS_DEFAULT_STACK_SIZE_BYTES)
+    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, (SIZE_T) KVS_DEFAULT_STACK_SIZE_BYTES, args));
 #elif defined(CONSTRAINED_DEVICE)
     CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, (SIZE_T) THREAD_STACK_SIZE_ON_CONSTRAINED_DEVICE, args));
 #else
