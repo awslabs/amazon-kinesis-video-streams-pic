@@ -650,6 +650,7 @@ PUBLIC_API STATUS stackQueueEnqueueAfterIndex(PStackQueue, UINT32, UINT64);
  * NOTE: Variable size structure - the buckets follow directly after the main structure
  */
 typedef struct {
+    CHAR name[256];
     UINT32 itemCount;
     UINT32 bucketCount;
     UINT32 bucketLength;
