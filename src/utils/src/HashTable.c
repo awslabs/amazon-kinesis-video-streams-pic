@@ -270,7 +270,7 @@ STATUS hashTableUpsert(PHashTable pHashTable, UINT64 key, UINT64 value)
     pHashBucket = getHashBucket(pHashTable, key);
     CHK(pHashBucket != NULL, STATUS_INTERNAL_ERROR);
     pHashEntry = pHashBucket->entries;
-
+    DLOGI("Hash table count: %d, %d", pHashBucket->count,  pHashBucket->length);
     // Check if we already have the value
     for (i = 0; i < pHashBucket->count; i++, pHashEntry++) {
         if (pHashEntry->key == key) {
