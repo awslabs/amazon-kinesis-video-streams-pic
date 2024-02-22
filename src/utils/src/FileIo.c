@@ -80,7 +80,7 @@ STATUS readFileSegment(PCHAR filePath, BOOL binMode, PBYTE pBuffer, UINT64 offse
     CHK(fp != NULL, STATUS_OPEN_FILE_FAILED);
 
     // Get the size of the file
-#if defined _WIN32 || defined _WIN64
+#ifdef _WIN32
     _fseeki64(fp, 0, SEEK_END);
     fileLen = _ftelli64(fp);
 #else
