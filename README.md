@@ -55,7 +55,7 @@ You can pass the following options to `cmake ..`
 * `-DUNDEFINED_BEHAVIOR_SANITIZER` Build with UndefinedBehaviorSanitizer
 * `-DBUILD_DEBUG_HEAP` Build debug heap with guard bands and validation. This is ONLY intended for low-level debugging purposes. Default is OFF
 * `-DALIGNED_MEMORY_MODEL` Build for aligned memory model only devices. Default is OFF.
-* `-DKVS_DEFAULT_STACK_SIZE` -- Value in bytes for default stack size of threads. Pthread minimum for Unix applications is 16kb
+* `-DKVS_DEFAULT_STACK_SIZE` -- Value in bytes for default stack size of threads. Pthread minimum for Unix applications is 16 Kib
 
 ### Build
 To build the library run make in the build directory you executed CMake.

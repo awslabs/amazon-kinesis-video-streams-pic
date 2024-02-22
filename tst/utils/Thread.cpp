@@ -123,7 +123,8 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheckWithStack)
     UINT64 index;
     TID threads[TEST_THREAD_COUNT];
     gThreadMutex = MUTEX_CREATE(FALSE);
-    SIZE_T threadStack = 16 * 1024;
+    srand(GETTIME());
+    SIZE_T threadStack = 16 * 1024 + rand()%(500 * 1024);
     struct sleep_times st[TEST_THREAD_COUNT];
 
     gThreadCount = 0;
@@ -149,6 +150,25 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheckWithStack)
         EXPECT_TRUE(st[index].threadVisited) << "Thread didn't visit index " << index;
         EXPECT_TRUE(st[index].threadCleared) << "Thread didn't clear index " << index;
     }
+
+    MUTEX_FREE(gThreadMutex);
+}
+
+TEST_F(ThreadFunctionalityTest, NegativeTest)
+{
+    UINT64 index;
+    TID threads[TEST_THREAD_COUNT];
+    gThreadMutex = MUTEX_CREATE(FALSE);
+    SIZE_T threadStack = 16 * 1024;
+    struct sleep_times st[TEST_THREAD_COUNT];
+
+    gThreadCount = 0;
+    EXPECT_NE(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(NULL, testThreadRoutine, threadStack, NULL));
+    EXPECT_NE(STATUS_SUCCESS, THREAD_CREATE(NULL, testThreadRoutine, NULL));
+
+    MUTEX_LOCK(gThreadMutex);
+    EXPECT_EQ(0, gThreadCount);
+    MUTEX_UNLOCK(gThreadMutex);
 
     MUTEX_FREE(gThreadMutex);
 }
