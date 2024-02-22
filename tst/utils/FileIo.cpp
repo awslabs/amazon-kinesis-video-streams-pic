@@ -33,7 +33,15 @@ TEST_F(FileIoUnitTest, readFile_asciiBufferTooSmall) {
     FCLOSE(file);
 
     EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "asciitest"), FALSE, NULL, &fileSize));
+
+// In Windows systems, the newline character is represented by a combination of 
+// two characters: Carriage Return (CR) followed by Line Feed (LF), written as \r\n. 
+// So, each newline character in a text file on Windows contributes two bytes to the file size.
+#if defined _WIN32 || defined _WIN64    
+    EXPECT_EQ(48, fileSize);
+#else
     EXPECT_EQ(45, fileSize);
+#endif
 
     fileSize = 43;
 
@@ -74,7 +82,15 @@ TEST_F(FileIoFunctionalityTest, readFile_asciiFileSize) {
     FCLOSE(file);
 
     EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "asciitest"), FALSE, NULL, &fileSize));
+
+// In Windows systems, the newline character is represented by a combination of 
+// two characters: Carriage Return (CR) followed by Line Feed (LF), written as \r\n. 
+// So, each newline character in a text file on Windows contributes two bytes to the file size.
+#if defined _WIN32 || defined _WIN64    
+    EXPECT_EQ(48, fileSize);
+#else
     EXPECT_EQ(45, fileSize);
+#endif
 
     remove((PCHAR) (TEST_TEMP_DIR_PATH "asciitest"));
 }
@@ -124,7 +140,15 @@ TEST_F(FileIoFunctionalityTest, readFile_ascii) {
     FCLOSE(file);
 
     EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "asciitest"), FALSE, NULL, &fileSize));
+
+// In Windows systems, the newline character is represented by a combination of 
+// two characters: Carriage Return (CR) followed by Line Feed (LF), written as \r\n. 
+// So, each newline character in a text file on Windows contributes two bytes to the file size.
+#if defined _WIN32 || defined _WIN64    
+    EXPECT_EQ(48, fileSize);
+#else
     EXPECT_EQ(45, fileSize);
+#endif
 
     fileBuffer = (PCHAR) MEMCALLOC(1, (fileSize + 1) * SIZEOF(CHAR));
     EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "asciitest"), FALSE, (PBYTE) fileBuffer, &fileSize));
