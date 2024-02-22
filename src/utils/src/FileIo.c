@@ -24,10 +24,10 @@ STATUS readFile(PCHAR filePath, BOOL binMode, PBYTE pBuffer, PUINT64 pSize)
 
     // Get the size of the file
 
-    // Use Windows-specific _fseeki64 and _ftelli64 as the traditional fseek and ftell are non-compliant on systems that do not provide 
-    // the same guarantees as POSIX. On these systems, setting the file position indicator to the 
-    // end of the file using fseek() is not guaranteed to work for a binary stream, and consequently, 
-    // the amount of memory allocated may be incorrect, leading to a potential vulnerability. 
+    // Use Windows-specific _fseeki64 and _ftelli64 as the traditional fseek and ftell are non-compliant on systems that do not provide
+    // the same guarantees as POSIX. On these systems, setting the file position indicator to the
+    // end of the file using fseek() is not guaranteed to work for a binary stream, and consequently,
+    // the amount of memory allocated may be incorrect, leading to a potential vulnerability.
 #if defined _WIN32 || defined _WIN64
     _fseeki64(fp, 0, SEEK_END);
     fileLen = _ftelli64(fp);
@@ -50,10 +50,10 @@ STATUS readFile(PCHAR filePath, BOOL binMode, PBYTE pBuffer, PUINT64 pSize)
 
     // fread would either return 1, i.e, the number of objects we've requested it to read
     // or it would run into end-of-file / error.
-    // fread does not distinguish between end-of-file and error, 
+    // fread does not distinguish between end-of-file and error,
     // and callers must use feof and ferror to determine which occurred.
     if (FREAD(pBuffer, (SIZE_T) fileLen, 1, fp) != 1) {
-        CHK(FEOF(fp), STATUS_READ_FILE_FAILED);   
+        CHK(FEOF(fp), STATUS_READ_FILE_FAILED);
     }
 
 CleanUp:
@@ -93,10 +93,10 @@ STATUS readFileSegment(PCHAR filePath, BOOL binMode, PBYTE pBuffer, UINT64 offse
 
     // Get the size of the file
 
-    // Use Windows-specific _fseeki64 and _ftelli64 as the traditional fseek and ftell are non-compliant on systems that do not provide 
-    // the same guarantees as POSIX. On these systems, setting the file position indicator to the 
-    // end of the file using fseek() is not guaranteed to work for a binary stream, and consequently, 
-    // the amount of memory allocated may be incorrect, leading to a potential vulnerability. 
+    // Use Windows-specific _fseeki64 and _ftelli64 as the traditional fseek and ftell are non-compliant on systems that do not provide
+    // the same guarantees as POSIX. On these systems, setting the file position indicator to the
+    // end of the file using fseek() is not guaranteed to work for a binary stream, and consequently,
+    // the amount of memory allocated may be incorrect, leading to a potential vulnerability.
 #if defined _WIN32 || defined _WIN64
     _fseeki64(fp, 0, SEEK_END);
     fileLen = _ftelli64(fp);
@@ -115,10 +115,10 @@ STATUS readFileSegment(PCHAR filePath, BOOL binMode, PBYTE pBuffer, UINT64 offse
 
     // fread would either return 1, i.e, the number of objects we've requested it to read
     // or it would run into end-of-file / error.
-    // fread does not distinguish between end-of-file and error, 
+    // fread does not distinguish between end-of-file and error,
     // and callers must use feof and ferror to determine which occurred.
     if (FREAD(pBuffer, (SIZE_T) readSize, 1, fp) != 1) {
-        CHK(FEOF(fp), STATUS_READ_FILE_FAILED); 
+        CHK(FEOF(fp), STATUS_READ_FILE_FAILED);
     }
 
 CleanUp:

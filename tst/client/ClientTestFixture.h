@@ -72,7 +72,6 @@
 #define TEST_DEFAULT_PRODUCER_CONFIG_FRAME_SIZE 50000
 #define TEST_DEFAULT_PRODUCER_CONFIG_FRAME_RATE 20
 
-
 #define PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE()                                                                                                   \
     if ((mStreamInfo.retention == 0 || !mStreamInfo.streamCaps.fragmentAcks) && mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_OFFLINE) {    \
         EXPECT_EQ(STATUS_OFFLINE_MODE_WITH_ZERO_RETENTION, createKinesisVideoStreamSync(mClientHandle, &mStreamInfo, &mStreamHandle));               \
