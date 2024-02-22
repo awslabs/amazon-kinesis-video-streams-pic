@@ -922,6 +922,9 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 #ifndef FREAD
 #define FREAD fread
 #endif
+#ifndef FEOF
+#define FEOF feof
+#endif
 #ifndef FSEEK
 #define FSEEK fseek
 #endif
