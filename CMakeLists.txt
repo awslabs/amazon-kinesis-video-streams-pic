@@ -60,7 +60,7 @@ endfunction()
 
 if(KVS_DEFAULT_STACK_SIZE)
   message(STATUS "Building with default stack size")
-  add_compile_definitions(KVS_DEFAULT_STACK_SIZE=${KVS_DEFAULT_STACK_SIZE})
+  add_compile_definitions(KVS_DEFAULT_STACK_SIZE_BYTES=${KVS_DEFAULT_STACK_SIZE})
 endif()
 
 if(ADDRESS_SANITIZER)
