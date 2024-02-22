@@ -23,8 +23,13 @@ STATUS readFile(PCHAR filePath, BOOL binMode, PBYTE pBuffer, PUINT64 pSize)
     CHK(fp != NULL, STATUS_OPEN_FILE_FAILED);
 
     // Get the size of the file
+#if defined _WIN32 || defined _WIN64
+    _fseeki64(fp, 0, SEEK_END);
+    fileLen = _ftelli64(fp);
+#else
     FSEEK(fp, 0, SEEK_END);
     fileLen = FTELL(fp);
+#endif
 
     if (pBuffer == NULL) {
         // requested the length - set and early return
@@ -75,8 +80,13 @@ STATUS readFileSegment(PCHAR filePath, BOOL binMode, PBYTE pBuffer, UINT64 offse
     CHK(fp != NULL, STATUS_OPEN_FILE_FAILED);
 
     // Get the size of the file
+#if defined _WIN32 || defined _WIN64
+    _fseeki64(fp, 0, SEEK_END);
+    fileLen = _ftelli64(fp);
+#else
     FSEEK(fp, 0, SEEK_END);
     fileLen = FTELL(fp);
+#endif
 
     // Check if we are trying to read past the end of the file
     CHK(offset + readSize <= fileLen, STATUS_READ_FILE_FAILED);
