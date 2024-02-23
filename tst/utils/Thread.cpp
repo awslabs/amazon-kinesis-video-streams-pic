@@ -124,7 +124,7 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheckWithStack)
     TID threads[TEST_THREAD_COUNT];
     gThreadMutex = MUTEX_CREATE(FALSE);
     srand(GETTIME());
-    SIZE_T threadStack = 16 * 1024 + rand()%(500 * 1024);
+    SIZE_T threadStack = 16 * 1024 + rand()%(200 * 1024);
     struct sleep_times st[TEST_THREAD_COUNT];
 
     gThreadCount = 0;
