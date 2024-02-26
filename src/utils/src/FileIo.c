@@ -28,13 +28,8 @@ STATUS readFile(PCHAR filePath, BOOL binMode, PBYTE pBuffer, PUINT64 pSize)
     // the same guarantees as POSIX. On these systems, setting the file position indicator to the
     // end of the file using fseek() is not guaranteed to work for a binary stream, and consequently,
     // the amount of memory allocated may be incorrect, leading to a potential vulnerability.
-#if defined _WIN32 || defined _WIN64
-    _fseeki64(fp, 0, SEEK_END);
-    fileLen = _ftelli64(fp);
-#else
     FSEEK(fp, 0, SEEK_END);
     fileLen = FTELL(fp);
-#endif
 
     if (pBuffer == NULL) {
         // requested the length - set and early return
@@ -97,13 +92,8 @@ STATUS readFileSegment(PCHAR filePath, BOOL binMode, PBYTE pBuffer, UINT64 offse
     // the same guarantees as POSIX. On these systems, setting the file position indicator to the
     // end of the file using fseek() is not guaranteed to work for a binary stream, and consequently,
     // the amount of memory allocated may be incorrect, leading to a potential vulnerability.
-#if defined _WIN32 || defined _WIN64
-    _fseeki64(fp, 0, SEEK_END);
-    fileLen = _ftelli64(fp);
-#else
     FSEEK(fp, 0, SEEK_END);
     fileLen = FTELL(fp);
-#endif
 
     // Check if we are trying to read past the end of the file
     CHK(offset + readSize <= fileLen, STATUS_READ_FILE_FAILED);

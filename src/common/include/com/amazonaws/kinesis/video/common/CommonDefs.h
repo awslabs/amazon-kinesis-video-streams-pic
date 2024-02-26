@@ -926,10 +926,18 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 #define FEOF feof
 #endif
 #ifndef FSEEK
+#if defined _WIN32 || defined _WIN64
+#define FSEEK _fseeki64
+#else
 #define FSEEK fseek
 #endif
+#endif
 #ifndef FTELL
+#if defined _WIN32 || defined _WIN64
+#define FTELL _ftelli64
+#else
 #define FTELL ftell
+#endif
 #endif
 #ifndef FREMOVE
 #define FREMOVE remove
