@@ -23,6 +23,11 @@ STATUS readFile(PCHAR filePath, BOOL binMode, PBYTE pBuffer, PUINT64 pSize)
     CHK(fp != NULL, STATUS_OPEN_FILE_FAILED);
 
     // Get the size of the file
+
+    // Use Windows-specific _fseeki64 and _ftelli64 as the traditional fseek and ftell are non-compliant on systems that do not provide
+    // the same guarantees as POSIX. On these systems, setting the file position indicator to the
+    // end of the file using fseek() is not guaranteed to work for a binary stream, and consequently,
+    // the amount of memory allocated may be incorrect, leading to a potential vulnerability.
     FSEEK(fp, 0, SEEK_END);
     fileLen = FTELL(fp);
 
@@ -37,7 +42,14 @@ STATUS readFile(PCHAR filePath, BOOL binMode, PBYTE pBuffer, PUINT64 pSize)
 
     // Read the file into memory buffer
     FSEEK(fp, 0, SEEK_SET);
-    CHK(FREAD(pBuffer, (SIZE_T) fileLen, 1, fp) == 1, STATUS_READ_FILE_FAILED);
+
+    // fread would either return 1, i.e, the number of objects we've requested it to read
+    // or it would run into end-of-file / error.
+    // fread does not distinguish between end-of-file and error,
+    // and callers must use feof and ferror to determine which occurred.
+    if (FREAD(pBuffer, (SIZE_T) fileLen, 1, fp) != 1) {
+        CHK(FEOF(fp), STATUS_READ_FILE_FAILED);
+    }
 
 CleanUp:
 
@@ -75,6 +87,11 @@ STATUS readFileSegment(PCHAR filePath, BOOL binMode, PBYTE pBuffer, UINT64 offse
     CHK(fp != NULL, STATUS_OPEN_FILE_FAILED);
 
     // Get the size of the file
+
+    // Use Windows-specific _fseeki64 and _ftelli64 as the traditional fseek and ftell are non-compliant on systems that do not provide
+    // the same guarantees as POSIX. On these systems, setting the file position indicator to the
+    // end of the file using fseek() is not guaranteed to work for a binary stream, and consequently,
+    // the amount of memory allocated may be incorrect, leading to a potential vulnerability.
     FSEEK(fp, 0, SEEK_END);
     fileLen = FTELL(fp);
 
@@ -83,7 +100,16 @@ STATUS readFileSegment(PCHAR filePath, BOOL binMode, PBYTE pBuffer, UINT64 offse
 
     // Set the offset and read the file content
     result = FSEEK(fp, (UINT32) offset, SEEK_SET);
-    CHK(result == 0 && (FREAD(pBuffer, (SIZE_T) readSize, 1, fp) == 1), STATUS_READ_FILE_FAILED);
+
+    CHK(result == 0, STATUS_READ_FILE_FAILED);
+
+    // fread would either return 1, i.e, the number of objects we've requested it to read
+    // or it would run into end-of-file / error.
+    // fread does not distinguish between end-of-file and error,
+    // and callers must use feof and ferror to determine which occurred.
+    if (FREAD(pBuffer, (SIZE_T) readSize, 1, fp) != 1) {
+        CHK(FEOF(fp), STATUS_READ_FILE_FAILED);
+    }
 
 CleanUp:
 
