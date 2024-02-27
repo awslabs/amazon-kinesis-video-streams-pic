@@ -1034,7 +1034,7 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 //
 // Thread functionality
 //
-//Wrappers around OS specific utilities for threads. Takes arguments as given.
+// Wrappers around OS specific utilities for threads. Takes arguments as given.
 #define THREAD_CREATE             globalCreateThread
 #define THREAD_CREATE_WITH_PARAMS globalCreateThreadWithParams
 #define THREAD_JOIN               globalJoinThread
