@@ -2064,7 +2064,7 @@ STATUS putFragmentMetadata(PKinesisVideoStream pKinesisVideoStream, PCHAR name, 
 
             pExistingSerializedMetadata = (PSerializedMetadata) data;
 
-            DLOGI("EEEEEEEEEEE: name: %s %s", name, value);
+            DLOGI("EEEEEEEEEEE: name: %s %s", pExistingSerializedMetadata->name, pExistingSerializedMetadata->value);
 
             CHK(pExistingSerializedMetadata != NULL, STATUS_INTERNAL_ERROR);
 
