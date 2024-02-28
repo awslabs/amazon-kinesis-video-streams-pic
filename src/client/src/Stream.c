@@ -2063,6 +2063,9 @@ STATUS putFragmentMetadata(PKinesisVideoStream pKinesisVideoStream, PCHAR name, 
             CHK_STATUS(stackQueueIteratorGetItem(iterator, &data));
 
             pExistingSerializedMetadata = (PSerializedMetadata) data;
+
+            DLOGI("EEEEEEEEEEE: name: %s %s", name, value);
+
             CHK(pExistingSerializedMetadata != NULL, STATUS_INTERNAL_ERROR);
 
             // Check to see if we have a persistent metadata and have a match and if we do then just remove
