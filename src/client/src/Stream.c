@@ -2091,6 +2091,7 @@ STATUS putFragmentMetadata(PKinesisVideoStream pKinesisVideoStream, PCHAR name, 
 
     DLOGI("Queue size: %d Name: %s Value: %s Persistent: %d", metadataQueueSize, name, value, persistent);
     CHK(metadataQueueSize < MAX_FRAGMENT_METADATA_COUNT, STATUS_MAX_FRAGMENT_METADATA_COUNT);
+    DLOGI("RRRRRRRRRRRRRRRRRRR: %d %d", __LINE__, metadataQueueSize);
 
     CHK_STATUS(createSerializedMetadata(name, value, persistent, packagedSize, STREAM_EVENT_TYPE_NONE, MKV_TREE_TAGS, &pSerializedMetadata));
     CHK_STATUS(appendValidatedMetadata(pKinesisVideoStream, pSerializedMetadata));
