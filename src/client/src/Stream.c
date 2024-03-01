@@ -2064,8 +2064,6 @@ STATUS putFragmentMetadata(PKinesisVideoStream pKinesisVideoStream, PCHAR name, 
 
             pExistingSerializedMetadata = (PSerializedMetadata) data;
 
-            DLOGI("EEEEEEEEEEE: name: %s %s", pExistingSerializedMetadata->name, pExistingSerializedMetadata->value);
-
             CHK(pExistingSerializedMetadata != NULL, STATUS_INTERNAL_ERROR);
 
             // Check to see if we have a persistent metadata and have a match and if we do then just remove
@@ -2092,8 +2090,7 @@ STATUS putFragmentMetadata(PKinesisVideoStream pKinesisVideoStream, PCHAR name, 
     // Ensure we don't have more than MAX size of the metadata queue
     CHK_STATUS(stackQueueGetCount(pKinesisVideoStream->pMetadataQueue, &metadataQueueSize));
 
-    DLOGI("Queue size: %d Name: %s Value: %s Persistent: %d", metadataQueueSize, name, value, persistent);
-    CHK(metadataQueueSize < MAX_FRAGMENT_METADATA_COUNT, STATUS_MAX_FRAGMENT_METADATA_COUNT);
+    CHK(metadataQueueSize < MAX_FRAGMENT_METADATA_TAGS, STATUS_MAX_FRAGMENT_METADATA_COUNT);
     DLOGI("RRRRRRRRRRRRRRRRRRR: %d %d", __LINE__, metadataQueueSize);
 
     CHK_STATUS(createSerializedMetadata(name, value, persistent, packagedSize, STREAM_EVENT_TYPE_NONE, MKV_TREE_TAGS, &pSerializedMetadata));
