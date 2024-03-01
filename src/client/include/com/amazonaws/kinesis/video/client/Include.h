@@ -272,7 +272,7 @@ extern "C" {
 /**
  * Maximal size of the metadata queue for a fragment
  */
-#define MAX_FRAGMENT_METADATA_COUNT 25
+#define MAX_FRAGMENT_METADATA_COUNT 10
 
 /**
  * Maximum amount of the "tags" element metadata for a fragment
