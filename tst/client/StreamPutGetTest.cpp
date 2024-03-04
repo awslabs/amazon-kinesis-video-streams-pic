@@ -1427,8 +1427,8 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNotifyAndTagsStoreData)
         // Set the frame bits
         MEMSET(frame.frameData, (BYTE) i, SIZEOF(tempBuffer));
 
-        // Key frame every 10th
-        frame.flags = i % 10 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
+        // Key frame every 8th
+        frame.flags = i % 8 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
 
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame)) << "Iteration " << i;
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "postTagName", (PCHAR) "postTagValue", FALSE)) << i;
@@ -1449,7 +1449,7 @@ TEST_F(StreamPutGetTest, putFrame_PutGetNotifyAndTagsStoreData)
     ASSERT_TRUE(retStatus == STATUS_SUCCESS || retStatus == STATUS_NO_MORE_DATA_AVAILABLE);
 
     // Manually pre-validated data file size
-    EXPECT_EQ(18646, filledSize);
+    EXPECT_EQ(19150, filledSize);
 
     // Store the data in a file
     EXPECT_EQ(STATUS_SUCCESS, writeFile((PCHAR) "test_put_get_tags.mkv", TRUE, FALSE, getDataBuffer, filledSize));
