@@ -277,7 +277,7 @@ extern "C" {
 /**
  * Maximum amount of the "tags" element metadata for a fragment
  */
-#define MAX_FRAGMENT_METADATA_TAGS 10
+#define MAX_FRAGMENT_METADATA_TAGS MAX_FRAGMENT_METADATA_COUNT
 
 /**
  * Max name/value pairs for custom event metadata
