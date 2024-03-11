@@ -74,9 +74,15 @@ extern "C" {
 // 64/32 bit check on GCC
 //
 #if defined __GNUC__ || defined __GNUG__
-#if defined __x86_64__ || defined __ppc64__
+#if defined __x86_64__ || defined __ppc64__ || __aarch64__
 #define SIZE_64
-#define __LLP64__ // win64 uses LLP64 data model
+#if defined __APPLE__
+#define __LLP64__
+#else
+#ifndef __LP64__
+#define __LP64__ // Linux uses LP64 data model
+#endif
+#endif
 #else
 #define SIZE_32
 #endif
@@ -228,6 +234,9 @@ typedef UINT64 MUTEX;
 #if defined __WINDOWS_BUILD__
 typedef PCONDITION_VARIABLE CVAR;
 #else
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE
+#endif
 #include <pthread.h>
 #include <signal.h>
 typedef pthread_cond_t* CVAR;
@@ -368,11 +377,11 @@ typedef INT_PTR SSIZE_T, *PSSIZE_T;
 // NOTE: Timer precision is in 100ns intervals. This is used in heuristics and in time functionality
 //
 #define DEFAULT_TIME_UNIT_IN_NANOS         100
-#define HUNDREDS_OF_NANOS_IN_A_MICROSECOND 10LL
-#define HUNDREDS_OF_NANOS_IN_A_MILLISECOND (HUNDREDS_OF_NANOS_IN_A_MICROSECOND * 1000LL)
-#define HUNDREDS_OF_NANOS_IN_A_SECOND      (HUNDREDS_OF_NANOS_IN_A_MILLISECOND * 1000LL)
-#define HUNDREDS_OF_NANOS_IN_A_MINUTE      (HUNDREDS_OF_NANOS_IN_A_SECOND * 60LL)
-#define HUNDREDS_OF_NANOS_IN_AN_HOUR       (HUNDREDS_OF_NANOS_IN_A_MINUTE * 60LL)
+#define HUNDREDS_OF_NANOS_IN_A_MICROSECOND ((INT64) 10)
+#define HUNDREDS_OF_NANOS_IN_A_MILLISECOND (HUNDREDS_OF_NANOS_IN_A_MICROSECOND * ((INT64) 1000))
+#define HUNDREDS_OF_NANOS_IN_A_SECOND      (HUNDREDS_OF_NANOS_IN_A_MILLISECOND * ((INT64) 1000))
+#define HUNDREDS_OF_NANOS_IN_A_MINUTE      (HUNDREDS_OF_NANOS_IN_A_SECOND * ((INT64) 60))
+#define HUNDREDS_OF_NANOS_IN_AN_HOUR       (HUNDREDS_OF_NANOS_IN_A_MINUTE * ((INT64) 60))
 
 //
 // Infinite time
@@ -527,11 +536,11 @@ typedef INT_PTR SSIZE_T, *PSSIZE_T;
 #endif
 
 #ifndef S_ISDIR
-#define S_ISDIR(mode) (((mode) &S_IFMT) == S_IFDIR)
+#define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
 #endif
 
 #ifndef S_ISREG
-#define S_ISREG(mode) (((mode) &S_IFMT) == S_IFREG)
+#define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
 #endif
 
 // Definition of the mkdir for Windows with 1 param
@@ -677,6 +686,8 @@ extern getTName globalGetThreadName;
 //
 typedef UINT64 (*getTime)();
 
+typedef struct tm* (*getTmTime)(const time_t*);
+
 //
 // Default time library functions
 //
@@ -685,10 +696,20 @@ typedef UINT64 (*getTime)();
 PUBLIC_API UINT64 defaultGetTime();
 
 //
+// The C library function gmtime is not threadsafe, but we need a thread
+// safe impl.  This provides that by wrapping the gmtime call around
+// a global mutex specific for gmtime calls.  All instances of GMTIME
+// can be safely replaced with the new GMTIME_THREAD_SAFE.
+// On Windows gmtime is threadsafe so no impact there.
+//
+PUBLIC_API struct tm* defaultGetThreadSafeTmTime(const time_t*);
+
+//
 // Thread related functionality
 //
 extern getTime globalGetTime;
 extern getTime globalGetRealTime;
+extern getTmTime globalGetThreadSafeTmTime;
 
 //
 // Thread library function definitions
@@ -862,6 +883,11 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 #define IS_EMPTY_STRING(str) ((str)[0] == '\0')
 
 //
+// Check if string is null or empty
+//
+#define IS_NULL_OR_EMPTY_STRING(str) (str == NULL || IS_EMPTY_STRING(str))
+
+//
 // Pseudo-random functionality
 //
 #ifndef SRAND
@@ -896,11 +922,22 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 #ifndef FREAD
 #define FREAD fread
 #endif
+#ifndef FEOF
+#define FEOF feof
+#endif
 #ifndef FSEEK
+#if defined _WIN32 || defined _WIN64
+#define FSEEK _fseeki64
+#else
 #define FSEEK fseek
 #endif
+#endif
 #ifndef FTELL
+#if defined _WIN32 || defined _WIN64
+#define FTELL _ftelli64
+#else
 #define FTELL ftell
+#endif
 #endif
 #ifndef FREMOVE
 #define FREMOVE remove
@@ -978,6 +1015,12 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 #define GETREALTIME globalGetRealTime
 #define STRFTIME    strftime
 #define GMTIME      gmtime
+
+#if defined _WIN32 || defined _WIN64 || defined __CYGWIN__
+#define GMTIME_THREAD_SAFE GMTIME
+#else
+#define GMTIME_THREAD_SAFE globalGetThreadSafeTmTime
+#endif
 
 //
 // Mutex functionality
@@ -1069,9 +1112,9 @@ typedef SIZE_T ATOMIC_BOOL;
 #define LOW_INT32(x)  ((INT32) (x))
 #define HIGH_INT32(x) ((INT32) (((INT64) (x) >> 32) & 0xFFFFFFFF))
 
-#define MAKE_INT16(a, b) ((INT16) (((UINT8) ((UINT16) (a) &0xff)) | ((UINT16) ((UINT8) ((UINT16) (b) &0xff))) << 8))
-#define MAKE_INT32(a, b) ((INT32) (((UINT16) ((UINT32) (a) &0xffff)) | ((UINT32) ((UINT16) ((UINT32) (b) &0xffff))) << 16))
-#define MAKE_INT64(a, b) ((INT64) (((UINT32) ((UINT64) (a) &0xffffffff)) | ((UINT64) ((UINT32) ((UINT64) (b) &0xffffffff))) << 32))
+#define MAKE_INT16(a, b) ((INT16) (((UINT8) ((UINT16) (a) & 0xff)) | ((UINT16) ((UINT8) ((UINT16) (b) & 0xff))) << 8))
+#define MAKE_INT32(a, b) ((INT32) (((UINT16) ((UINT32) (a) & 0xffff)) | ((UINT32) ((UINT16) ((UINT32) (b) & 0xffff))) << 16))
+#define MAKE_INT64(a, b) ((INT64) (((UINT32) ((UINT64) (a) & 0xffffffff)) | ((UINT64) ((UINT32) ((UINT64) (b) & 0xffffffff))) << 32))
 
 #define SWAP_INT16(x) MAKE_INT16(HIGH_BYTE(x), LOW_BYTE(x))
 

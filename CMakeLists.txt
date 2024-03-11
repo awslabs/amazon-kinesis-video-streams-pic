@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.6.3)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake;${CMAKE_MODULE_PATH}")
 include(Utilities)
-project(pic_project)
+project(pic_project LANGUAGES C)
 
 include(GNUInstallDirs)
 
@@ -30,6 +30,16 @@ execute_process(
 add_definitions(-DSDK_VERSION=\"${GIT_COMMIT_HASH}\")
 add_definitions(-DDETECTED_GIT_HASH)
 
+
+if(NOT CMAKE_BUILD_TYPE)
+  message(STATUS "Setting CMAKE_BUILD_TYPE to Release by default")
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
+elseif()
+  string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER) # To ensure consistency
+  if(CMAKE_BUILD_TYPE_UPPER STREQUAL "DEBUG")
+    add_definitions(-DDEBUG_BUILD)
+  endif()
+endif()
 
 if(BUILD_SHARED_LIBS)
   set(LIBTYPE SHARED)
@@ -110,8 +120,6 @@ file(GLOB PIC_TRACE_SOURCE_FILES "src/trace/src/*.c")
 file(GLOB PIC_UTILS_SOURCE_FILES "src/utils/src/*.c")
 
 file(GLOB PIC_VIEW_SOURCE_FILES "src/view/src/*.c")
-
-file(GLOB PIC_TEST_SOURCE_FILES "src/*/tst/*.cpp")
 
 file(GLOB PIC_HEADERS "${KINESIS_VIDEO_PIC_SRC}/src/*/include")
 
@@ -194,32 +202,5 @@ install(
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 
 if(BUILD_TEST)
-  set(CMAKE_CXX_STANDARD 11)
-
-  if (OPEN_SRC_INSTALL_PREFIX)
-    find_package(GTest REQUIRED PATHS ${OPEN_SRC_INSTALL_PREFIX})
-  else()
-    find_package(GTest REQUIRED)
-  endif()
-
-  SET(GTEST_LIBNAME GTest::gtest)
-  if (TARGET GTest::GTest)
-    SET(GTEST_LIBNAME GTest::GTest)
-  endif()
-
-  add_executable(kvspic_test ${PIC_TEST_SOURCE_FILES}
-          ${PIC_CLIENT_SOURCE_FILES}
-          ${PIC_DURATION_SOURCE_FILES}
-          ${PIC_HEAP_SOURCE_FILES}
-          ${PIC_MKVGEN_SOURCE_FILES}
-          ${PIC_STATE_SOURCE_FILES}
-          ${PIC_TRACE_SOURCE_FILES}
-          ${PIC_UTILS_SOURCE_FILES}
-          ${PIC_VIEW_SOURCE_FILES})
-  target_compile_definitions(kvspic_test PRIVATE ALIGNED_MEMORY_MODEL=TRUE FIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE)
-  target_link_libraries(kvspic_test ${GTEST_LIBNAME} ${CMAKE_DL_LIBS} Threads::Threads)
-  if(UNIX AND NOT APPLE)
-    # rt needed for clock_gettime
-    target_link_libraries(kvspic_test rt)
-  endif()
+  add_subdirectory(tst)
 endif()

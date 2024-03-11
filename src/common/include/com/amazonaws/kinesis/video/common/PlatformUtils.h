@@ -22,12 +22,12 @@ extern "C" {
 #endif
 
 // Log print function definition
-typedef VOID (*logPrintFunc)(UINT32, PCHAR, PCHAR, ...);
+typedef VOID (*logPrintFunc)(UINT32, const PCHAR, const PCHAR, ...);
 
 //
 // Default logger function
 //
-PUBLIC_API VOID defaultLogPrint(UINT32 level, PCHAR tag, PCHAR fmt, ...);
+PUBLIC_API VOID defaultLogPrint(UINT32 level, const PCHAR tag, const PCHAR fmt, ...);
 
 extern logPrintFunc globalCustomLogPrintFn;
 
@@ -35,14 +35,21 @@ extern logPrintFunc globalCustomLogPrintFn;
 // Compiling with NDK
 #include <android/log.h>
 #define __LOG(p1, p2, p3, ...)    __android_log_print(p1, p2, p3, ##__VA_ARGS__)
-#define __ASSERT(p1, p2, p3, ...) __android_log_assert(p1, p2, p3, ##__VA_ARGS__)
+#define __ASSERT(p1, p2, p3, ...) __android_log_assert(p1, p2, p3, ##__VA_ARGS__) // This is unaffected by release vs debug build unlike C assert().
 #else
 // Compiling under non-NDK
 #include <stddef.h>
 #include <stdlib.h>
 #include <assert.h>
+
+#ifdef DEBUG_BUILD
 #define __ASSERT(p1, p2, p3, ...) assert(p1)
-#define __LOG                     globalCustomLogPrintFn
+#else
+PUBLIC_API VOID customAssert(INT64 condition, const CHAR* fileName, INT64 lineNumber, const CHAR* functionName);
+#define __ASSERT(p1, p2, p3, ...) customAssert((p1), __FILE__, __LINE__, __FUNCTION__)
+#endif
+
+#define __LOG globalCustomLogPrintFn
 #endif // ANDROID_BUILD
 
 #define LOG_LEVEL_VERBOSE 1
@@ -52,38 +59,40 @@ extern logPrintFunc globalCustomLogPrintFn;
 #define LOG_LEVEL_ERROR   5
 #define LOG_LEVEL_FATAL   6
 #define LOG_LEVEL_SILENT  7
+
+// Adding this after LOG_LEVEL_SILENT to ensure we do not break backward compat
 #define LOG_LEVEL_PROFILE 8
 
-#define LOG_LEVEL_VERBOSE_STR (PCHAR) "VERBOSE"
-#define LOG_LEVEL_DEBUG_STR   (PCHAR) "DEBUG"
-#define LOG_LEVEL_INFO_STR    (PCHAR) "INFO"
-#define LOG_LEVEL_WARN_STR    (PCHAR) "WARN"
-#define LOG_LEVEL_ERROR_STR   (PCHAR) "ERROR"
-#define LOG_LEVEL_FATAL_STR   (PCHAR) "FATAL"
-#define LOG_LEVEL_SILENT_STR  (PCHAR) "SILENT"
-#define LOG_LEVEL_PROFILE_STR (PCHAR) "PROFILE"
+#define LOG_LEVEL_VERBOSE_STR (const PCHAR) "VERBOSE"
+#define LOG_LEVEL_DEBUG_STR   (const PCHAR) "DEBUG"
+#define LOG_LEVEL_INFO_STR    (const PCHAR) "INFO"
+#define LOG_LEVEL_WARN_STR    (const PCHAR) "WARN"
+#define LOG_LEVEL_ERROR_STR   (const PCHAR) "ERROR"
+#define LOG_LEVEL_FATAL_STR   (const PCHAR) "FATAL"
+#define LOG_LEVEL_SILENT_STR  (const PCHAR) "SILENT"
+#define LOG_LEVEL_PROFILE_STR (const PCHAR) "PROFILE"
 
 // LOG_LEVEL_VERBOSE_STR string length
 #define MAX_LOG_LEVEL_STRLEN 7
 
 // Extra logging macros
 #ifndef DLOGE
-#define DLOGE(fmt, ...) __LOG(LOG_LEVEL_ERROR, (PCHAR) LOG_CLASS, (PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
+#define DLOGE(fmt, ...) __LOG(LOG_LEVEL_ERROR, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
 #endif
 #ifndef DLOGW
-#define DLOGW(fmt, ...) __LOG(LOG_LEVEL_WARN, (PCHAR) LOG_CLASS, (PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
+#define DLOGW(fmt, ...) __LOG(LOG_LEVEL_WARN, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
 #endif
 #ifndef DLOGI
-#define DLOGI(fmt, ...) __LOG(LOG_LEVEL_INFO, (PCHAR) LOG_CLASS, (PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
+#define DLOGI(fmt, ...) __LOG(LOG_LEVEL_INFO, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
 #endif
 #ifndef DLOGD
-#define DLOGD(fmt, ...) __LOG(LOG_LEVEL_DEBUG, (PCHAR) LOG_CLASS, (PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
+#define DLOGD(fmt, ...) __LOG(LOG_LEVEL_DEBUG, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
 #endif
 #ifndef DLOGV
-#define DLOGV(fmt, ...) __LOG(LOG_LEVEL_VERBOSE, (PCHAR) LOG_CLASS, (PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
+#define DLOGV(fmt, ...) __LOG(LOG_LEVEL_VERBOSE, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
 #endif
 #ifndef DLOGP
-#define DLOGP(fmt, ...) __LOG(LOG_LEVEL_PROFILE, (PCHAR) LOG_CLASS, (PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
+#define DLOGP(fmt, ...) __LOG(LOG_LEVEL_PROFILE, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
 #endif
 
 #ifndef ENTER
@@ -119,25 +128,26 @@ extern logPrintFunc globalCustomLogPrintFn;
 #endif
 #endif
 #ifndef LOG_ALWAYS_FATAL_IF
-#define LOG_ALWAYS_FATAL_IF(cond, ...) ((CONDITION(cond)) ? ((void) __ASSERT(FALSE, (PCHAR) LOG_CLASS, ##__VA_ARGS__)) : (void) 0)
+#define LOG_ALWAYS_FATAL_IF(cond, ...) ((CONDITION(cond)) ? ((void) __ASSERT(FALSE, (const PCHAR) LOG_CLASS, ##__VA_ARGS__)) : (void) 0)
 #endif
 
 #ifndef LOG_ALWAYS_FATAL
-#define LOG_ALWAYS_FATAL(...) (((void) __ASSERT(FALSE, (PCHAR) LOG_CLASS, ##__VA_ARGS__)))
+#define LOG_ALWAYS_FATAL(...) (((void) __ASSERT(FALSE, (const PCHAR) LOG_CLASS, ##__VA_ARGS__)))
 #endif
 
 #ifndef SANITIZED_FILE
 #define SANITIZED_FILE (STRRCHR(__FILE__, '/') ? STRRCHR(__FILE__, '/') + 1 : __FILE__)
 #endif
 #ifndef CRASH
-#define CRASH(fmt, ...) LOG_ALWAYS_FATAL("%s::%s: " fmt, (PCHAR) LOG_CLASS, __FUNCTION__, ##__VA_ARGS__)
+#define CRASH(fmt, ...) LOG_ALWAYS_FATAL("%s::%s: " fmt, (const PCHAR) LOG_CLASS, __FUNCTION__, ##__VA_ARGS__)
 #endif
 #ifndef CHECK
-#define CHECK(x) LOG_ALWAYS_FATAL_IF(!(x), "%s::%s: ASSERTION FAILED at %s:%d: " #x, (PCHAR) LOG_CLASS, __FUNCTION__, SANITIZED_FILE, __LINE__)
+#define CHECK(x) LOG_ALWAYS_FATAL_IF(!(x), "%s::%s: ASSERTION FAILED at %s:%d: " #x, (const PCHAR) LOG_CLASS, __FUNCTION__, SANITIZED_FILE, __LINE__)
 #endif
 #ifndef CHECK_EXT
 #define CHECK_EXT(x, fmt, ...)                                                                                                                       \
-    LOG_ALWAYS_FATAL_IF(!(x), "%s::%s: ASSERTION FAILED at %s:%d: " fmt, (PCHAR) LOG_CLASS, __FUNCTION__, SANITIZED_FILE, __LINE__, ##__VA_ARGS__)
+    LOG_ALWAYS_FATAL_IF(!(x), "%s::%s: ASSERTION FAILED at %s:%d: " fmt, (const PCHAR) LOG_CLASS, __FUNCTION__, SANITIZED_FILE, __LINE__,            \
+                        ##__VA_ARGS__)
 #endif
 
 #ifndef LOG_GIT_HASH

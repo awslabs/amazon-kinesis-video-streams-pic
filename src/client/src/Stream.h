@@ -270,7 +270,7 @@ typedef enum {
 
 } UPLOAD_HANDLE_STATE;
 
-#define CHECK_UPLOAD_CONNECTION_STATE_IN_USE(f) (((f) &UPLOAD_CONNECTION_STATE_IN_USE) != UPLOAD_CONNECTION_STATE_NONE)
+#define CHECK_UPLOAD_CONNECTION_STATE_IN_USE(f) (((f) & UPLOAD_CONNECTION_STATE_IN_USE) != UPLOAD_CONNECTION_STATE_NONE)
 /**
  * Upload connection state enum type definition
  */
@@ -376,6 +376,9 @@ struct __KinesisVideoStream {
 
     // Stream state for running/stopping
     UINT64 streamState;
+
+    // Whether to continue iterating the stream state machine
+    BOOL keepIteratingStateMachine;
 
     // Fragment ACK parser for streaming ACKs
     FragmentAckParser fragmentAckParser;
@@ -840,6 +843,11 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream, UINT64, UINT64, SERVICE_CALL_
 // Streaming event functions
 ///////////////////////////////////////////////////////////////////////////
 STATUS getStreamData(PKinesisVideoStream, UPLOAD_HANDLE, PBYTE, UINT32, PUINT32);
+
+///////////////////////////////////////////////////////////////////////////
+// State machine iterator
+///////////////////////////////////////////////////////////////////////////
+STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream);
 
 ///////////////////////////////////////////////////////////////////////////
 // State machine callback functionality

@@ -54,6 +54,26 @@ CleanUp:
     return retStatus;
 }
 
+STATUS createStateMachineWithName(PStateMachineState pStates, UINT32 stateCount, UINT64 customData, GetCurrentTimeFunc getCurrentTimeFunc,
+                                  UINT64 getCurrentTimeFuncCustomData, PCHAR pStateMachineName, PStateMachine* ppStateMachine)
+{
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    PStateMachineImpl pStateMachineImpl;
+    CHK_ERR(pStateMachineName != NULL, STATUS_NULL_ARG, "State machine name is NULL");
+    CHK_ERR(!IS_EMPTY_STRING(pStateMachineName), STATUS_STATE_MACHINE_NAME_LEN_INVALID, "State machine name is empty");
+    CHK(STRNLEN(pStateMachineName, MAX_STATE_MACHINE_NAME_LENGTH + 1) <= MAX_STATE_MACHINE_NAME_LENGTH, STATUS_STATE_MACHINE_NAME_LEN_INVALID);
+    CHK_STATUS(createStateMachine(pStates, stateCount, customData, getCurrentTimeFunc, getCurrentTimeFuncCustomData, ppStateMachine));
+    pStateMachineImpl = (PStateMachineImpl) *ppStateMachine;
+    CHK(pStateMachineImpl != NULL, STATUS_NULL_ARG);
+    STRNCPY(pStateMachineImpl->stateMachineName, pStateMachineName, MAX_STATE_MACHINE_NAME_LENGTH);
+    pStateMachineImpl->stateMachineName[MAX_STATE_MACHINE_NAME_LENGTH] = '\0';
+    *ppStateMachine = (PStateMachine) pStateMachineImpl;
+CleanUp:
+    LEAVES();
+    return retStatus;
+}
+
 /**
  * Frees the state machine object
  */
@@ -126,7 +146,7 @@ CleanUp:
 }
 
 /**
- * Transition the state machine given it's context
+ * Transition the state machine given its context
  */
 STATUS stepStateMachine(PStateMachine pStateMachine)
 {
@@ -161,7 +181,7 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
 
     // Check if we are changing the state
     if (pState->state != pStateMachineImpl->context.pCurrentState->state) {
-        // Since we're transitioning to a different state from this state, reset the local state retry count to0
+        // Since we're transitioning to a different state from this state, reset the local state retry count to 0
         pStateMachineImpl->context.localStateRetryCount = 0;
     } else {
         // Increment the local state retry count.
@@ -169,10 +189,18 @@ STATUS stepStateMachine(PStateMachine pStateMachine)
         pStateMachineImpl->context.localStateRetryCount++;
     }
 
-    DLOGV("State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64 ", "
-          "Current local state retry count [%u], Max local state retry count [%u], State transition wait time [%u] ms",
-          pStateMachineImpl->context.pCurrentState->state, nextState, pStateMachineImpl->context.localStateRetryCount,
-          pState->maxLocalStateRetryCount, errorStateTransitionWaitTime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    if (IS_EMPTY_STRING(pStateMachineImpl->stateMachineName)) {
+        DLOGV("State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64 ", "
+              "Current local state retry count [%u], Max local state retry count [%u], State transition wait time [%u] ms",
+              pStateMachineImpl->context.pCurrentState->state, nextState, pStateMachineImpl->context.localStateRetryCount,
+              pState->maxLocalStateRetryCount, errorStateTransitionWaitTime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    } else {
+        DLOGV("[%s] State Machine - Current state: 0x%016" PRIx64 ", Next state: 0x%016" PRIx64 ", "
+              "Current local state retry count [%u], Max local state retry count [%u], State transition wait time [%u] ms",
+              pStateMachineImpl->stateMachineName, pStateMachineImpl->context.pCurrentState->state, nextState,
+              pStateMachineImpl->context.localStateRetryCount, pState->maxLocalStateRetryCount,
+              errorStateTransitionWaitTime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    }
 
     // Check if we have tried enough times within the same state
     if (pState->maxLocalStateRetryCount != INFINITE_RETRY_COUNT_SENTINEL) {
@@ -257,4 +285,57 @@ CleanUp:
 
     LEAVES();
     return retStatus;
+}
+
+/**
+ * Calls the from function of the current state to determine if the state machine is ready to
+ * move on to another state.
+ */
+STATUS checkForStateTransition(PStateMachine pStateMachine, PBOOL pTransitionReady)
+{
+    ENTERS();
+    STATUS retStatus = STATUS_SUCCESS;
+    PStateMachineState pState = NULL;
+    UINT64 nextState, time;
+    UINT64 customData;
+    PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
+    UINT64 errorStateTransitionWaitTime = 0;
+    BOOL transitionReady = FALSE;
+    UINT32 i;
+
+    CHK(pStateMachineImpl != NULL && pTransitionReady != NULL, STATUS_NULL_ARG);
+    customData = pStateMachineImpl->customData;
+
+    // Get the next state
+    CHK(pStateMachineImpl->context.pCurrentState->getNextStateFn != NULL, STATUS_NULL_ARG);
+    CHK_STATUS(pStateMachineImpl->context.pCurrentState->getNextStateFn(pStateMachineImpl->customData, &nextState));
+
+    // Iterate over and find the first state
+    for (i = 0; pState == NULL && i < pStateMachineImpl->stateCount; i++) {
+        if (pStateMachineImpl->states[i].state == nextState) {
+            if (pStateMachineImpl->context.pCurrentState->state != nextState) {
+                transitionReady = TRUE;
+            }
+            break;
+        }
+    }
+
+    *pTransitionReady = transitionReady;
+
+CleanUp:
+
+    LEAVES();
+    return retStatus;
+}
+
+// This function is useful for unit tests
+PCHAR getStateMachineName(PStateMachine pStateMachine)
+{
+    PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
+    if (pStateMachineImpl == NULL) {
+        DLOGW("State machine object not created. Cannot retrieve name");
+        return NULL;
+    } else {
+        return pStateMachineImpl->stateMachineName;
+    }
 }

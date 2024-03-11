@@ -68,6 +68,7 @@ extern "C" {
 #define STATUS_EXPONENTIAL_BACKOFF_INVALID_STATE     STATUS_UTILS_BASE + 0x0000002a
 #define STATUS_EXPONENTIAL_BACKOFF_RETRIES_EXHAUSTED STATUS_UTILS_BASE + 0x0000002b
 #define STATUS_THREADPOOL_MAX_COUNT                  STATUS_UTILS_BASE + 0x0000002c
+#define STATUS_THREADPOOL_INTERNAL_ERROR             STATUS_UTILS_BASE + 0x0000002d
 
 /**
  * Base64 encode/decode functionality
@@ -1248,6 +1249,16 @@ PUBLIC_API STATUS timerQueueGetTimersWithCustomData(TIMER_QUEUE_HANDLE, UINT64, 
 PUBLIC_API STATUS timerQueueUpdateTimerPeriod(TIMER_QUEUE_HANDLE, UINT64, UINT32, UINT64);
 
 /*
+ * Kick timer id's timer to invoke immediately. Do nothing if timer not found.
+ *
+ * @param - TIMER_QUEUE_HANDLE - IN - Timer queue handle
+ * @param - UINT32 - IN - Timer id to update
+ *
+ * @return - STATUS code of the execution
+ */
+PUBLIC_API STATUS timerQueueKick(TIMER_QUEUE_HANDLE, UINT32);
+
+/*
  * stop the timer. Once stopped timer can't be restarted. There will be no more timer callback invocation after
  * timerQueueShutdown returns.
  *
@@ -1454,8 +1465,8 @@ PUBLIC_API SIZE_T getInstrumentedTotalAllocationSize();
 /**
  * File logger error values starting from 0x41300000
  */
-#define STATUS_FILE_LOGGER_BASE                    STATUS_UTILS_BASE + 0x01200000
-#define STATUS_FILE_LOGGER_INDEX_FILE_INVALID_SIZE STATUS_SEMAPHORE_BASE + 0x00000001
+#define STATUS_FILE_LOGGER_BASE                    STATUS_UTILS_BASE + 0x01300000
+#define STATUS_FILE_LOGGER_INDEX_FILE_INVALID_SIZE STATUS_FILE_LOGGER_BASE + 0x00000001
 
 /**
  * File based logger limit constants
