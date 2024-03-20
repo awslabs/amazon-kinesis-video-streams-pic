@@ -11,10 +11,10 @@ on:
       - master
 jobs:
   clang-format-check:
-    runs-on: macos-11
+    runs-on: macos-12
     steps:
       - name: Clone repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install clang-format
         run: |
           brew install clang-format
@@ -30,7 +30,7 @@ jobs:
       AWS_KVS_LOG_LEVEL: 2
     steps:
       - name: Clone repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build repository
         run: |
           mkdir build && cd build
@@ -56,7 +56,7 @@ jobs:
       AWS_KVS_LOG_LEVEL: 2
     steps:
       - name: Clone repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build repository
         run: |
           mkdir build && cd build
@@ -82,7 +82,7 @@ jobs:
       AWS_KVS_LOG_LEVEL: 2
     steps:
       - name: Clone repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build repository
         run: |
           brew unlink openssl
@@ -115,7 +115,7 @@ jobs:
         with:
           xcode-version: '15.2'    
       - name: Clone repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build repository
         run: |
           brew unlink openssl
@@ -142,7 +142,7 @@ jobs:
       AWS_KVS_LOG_LEVEL: 2
     steps:
       - name: Clone repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build repository
         run: |
           mkdir build && cd build
@@ -174,7 +174,7 @@ jobs:
       AWS_KVS_LOG_LEVEL: 2
     steps:
       - name: Clone repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build repository
         run: |
           mkdir build && cd build
@@ -204,7 +204,7 @@ jobs:
       AWS_KVS_LOG_LEVEL: 2
     steps:
       - name: Clone repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -236,7 +236,7 @@ jobs:
       CC: gcc-4.4
     steps:
       - name: Clone repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install deps
         run: |
           sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
@@ -274,7 +274,7 @@ jobs:
   #     AWS_KVS_LOG_LEVEL: 2
   #   steps:
   #     - name: Clone repository
-  #       uses: actions/checkout@v2
+  #       uses: actions/checkout@v4
   #     - name: Install dependencies
   #       run: |
   #         sudo apt-get update
@@ -295,7 +295,7 @@ jobs:
       AWS_KVS_LOG_LEVEL: 2
     steps:
       - name: Clone repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -326,7 +326,7 @@ jobs:
       AWS_KVS_LOG_LEVEL: 7
     steps:
       - name: Clone repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build and run
         run: |
           .github/build_windows.bat
@@ -344,7 +344,7 @@ jobs:
           sudo apt update
           sudo apt-get -y install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
       - name: Clone repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build Repository
         run: |
           sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
@@ -362,7 +362,7 @@ jobs:
           sudo apt update
           sudo apt-get -y install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi binutils-arm-linux-gnueabi
       - name: Clone repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build Repository
         run: |
           sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
