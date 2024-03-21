@@ -291,6 +291,22 @@ typedef struct {
     logPrintFunc storedLoggerLogPrintFn;
 } FileLogger, *PFileLogger;
 
+/**
+ * syslog logger declaration
+ */
+#if !defined(_WIN32) && !defined(_WIN64)
+typedef struct {
+    // print log to stdout too
+    BOOL printLog;
+
+    // syslog logger logPrint callback
+    logPrintFunc syslogLoggerLogPrintFn;
+
+    // Original stored logger function
+    logPrintFunc storedLoggerLogPrintFn;
+} SyslogLogger, *PSyslogLogger;
+#endif
+
 /////////////////////////////////////////////////////////////////////
 // Internal functionality
 /////////////////////////////////////////////////////////////////////
