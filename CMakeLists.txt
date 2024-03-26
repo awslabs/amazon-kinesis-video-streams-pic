@@ -188,6 +188,10 @@ if(UNIX AND NOT APPLE)
   target_link_libraries(kvspicUtils rt)
 endif()
 
+if(COMPILER_WARNINGS)
+  target_compile_options(kvspic PUBLIC -Wall -Werror -pedantic -Wextra -Wno-unknown-warning-option)
+endif()
+
 install(
   TARGETS kvspic kvspicClient kvspicState kvspicUtils
   ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
