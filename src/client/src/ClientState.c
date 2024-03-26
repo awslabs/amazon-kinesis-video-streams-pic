@@ -163,7 +163,6 @@ STATUS fromAuthClientState(UINT64 customData, PUINT64 pState)
             }
 
             // Deliberate fall-through
-            /* FALLTHRU */
         case AUTH_INFO_NONE:
             // Token integration - proceed with create state if we are creating a new client, otherwise, move to ready
             if (pKinesisVideoClient->clientReady) {

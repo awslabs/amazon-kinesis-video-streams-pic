@@ -470,11 +470,9 @@ STATUS getKinesisVideoMetrics(CLIENT_HANDLE clientHandle, PClientMetrics pKinesi
                 case 2:
                     totalClientRetryCount += pKinesisVideoClient->streams[i]->diagnostics.streamApiCallRetryCount;
                     // explicit fall through since V2 would include V1 and V0 metrics as well
-                    /* FALLTHRU */
                 case 1:
                     pKinesisVideoMetrics->totalElementaryFrameRate += pKinesisVideoClient->streams[i]->diagnostics.elementaryFrameRate;
                     // explicit fall through since V1 would include V0 metrics as well
-                    /* FALLTHRU */
                 case 0:
                     pKinesisVideoMetrics->totalContentViewsSize += viewAllocationSize;
                     pKinesisVideoMetrics->totalFrameRate += (UINT64) pKinesisVideoClient->streams[i]->diagnostics.currentFrameRate;

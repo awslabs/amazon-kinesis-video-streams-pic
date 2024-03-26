@@ -462,7 +462,7 @@ STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
     PKinesisVideoClient pKinesisVideoClient;
     UINT64 duration, viewByteSize;
     UINT32 i, sessionCount;
-    BOOL streamLocked = FALSE, clientLocked = FALSE, streamsListLock = FALSE, notSent = FALSE;
+    BOOL streamLocked = FALSE, clientLocked = FALSE, notSent = FALSE;
     PUploadHandleInfo pUploadHandleInfo = NULL;
     UINT64 item;
 
@@ -1889,13 +1889,9 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
     PKinesisVideoClient pKinesisVideoClient = NULL;
     BOOL streamLocked = FALSE, hasMetadata = pMetadata == NULL ? FALSE : TRUE, creatingNodes = FALSE, streamStarted = FALSE;
     UINT8 iter = 0;
-    UINT32 packagedSize = 0, totalPackagedSize = 0, metadataQueueSize;
-    UINT32 packagedSizes[MAX_FRAGMENT_METADATA_COUNT] = {0};
+    UINT32 packagedSize = 0, metadataQueueSize;
     PSerializedMetadata serializedNodes[MAX_FRAGMENT_METADATA_COUNT] = {0};
     UINT8 neededNodes = 0;
-    PSerializedMetadata pExistingSerializedMetadata;
-    StackQueueIterator iterator;
-    UINT64 data;
 
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
@@ -2988,7 +2984,7 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
     PBYTE tagsStart;
     UINT64 item;
     PSerializedMetadata pSerializedMetadata = NULL;
-    BOOL firstTimeCheck = TRUE, tagsFound = FALSE;
+    BOOL tagsFound = FALSE;
 
     // NOTE: Assuming the locking is already done.
     // We will calculate the size and return the size only if buffer is NULL

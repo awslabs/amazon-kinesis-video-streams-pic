@@ -189,7 +189,7 @@ if(UNIX AND NOT APPLE)
 endif()
 
 if(COMPILER_WARNINGS)
-  target_compile_options(kvspic PUBLIC -Wall -Werror -pedantic -Wextra -Wno-unknown-warning-option)
+  target_compile_options(kvspic PUBLIC -Wall -Werror -pedantic -Wextra -Wno-unknown-warning-option -Wimplicit-fallthrough=2)
 endif()
 
 install(
