@@ -274,6 +274,7 @@ VOID fixupDeviceInfo(PDeviceInfo pClientDeviceInfo, PDeviceInfo pDeviceInfo)
             pOrigClientInfo = &pDeviceInfo->clientInfo;
 
             // Explicit fall-through
+            /* FALLTHRU */
         case 0:
             // Copy and fixup individual fields
             pClientDeviceInfo->version = DEVICE_INFO_CURRENT_VERSION;
@@ -318,12 +319,14 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
                 pClientInfo->serviceCallConnectionTimeout = pOrigClientInfo->serviceCallConnectionTimeout;
 
                 // explicit fall through
+                /* FALLTHRU */
             case 2:
                 // Copy individual fields and skip to V1
                 pClientInfo->automaticStreamingFlags = pOrigClientInfo->automaticStreamingFlags;
                 pClientInfo->reservedCallbackPeriod = pOrigClientInfo->reservedCallbackPeriod;
 
                 // explicit fall-through
+                /* FALLTHRU */
             case 1:
                 // Copy individual fields and skip to V0
                 pClientInfo->metricLoggingPeriod = pOrigClientInfo->metricLoggingPeriod;
@@ -444,10 +447,13 @@ VOID fixupStreamInfo(PStreamInfo pStreamInfo)
             }
 
             // Explicit fall-through
+            /* FALLTHRU */
         case 1:
             pStreamInfo->streamCaps.storePressurePolicy = CONTENT_STORE_PRESSURE_POLICY_OOM;
             pStreamInfo->streamCaps.viewOverflowPolicy = CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM;
 
+            // TODO: Verify that this is correct:
+            /* FALLTHRU */
         case 2:
             pStreamInfo->streamCaps.allowStreamCreation = TRUE;
             break;
@@ -462,11 +468,14 @@ VOID fixupStreamInfo(PStreamInfo pStreamInfo)
 
 VOID fixupTrackInfo(PTrackInfo pTrackInfo, UINT32 trackInfoCount)
 {
+    UNUSED_PARAM(pTrackInfo);
+    UNUSED_PARAM(trackInfoCount);
     // NO OP
 }
 
 VOID fixupFrame(PFrame pFrame)
 {
+    UNUSED_PARAM(pFrame);
     // NO OP
 }
 

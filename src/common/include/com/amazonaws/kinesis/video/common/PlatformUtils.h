@@ -46,7 +46,7 @@ extern logPrintFunc globalCustomLogPrintFn;
 #define __ASSERT(p1, p2, p3, ...) assert(p1)
 #else
 PUBLIC_API VOID customAssert(INT64 condition, const CHAR* fileName, INT64 lineNumber, const CHAR* functionName);
-#define __ASSERT(p1, p2, p3, ...) customAssert((p1), __FILE__, __LINE__, __FUNCTION__)
+#define __ASSERT(p1, p2, p3, ...) customAssert((p1), __FILE__, __LINE__, __func__)
 #endif
 
 #define __LOG globalCustomLogPrintFn
@@ -77,22 +77,22 @@ PUBLIC_API VOID customAssert(INT64 condition, const CHAR* fileName, INT64 lineNu
 
 // Extra logging macros
 #ifndef DLOGE
-#define DLOGE(fmt, ...) __LOG(LOG_LEVEL_ERROR, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
+#define DLOGE(fmt, ...) __LOG(LOG_LEVEL_ERROR, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __func__, ##__VA_ARGS__)
 #endif
 #ifndef DLOGW
-#define DLOGW(fmt, ...) __LOG(LOG_LEVEL_WARN, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
+#define DLOGW(fmt, ...) __LOG(LOG_LEVEL_WARN, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __func__, ##__VA_ARGS__)
 #endif
 #ifndef DLOGI
-#define DLOGI(fmt, ...) __LOG(LOG_LEVEL_INFO, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
+#define DLOGI(fmt, ...) __LOG(LOG_LEVEL_INFO, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __func__, ##__VA_ARGS__)
 #endif
 #ifndef DLOGD
-#define DLOGD(fmt, ...) __LOG(LOG_LEVEL_DEBUG, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
+#define DLOGD(fmt, ...) __LOG(LOG_LEVEL_DEBUG, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __func__, ##__VA_ARGS__)
 #endif
 #ifndef DLOGV
-#define DLOGV(fmt, ...) __LOG(LOG_LEVEL_VERBOSE, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
+#define DLOGV(fmt, ...) __LOG(LOG_LEVEL_VERBOSE, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __func__, ##__VA_ARGS__)
 #endif
 #ifndef DLOGP
-#define DLOGP(fmt, ...) __LOG(LOG_LEVEL_PROFILE, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __FUNCTION__, ##__VA_ARGS__)
+#define DLOGP(fmt, ...) __LOG(LOG_LEVEL_PROFILE, (const PCHAR) LOG_CLASS, (const PCHAR) "%s(): " fmt, __func__, ##__VA_ARGS__)
 #endif
 
 #ifndef ENTER
@@ -139,14 +139,14 @@ PUBLIC_API VOID customAssert(INT64 condition, const CHAR* fileName, INT64 lineNu
 #define SANITIZED_FILE (STRRCHR(__FILE__, '/') ? STRRCHR(__FILE__, '/') + 1 : __FILE__)
 #endif
 #ifndef CRASH
-#define CRASH(fmt, ...) LOG_ALWAYS_FATAL("%s::%s: " fmt, (const PCHAR) LOG_CLASS, __FUNCTION__, ##__VA_ARGS__)
+#define CRASH(fmt, ...) LOG_ALWAYS_FATAL("%s::%s: " fmt, (const PCHAR) LOG_CLASS, __func__, ##__VA_ARGS__)
 #endif
 #ifndef CHECK
-#define CHECK(x) LOG_ALWAYS_FATAL_IF(!(x), "%s::%s: ASSERTION FAILED at %s:%d: " #x, (const PCHAR) LOG_CLASS, __FUNCTION__, SANITIZED_FILE, __LINE__)
+#define CHECK(x) LOG_ALWAYS_FATAL_IF(!(x), "%s::%s: ASSERTION FAILED at %s:%d: " #x, (const PCHAR) LOG_CLASS, __func__, SANITIZED_FILE, __LINE__)
 #endif
 #ifndef CHECK_EXT
 #define CHECK_EXT(x, fmt, ...)                                                                                                                       \
-    LOG_ALWAYS_FATAL_IF(!(x), "%s::%s: ASSERTION FAILED at %s:%d: " fmt, (const PCHAR) LOG_CLASS, __FUNCTION__, SANITIZED_FILE, __LINE__,            \
+    LOG_ALWAYS_FATAL_IF(!(x), "%s::%s: ASSERTION FAILED at %s:%d: " fmt, (const PCHAR) LOG_CLASS, __func__, SANITIZED_FILE, __LINE__,            \
                         ##__VA_ARGS__)
 #endif
 
