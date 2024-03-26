@@ -1,5 +1,7 @@
 name: PIC CI
 
+# TODO: Add ubuntu CI and use COMPILER_WARNINGS=ON
+
 on:
   push:
     branches: 
