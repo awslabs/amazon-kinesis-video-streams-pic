@@ -646,9 +646,9 @@ STATUS stopKinesisVideoStreamSync(STREAM_HANDLE streamHandle)
     BOOL releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE, streamsListLock = FALSE;
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(streamHandle);
 
-    DLOGI("Synchronously stopping Kinesis Video Stream %016" PRIx64 ".", streamHandle);
-
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+
+    DLOGI("[%s] Synchronously stopping Kinesis Video Stream", pKinesisVideoStream->streamInfo.name);
 
     // Shutdown sequencer
     CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->pKinesisVideoClient->base.shutdownSemaphore, INFINITE_TIME_VALUE));

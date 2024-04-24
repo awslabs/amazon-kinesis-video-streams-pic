@@ -82,7 +82,7 @@ typedef struct {
 /**
  * Gets the allocation header
  */
-#define GET_AIV_ALLOCATION_HEADER(p) ((PAIV_ALLOCATION_HEADER) (p) -1)
+#define GET_AIV_ALLOCATION_HEADER(p) ((PAIV_ALLOCATION_HEADER) (p) - 1)
 
 /**
  * Retrieve the allocation size
