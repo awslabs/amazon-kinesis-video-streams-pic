@@ -1103,8 +1103,8 @@ typedef SIZE_T ATOMIC_BOOL;
 //
 // Aligns an integer X value up or down to alignment A
 //
-#define ROUND_DOWN(X, A) ((X) & ~((A) -1))
-#define ROUND_UP(X, A)   (((X) + (A) -1) & ~((A) -1))
+#define ROUND_DOWN(X, A) ((X) & ~((A) - 1))
+#define ROUND_UP(X, A)   (((X) + (A) - 1) & ~((A) - 1))
 
 //
 // Macros to swap endinanness
@@ -1129,7 +1129,7 @@ typedef SIZE_T ATOMIC_BOOL;
 //
 // Check if at most 1 bit is set
 //
-#define CHECK_POWER_2(x) !((x) & ((x) -1))
+#define CHECK_POWER_2(x) !((x) & ((x) - 1))
 
 //
 // Checks if only 1 bit is set
