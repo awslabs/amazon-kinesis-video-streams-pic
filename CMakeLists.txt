@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.6.3)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake;${CMAKE_MODULE_PATH}")
 include(Utilities)
-project(pic_project LANGUAGES C)
+project(pic_project VERSION 1.1.0 LANGUAGES C)
 
 include(GNUInstallDirs)
 
