@@ -327,6 +327,9 @@ jobs:
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          choco install pkgconfiglite
       - name: Build and run
         run: |
           .github/build_windows.bat
