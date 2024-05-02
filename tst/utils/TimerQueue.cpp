@@ -538,7 +538,10 @@ TEST_F(TimerQueueFunctionalityTest, timerCancelDirectlyOneLeaveAnotherStart)
 
 TEST_F(TimerQueueFunctionalityTest, miniStressTest)
 {
-    UINT64 period = 1 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    // This test is highly sensitive to hardware platform capabilities and the version and the type of the underlying OS.
+    // For example, many server OS-es have 30ms+ schedulers and the timer functionality is based on the OS scheduler.
+    const UINT64 periodInMs = 100;
+    UINT64 period = periodInMs * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     TIMER_QUEUE_HANDLE handle = INVALID_TIMER_QUEUE_HANDLE_VALUE;
     UINT32 timerIds[DEFAULT_TIMER_QUEUE_TIMER_COUNT], i;
 
@@ -555,7 +558,7 @@ TEST_F(TimerQueueFunctionalityTest, miniStressTest)
     }
 
     // Let it fire for a while
-    THREAD_SLEEP(1000 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    THREAD_SLEEP(HUNDREDS_OF_NANOS_IN_A_SECOND);
 
     // Cancel all the timers
     for (i = 0; i < DEFAULT_TIMER_QUEUE_TIMER_COUNT; i++) {
@@ -564,7 +567,7 @@ TEST_F(TimerQueueFunctionalityTest, miniStressTest)
 
     // There should be a number of timers * duration in millis invokes but the actual number is timing
     // dependent and will be lower. We will check for half.
-    EXPECT_LT(1000 * DEFAULT_TIMER_QUEUE_TIMER_COUNT / 2, ATOMIC_LOAD(&invokeCount));
+    EXPECT_LT((1000 / periodInMs) * DEFAULT_TIMER_QUEUE_TIMER_COUNT / 2, ATOMIC_LOAD(&invokeCount));
 
     // Free the timer queue
     EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
@@ -794,7 +797,6 @@ TEST_F(TimerQueueFunctionalityTest, kickTimerQueueTest)
 {
     TIMER_QUEUE_HANDLE handle = INVALID_TIMER_QUEUE_HANDLE_VALUE;
     UINT32 timerId;
-    UINT64 curTime;
 
     // Make sure we don't check for the timer in the test callback
     checkTimerId = FALSE;
@@ -810,7 +812,7 @@ TEST_F(TimerQueueFunctionalityTest, kickTimerQueueTest)
 
     EXPECT_EQ(STATUS_SUCCESS, timerQueueKick(handle, timerId));
     EXPECT_NE(STATUS_SUCCESS, timerQueueKick(INVALID_TIMER_QUEUE_HANDLE_VALUE, timerId));
-    EXPECT_NE(STATUS_SUCCESS, timerQueueKick(handle, 0));
+    EXPECT_NE(STATUS_SUCCESS, timerQueueKick(handle, MAX_UINT32));
 
     //let kick happen
     THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);

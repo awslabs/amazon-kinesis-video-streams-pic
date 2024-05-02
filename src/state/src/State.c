@@ -296,7 +296,7 @@ STATUS checkForStateTransition(PStateMachine pStateMachine, PBOOL pTransitionRea
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PStateMachineState pState = NULL;
-    UINT64 nextState, time;
+    UINT64 nextState;
     UINT64 customData;
     PStateMachineImpl pStateMachineImpl = (PStateMachineImpl) pStateMachine;
     UINT64 errorStateTransitionWaitTime = 0;

@@ -29,7 +29,7 @@ auto randStr = [](SIZE_T n) -> std::string {
     std::string s;
 
     // not ideal, but it's important to always randomize rand
-    SRAND(GETTIME());
+    SRAND((UINT32) GETTIME());
     for (int i = 0; i < n; i++) {
         // 8 bits contain 255 characters + 1 null character
         s += (CHAR)(RAND() % 255) + 1;

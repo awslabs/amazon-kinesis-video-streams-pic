@@ -484,7 +484,7 @@ TEST_F(MkvgenApiTest, mkvgenGenerateTagsChain_OriginalAPICheck)
 TEST_F(MkvgenApiTest, mkvgenGenerateTagsChain_MaxStringsCheck)
 {
     UINT32 size = 100000;
-    srand(GETTIME());
+    SRAND((UINT32) GETTIME());
     CHAR tagName[MKV_MAX_TAG_NAME_LEN + 2] = {0};
     CHAR tagValue[MKV_MAX_TAG_VALUE_LEN + 2] = {0};
     CHAR temp;
@@ -529,7 +529,7 @@ TEST_F(MkvgenApiTest, mkvgenIncreaseTagsTagSize_FunctionalityTest)
 {
     UINT32 size = 1000, randomSize = 0, encodedSize = 0;
     PBYTE tagsMkvHolder = (PBYTE) MEMCALLOC(1, size);
-    srand(GETTIME());
+    SRAND((UINT32) GETTIME());
 
     EXPECT_EQ(STATUS_INVALID_ARG, mkvgenIncreaseTagsTagSize(NULL, 0));
 

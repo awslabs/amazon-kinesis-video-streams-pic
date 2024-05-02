@@ -416,6 +416,7 @@ TEST_F(ClientApiTest, kinesisVideoClientCreateSync_Valid_Timeout)
 TEST_F(ClientApiTest, kinesisVideoClientCreateSync_Store_Alloc)
 {
     CLIENT_HANDLE clientHandle, failedClientHandle;
+    UNUSED_PARAM(failedClientHandle);
 
     mClientSyncMode = TRUE;
     mDeviceInfo.clientInfo.createClientTimeout = 20 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
@@ -472,7 +473,7 @@ TEST_F(ClientApiTest, getKinesisVideoMetrics_Valid)
     ClientMetrics kinesisVideoClientMetrics;
     // Testing all versions
     for(UINT64 i = 0; i <= CLIENT_METRICS_CURRENT_VERSION; i++) {
-        kinesisVideoClientMetrics.version = i;
+        kinesisVideoClientMetrics.version = (UINT32) i;
         EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoMetrics(mClientHandle, &kinesisVideoClientMetrics));
     }
 }
@@ -505,7 +506,7 @@ TEST_F(ClientApiTest, getStreamMetrics_Valid)
     EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoStream(mClientHandle, &mStreamInfo, &streamHandle));
     // Testing all versions
     for(UINT64 i = 0; i <= STREAM_METRICS_CURRENT_VERSION; i++) {
-        streamMetrics.version = i;
+        streamMetrics.version = (UINT32) i;
         EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamMetrics(streamHandle, &streamMetrics));
     }
 

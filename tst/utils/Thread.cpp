@@ -9,7 +9,7 @@ MUTEX gThreadMutex;
 UINT64 gThreadCount;
 
 struct sleep_times {
-    BOOL threadSleepTime;
+    UINT64 threadSleepTime;
     BOOL threadVisited;
     BOOL threadCleared;
 };
@@ -42,9 +42,9 @@ PVOID testThreadRoutine(PVOID arg)
 TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheck)
 {
     UINT64 index;
-    TID threads[TEST_THREAD_COUNT];
+    TID threads[TEST_THREAD_COUNT] = {0};
     gThreadMutex = MUTEX_CREATE(FALSE);
-    struct sleep_times st[TEST_THREAD_COUNT];
+    struct sleep_times st[TEST_THREAD_COUNT] = {0};
 
     // Create the threads
     for (index = 0; index < TEST_THREAD_COUNT; index++) {
@@ -74,9 +74,9 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheck)
 TEST_F(ThreadFunctionalityTest, ThreadCreateAndCancel)
 {
     UINT64 index;
-    TID threads[TEST_THREAD_COUNT];
+    TID threads[TEST_THREAD_COUNT] = {0};
     gThreadMutex = MUTEX_CREATE(FALSE);
-    struct sleep_times st[TEST_THREAD_COUNT];
+    struct sleep_times st[TEST_THREAD_COUNT] = {0};
 
     // Create the threads
     for (index = 0; index < TEST_THREAD_COUNT; index++) {
@@ -121,11 +121,11 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndCancel)
 TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheckWithStack)
 {
     UINT64 index;
-    TID threads[TEST_THREAD_COUNT];
+    TID threads[TEST_THREAD_COUNT] = {0};
     gThreadMutex = MUTEX_CREATE(FALSE);
-    srand(GETTIME());
+    SRAND((UINT32) GETTIME());
     SIZE_T threadStack = 64 * 1024;
-    struct sleep_times st[TEST_THREAD_COUNT];
+    struct sleep_times st[TEST_THREAD_COUNT] = {0};
 
     gThreadCount = 0;
 
@@ -156,11 +156,8 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheckWithStack)
 
 TEST_F(ThreadFunctionalityTest, NegativeTest)
 {
-    UINT64 index;
-    TID threads[TEST_THREAD_COUNT];
     gThreadMutex = MUTEX_CREATE(FALSE);
     SIZE_T threadStack = 16 * 1024;
-    struct sleep_times st[TEST_THREAD_COUNT];
 
     gThreadCount = 0;
     EXPECT_NE(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(NULL, testThreadRoutine, threadStack, NULL));

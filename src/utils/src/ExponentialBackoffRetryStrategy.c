@@ -23,7 +23,7 @@ STATUS normalizeExponentialBackoffConfig(PExponentialBackoffRetryStrategyConfig 
           pExponentialBackoffRetryStrategyConfig->jitterType, pExponentialBackoffRetryStrategyConfig->jitterFactor);
 
     // Seed rand to generate random number for jitter
-    SRAND(GETTIME());
+    SRAND((UINT32) GETTIME());
 
 CleanUp:
     LEAVES();

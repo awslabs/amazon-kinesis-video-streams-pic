@@ -65,7 +65,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
     gTerminateCount = 0;
     gTerminateMutex = MUTEX_CREATE(FALSE);
     EXPECT_EQ(STATUS_SUCCESS, semaphoreEmptyCreate(10, &gTerminateSemaphore));
-    srand(GETTIME());
+    SRAND((UINT32) GETTIME());
     EXPECT_EQ(STATUS_SUCCESS, threadpoolCreate(&pThreadpool, 1, 1));
 
     // sleep for a little. Create asynchronously detaches threads, so using TryAdd too soon can
@@ -100,7 +100,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
     PThreadpool pThreadpool = NULL;
     BOOL terminate = FALSE;
     UINT32 count = 0;
-    srand(GETTIME());
+    SRAND((UINT32) GETTIME());
     EXPECT_EQ(STATUS_SUCCESS, threadpoolCreate(&pThreadpool, 1, 2));
     EXPECT_EQ(STATUS_SUCCESS, threadpoolPush(pThreadpool, exitOnTeardownTask, &terminate));
     EXPECT_EQ(STATUS_SUCCESS, threadpoolPush(pThreadpool, exitOnTeardownTask, &terminate));
@@ -133,7 +133,7 @@ TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
     PThreadpool pThreadpool = NULL;
     UINT32 count = 0;
     BOOL terminate = FALSE;
-    srand(GETTIME());
+    SRAND((UINT32) GETTIME());
     const UINT32 max = 10;
     // accepted race condition where min is 1, threadpoolPush can create a new thread
     // before the first thread is ready to accept tasks
@@ -187,7 +187,7 @@ TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest
     PThreadpool pThreadpool = NULL;
     UINT32 count = 0;
     BOOL terminate = FALSE;
-    srand(GETTIME());
+    SRAND((UINT32) GETTIME());
     const UINT32 max = 10;
     UINT32 min = rand() % (max / 2) + 2;
     EXPECT_EQ(STATUS_SUCCESS, threadpoolCreate(&pThreadpool, min, max));
@@ -249,7 +249,7 @@ TEST_F(ThreadpoolFunctionalityTest, MultithreadUseTest)
     PThreadpool pThreadpool = NULL;
     ThreadpoolUser user;
     UINT32 count = 0;
-    srand(GETTIME());
+    SRAND((UINT32) GETTIME());
     const UINT32 max = 10;
     UINT32 min = rand() % (max / 2) + 2;
     TID thread1, thread2;

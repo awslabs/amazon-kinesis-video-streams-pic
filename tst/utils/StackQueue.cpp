@@ -178,7 +178,7 @@ TEST_F(StackQueueFunctionalityTest, StackQueueEnqueueAfterValidation)
     UINT64 checkIndex[5];
     UINT64 indexShift[5] = {0};
 
-    srand(GETTIME());
+    SRAND((UINT32) GETTIME());
     // Create the list
     EXPECT_EQ(STATUS_SUCCESS, stackQueueCreate(&pStackQueue));
 
@@ -195,7 +195,7 @@ TEST_F(StackQueueFunctionalityTest, StackQueueEnqueueAfterValidation)
 
     for (UINT64 j = 0; j < 5; j++) {
         checkIndex[j] = rand()%count;
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueEnqueueAfterIndex(pStackQueue, checkIndex[j], j));
+        EXPECT_EQ(STATUS_SUCCESS, stackQueueEnqueueAfterIndex(pStackQueue, (UINT32) checkIndex[j], j));
     }
 
     for (UINT64 init = 0; init < 5; init++) {
@@ -209,7 +209,7 @@ TEST_F(StackQueueFunctionalityTest, StackQueueEnqueueAfterValidation)
     }
 
     for (UINT64 k = 0; k < 5; k++) {
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueGetAt(pStackQueue, checkIndex[k] + indexShift[k], &data));
+        EXPECT_EQ(STATUS_SUCCESS, stackQueueGetAt(pStackQueue, (UINT32) (checkIndex[k] + indexShift[k]), &data));
         EXPECT_EQ(k, data);
     }
 
