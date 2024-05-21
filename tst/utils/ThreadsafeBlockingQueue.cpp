@@ -16,8 +16,8 @@ TEST_F(ThreadsafeBlockingQueueFunctionalityTest, createEnqueueDestroyTest)
 {
     PSafeBlockingQueue pSafeQueue = NULL;
     UINT64 totalItems = 0;
-    srand(GETTIME());
-    totalItems = rand()%(UINT16_MAX) + 1;
+    SRAND((UINT32) GETTIME());
+    totalItems = (UINT64) RAND() % (UINT16_MAX) + 1;
     EXPECT_EQ(STATUS_SUCCESS, safeBlockingQueueCreate(&pSafeQueue));
     for(UINT64 i = 0; i < totalItems; i++) {
         EXPECT_EQ(STATUS_SUCCESS, safeBlockingQueueEnqueue(pSafeQueue, i));
@@ -30,9 +30,9 @@ TEST_F(ThreadsafeBlockingQueueFunctionalityTest, queueIsEmptyTest)
     PSafeBlockingQueue pSafeQueue = NULL;
     UINT64 totalItems = 0, totalLoops = 0, item = 0;
     BOOL empty = FALSE;
-    srand(GETTIME());
-    totalItems = rand()%(UINT16_MAX) + 1;
-    totalLoops = rand()%64;
+    SRAND((UINT32) GETTIME());
+    totalItems = (UINT64) RAND() % (UINT16_MAX) + 1;
+    totalLoops = RAND() % 64;
     EXPECT_EQ(STATUS_SUCCESS, safeBlockingQueueCreate(&pSafeQueue));
     for(UINT64 j = 0; j < totalLoops; j++) {
         EXPECT_EQ(STATUS_SUCCESS, safeBlockingQueueIsEmpty(pSafeQueue, &empty));
@@ -62,7 +62,7 @@ TEST_F(ThreadsafeBlockingQueueFunctionalityTest, queueCountCorrectTest)
     UINT64 totalItems = 0, totalLoops = 0, item = 0, itemsToQueue = 0;;
     UINT32 items = 0;
     BOOL empty = FALSE;
-    srand(GETTIME());
+    SRAND((UINT32) GETTIME());
     totalLoops = rand()%64;
     EXPECT_EQ(STATUS_SUCCESS, safeBlockingQueueCreate(&pSafeQueue));
     //queue and dequeue a random number of items in a loop, and check the value
@@ -132,12 +132,12 @@ void* readingThread(void* ptr) {
 TEST_F(ThreadsafeBlockingQueueFunctionalityTest, multithreadQueueDequeueTest)
 {
     PSafeBlockingQueue pSafeQueue = NULL;
-    SafeQueueUser user;
+    SafeQueueUser user = {0};
     UINT64 totalThreads = 0, item = 0, threadCount = 0;
     BOOL empty = FALSE;
     TID threads[8] = {0};
-    srand(GETTIME());
-    totalThreads = rand()%7 + 2;
+    SRAND((UINT32) GETTIME());
+    totalThreads = (UINT64) RAND() % 7 + 2;
     //make it even
     totalThreads -= totalThreads%2;
     EXPECT_EQ(STATUS_SUCCESS, safeBlockingQueueCreate(&pSafeQueue));
@@ -159,12 +159,12 @@ TEST_F(ThreadsafeBlockingQueueFunctionalityTest, multithreadQueueDequeueTest)
 TEST_F(ThreadsafeBlockingQueueFunctionalityTest, multithreadTeardownTest)
 {
     PSafeBlockingQueue pSafeQueue = NULL;
-    SafeQueueUser user;
+    SafeQueueUser user = {0};
     UINT64 totalThreads = 0, item = 0, threadCount = 0;
     BOOL empty = FALSE;
     TID threads[8] = {0};
-    srand(GETTIME());
-    totalThreads = rand()%7 + 2;
+    SRAND((UINT32) GETTIME());
+    totalThreads = (UINT64) RAND() % 7 + 2;
     //make it even
     totalThreads -= totalThreads%2;
     EXPECT_EQ(STATUS_SUCCESS, safeBlockingQueueCreate(&pSafeQueue));

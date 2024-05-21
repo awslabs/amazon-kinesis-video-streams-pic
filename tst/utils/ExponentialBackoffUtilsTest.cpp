@@ -59,9 +59,10 @@ public:
         EXPECT_EQ(expectedExponentialBackoffStatus, pExponentialBackoffRetryStrategyState->status);
         // Record the actual wait time for validation
         EXPECT_EQ(retryWaitTimeToVerify, pExponentialBackoffRetryStrategyState->lastRetryWaitTime);
-        EXPECT_TRUE(inRange(retryWaitTimeToVerify/HUNDREDS_OF_NANOS_IN_A_MILLISECOND, acceptableWaitTimeRange));
+        EXPECT_TRUE(inRange((DOUBLE) retryWaitTimeToVerify / HUNDREDS_OF_NANOS_IN_A_MILLISECOND, acceptableWaitTimeRange));
 
-        UINT64 lastRetrySystemTimeMilliSec = pExponentialBackoffRetryStrategyState->lastRetrySystemTime/(HUNDREDS_OF_NANOS_IN_A_MILLISECOND * 1.0);
+        UINT64 lastRetrySystemTimeMilliSec =
+            (UINT64) ((DOUBLE) pExponentialBackoffRetryStrategyState->lastRetrySystemTime / (HUNDREDS_OF_NANOS_IN_A_MILLISECOND * 1.0));
         UINT64 currentTimeMilliSec = GETTIME()/HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
         UINT64 diffInMilliSec = currentTimeMilliSec - lastRetrySystemTimeMilliSec;
 
@@ -245,7 +246,7 @@ TEST_F(ExponentialBackoffUtilsTest, testExponentialBackoffBlockingWait_Bounded)
 
     UINT64 retryWaitTimeToVerify;
     UINT32 actualRetryCount = 0;
-    for (int retryCount = 0; retryCount < maxTestRetryCount; retryCount++) {
+    for (UINT32 retryCount = 0; retryCount < maxTestRetryCount; retryCount++) {
         retryWaitTimeToVerify = 0;
         EXPECT_EQ(STATUS_SUCCESS, getExponentialBackoffRetryStrategyWaitTime(&kvsRetryStrategy, &retryWaitTimeToVerify));
         EXPECT_EQ(STATUS_SUCCESS, getExponentialBackoffRetryCount(&kvsRetryStrategy, &actualRetryCount));
@@ -302,7 +303,7 @@ TEST_F(ExponentialBackoffUtilsTest, testExponentialBackoffBlockingWait_FullJitte
 
     UINT64 retryWaitTimeToVerify;
     UINT32 actualRetryCount = 0;
-    for (int retryCount = 0; retryCount < maxTestRetryCount; retryCount++) {
+    for (UINT32 retryCount = 0; retryCount < maxTestRetryCount; retryCount++) {
         retryWaitTimeToVerify = 0;
         EXPECT_EQ(STATUS_SUCCESS, getExponentialBackoffRetryStrategyWaitTime(&kvsRetryStrategy, &retryWaitTimeToVerify));
         EXPECT_EQ(STATUS_SUCCESS, getExponentialBackoffRetryCount(&kvsRetryStrategy, &actualRetryCount));

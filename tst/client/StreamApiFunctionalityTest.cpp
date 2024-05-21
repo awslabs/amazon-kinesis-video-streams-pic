@@ -99,10 +99,10 @@ TEST_F(StreamApiFunctionalityTest, putFrame_DescribeStreamNotExisting_CreateNotA
 
 TEST_F(StreamApiFunctionalityTest, streamFormatChange_stateCheck)
 {
-    UINT32 i;
-    BYTE tempBuffer[10000];
-    UINT64 timestamp;
-    Frame frame;
+    UINT32 i = 0;
+    BYTE tempBuffer[10000] = {0};
+    UINT64 timestamp = 0;
+    Frame frame = {0};
     BYTE cpd[100];
 
     CreateStream();
@@ -161,13 +161,12 @@ TEST_F(StreamApiFunctionalityTest, streamFormatChange_stateCheck)
 
 TEST_F(StreamApiFunctionalityTest, setNalAdaptionFlags_stateCheck)
 {
-    UINT32 i;
-    BYTE tempBuffer[10000];
-    UINT64 timestamp;
-    Frame frame;
+    UINT32 i = 0;
+    BYTE tempBuffer[10000] = {0};
+    UINT64 timestamp = 0;
+    Frame frame = {0};
     UINT32 nalFlags = NAL_ADAPTATION_ANNEXB_NALS | NAL_ADAPTATION_ANNEXB_CPD_NALS;
     PKinesisVideoStream pKinesisVideoStream;
-    PStreamMkvGenerator pStreamMkvGenerator;
 
     // The default would be flags NONE
     CreateStream();

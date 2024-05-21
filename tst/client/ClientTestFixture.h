@@ -371,7 +371,7 @@ class ClientTestBase : public ::testing::Test {
 
     void initTestMembers()
     {
-        UINT32 logLevel = 0;
+        UINT32 logLevel = LOG_LEVEL_WARN;
         STATUS retStatus = STATUS_SUCCESS;
         auto logLevelStr = GETENV("AWS_KVS_LOG_LEVEL");
         if (logLevelStr != NULL) {
@@ -382,6 +382,7 @@ class ClientTestBase : public ::testing::Test {
         // Zero things out
         mClientHandle = INVALID_CLIENT_HANDLE_VALUE;
         MEMSET(&mDeviceInfo, 0x00, SIZEOF(DeviceInfo));
+        MEMSET(&mStreamInfo, 0x00, SIZEOF(StreamInfo));
         MEMSET(&mClientHandle, 0x00, SIZEOF(ClientCallbacks));
         MEMSET(mDeviceName, 0x00, MAX_DEVICE_NAME_LEN);
         MEMSET(mStreamName, 0x00, MAX_STREAM_NAME_LEN);

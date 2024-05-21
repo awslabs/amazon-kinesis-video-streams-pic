@@ -1,12 +1,14 @@
 cmake_minimum_required(VERSION 3.6.3)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake;${CMAKE_MODULE_PATH}")
 include(Utilities)
+include(GoogleTest)
 project(pic_project_tests LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 if (OPEN_SRC_INSTALL_PREFIX)
     find_package(GTest REQUIRED PATHS ${OPEN_SRC_INSTALL_PREFIX})
@@ -33,4 +35,4 @@ if(UNIX AND NOT APPLE)
     target_link_libraries(kvspic_test rt)
 endif()
 
-add_test(${PROJECT_NAME} ${PROJECT_NAME})
+add_test(TARGET kvspic_test EXTRA_ARGS --arg1 "${CMAKE_CURRENT_SOURCE_DIR}")

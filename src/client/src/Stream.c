@@ -1893,9 +1893,6 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
     UINT32 packagedSizes[MAX_FRAGMENT_METADATA_COUNT] = {0};
     PSerializedMetadata serializedNodes[MAX_FRAGMENT_METADATA_COUNT] = {0};
     UINT8 neededNodes = 0;
-    PSerializedMetadata pExistingSerializedMetadata;
-    StackQueueIterator iterator;
-    UINT64 data;
 
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;

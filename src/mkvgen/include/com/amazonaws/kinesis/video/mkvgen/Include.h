@@ -324,10 +324,7 @@ typedef struct __Frame {
  *
  * The initializer will zero all the fields and set the EoFr flag in flags.
  */
-#define EOFR_FRAME_INITIALIZER                                                                                                                       \
-    {                                                                                                                                                \
-        FRAME_CURRENT_VERSION, 0, FRAME_FLAG_END_OF_FRAGMENT, 0, 0, 0, 0, NULL, 0                                                                    \
-    }
+#define EOFR_FRAME_INITIALIZER {FRAME_CURRENT_VERSION, 0, FRAME_FLAG_END_OF_FRAGMENT, 0, 0, 0, 0, NULL, 0}
 
 /**
  * The representation of mkv video element

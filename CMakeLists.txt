@@ -207,5 +207,6 @@ install(
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 
 if(BUILD_TEST)
+  enable_testing()
   add_subdirectory(tst)
 endif()
