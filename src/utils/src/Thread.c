@@ -222,6 +222,7 @@ PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID 
 #elif defined(CONSTRAINED_DEVICE)
     CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, (SIZE_T) THREAD_STACK_SIZE_ON_CONSTRAINED_DEVICE, args));
 #else
+    DLOGI("Hitting this portion");
     CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, 0, args));
 #endif
 
