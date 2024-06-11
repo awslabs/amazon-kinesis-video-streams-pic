@@ -218,11 +218,13 @@ PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID 
     STATUS retStatus = STATUS_SUCCESS;
 
 #if defined(KVS_DEFAULT_STACK_SIZE_BYTES)
+    printf("Set default value\n");
     CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, (SIZE_T) KVS_DEFAULT_STACK_SIZE_BYTES, args));
 #elif defined(CONSTRAINED_DEVICE)
+    printf("Constrained device break\n");
     CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, (SIZE_T) THREAD_STACK_SIZE_ON_CONSTRAINED_DEVICE, args));
 #else
-    DLOGI("Hitting this portion");
+    printf("Hitting this portion\n");
     CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, 0, args));
 #endif
 
