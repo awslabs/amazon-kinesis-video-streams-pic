@@ -36,7 +36,11 @@ extern "C" {
 #endif
 #else
 #if __GNUC__ >= 4
+#ifdef __GNUC_STDC_INLINE__
+#define INLINE       __attribute__((gnu_inline))
+#else
 #define INLINE       inline
+#endif
 #define LIB_EXPORT   __attribute__((visibility("default")))
 #define LIB_IMPORT   __attribute__((visibility("default")))
 #define LIB_INTERNAL __attribute__((visibility("hidden")))
