@@ -555,7 +555,7 @@ STATUS threadpoolPush(PThreadpool pThreadpool, startRoutine function, PVOID cust
     CHK_STATUS(threadpoolInternalCanCreateThread(pThreadpool, &spaceAvailable));
     CHK_STATUS(threadpoolInternalInactiveThreadCount(pThreadpool, &count));
 
-    DLOGE("[TURN Debugging] threadpoolInternalInactiveThreadCount: %d", count);
+    DLOGE("[TURN Debugging] threadpoolInternalInactiveThreadCount: %zu", count);
 
     // always queue task
     CHK_STATUS(threadpoolInternalCreateTask(pThreadpool, function, customData));
