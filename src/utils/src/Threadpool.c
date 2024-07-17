@@ -126,12 +126,21 @@ PVOID threadpoolActor(PVOID data)
                     // Check if this thread is needed to maintain minimum thread count
                     // otherwise exit loop and remove it.
                     if (stackQueueGetCount(pThreadpool->threadList, &count) == STATUS_SUCCESS) {
+                        DLOGE("[TURN Debugging] stackQueueGetCount returned %d", count);
+                        DLOGE("[TURN Debugging] pThreadpool->minThreads is equal to %d", pThreadpool->minThreads);
+                        // Question: why are we only removing one thread if count is > minThread? Might there not be more that need removing?
                         if (count > pThreadpool->minThreads) {
                             finished = TRUE;
                             if (stackQueueRemoveItem(pThreadpool->threadList, (UINT64) pThreadData) != STATUS_SUCCESS) {
                                 DLOGE("Failed to remove thread data from threadpool");
                             }
+
+                            stackQueueGetCount(pThreadpool->threadList, &count);
+                            DLOGE("[TURN Debugging] stackQueueRemoveItem called, stackQueueGetCount is now %d", count);
+                            DLOGE("[TURN Debugging] stackQueueRemoveItem called, stackQueueGetCount is now %d", count);
                         }
+                    } else {
+                        DLOGE("[TURN Debugging] stackQueueGetCount FAILED!");
                     }
                 }
             }
@@ -281,6 +290,7 @@ STATUS threadpoolInternalCanCreateThread(PThreadpool pThreadpool, PBOOL pSpaceAv
     CHK_STATUS(stackQueueGetCount(pThreadpool->threadList, &count));
 
     if (count < pThreadpool->maxThreads) {
+        DLOGE("[TURN Debugging] threadpoolInternalCanCreateThread? Yes, thread count, %d,  is less than maxThreads, %d.", count, pThreadpool->maxThreads);
         *pSpaceAvailable = TRUE;
     } else {
         *pSpaceAvailable = FALSE;
@@ -537,17 +547,22 @@ STATUS threadpoolPush(PThreadpool pThreadpool, startRoutine function, PVOID cust
 {
     STATUS retStatus = STATUS_SUCCESS;
     BOOL spaceAvailable = FALSE;
-    SIZE_T count = 0;
+    SIZE_T count = 0; // Must this be a size_t instead of uint?
     CHK(pThreadpool != NULL, STATUS_NULL_ARG);
+
+    DLOGE("[TURN Debugging]  PIC's threadpoolPush called");
 
     CHK_STATUS(threadpoolInternalCanCreateThread(pThreadpool, &spaceAvailable));
     CHK_STATUS(threadpoolInternalInactiveThreadCount(pThreadpool, &count));
+
+    DLOGE("[TURN Debugging] threadpoolInternalInactiveThreadCount: %d", count);
 
     // always queue task
     CHK_STATUS(threadpoolInternalCreateTask(pThreadpool, function, customData));
 
     // only create a thread if there are no available threads and not maxed
     if (count <= 0 && spaceAvailable) {
+        DLOGE("[TURN Debugging] count <= 0 && spaceAvailable ... calling threadpoolInternalCreateThread");
         CHK_STATUS(threadpoolInternalCreateThread(pThreadpool));
     }
 
