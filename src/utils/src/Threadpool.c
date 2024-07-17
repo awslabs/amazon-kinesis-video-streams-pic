@@ -130,13 +130,13 @@ PVOID threadpoolActor(PVOID data)
                         DLOGE("[TURN Debugging] pThreadpool->minThreads is equal to %d", pThreadpool->minThreads);
                         // Question: why are we only removing one thread if count is > minThread? Might there not be more that need removing?
                         if (count > pThreadpool->minThreads) {
+                            DLOGE("[TURN Debugging] count is greater than minThreads, calling stackQueueRemoveItem and will terminate actor loop.");
                             finished = TRUE;
                             if (stackQueueRemoveItem(pThreadpool->threadList, (UINT64) pThreadData) != STATUS_SUCCESS) {
                                 DLOGE("Failed to remove thread data from threadpool");
                             }
 
                             stackQueueGetCount(pThreadpool->threadList, &count);
-                            DLOGE("[TURN Debugging] stackQueueRemoveItem called, stackQueueGetCount is now %d", count);
                             DLOGE("[TURN Debugging] stackQueueRemoveItem called, stackQueueGetCount is now %d", count);
                         }
                     } else {
