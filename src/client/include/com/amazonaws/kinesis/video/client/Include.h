@@ -1522,8 +1522,8 @@ struct __StreamEventMetadata {
     UINT8 numberOfPairs;
 
     // optional custom data name/value pairs
-    PCHAR names[MAX_EVENT_CUSTOM_PAIRS];
-    PCHAR values[MAX_EVENT_CUSTOM_PAIRS];
+    PCHAR names[MAX_EVENT_CUSTOM_PAIRS]; // PCHAR names[MAX_EVENT_CUSTOM_PAIRS][MKV_MAX_TAG_NAME_LEN]; = ~1 KB, freed as soon as the metadata is sent.
+    PCHAR values[MAX_EVENT_CUSTOM_PAIRS];                     // (10)                 // (128)
 };
 
 typedef struct __StreamEventMetadata* PStreamEventMetadata;

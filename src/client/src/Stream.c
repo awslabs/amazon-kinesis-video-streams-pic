@@ -1936,6 +1936,8 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
             CHK(STRLEN(pMetadata->imagePrefix) <= MAX_IMAGE_PREFIX_LENGTH, STATUS_INVALID_IMAGE_PREFIX_LENGTH);
         }
         neededNodes += pMetadata->numberOfPairs;
+        printf("[TESTING] [PIC] Adding %d to neededNodes in putEventMetadata.\n", pMetadata->numberOfPairs);
+        printf("[TESTING] [PIC] neededNodes is: %d .\n", neededNodes);
     }
 
     // Ensure we don't have more than MAX size of the metadata queue
@@ -1944,11 +1946,14 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
     }
     if (CHECK_STREAM_EVENT_TYPE_IMAGE_GENERATION(event)) {
         neededNodes++;
+        printf("[TESTING] [PIC] Adding 1 to neededNodes in putEventMetadata.\n");
+        printf("[TESTING] [PIC] neededNodes is: %d .\n", neededNodes);
         if (hasMetadata && pMetadata->imagePrefix != NULL) {
             neededNodes++;
         }
     }
     CHK_STATUS(stackQueueGetCount(pKinesisVideoStream->pMetadataQueue, &metadataQueueSize));
+    printf("[TESTING] [PIC] Checking for MAX_FRAGMENT_METADATA_COUNT in putEventMetadata.\n");
     CHK((metadataQueueSize + neededNodes) <= MAX_FRAGMENT_METADATA_COUNT, STATUS_MAX_FRAGMENT_METADATA_COUNT);
 
     // reset iterator for size calculations
@@ -1985,6 +1990,7 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
             // Check that custom data can fit as well
             if (hasMetadata) {
                 for (iter = 0; iter < pMetadata->numberOfPairs; iter++) {
+                    printf("[TESTING] putEventMetadata iter # %d", iter);
                     CHK_STATUS(mkvgenGenerateTagsChain(NULL, pMetadata->names[iter], pMetadata->values[iter], &packagedSize, MKV_TREE_SIMPLE));
                     CHK_STATUS(createSerializedMetadata(pMetadata->names[iter], pMetadata->values[iter], FALSE, packagedSize,
                                                         STREAM_EVENT_TYPE_IMAGE_GENERATION, MKV_TREE_SIMPLE, &serializedNodes[neededNodes++]));

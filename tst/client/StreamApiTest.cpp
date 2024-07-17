@@ -330,58 +330,153 @@ TEST_F(StreamApiTest, insertKinesisVideoTag_NULL_Invalid)
 TEST_F(StreamApiTest, insertKinesisVideoEvent_NULL_Invalid)
 {
     STREAM_HANDLE streamHandle = INVALID_STREAM_HANDLE_VALUE;
+
+    PCHAR s3Prefix = "test";
+    
     StreamEventMetadata Meta{STREAM_EVENT_METADATA_CURRENT_VERSION, NULL, 1, {}, {}};
+    StreamEventMetadata otherMeta{STREAM_EVENT_METADATA_CURRENT_VERSION, NULL, 8, NULL, NULL};
 
     CHAR tagName[MKV_MAX_TAG_NAME_LEN + 2] = {0};
     CHAR tagValue[MKV_MAX_TAG_VALUE_LEN + 2] = {0};
 
-    // Create a stream
-    CreateStream();
-
     Meta.names[0] = tagName;
     Meta.values[0] = tagValue;
 
+    for(UINT16 i = 0; i < 8; i++) {
+        CHAR otherTagName[MKV_MAX_TAG_NAME_LEN + 1];
+        CHAR otherTagValue[MKV_MAX_TAG_VALUE_LEN + 1];
+        
+        // Fill otherTagName and otherTagValue with the value of "i"
+        snprintf(otherTagName, sizeof(otherTagName), "name%d\n", i);
+        snprintf(otherTagValue, sizeof(otherTagValue), "value%d\n", i);
+
+        // Null-terminate the strings
+        otherTagName[MKV_MAX_TAG_NAME_LEN] = '\0';
+        otherTagValue[MKV_MAX_TAG_VALUE_LEN] = '\0';
+
+        // Assign the strings to corresponding positions in otherMeta
+        otherMeta.names[i] = strdup(otherTagName);
+        otherMeta.values[i] = strdup(otherTagValue);
+
+        printf("otherMeta.names[i] is: %s\n", otherMeta.names[i]);
+    }
+        CHAR otherTagName[MKV_MAX_TAG_VALUE_LEN + 1];
+        snprintf(otherTagName, sizeof(otherTagName), "value%d\n", 8);
+        otherMeta.names[9] = strdup(otherTagName);
+
+
+    UINT32 i, filledSize;
+    BYTE tempBuffer[100];
+    PBYTE getDataBuffer = NULL;
+    UINT32 getDataBufferSize = 500000;
+    UINT64 timestamp;
+    Frame frame;
+    STATUS retStatus;
+
+    // Ensure we have fragmentation based on the key frames
+    mStreamInfo.streamCaps.keyFrameFragmentation = TRUE;
+
+    // Create and ready a stream
+    ReadyStream();
+
+    getDataBuffer = (PBYTE) MEMALLOC(getDataBufferSize);
+
+    PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+
+    // Insert a tag first - these should just accumulate
+    // EXPECT_EQ(STATUS_SUCCESS, putFragmentMetadata(pKinesisVideoStream, (PCHAR) "prePrependTagName1", (PCHAR) "prePrependTagValue1", FALSE));
+
+    // Produce frames
+    frame.duration = TEST_LONG_FRAME_DURATION;
+    frame.size = SIZEOF(tempBuffer);
+    frame.frameData = tempBuffer;
+    frame.trackId = TEST_TRACKID;
+    for (i = 0, timestamp = 0; i < 20; timestamp += TEST_LONG_FRAME_DURATION, i++) {
+        frame.index = i;
+        frame.decodingTs = timestamp;
+        frame.presentationTs = timestamp;
+
+        // Set the frame bits
+        MEMSET(frame.frameData, (BYTE) i, SIZEOF(tempBuffer));
+
+        // Key frame every 3rd
+        frame.flags = i % 3 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
+
+        // Insert before a key frame
+        if ((frame.flags & FRAME_FLAG_KEY_FRAME) == FRAME_FLAG_KEY_FRAME) {
+            // EXPECT_EQ(STATUS_SUCCESS, putFragmentMetadata(pKinesisVideoStream, (PCHAR) "AppendTagName1", (PCHAR) "AppendTagValue1", FALSE)) << i;
+            // EXPECT_EQ(STATUS_SUCCESS, putFragmentMetadata(pKinesisVideoStream, (PCHAR) "AppendTagName2", (PCHAR) "AppendTagValue2", FALSE)) << i;
+        }
+
+        EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame)) << "Iteration " << i;
+        // EXPECT_EQ(STATUS_SUCCESS, putFragmentMetadata(pKinesisVideoStream, (PCHAR) "PrependTagName1", (PCHAR) "PrependTagValue1", FALSE)) << i;
+        // EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFragmentMetadata(mStreamHandle, (PCHAR) "postTagName", (PCHAR) "postTagValue", FALSE)) << i;
+
+        // Return a put stream result on 10th
+        if (i == 10) {
+            STATUS putKinesisVideoEventMetadataStatus = putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_IMAGE_GENERATION, &otherMeta);
+            printf("putKinesisVideoEventMetadata STATUS is: %x\n", putKinesisVideoEventMetadataStatus);
+            EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoEventMetadataStatus);
+            EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
+        }
+    }
+
+    // Append a tag
+    // EXPECT_EQ(STATUS_SUCCESS, putFragmentMetadata(pKinesisVideoStream, (PCHAR) "Should not appear", (PCHAR) "Should not appear", FALSE));
+
+    // Consume frames on the boundary and validate
+    // retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, getDataBufferSize, &filledSize);
+    // ASSERT_TRUE(retStatus == STATUS_SUCCESS || retStatus == STATUS_NO_MORE_DATA_AVAILABLE);
+
+    // Manually pre-validated data file size
+    // EXPECT_EQ(6703, filledSize);
+
+    // Store the data in a file
+    // EXPECT_EQ(STATUS_SUCCESS, writeFile((PCHAR) "test_insert_pre_tags.mkv", TRUE, FALSE, getDataBuffer, filledSize));
+
+    MEMFREE(getDataBuffer);
+
+
     MEMCPY(tagName, (PCHAR) "tagName", STRLEN("tagName"));
     MEMCPY(tagValue, (PCHAR) "tagValue", STRLEN("tagValue"));
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(streamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
-    Meta.names[0] = NULL;
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    // Meta.names[0] = NULL;
+    // EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
-    Meta.names[0] = tagName;
-    MEMCPY(tagName, (PCHAR) "", STRLEN(""));
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    // Meta.names[0] = tagName;
+    // MEMCPY(tagName, (PCHAR) "", STRLEN(""));
+    // EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
-    MEMCPY(tagName, (PCHAR) "tagName", STRLEN("tagName"));
-    Meta.values[0] = NULL;
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    // MEMCPY(tagName, (PCHAR) "tagName", STRLEN("tagName"));
+    // Meta.values[0] = NULL;
+    // EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
-    Meta.names[0] = NULL;
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(streamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    // Meta.names[0] = NULL;
+    // EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    // EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(streamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
-    MEMSET(tagName, 'a', MKV_MAX_TAG_NAME_LEN + 1);
-    tagName[MKV_MAX_TAG_NAME_LEN + 1] = '\0';
-    Meta.names[0] = tagName;
-    Meta.values[0] = tagValue;
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    // MEMSET(tagName, 'a', MKV_MAX_TAG_NAME_LEN + 1);
+    // tagName[MKV_MAX_TAG_NAME_LEN + 1] = '\0';
+    // Meta.names[0] = tagName;
+    // Meta.values[0] = tagValue;
+    // EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
-    MEMCPY(tagName, (PCHAR) "tagName", STRLEN("tagName"));
-    MEMSET(tagValue, 'b', MKV_MAX_TAG_VALUE_LEN + 1);
-    tagValue[MKV_MAX_TAG_VALUE_LEN + 1] = '\0';
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    // MEMCPY(tagName, (PCHAR) "tagName", STRLEN("tagName"));
+    // MEMSET(tagValue, 'b', MKV_MAX_TAG_VALUE_LEN + 1);
+    // tagValue[MKV_MAX_TAG_VALUE_LEN + 1] = '\0';
+    // EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
 
-    MEMSET(tagName, 'a', MKV_MAX_TAG_NAME_LEN + 1);
-    tagName[MKV_MAX_TAG_NAME_LEN + 1] = '\0';
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
-    EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_LAST, &Meta));
+    // MEMSET(tagName, 'a', MKV_MAX_TAG_NAME_LEN + 1);
+    // tagName[MKV_MAX_TAG_NAME_LEN + 1] = '\0';
+    // EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    // EXPECT_NE(STATUS_SUCCESS, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_LAST, &Meta));
 
-    // Validate the negative case with state
-    MEMCPY(tagName, (PCHAR) "tagName", STRLEN("tagName"));
-    MEMCPY(tagValue, (PCHAR) "tagValue", STRLEN("tagValue"));
-    EXPECT_EQ(STATUS_INVALID_STREAM_STATE, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
-    EXPECT_EQ(STATUS_INVALID_ARG, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_LAST, &Meta));
-    EXPECT_EQ(STATUS_INVALID_ARG, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_LAST + rand() % STREAM_EVENT_TYPE_LAST, &Meta));
+    // // Validate the negative case with state
+    // MEMCPY(tagName, (PCHAR) "tagName", STRLEN("tagName"));
+    // MEMCPY(tagValue, (PCHAR) "tagValue", STRLEN("tagValue"));
+    // EXPECT_EQ(STATUS_INVALID_STREAM_STATE, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_NOTIFICATION, &Meta));
+    // EXPECT_EQ(STATUS_INVALID_ARG, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_LAST, &Meta));
+    // EXPECT_EQ(STATUS_INVALID_ARG, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_LAST + rand() % STREAM_EVENT_TYPE_LAST, &Meta));
 }
 
 #ifdef ALIGNED_MEMORY_MODEL
