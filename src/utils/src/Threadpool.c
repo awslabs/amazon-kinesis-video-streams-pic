@@ -47,6 +47,8 @@ PVOID threadpoolActor(PVOID data)
     UINT64 item = 0;
     BOOL finished = FALSE;
 
+    DLOGE("Threadpool actor started for thread ID: %llu", GETTID());
+
     if (pThreadData == NULL) {
         DLOGE("Threadpool actor unable to start, threaddata is NULL");
         return NULL;
@@ -126,8 +128,8 @@ PVOID threadpoolActor(PVOID data)
                     // Check if this thread is needed to maintain minimum thread count
                     // otherwise exit loop and remove it.
                     if (stackQueueGetCount(pThreadpool->threadList, &count) == STATUS_SUCCESS) {
-                        DLOGE("[TURN Debugging] stackQueueGetCount returned %d", count);
-                        DLOGE("[TURN Debugging] pThreadpool->minThreads is equal to %d", pThreadpool->minThreads);
+                        DLOGE("[TURN Debugging] stackQueueGetCount returned %u", count);
+                        DLOGE("[TURN Debugging] pThreadpool->minThreads is equal to %u", pThreadpool->minThreads);
                         // Question: why are we only removing one thread if count is > minThread? Might there not be more that need removing?
                         if (count > pThreadpool->minThreads) {
                             DLOGE("[TURN Debugging] count is greater than minThreads, calling stackQueueRemoveItem and will terminate actor loop.");
@@ -137,7 +139,7 @@ PVOID threadpoolActor(PVOID data)
                             }
 
                             stackQueueGetCount(pThreadpool->threadList, &count);
-                            DLOGE("[TURN Debugging] stackQueueRemoveItem called, stackQueueGetCount is now %d", count);
+                            DLOGE("[TURN Debugging] stackQueueRemoveItem called, stackQueueGetCount is now %u", count);
                         }
                     } else {
                         DLOGE("[TURN Debugging] stackQueueGetCount FAILED!");
@@ -156,6 +158,9 @@ PVOID threadpoolActor(PVOID data)
     // we assume we've already been removed from the threadList
     MUTEX_FREE(pThreadData->dataMutex);
     SAFE_MEMFREE(pThreadData);
+
+    DLOGE("Threadpool actor finished.");
+
     return NULL;
 }
 
@@ -164,6 +169,9 @@ PVOID threadpoolActor(PVOID data)
  */
 STATUS threadpoolCreate(PThreadpool* ppThreadpool, UINT32 minThreads, UINT32 maxThreads)
 {
+    DLOGE("Size of size_t is %lu", sizeof(size_t));
+    DLOGE("Size of SIZE_T is %lu", sizeof(SIZE_T) );
+
     STATUS retStatus = STATUS_SUCCESS;
     UINT32 i = 0;
     PThreadpool pThreadpool = NULL;
@@ -290,9 +298,10 @@ STATUS threadpoolInternalCanCreateThread(PThreadpool pThreadpool, PBOOL pSpaceAv
     CHK_STATUS(stackQueueGetCount(pThreadpool->threadList, &count));
 
     if (count < pThreadpool->maxThreads) {
-        DLOGE("[TURN Debugging] threadpoolInternalCanCreateThread? Yes, thread count, %d,  is less than maxThreads, %d.", count, pThreadpool->maxThreads);
+        DLOGE("[TURN Debugging] threadpoolInternalCanCreateThread? Yes, thread count, %u,  is less than maxThreads, %u.", count, pThreadpool->maxThreads);
         *pSpaceAvailable = TRUE;
     } else {
+        DLOGE("[TURN Debugging] threadpoolInternalCanCreateThread? No, thread count, %u,  is greater than or equal to maxThreads, %u.", count, pThreadpool->maxThreads);
         *pSpaceAvailable = FALSE;
     }
 
@@ -550,11 +559,12 @@ STATUS threadpoolPush(PThreadpool pThreadpool, startRoutine function, PVOID cust
     SIZE_T count = 0; // Must this be a size_t instead of uint?
     CHK(pThreadpool != NULL, STATUS_NULL_ARG);
 
-    DLOGE("[TURN Debugging]  PIC's threadpoolPush called");
+    DLOGE("[TURN Debugging] PIC's threadpoolPush called");
 
     CHK_STATUS(threadpoolInternalCanCreateThread(pThreadpool, &spaceAvailable));
     CHK_STATUS(threadpoolInternalInactiveThreadCount(pThreadpool, &count));
 
+    DLOGE("[TURN Debugging] threadpoolInternalCanCreateThread set spaceAvailable to %s", spaceAvailable ? "true" : "false");
     DLOGE("[TURN Debugging] threadpoolInternalInactiveThreadCount: %zu", count);
 
     // always queue task
@@ -567,5 +577,10 @@ STATUS threadpoolPush(PThreadpool pThreadpool, startRoutine function, PVOID cust
     }
 
 CleanUp:
+    if(retStatus != STATUS_SUCCESS) {
+        DLOGE("[TURN Debugging] threadpoolPush failed with  0x%08x", retStatus);
+    } else {
+        DLOGE("[TURN Debugging] threadpoolPush succeeded");
+    }
     return retStatus;
 }
