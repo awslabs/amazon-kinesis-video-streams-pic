@@ -76,7 +76,11 @@ PVOID threadpoolActor(PVOID data)
         finished = TRUE;
     }
 
-    DLOGE("[TURN Debugging] Threadpool actor will %senter while loop for thread ID: %llu", finished ? "" : "NOT ", GETTID());
+    if (finished) {
+            DLOGE("[TURN Debugging] Threadpool actor will NOT enter while loop for thread ID: %llu", GETTID());
+    } else {
+            DLOGE("[TURN Debugging] Threadpool actor will enter while loop for thread ID: %llu", GETTID());
+    }
 
     // This actor will now wait for a task to be added to the queue, and then execute that task
     // when the task is complete it will check if the we're beyond our min threshold of threads
