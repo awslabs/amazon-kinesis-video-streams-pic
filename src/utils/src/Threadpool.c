@@ -47,7 +47,7 @@ PVOID threadpoolActor(PVOID data)
     UINT64 item = 0;
     BOOL finished = FALSE;
 
-    DLOGE("Threadpool actor started for thread ID: %llu", GETTID());
+    DLOGE("[TURN Debugging] Threadpool actor started for thread ID: %llu", GETTID());
 
     if (pThreadData == NULL) {
         DLOGE("Threadpool actor unable to start, threaddata is NULL");
@@ -67,12 +67,16 @@ PVOID threadpoolActor(PVOID data)
 
             pQueue = pThreadpool->taskQueue;
         } else {
+            DLOGE("[TURN Debugging] Threadpool actor not starting - termninate flag is on for thread ID: %llu", GETTID());
             finished = TRUE;
         }
         MUTEX_UNLOCK(pThreadData->dataMutex);
     } else {
+        DLOGE("[TURN Debugging] Threadpool actor not starting - failed to lock dataMutex for thread ID: %llu", GETTID());
         finished = TRUE;
     }
+
+    DLOGE("[TURN Debugging] Threadpool actor will %senter while loop for thread ID: %llu", finished ? "" : "NOT ", GETTID());
 
     // This actor will now wait for a task to be added to the queue, and then execute that task
     // when the task is complete it will check if the we're beyond our min threshold of threads
@@ -93,14 +97,19 @@ PVOID threadpoolActor(PVOID data)
                 ATOMIC_DECREMENT(&pThreadData->pThreadpool->availableThreads);
                 MUTEX_UNLOCK(pThreadData->dataMutex);
                 if (pTask != NULL) {
+                    DLOGE("[TURN Debugging] Threadpool actor calling a task function, for thread ID: %llu", GETID());
+
                     pTask->function(pTask->customData);
                     SAFE_MEMFREE(pTask);
                 }
             } else {
+                DLOGE("[TURN Debugging] Threadpool actor NOT calling a task function due to failure to dequeue, for thread ID: %llu", GETID());
+                // QUESTION: Why are we decrementing the availableThreads here if we are not running a task on the thread?
                 ATOMIC_DECREMENT(&pThreadData->pThreadpool->availableThreads);
                 MUTEX_UNLOCK(pThreadData->dataMutex);
             }
         } else {
+            DLOGE("[TURN Debugging] Threadpool actor NOT calling a task function due to terminate flag, for thread ID: %llu", GETID());
             finished = TRUE;
             MUTEX_UNLOCK(pThreadData->dataMutex);
             break;
@@ -211,6 +220,7 @@ CleanUp:
  */
 STATUS threadpoolInternalCreateThread(PThreadpool pThreadpool)
 {
+    // TODO: Add logs here...
     STATUS retStatus = STATUS_SUCCESS;
     PThreadData data = NULL;
     BOOL locked = FALSE, dataCreated = FALSE, mutexCreated = FALSE;
@@ -507,6 +517,8 @@ STATUS threadpoolInternalInactiveThreadCount(PThreadpool pThreadpool, PSIZE_T pC
 
     CHK(pThreadpool != NULL && pCount != NULL, STATUS_NULL_ARG);
     CHK(!ATOMIC_LOAD_BOOL(&pThreadpool->terminate), STATUS_INVALID_OPERATION);
+
+    //NOTE: Let's log available threads and pending tasks in addition to this count.
 
     CHK_STATUS(safeBlockingQueueGetCount(pThreadpool->taskQueue, &pendingTasks));
     unblockedThreads = (SIZE_T) ATOMIC_LOAD(&pThreadpool->availableThreads);
