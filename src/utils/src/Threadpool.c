@@ -97,19 +97,19 @@ PVOID threadpoolActor(PVOID data)
                 ATOMIC_DECREMENT(&pThreadData->pThreadpool->availableThreads);
                 MUTEX_UNLOCK(pThreadData->dataMutex);
                 if (pTask != NULL) {
-                    DLOGE("[TURN Debugging] Threadpool actor calling a task function, for thread ID: %llu", GETID());
+                    DLOGE("[TURN Debugging] Threadpool actor calling a task function, for thread ID: %llu", GETTID());
 
                     pTask->function(pTask->customData);
                     SAFE_MEMFREE(pTask);
                 }
             } else {
-                DLOGE("[TURN Debugging] Threadpool actor NOT calling a task function due to failure to dequeue, for thread ID: %llu", GETID());
+                DLOGE("[TURN Debugging] Threadpool actor NOT calling a task function due to failure to dequeue, for thread ID: %llu", GETTID());
                 // QUESTION: Why are we decrementing the availableThreads here if we are not running a task on the thread?
                 ATOMIC_DECREMENT(&pThreadData->pThreadpool->availableThreads);
                 MUTEX_UNLOCK(pThreadData->dataMutex);
             }
         } else {
-            DLOGE("[TURN Debugging] Threadpool actor NOT calling a task function due to terminate flag, for thread ID: %llu", GETID());
+            DLOGE("[TURN Debugging] Threadpool actor NOT calling a task function due to terminate flag, for thread ID: %llu", GETTID());
             finished = TRUE;
             MUTEX_UNLOCK(pThreadData->dataMutex);
             break;
