@@ -91,6 +91,8 @@ PVOID threadpoolActor(PVOID data)
         // has been deleted
         MUTEX_LOCK(pThreadData->dataMutex);
 
+        DLOGE("[TURN Debugging] Threadpool actor entered while loop");
+
         // ThreadData is allocated separately from the Threadpool.
         // The Threadpool will set terminate to false before the threadpool is free.
         // This way the thread actors can avoid accessing the Threadpool after termination.
