@@ -145,7 +145,8 @@ PVOID threadpoolActor(PVOID data)
                     if (stackQueueGetCount(pThreadpool->threadList, &count) == STATUS_SUCCESS) {
                         DLOGE("[TURN Debugging] stackQueueGetCount returned %u", count);
                         DLOGE("[TURN Debugging] pThreadpool->minThreads is equal to %u", pThreadpool->minThreads);
-                        // Question: why are we only removing one thread if count is > minThread? Might there not be more that need removing?
+                        // Q: Why are we only removing one thread if count is > minThread? Might there not be more that need removing?
+                        // A: This is a "lazy" removal which will optimize the process time-wise
                         if (count > pThreadpool->minThreads) {
                             DLOGE("[TURN Debugging] count is greater than minThreads, calling stackQueueRemoveItem and will terminate actor loop.");
                             finished = TRUE;
@@ -160,11 +161,15 @@ PVOID threadpoolActor(PVOID data)
                         DLOGE("[TURN Debugging] stackQueueGetCount FAILED!");
                     }
                 }
+            } else {
+                // TODO: Add logs here....
             }
             MUTEX_UNLOCK(pThreadpool->listMutex);
             MUTEX_UNLOCK(pThreadData->dataMutex);
         }
     }
+    
+    
     // now that we've released the listMutex, we can do an actual MUTEX_LOCK to ensure the
     // threadpool has finished using pThreadData
     MUTEX_LOCK(pThreadData->dataMutex);
@@ -191,7 +196,7 @@ STATUS threadpoolCreate(PThreadpool* ppThreadpool, UINT32 minThreads, UINT32 max
     UINT32 i = 0;
     PThreadpool pThreadpool = NULL;
     CHK(ppThreadpool != NULL, STATUS_NULL_ARG);
-    CHK(minThreads <= maxThreads && minThreads > 0 && maxThreads > 0, STATUS_INVALID_ARG);
+    CHK(minThreads <= maxThreads && minThreads > 0 && maxThreads > 0, STATUS_INVALID_ARG); // Q: Why cant min threads be 0 ?
 
     pThreadpool = (PThreadpool) MEMCALLOC(1, SIZEOF(Threadpool));
     CHK(pThreadpool != NULL, STATUS_NOT_ENOUGH_MEMORY);
@@ -579,8 +584,12 @@ STATUS threadpoolPush(PThreadpool pThreadpool, startRoutine function, PVOID cust
 
     DLOGE("[TURN Debugging] PIC's threadpoolPush called");
 
+
+    // TODO: Move this threadpoolInternalCanCreateThread to within a if(count <= 0){}. Even better would be if we changed the var name and comparison: if(inactiveThreadCount = 0){}
     CHK_STATUS(threadpoolInternalCanCreateThread(pThreadpool, &spaceAvailable));
     CHK_STATUS(threadpoolInternalInactiveThreadCount(pThreadpool, &count));
+    // ALSO, can't the spaceAvailable and count change in a racey way since nothing is locked here?
+
 
     DLOGE("[TURN Debugging] threadpoolInternalCanCreateThread set spaceAvailable to %s", spaceAvailable ? "true" : "false");
     DLOGE("[TURN Debugging] threadpoolInternalInactiveThreadCount: %zu", count);
