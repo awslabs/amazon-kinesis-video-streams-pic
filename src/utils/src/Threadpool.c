@@ -56,6 +56,7 @@ PVOID threadpoolActor(PVOID data)
 
     // attempt to acquire thread mutex, if we cannot it means the threadpool has already been
     // destroyed. Quickly exit
+    DLOGE("[TURN Debugging] Threadpool actor attempting to TRY lock dataMutex for thread ID: %llu", GETTID());
     if (MUTEX_TRYLOCK(pThreadData->dataMutex)) {
         if (!ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
             pThreadpool = pThreadData->pThreadpool;
@@ -89,9 +90,13 @@ PVOID threadpoolActor(PVOID data)
         // This lock exists to protect the atomic increment after the terminate check.
         // There is a data-race condition that can result in an increment after the Threadpool
         // has been deleted
+        DLOGE("[TURN Debugging] Threadpool actor entered while loopf or thread ID: %llu", GETTID());
+
+        DLOGE("[TURN Debugging] Threadpool actor attempthing to acquire dataMutex for thread ID: %llu", GETTID());
+
         MUTEX_LOCK(pThreadData->dataMutex);
 
-        DLOGE("[TURN Debugging] Threadpool actor entered while loop");
+        DLOGE("[TURN Debugging] Threadpool actor acquired dataMutex for thread ID: %llu", GETTID());
 
         // ThreadData is allocated separately from the Threadpool.
         // The Threadpool will set terminate to false before the threadpool is free.
@@ -104,9 +109,12 @@ PVOID threadpoolActor(PVOID data)
                 MUTEX_UNLOCK(pThreadData->dataMutex);
                 if (pTask != NULL) {
                     DLOGE("[TURN Debugging] Threadpool actor calling a task function, for thread ID: %llu", GETTID());
-
                     pTask->function(pTask->customData);
+                    DLOGE("[TURN Debugging] Threadpool actor finished calling a task function, for thread ID: %llu", GETTID());
+
                     SAFE_MEMFREE(pTask);
+                } else {
+                    DLOGE("[TURN Debugging] dequeued task is null, task queue must be empty, for thread ID: %llu", GETTID());
                 }
             } else {
                 DLOGE("[TURN Debugging] Threadpool actor NOT calling a task function due to failure to dequeue, for thread ID: %llu", GETTID());
@@ -121,11 +129,15 @@ PVOID threadpoolActor(PVOID data)
             break;
         }
 
+        DLOGE("[TURN Debugging] Threadpool actor locking dataMutex once available, for thread ID: %llu", GETTID());
         MUTEX_LOCK(pThreadData->dataMutex);
+        DLOGE("[TURN Debugging] Threadpool actor locked dataMutex, for thread ID: %llu", GETTID());
         if (ATOMIC_LOAD_BOOL(&pThreadData->terminate)) {
+            DLOGE("[TURN Debugging] Threadpool actor received terminate flag from threadData, for thread ID: %llu", GETTID());
             MUTEX_UNLOCK(pThreadData->dataMutex);
         } else {
             // Threadpool is active - lock its mutex
+            DLOGE("[TURN Debugging] Threadpool actor locking listMutex once available, for thread ID: %llu", GETTID());
             MUTEX_LOCK(pThreadpool->listMutex);
 
             // if threadpool is in teardown, release this mutex and go to queue.
@@ -140,6 +152,7 @@ PVOID threadpoolActor(PVOID data)
             // Check that there aren't any pending tasks.
             if (safeBlockingQueueIsEmpty(pQueue, &taskQueueEmpty) == STATUS_SUCCESS) {
                 if (taskQueueEmpty) {
+                    DLOGE("[TURN Debugging] Threadpool actor found taskQueue to be empty, for thread ID: %llu", GETTID());
                     // Check if this thread is needed to maintain minimum thread count
                     // otherwise exit loop and remove it.
                     if (stackQueueGetCount(pThreadpool->threadList, &count) == STATUS_SUCCESS) {
@@ -162,6 +175,7 @@ PVOID threadpoolActor(PVOID data)
                     }
                 }
             } else {
+                DLOGE("[TURN Debugging] Threadpool actor failed to call safeBlockingQueueIsEmpty for thread ID: %llu", GETTID());
                 // TODO: Add logs here....
             }
             MUTEX_UNLOCK(pThreadpool->listMutex);
@@ -169,7 +183,7 @@ PVOID threadpoolActor(PVOID data)
         }
     }
     
-    
+    DLOGE("[TURN Debugging] Threadpool actor locking dataMutex once available, for thread ID: %llu", GETTID());
     // now that we've released the listMutex, we can do an actual MUTEX_LOCK to ensure the
     // threadpool has finished using pThreadData
     MUTEX_LOCK(pThreadData->dataMutex);
@@ -296,6 +310,9 @@ STATUS threadpoolInternalCreateTask(PThreadpool pThreadpool, startRoutine functi
     CHK_STATUS(safeBlockingQueueEnqueue(pThreadpool->taskQueue, (UINT64) pTask));
 
 CleanUp:
+    if(retStatus != STATUS_SUCCESS){
+        DLOGE("[TURN Debugging] threadpoolInternalCreateTask failed to enqueue a task.");
+    }
     if (STATUS_FAILED(retStatus) && allocated) {
         SAFE_MEMFREE(pTask);
     }
@@ -598,9 +615,11 @@ STATUS threadpoolPush(PThreadpool pThreadpool, startRoutine function, PVOID cust
     CHK_STATUS(threadpoolInternalCreateTask(pThreadpool, function, customData));
 
     // only create a thread if there are no available threads and not maxed
-    if (count <= 0 && spaceAvailable) {
-        DLOGE("[TURN Debugging] count <= 0 && spaceAvailable ... calling threadpoolInternalCreateThread");
+    if (count <= 0 && spaceAvailable) { // TODO: Remove the <= in place of == because SIZE_T cannot be negative.
+        DLOGE("[TURN Debugging] inactive thread count <= 0 && spaceAvailable ... calling threadpoolInternalCreateThread");
         CHK_STATUS(threadpoolInternalCreateThread(pThreadpool));
+    } else {
+        DLOGE("[TURN Debugging] NOT calling threadpoolInternalCreateThread");
     }
 
 CleanUp:
