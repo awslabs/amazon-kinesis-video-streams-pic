@@ -888,6 +888,12 @@ typedef enum {
     AUTOMATIC_STREAMING_ALWAYS_CONTINUOUS = (1 << 8),
 } AUTOMATIC_STREAMING_FLAGS;
 
+typedef enum {
+    IPv4_ONLY = 0,
+    IPv6_ONLY = 2,
+    DUAL_STACK = 4,
+} IP_VERSION;
+
 /**
  * NAL adaptation types enum. The bit flags correspond to the ones defined in the
  * mkvgen public header enumeration for simple copy forward.
@@ -1204,6 +1210,8 @@ typedef struct __ClientInfo {
     UINT64 serviceCallCompletionTimeout;
     UINT64 serviceCallConnectionTimeout;
 
+    IP_VERSION ipVersion;
+
 } ClientInfo, *PClientInfo;
 
 /**
@@ -1506,6 +1514,8 @@ struct __ServiceCallContext {
 
     // -------- V0 compat --------
     UINT64 connectionTimeout;
+    
+    IP_VERSION ipVersion;
 };
 
 typedef struct __ServiceCallContext* PServiceCallContext;
