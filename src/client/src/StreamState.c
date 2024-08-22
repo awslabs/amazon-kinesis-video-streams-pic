@@ -595,10 +595,14 @@ STATUS executeGetEndpointStreamState(UINT64 customData, UINT64 time)
     // Reset the call result
     pKinesisVideoStream->base.result = SERVICE_CALL_RESULT_NOT_SET;
 
+    DLOGI("========= [PIC] FROM executeGetEndpointStreamState ============");
+
     // Call API
     CHK_STATUS(pKinesisVideoClient->clientCallbacks.getStreamingEndpointFn(
         pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->streamInfo.name, (PCHAR) GET_DATA_ENDPOINT_REAL_TIME_PUT_API_NAME,
         &pKinesisVideoStream->base.serviceCallContext));
+
+    DLOGI("========= [PIC] After ============");
 
 CleanUp:
 
