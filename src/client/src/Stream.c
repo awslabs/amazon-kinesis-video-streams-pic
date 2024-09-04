@@ -38,17 +38,21 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
 
     // Validate the input structs
     CHK_STATUS(validateStreamInfo(pStreamInfo, &pKinesisVideoClient->clientCallbacks));
+    DLOGI("======== 4444444: %d", __LINE__);
     logStreamInfo(pStreamInfo);
+    DLOGI("======== 4444444: %d", __LINE__);
 
     // Lock the client streams list lock because we will iterate over current streams + add more streams
     // We follow the principle that the streamListLock is *never* acquired inside a client or streams lock,
     // always outside to prevent deadlock
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.streamListLock);
     clientStreamsListLocked = TRUE;
+    DLOGI("======== 4444444: %d", __LINE__);
 
     // Lock the client
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     clientLocked = TRUE;
+    DLOGI("======== 4444444: %d", __LINE__);
 
     // Check for the stream count
     CHK(pKinesisVideoClient->streamCount < pKinesisVideoClient->deviceInfo.streamCount, STATUS_MAX_STREAM_COUNT);
@@ -57,11 +61,13 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     if (pStreamInfo->name[0] == '\0') {
         createRandomName(tempStreamName, DEFAULT_STREAM_NAME_LEN, pKinesisVideoClient->clientCallbacks.getRandomNumberFn,
                          pKinesisVideoClient->clientCallbacks.customData);
+                         DLOGI("======== 4444444: %d", __LINE__);
     } else {
         // Copy the stream name otherwise
         // NOTE: Stream name length has already been validated
         STRCPY(tempStreamName, pStreamInfo->name);
     }
+    DLOGI("======== 4444444: %d", __LINE__);
 
     // Check if a stream by that name already exists
     for (i = 0; i < pKinesisVideoClient->deviceInfo.streamCount; i++) {
@@ -69,12 +75,14 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
             CHK(0 != STRCMP(pKinesisVideoClient->streams[i]->streamInfo.name, tempStreamName), STATUS_DUPLICATE_STREAM_NAME);
         }
     }
+    DLOGI("======== 4444444: %d", __LINE__);
 
     // Space for track info bits
     trackInfoSize = SIZEOF(TrackInfo) * pStreamInfo->streamCaps.trackInfoCount;
 
     // Get the max tags structure size
     CHK_STATUS(packageTags(pStreamInfo->tagCount, pStreamInfo->tags, 0, NULL, &tagsSize));
+    DLOGI("======== 4444444: %d", __LINE__);
 
     // Allocate the main struct
     // NOTE: The calloc will Zero the fields
@@ -83,6 +91,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     allocationSize = SIZEOF(KinesisVideoStream) + tagsSize + trackInfoSize + MKV_SEGMENT_UUID_LEN;
     pKinesisVideoStream = (PKinesisVideoStream) MEMCALLOC(1, allocationSize);
     CHK(pKinesisVideoStream != NULL, STATUS_NOT_ENOUGH_MEMORY);
+    DLOGI("======== 4444444: %d", __LINE__);
 
     // Set the stream id first available slot so during the teardown it will clean it up.
     for (i = 0; i < pKinesisVideoClient->deviceInfo.streamCount; i++) {
@@ -143,6 +152,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     pKinesisVideoStream->diagnostics.currentTransferRate = pStreamInfo->streamCaps.avgBandwidthBps;
     pKinesisVideoStream->diagnostics.accumulatedByteCount = 0;
     pKinesisVideoStream->diagnostics.lastFrameRateTimestamp = pKinesisVideoStream->diagnostics.lastTransferRateTimestamp = 0;
+    DLOGI("======== 4444444: %d", __LINE__);
 
     // Set the trackers
     pKinesisVideoStream->eosTracker.size = 0;
@@ -172,17 +182,18 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     if (pKinesisVideoStream->streamInfo.name[0] == '\0') {
         STRCPY(pKinesisVideoStream->streamInfo.name, tempStreamName);
     }
+    DLOGI("======== 4444444: %d", __LINE__);
 
     // Create the stream lock
     pKinesisVideoStream->base.lock = pKinesisVideoClient->clientCallbacks.createMutexFn(pKinesisVideoClient->clientCallbacks.customData, TRUE);
-
+    DLOGI("======== 4444444: %d", __LINE__);
     // Create the Ready state condition variable
     pKinesisVideoStream->base.ready = pKinesisVideoClient->clientCallbacks.createConditionVariableFn(pKinesisVideoClient->clientCallbacks.customData);
-
+DLOGI("======== 4444444: %d", __LINE__);
     // Create the Stream Closed notifier condition variable
     pKinesisVideoStream->streamClosedCondition =
         pKinesisVideoClient->clientCallbacks.createConditionVariableFn(pKinesisVideoClient->clientCallbacks.customData);
-
+DLOGI("======== 4444444: %d", __LINE__);
     // Create the buffer availability condition variable
     pKinesisVideoStream->bufferAvailabilityCondition =
         pKinesisVideoClient->clientCallbacks.createConditionVariableFn(pKinesisVideoClient->clientCallbacks.customData);
@@ -191,7 +202,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
         pKinesisVideoStream->streamInfo.streamCaps.bufferDuration = MIN_VIEW_BUFFER_DURATION;
     }
     pKinesisVideoStream->streamInfo.streamCaps.replayDuration = MIN(pStreamInfo->streamCaps.bufferDuration, pStreamInfo->streamCaps.replayDuration);
-
+DLOGI("======== 4444444: %d", __LINE__);
     // Set the tags pointer to point after the KinesisVideoStream struct
     pKinesisVideoStream->streamInfo.tags = (PTag) ((PBYTE) (pKinesisVideoStream + 1));
 
@@ -199,7 +210,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     CHK_STATUS(packageTags(pStreamInfo->tagCount, pStreamInfo->tags, tagsSize, pKinesisVideoStream->streamInfo.tags, &tagsSize));
     pKinesisVideoStream->streamInfo.tagCount = pStreamInfo->tagCount;
     pCurPnt = (PBYTE) pKinesisVideoStream->streamInfo.tags + tagsSize;
-
+DLOGI("======== 4444444: %d", __LINE__);
     // Fix-up/store the segment Uid to make it random if NULL
     pKinesisVideoStream->streamInfo.streamCaps.segmentUuid = pCurPnt;
     if (pStreamInfo->streamCaps.segmentUuid == NULL) {
@@ -210,7 +221,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     } else {
         MEMCPY(pKinesisVideoStream->streamInfo.streamCaps.segmentUuid, pStreamInfo->streamCaps.segmentUuid, MKV_SEGMENT_UUID_LEN);
     }
-
+DLOGI("======== 4444444: %d", __LINE__);
     // Advance the current pointer
     pCurPnt += MKV_SEGMENT_UUID_LEN;
 
@@ -224,7 +235,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     if (pKinesisVideoStream->streamInfo.streamCaps.frameOrderingMode != FRAME_ORDER_MODE_PASS_THROUGH) {
         CHK_STATUS(createFrameOrderCoordinator(pKinesisVideoStream, &pKinesisVideoStream->pFrameOrderCoordinator));
     }
-
+DLOGI("======== 4444444: %d", __LINE__);
     // Move pCurPnt to the end of pKinesisVideoStream->streamInfo.streamCaps.trackInfoList
     pCurPnt = (PBYTE) (pKinesisVideoStream->streamInfo.streamCaps.trackInfoList + pKinesisVideoStream->streamInfo.streamCaps.trackInfoCount);
 
@@ -298,6 +309,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
 
     // Call to transition the state machine
     CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
+    DLOGI("======== 4444444: %d", __LINE__);
 
 CleanUp:
 

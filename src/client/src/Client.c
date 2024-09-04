@@ -720,15 +720,22 @@ STATUS createKinesisVideoStream(CLIENT_HANDLE clientHandle, PStreamInfo pStreamI
 
     CHK(pKinesisVideoClient != NULL && pStreamHandle != NULL, STATUS_NULL_ARG);
 
+    DLOGI("======== 4444444: %d", __LINE__);
+
     // Shutdown sequencer
     CHK_STATUS(semaphoreAcquire(pKinesisVideoClient->base.shutdownSemaphore, INFINITE_TIME_VALUE));
+
+    DLOGI("======== 4444444: %d", __LINE__);
+
     releaseClientSemaphore = TRUE;
 
     // Check if we are in the right state
     CHK_STATUS(acceptStateMachineState(pKinesisVideoClient->base.pStateMachine, CLIENT_STATE_READY));
+    DLOGI("======== 4444444: %d", __LINE__);
 
     // Create the actual stream
     CHK_STATUS(createStream(pKinesisVideoClient, pStreamInfo, &pKinesisVideoStream));
+    DLOGI("======== 4444444: %d", __LINE__);
 
     // Convert to handle
     *pStreamHandle = TO_STREAM_HANDLE(pKinesisVideoStream);
