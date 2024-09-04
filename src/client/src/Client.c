@@ -100,7 +100,9 @@ STATUS setupDefaultKvsRetryStrategyParameters(PKinesisVideoClient pKinesisVideoC
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
+    DLOGI("===========: %d", __LINE__);
     PKvsRetryStrategyCallbacks pKvsRetryStrategyCallbacks = &(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategyCallbacks);
+    DLOGI("===========: %d", __LINE__);
 
     // Use default as exponential backoff wait
     pKvsRetryStrategyCallbacks->createRetryStrategyFn = exponentialBackoffRetryStrategyCreate;
@@ -108,9 +110,13 @@ STATUS setupDefaultKvsRetryStrategyParameters(PKinesisVideoClient pKinesisVideoC
     pKvsRetryStrategyCallbacks->executeRetryStrategyFn = getExponentialBackoffRetryStrategyWaitTime;
     pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn = getExponentialBackoffRetryCount;
 
+    DLOGI("===========: %d", __LINE__);
+
     // Use exponential backoff config for state machine
     pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.pRetryStrategyConfig =
         (PRetryStrategyConfig) &DEFAULT_STATE_MACHINE_EXPONENTIAL_BACKOFF_RETRY_CONFIGURATION;
+
+    DLOGI("===========: %d", __LINE__);
 
 CleanUp:
     LEAVES();
@@ -136,8 +142,14 @@ STATUS configureClientWithRetryStrategy(PKinesisVideoClient pKinesisVideoClient)
     // build the client with a default retry strategy.
     if (pKvsRetryStrategyCallbacks->createRetryStrategyFn == NULL || pKvsRetryStrategyCallbacks->freeRetryStrategyFn == NULL ||
         pKvsRetryStrategyCallbacks->executeRetryStrategyFn == NULL || pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn == NULL) {
+        DLOGI("===========: %d", __LINE__);
         CHK_STATUS(setupDefaultKvsRetryStrategyParameters(pKinesisVideoClient));
         DLOGI("===========: %d", __LINE__);
+    }
+
+    if (pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.pRetryStrategyConfig == NULL) {
+        pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.pRetryStrategyConfig =
+        (PRetryStrategyConfig) &DEFAULT_STATE_MACHINE_EXPONENTIAL_BACKOFF_RETRY_CONFIGURATION;
     }
 
     DLOGI("===========: %d", __LINE__);
