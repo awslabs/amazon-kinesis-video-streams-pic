@@ -140,17 +140,14 @@ STATUS configureClientWithRetryStrategy(PKinesisVideoClient pKinesisVideoClient)
     DLOGI("===========: %d", __LINE__);
     // If the callbacks for retry strategy are already set, then use that otherwise
     // build the client with a default retry strategy.
-    if (pKvsRetryStrategyCallbacks->createRetryStrategyFn == NULL || pKvsRetryStrategyCallbacks->freeRetryStrategyFn == NULL ||
-        pKvsRetryStrategyCallbacks->executeRetryStrategyFn == NULL || pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn == NULL) {
-        DLOGI("===========: %d", __LINE__);
-        CHK_STATUS(setupDefaultKvsRetryStrategyParameters(pKinesisVideoClient));
-        DLOGI("===========: %d", __LINE__);
-    }
 
-    if (pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.pRetryStrategyConfig == NULL) {
-        pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy.pRetryStrategyConfig =
-        (PRetryStrategyConfig) &DEFAULT_STATE_MACHINE_EXPONENTIAL_BACKOFF_RETRY_CONFIGURATION;
-    }
+    CHK_STATUS(setupDefaultKvsRetryStrategyParameters(pKinesisVideoClient));
+    // if (pKvsRetryStrategyCallbacks->createRetryStrategyFn == NULL || pKvsRetryStrategyCallbacks->freeRetryStrategyFn == NULL ||
+    //     pKvsRetryStrategyCallbacks->executeRetryStrategyFn == NULL || pKvsRetryStrategyCallbacks->getCurrentRetryAttemptNumberFn == NULL) {
+    //     DLOGI("===========: %d", __LINE__);
+    //    CHK_STATUS(setupDefaultKvsRetryStrategyParameters(pKinesisVideoClient));
+    //     DLOGI("===========: %d", __LINE__);
+    // }
 
     DLOGI("===========: %d", __LINE__);
 
