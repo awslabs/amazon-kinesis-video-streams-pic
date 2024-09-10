@@ -173,6 +173,8 @@ STATUS executeDescribeStreamState(UINT64 customData, UINT64 time)
     // Step the client state machine first
     CHK_STATUS(stepClientStateMachine(pKinesisVideoClient));
 
+    DLOGI("\n\nYYYYYYYYYYY====== %d", pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
+
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);

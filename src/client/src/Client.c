@@ -187,6 +187,8 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
 
     // Report the creation after the validation as we might have the overwritten logger.
     DLOGI("Creating Kinesis Video Client");
+    CHK_STATUS(validateClientCallbacks(pDeviceInfo, pClientCallbacks));
+    DLOGI("\n\nYYYYYYYYYYY====== %d", pDeviceInfo->clientInfo.dualStackEnabled);
 
     // Get the max tags structure size
     CHK_STATUS(packageTags(pDeviceInfo->tagCount, pDeviceInfo->tags, 0, NULL, &tagsSize));
@@ -321,6 +323,7 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     // call which might fail. The clients can still choose to proceed
     // with some further processing with a valid object.
     CHK_STATUS(stepStateMachine(pKinesisVideoClient->base.pStateMachine));
+    DLOGI("\n\nYYYYYYYYYYY====== %d", pDeviceInfo->clientInfo.dualStackEnabled);
 
 CleanUp:
 
