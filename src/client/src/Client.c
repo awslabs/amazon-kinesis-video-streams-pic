@@ -754,9 +754,11 @@ STATUS createKinesisVideoStreamSync(CLIENT_HANDLE clientHandle, PStreamInfo pStr
     PKinesisVideoStream pKinesisVideoStream = NULL;
     BOOL streamLocked = FALSE, releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
 
+    DLOGI("\n\nYYYYYYYYYYY======%d %d", __LINE__, pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
+
     CHK_STATUS(createKinesisVideoStream(clientHandle, pStreamInfo, pStreamHandle));
 
-    DLOGI("\n\nYYYYYYYYYYY======%d %d", __LINE__, pKinesisVideoStream->pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
+    DLOGI("\n\nYYYYYYYYYYY======%d %d", __LINE__, pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
 
     CHK_STATUS(semaphoreAcquire(pKinesisVideoClient->base.shutdownSemaphore, INFINITE_TIME_VALUE));
     releaseClientSemaphore = TRUE;
@@ -766,7 +768,7 @@ STATUS createKinesisVideoStreamSync(CLIENT_HANDLE clientHandle, PStreamInfo pStr
     CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->base.shutdownSemaphore, INFINITE_TIME_VALUE));
     releaseStreamSemaphore = TRUE;
 
-    DLOGI("\n\nYYYYYYYYYYY======%d %d", __LINE__, pKinesisVideoStream->pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
+    DLOGI("\n\nYYYYYYYYYYY======%d %d", __LINE__, pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
 
     // Need to await for the Ready state before returning
     DLOGV("Awaiting for the stream to become ready...");
