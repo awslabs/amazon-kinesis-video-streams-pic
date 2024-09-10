@@ -1204,6 +1204,7 @@ typedef struct __ClientInfo {
     UINT64 serviceCallCompletionTimeout;
     UINT64 serviceCallConnectionTimeout;
 
+    // ------------------------------ V3 compat --------------------------
     BOOL dualStackEnabled;
 
 } ClientInfo, *PClientInfo;
@@ -1508,7 +1509,8 @@ struct __ServiceCallContext {
 
     // -------- V0 compat --------
     UINT64 connectionTimeout;
-    
+
+    // -------- V1 compat --------
     BOOL dualStackEnabled;
 };
 
