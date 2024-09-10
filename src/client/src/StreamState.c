@@ -178,7 +178,7 @@ STATUS executeDescribeStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
     pKinesisVideoStream->base.serviceCallContext.timeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout;
     pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
-    pKinesisVideoStream->base.serviceCallContext.ipVersion = pKinesisVideoClient->deviceInfo.clientInfo.ipVersion;
+    pKinesisVideoStream->base.serviceCallContext.dualStackEnabled = pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled;
 
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
@@ -590,21 +590,17 @@ STATUS executeGetEndpointStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
     pKinesisVideoStream->base.serviceCallContext.timeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout;
     pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
-    pKinesisVideoStream->base.serviceCallContext.ipVersion = pKinesisVideoClient->deviceInfo.clientInfo.ipVersion;
+    pKinesisVideoStream->base.serviceCallContext.dualStackEnabled = pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled;
 
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
     // Reset the call result
     pKinesisVideoStream->base.result = SERVICE_CALL_RESULT_NOT_SET;
 
-    DLOGI("========= [PIC] FROM executeGetEndpointStreamState ============");
-
     // Call API
     CHK_STATUS(pKinesisVideoClient->clientCallbacks.getStreamingEndpointFn(
         pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->streamInfo.name, (PCHAR) GET_DATA_ENDPOINT_REAL_TIME_PUT_API_NAME,
         &pKinesisVideoStream->base.serviceCallContext));
-
-    DLOGI("========= [PIC] After ============");
 
 CleanUp:
 
@@ -631,7 +627,7 @@ STATUS executeGetTokenStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
     pKinesisVideoStream->base.serviceCallContext.timeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout;
     pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
-    pKinesisVideoStream->base.serviceCallContext.ipVersion = pKinesisVideoClient->deviceInfo.clientInfo.ipVersion;
+    pKinesisVideoStream->base.serviceCallContext.dualStackEnabled = pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled;
 
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
@@ -668,7 +664,7 @@ STATUS executeCreateStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
     pKinesisVideoStream->base.serviceCallContext.timeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout;
     pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
-    pKinesisVideoStream->base.serviceCallContext.ipVersion = pKinesisVideoClient->deviceInfo.clientInfo.ipVersion;
+    pKinesisVideoStream->base.serviceCallContext.dualStackEnabled = pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled;
 
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
@@ -707,7 +703,7 @@ STATUS executeTagStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->base.serviceCallContext.customData = TO_STREAM_HANDLE(pKinesisVideoStream);
     pKinesisVideoStream->base.serviceCallContext.timeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallCompletionTimeout;
     pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
-    pKinesisVideoStream->base.serviceCallContext.ipVersion = pKinesisVideoClient->deviceInfo.clientInfo.ipVersion;
+    pKinesisVideoStream->base.serviceCallContext.dualStackEnabled = pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled;
 
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
@@ -783,7 +779,7 @@ STATUS executePutStreamState(UINT64 customData, UINT64 time)
     // Infinite wait for streaming
     pKinesisVideoStream->base.serviceCallContext.timeout = SERVICE_CALL_INFINITE_TIMEOUT;
     pKinesisVideoStream->base.serviceCallContext.connectionTimeout = pKinesisVideoClient->deviceInfo.clientInfo.serviceCallConnectionTimeout;
-    pKinesisVideoStream->base.serviceCallContext.ipVersion = pKinesisVideoClient->deviceInfo.clientInfo.ipVersion;
+    pKinesisVideoStream->base.serviceCallContext.dualStackEnabled = pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled;
 
     pKinesisVideoStream->base.serviceCallContext.callAfter = time;
 
