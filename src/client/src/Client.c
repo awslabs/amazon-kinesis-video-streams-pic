@@ -754,8 +754,6 @@ STATUS createKinesisVideoStreamSync(CLIENT_HANDLE clientHandle, PStreamInfo pStr
     PKinesisVideoStream pKinesisVideoStream = NULL;
     BOOL streamLocked = FALSE, releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
 
-    pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled = TRUE;
-
     DLOGI("\n\nYYYYYYYYYYY======%d %d", __LINE__, pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
 
     CHK_STATUS(createKinesisVideoStream(clientHandle, pStreamInfo, pStreamHandle));
