@@ -468,12 +468,12 @@ extern "C" {
 #define SEGMENT_INFO_CURRENT_VERSION          0
 #define STORAGE_INFO_CURRENT_VERSION          0
 #define AUTH_INFO_CURRENT_VERSION             0
-#define SERVICE_CALL_CONTEXT_CURRENT_VERSION  1
+#define SERVICE_CALL_CONTEXT_CURRENT_VERSION  2
 #define STREAM_DESCRIPTION_CURRENT_VERSION    1
 #define FRAGMENT_ACK_CURRENT_VERSION          0
 #define STREAM_METRICS_CURRENT_VERSION        3
 #define CLIENT_METRICS_CURRENT_VERSION        2
-#define CLIENT_INFO_CURRENT_VERSION           3
+#define CLIENT_INFO_CURRENT_VERSION           4
 #define STREAM_EVENT_METADATA_CURRENT_VERSION 0
 
 /**
@@ -1204,6 +1204,9 @@ typedef struct __ClientInfo {
     UINT64 serviceCallCompletionTimeout;
     UINT64 serviceCallConnectionTimeout;
 
+    // ------------------------------ V3 compat --------------------------
+    BOOL dualStackEnabled;
+
 } ClientInfo, *PClientInfo;
 
 /**
@@ -1506,6 +1509,9 @@ struct __ServiceCallContext {
 
     // -------- V0 compat --------
     UINT64 connectionTimeout;
+
+    // -------- V1 compat --------
+    BOOL dualStackEnabled;
 };
 
 typedef struct __ServiceCallContext* PServiceCallContext;

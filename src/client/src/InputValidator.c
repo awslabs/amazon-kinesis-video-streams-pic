@@ -313,6 +313,10 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
         pClientInfo->kvsRetryStrategyCallbacks = pOrigClientInfo->kvsRetryStrategyCallbacks;
 
         switch (pOrigClientInfo->version) {
+            case 4:
+                pClientInfo->dualStackEnabled = pOrigClientInfo->dualStackEnabled;
+
+                // explicit fall through
             case 3:
                 pClientInfo->serviceCallCompletionTimeout = pOrigClientInfo->serviceCallCompletionTimeout;
                 pClientInfo->serviceCallConnectionTimeout = pOrigClientInfo->serviceCallConnectionTimeout;
