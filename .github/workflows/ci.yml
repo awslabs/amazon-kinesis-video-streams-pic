@@ -105,6 +105,7 @@ jobs:
           ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   mac-os-m1-build-gcc:
     runs-on: macos-13-xlarge
+    env:
       AWS_KVS_LOG_LEVEL: 2
     steps:
       - name: Setup XCode version 15.2
