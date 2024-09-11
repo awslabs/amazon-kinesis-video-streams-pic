@@ -52,8 +52,6 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
     pStateMachine = pKinesisVideoStream->base.pStateMachine;
 
-    DLOGI("\n\nYYYYYYYYYYY======%d %d", __LINE__, pKinesisVideoStream->pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
-
     CHK(pStateMachine != NULL, STATUS_NULL_ARG);
 
     do {
@@ -175,8 +173,6 @@ STATUS executeDescribeStreamState(UINT64 customData, UINT64 time)
 
     // Step the client state machine first
     CHK_STATUS(stepClientStateMachine(pKinesisVideoClient));
-
-    DLOGI("\n\nYYYYYYYYYYY======%d %d", __LINE__, pKinesisVideoStream->pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
 
     pKinesisVideoStream->base.serviceCallContext.pAuthInfo = &pKinesisVideoClient->tokenAuthInfo;
     pKinesisVideoStream->base.serviceCallContext.version = SERVICE_CALL_CONTEXT_CURRENT_VERSION;

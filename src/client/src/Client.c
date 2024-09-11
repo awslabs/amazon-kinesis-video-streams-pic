@@ -188,7 +188,6 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     // Report the creation after the validation as we might have the overwritten logger.
     DLOGI("Creating Kinesis Video Client");
     CHK_STATUS(validateClientCallbacks(pDeviceInfo, pClientCallbacks));
-    DLOGI("\n\nYYYYYYYYYYY====== %d", pDeviceInfo->clientInfo.dualStackEnabled);
 
     // Get the max tags structure size
     CHK_STATUS(packageTags(pDeviceInfo->tagCount, pDeviceInfo->tags, 0, NULL, &tagsSize));
@@ -233,11 +232,7 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     // is used and the remaining fields are not copied
     fixupDeviceInfo(&pKinesisVideoClient->deviceInfo, pDeviceInfo);
 
-    DLOGI("\n\nYYYYYYYYYYY====== %d %d", __LINE__, pDeviceInfo->clientInfo.dualStackEnabled);
-
     CHK_STATUS(configureClientWithRetryStrategy(pKinesisVideoClient));
-
-    DLOGI("\n\nYYYYYYYYYYY====== %d %d", __LINE__, pDeviceInfo->clientInfo.dualStackEnabled);
 
     // Fix-up the name of the device if not specified
     if (pKinesisVideoClient->deviceInfo.name[0] == '\0') {
@@ -255,7 +250,6 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
 #endif
 
     // Create the storage
-    DLOGI("\n\nYYYYYYYYYYY====== %d %d", __LINE__, pDeviceInfo->clientInfo.dualStackEnabled);
     heapFlags = pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_IN_MEM ||
             pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC
         ? MEMORY_BASED_HEAP_FLAGS
@@ -310,8 +304,6 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
         }
     }
 
-    DLOGI("\n\nYYYYYYYYYYY====== %d %d", __LINE__, pDeviceInfo->clientInfo.dualStackEnabled);
-
     // Set the call result to unknown to start
     pKinesisVideoClient->base.result = SERVICE_CALL_RESULT_NOT_SET;
 
@@ -329,9 +321,7 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     // object to the OUT parameter as this might evaluate to a service
     // call which might fail. The clients can still choose to proceed
     // with some further processing with a valid object.
-    DLOGI("\n\nYYYYYYYYYYY====== %d %d", __LINE__, pDeviceInfo->clientInfo.dualStackEnabled);
     CHK_STATUS(stepStateMachine(pKinesisVideoClient->base.pStateMachine));
-    DLOGI("\n\nYYYYYYYYYYY====== %d %d", __LINE__, pDeviceInfo->clientInfo.dualStackEnabled);
 
 CleanUp:
 
@@ -754,11 +744,7 @@ STATUS createKinesisVideoStreamSync(CLIENT_HANDLE clientHandle, PStreamInfo pStr
     PKinesisVideoStream pKinesisVideoStream = NULL;
     BOOL streamLocked = FALSE, releaseClientSemaphore = FALSE, releaseStreamSemaphore = FALSE;
 
-    DLOGI("\n\nYYYYYYYYYYY======%d %d", __LINE__, pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
-
     CHK_STATUS(createKinesisVideoStream(clientHandle, pStreamInfo, pStreamHandle));
-
-    DLOGI("\n\nYYYYYYYYYYY======%d %d", __LINE__, pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
 
     CHK_STATUS(semaphoreAcquire(pKinesisVideoClient->base.shutdownSemaphore, INFINITE_TIME_VALUE));
     releaseClientSemaphore = TRUE;
@@ -767,8 +753,6 @@ STATUS createKinesisVideoStreamSync(CLIENT_HANDLE clientHandle, PStreamInfo pStr
 
     CHK_STATUS(semaphoreAcquire(pKinesisVideoStream->base.shutdownSemaphore, INFINITE_TIME_VALUE));
     releaseStreamSemaphore = TRUE;
-
-    DLOGI("\n\nYYYYYYYYYYY======%d %d", __LINE__, pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
 
     // Need to await for the Ready state before returning
     DLOGV("Awaiting for the stream to become ready...");
