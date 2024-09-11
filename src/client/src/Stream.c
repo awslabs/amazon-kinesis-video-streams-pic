@@ -295,8 +295,6 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     // Set up the next logging time if enabled
     pKinesisVideoStream->diagnostics.nextLoggingTime =
         pKinesisVideoStream->diagnostics.createTime + pKinesisVideoClient->deviceInfo.clientInfo.metricLoggingPeriod;
-    
-    DLOGI("YYYYYYYYYYY======%d %d\n\n", __LINE__, pKinesisVideoStream->pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
 
     // Call to transition the state machine
     CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));

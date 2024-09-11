@@ -702,8 +702,6 @@ STATUS createKinesisVideoStream(CLIENT_HANDLE clientHandle, PStreamInfo pStreamI
 
     DLOGI("Creating Kinesis Video Stream.");
 
-    DLOGI("YYYYYYYYYYY======%d %d\n\n", __LINE__, pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
-
     CHK(pKinesisVideoClient != NULL && pStreamHandle != NULL, STATUS_NULL_ARG);
 
     // Shutdown sequencer
@@ -715,9 +713,6 @@ STATUS createKinesisVideoStream(CLIENT_HANDLE clientHandle, PStreamInfo pStreamI
 
     // Create the actual stream
     CHK_STATUS(createStream(pKinesisVideoClient, pStreamInfo, &pKinesisVideoStream));
-
-    DLOGI("YYYYYYYYYYY======%d %d\n\n", __LINE__, pKinesisVideoStream->pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
-    DLOGI("YYYYYYYYYYY======%d %d\n\n", __LINE__, pKinesisVideoClient->deviceInfo.clientInfo.dualStackEnabled);
 
     // Convert to handle
     *pStreamHandle = TO_STREAM_HANDLE(pKinesisVideoStream);
