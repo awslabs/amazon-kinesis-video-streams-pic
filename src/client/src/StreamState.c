@@ -51,7 +51,6 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
 
     CHK(pKinesisVideoStream != NULL, STATUS_NULL_ARG);
     pStateMachine = pKinesisVideoStream->base.pStateMachine;
-
     CHK(pStateMachine != NULL, STATUS_NULL_ARG);
 
     do {
