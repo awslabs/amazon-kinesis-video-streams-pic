@@ -23,10 +23,10 @@ jobs:
         run: |
           bash scripts/check-clang.sh
   mac-os-build-gcc:
-    runs-on: macos-latest
+    runs-on: macos-12
     env:
-      CC: gcc-11
-      CXX: g++-11
+      CC: gcc-12
+      CXX: g++-12
       AWS_KVS_LOG_LEVEL: 2
     steps:
       - name: Clone repository
@@ -105,9 +105,6 @@ jobs:
           ./tst/kvspic_test --gtest_filter="-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
   mac-os-m1-build-gcc:
     runs-on: macos-13-xlarge
-    env:
-      CC: /opt/homebrew/bin/gcc-13
-      CXX: /opt/homebrew/bin/g++-13
       AWS_KVS_LOG_LEVEL: 2
     steps:
       - name: Setup XCode version 15.2
@@ -120,7 +117,7 @@ jobs:
         run: |
           brew unlink openssl
           mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE
+          sh -c 'cmake .. -DBUILD_TEST=TRUE -DCMAKE_C_COMPILER=$(brew --prefix llvm@15)/bin/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++'
           make
       - name: Run tests
         run: |
@@ -130,7 +127,7 @@ jobs:
         run: |
           rm -rf build
           mkdir build && cd build
-          cmake .. -DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE
+          sh -c 'cmake .. -DBUILD_TEST=TRUE -DCMAKE_C_COMPILER=$(brew --prefix llvm@15)/bin/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++ DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE'
           make
       - name: Run tests
         run: |
