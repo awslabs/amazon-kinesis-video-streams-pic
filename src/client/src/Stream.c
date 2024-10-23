@@ -1157,6 +1157,79 @@ CleanUp:
     return retStatus;
 }
 
+
+/**
+ * Saves the StreamRecoveryState to a binary file.
+ * 
+ * @param state The state to save.
+ * @return STATUS_SUCCESS if successful, an error status otherwise.
+ */
+STATUS saveStreamRecoveryState(StreamRecoveryState state)
+{
+    FILE *file = fopen(RECOVERY_STATE_FILE_PATH, "wb");
+    if (file == NULL) {
+        return STATUS_PERSISTENCE_ERROR;
+    }
+
+    size_t written = fwrite(&state, sizeof(StreamRecoveryState), 1, file);
+    if (written != 1) {
+        fclose(file);
+        return STATUS_PERSISTENCE_ERROR;
+    }
+
+    fclose(file);
+    return STATUS_SUCCESS;
+}
+
+
+/**
+ * Loads the StreamRecoveryState from a binary file.
+ * 
+ * @param pState - Pointer to StreamRecoveryState structure to be filled with loaded data.
+ * 
+ * @return STATUS_SUCCESS if the state was loaded successfully, otherwise an error status.
+ */
+STATUS loadStreamRecoveryState(PStreamRecoveryState pState)
+{
+    memset(pState, 0, sizeof(StreamRecoveryState));
+    
+    // Set default values for an invalid state in case loading fails
+    pState->viewItemIndex = INVALID_VIEW_INDEX_VALUE;
+    pState->viewItemTimestamp = 0;
+    pState->viewItemAckTimestamp = 0;
+    pState->viewItemDuration = 0;
+    pState->viewItemLength = 0;
+    pState->sessionStartTimestamp = 0;
+    pState->bytesTransferred = 0;
+    pState->eosMetadataSendFlag = FALSE;
+    pState->lastReceivedAck = FALSE;
+    pState->streamStopped = FALSE;
+
+    FILE *file = fopen(RECOVERY_STATE_FILE_PATH, "rb");
+    if (file == NULL) {
+        // Return an error if the file does not exist
+        DLOGW("Stream recovery state file not found. Returning default state.");
+        return STATUS_RECOVERY_STATE_NOT_FOUND;
+    }
+
+    // Read the StreamRecoveryState from the file
+    size_t read = fread(pState, sizeof(StreamRecoveryState), 1, file);
+    if (read != 1) {
+        // If reading fails, return an invalid state and error status
+        DLOGW("Failed to read stream recovery state from file. Returning default state.");
+        fclose(file);
+        return STATUS_INVALID_RECOVERY_STATE;
+    }
+
+    fclose(file);
+    
+    DLOGI("Stream recovery state loaded successfully.");
+    return STATUS_SUCCESS;
+}
+
+
+
+
 /**
  * Fills the caller buffer with the stream data
  */
@@ -1182,6 +1255,38 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
     // Lock the stream
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     streamLocked = TRUE;
+
+   // Detect if there was an interruption
+    BOOL interrupted = (pKinesisVideoStream->connectionDroppedResult != SERVICE_CALL_RESULT_OK || 
+                        pKinesisVideoStream->connectionState != UPLOAD_CONNECTION_STATE_OK);
+
+    // Load saved state only if a crash was detected
+    if (interrupted) {
+        DLOGI("Detected stream interruption/crash, attempting to load saved stream state.");
+
+        StreamRecoveryState loadedState;
+        STATUS loadStatus = loadStreamRecoveryState(&loadedState);
+
+        if (loadStatus == STATUS_SUCCESS && loadedState.viewItemIndex != INVALID_VIEW_INDEX_VALUE) {
+            // Set the stream to the loaded state
+            CHK_STATUS(contentViewSetCurrentIndex(pKinesisVideoStream->pView, loadedState.viewItemIndex));
+            pKinesisVideoStream->curViewItem.viewItem.timestamp = loadedState.viewItemTimestamp;
+            pKinesisVideoStream->curViewItem.viewItem.ackTimestamp = loadedState.viewItemAckTimestamp;
+            pKinesisVideoStream->curViewItem.viewItem.duration = loadedState.viewItemDuration;
+            pKinesisVideoStream->curViewItem.viewItem.length = loadedState.viewItemLength;
+            pKinesisVideoStream->eosTracker.send = loadedState.eosMetadataSendFlag;
+            pKinesisVideoStream->lastPutFrameTimestamp = loadedState.sessionStartTimestamp;
+            pKinesisVideoStream->diagnostics.transferredBytes = loadedState.bytesTransferred;
+            pKinesisVideoStream->streamStopped = loadedState.streamStopped;
+            rollbackToLastAck = loadedState.lastReceivedAck;
+
+            DLOGI("Stream state restored. Resuming from saved state.");
+        } else {
+            DLOGW("No valid saved state found.");
+        }
+    }
+
+
 
     // If the state of the connection is IN_USE
     // and we are not in grace period
@@ -1461,6 +1566,27 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
             remainingSize -= size;
             *pFillSize += size;
         }
+        // Check if we are at a start of a new fragment
+        if (CHECK_ITEM_FRAGMENT_START(pKinesisVideoStream->curViewItem.viewItem.flags)) {
+            // save the stream state for recovery
+            StreamRecoveryState currentState;
+            
+            // Populate the StreamRecoveryState struct with the current view item and stream details
+            currentState.viewItemIndex = pKinesisVideoStream->curViewItem.viewItem.index;
+            currentState.viewItemTimestamp = pKinesisVideoStream->curViewItem.viewItem.timestamp;
+            currentState.viewItemAckTimestamp = pKinesisVideoStream->curViewItem.viewItem.ackTimestamp;
+            currentState.viewItemDuration = pKinesisVideoStream->curViewItem.viewItem.duration;
+            currentState.viewItemLength = pKinesisVideoStream->curViewItem.viewItem.length;
+            currentState.eosMetadataSendFlag = pKinesisVideoStream->eosTracker.send;
+            currentState.lastReceivedAck = rollbackToLastAck;
+            currentState.sessionStartTimestamp = pKinesisVideoStream->lastPutFrameTimestamp;
+            currentState.bytesTransferred = pKinesisVideoStream->diagnostics.transferredBytes;
+            currentState.streamStopped = pKinesisVideoStream->streamStopped;
+
+            // Save the state to persistent storage
+            saveStreamRecoveryState(currentState);
+        }
+
     } while (remainingSize != 0);
 
 CleanUp:
