@@ -1,15 +1,15 @@
 #include "ClientTestFixture.h"
 
-using ::testing::WithParamInterface;
 using ::testing::Bool;
-using ::testing::Values;
 using ::testing::Combine;
+using ::testing::Values;
+using ::testing::WithParamInterface;
 
 class CallbacksAndPressuresFunctionalityTest : public ClientTestBase,
-                                               public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> >{
-
-protected:
-    void SetUp() {
+                                               public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> > {
+  protected:
+    void SetUp()
+    {
         ClientTestBase::SetUp();
 
         STREAMING_TYPE streamingType;
@@ -23,7 +23,8 @@ protected:
     }
 };
 #ifdef ALIGNED_MEMORY_MODEL
-TEST_P(CallbacksAndPressuresFunctionalityTest, CreateStreamLatencyPressureCallbackCalledSuccess) {
+TEST_P(CallbacksAndPressuresFunctionalityTest, CreateStreamLatencyPressureCallbackCalledSuccess)
+{
     BOOL didPutFrame;
     UINT64 currentTime, streamStopTime;
 
@@ -51,9 +52,10 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, CreateStreamLatencyPressureCallba
     }
 }
 
-TEST_P(CallbacksAndPressuresFunctionalityTest, CreateStreamDelayACKsStaleCallbackCalledSuccess) {
+TEST_P(CallbacksAndPressuresFunctionalityTest, CreateStreamDelayACKsStaleCallbackCalledSuccess)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT64 currentTime, streamStopTime, streamStartTime;
 
@@ -152,15 +154,16 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, BiggerBufferDurationThanStorageCh
     EXPECT_EQ(STATUS_SUCCESS, retStatus);
 }
 
-// Create Offline stream. Put frame until blocked on availability. StopSync. Send ACK to enable availability. Ensure unblocked put Frame call returns an error.
+// Create Offline stream. Put frame until blocked on availability. StopSync. Send ACK to enable availability. Ensure unblocked put Frame call returns
+// an error.
 TEST_P(CallbacksAndPressuresFunctionalityTest, CheckBlockedOfflinePutFrameReturnsErrorAfterStop)
 {
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     BOOL gotStreamData, submittedAck;
     UINT64 currentTime, stopTime;
     TID thread;
-    STATUS *pRetValue;
+    STATUS* pRetValue;
     STREAM_HANDLE streamHandle;
 
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
@@ -205,12 +208,12 @@ TEST_P(CallbacksAndPressuresFunctionalityTest, CheckBlockedOfflinePutFrameReturn
     } while (currentTime < stopTime);
 
     // The persisted ack should unblock the producer.
-    THREAD_JOIN(thread, (PVOID *) &pRetValue);
+    THREAD_JOIN(thread, (PVOID*) &pRetValue);
     // Check that the last putFrame in producer gets the correct error code.
     EXPECT_EQ(STATUS_BLOCKING_PUT_INTERRUPTED_STREAM_TERMINATED, mStatus);
 }
 
-
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, CallbacksAndPressuresFunctionalityTest,
-                        Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
+                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(),
+                                 Values(0, TEST_REPLAY_DURATION)));
 #endif

@@ -1,7 +1,6 @@
 #include "UtilTestFixture.h"
 
-class HashTableFunctionalityTest : public UtilTestBase {
-};
+class HashTableFunctionalityTest : public UtilTestBase {};
 
 /**
  * Static variable for using later in the tests with callbacks
@@ -343,11 +342,11 @@ TEST_F(HashTableFunctionalityTest, HashTableGetAllEntries)
     }
 
     EXPECT_EQ(STATUS_SUCCESS, hashTableGetAllEntries(pHashTable, NULL, &retCount));
-    EXPECT_EQ((UINT32)count, retCount);
+    EXPECT_EQ((UINT32) count, retCount);
 
     retCount = (UINT32) (count + 1);
     EXPECT_EQ(STATUS_SUCCESS, hashTableGetAllEntries(pHashTable, gEntries, &retCount));
-    EXPECT_EQ((UINT32)count, retCount);
+    EXPECT_EQ((UINT32) count, retCount);
 
     // Validate all are present
     for (UINT64 i = 0; i < count; i++) {

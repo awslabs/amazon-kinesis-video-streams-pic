@@ -1,14 +1,14 @@
 #include "ClientTestFixture.h"
 
-using ::testing::WithParamInterface;
 using ::testing::Bool;
-using ::testing::Values;
 using ::testing::Combine;
+using ::testing::Values;
+using ::testing::WithParamInterface;
 
-class AcksFunctionalityTest : public ClientTestBase,
-                              public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> >{
-protected:
-    void SetUp() {
+class AcksFunctionalityTest : public ClientTestBase, public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> > {
+  protected:
+    void SetUp()
+    {
         ClientTestBase::SetUp();
 
         STREAMING_TYPE streamingType;
@@ -22,12 +22,12 @@ protected:
     }
 };
 #ifdef ALIGNED_MEMORY_MODEL
-//Submit various types of error ACKs, Ensure the rollback is done from the ACK error time.
+// Submit various types of error ACKs, Ensure the rollback is done from the ACK error time.
 TEST_P(AcksFunctionalityTest, CheckRollbackFromErrorAckTime)
 {
     CreateScenarioTestClient();
     BOOL submittedErrorAck = FALSE, didPutFrame, gotStreamData;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     UINT64 stopTime, currentTime, currentIndex;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
     PViewItem pViewItem;
@@ -37,14 +37,14 @@ TEST_P(AcksFunctionalityTest, CheckRollbackFromErrorAckTime)
     CreateStreamSync();
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
-    //putFrame for 10 seconds, should finish putting at least 1 fragment
+    // putFrame for 10 seconds, should finish putting at least 1 fragment
     stopTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + 10 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.timedPutFrame(currentTime, &didPutFrame));
     } while (currentTime < stopTime);
 
-    //give 10 seconds to getStreamData and submit error ack on the first fragment
+    // give 10 seconds to getStreamData and submit error ack on the first fragment
     stopTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + 10 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
@@ -59,12 +59,12 @@ TEST_P(AcksFunctionalityTest, CheckRollbackFromErrorAckTime)
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
             VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             if (mockConsumer != NULL) {
-                // right now, resetting current is irregardless of the service error code. There just testing SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR is enough
+                // right now, resetting current is irregardless of the service error code. There just testing
+                // SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR is enough
                 EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR, &submittedErrorAck));
             }
         }
     } while (currentTime < stopTime && !submittedErrorAck);
-
 
     EXPECT_EQ(TRUE, submittedErrorAck);
 
@@ -80,10 +80,11 @@ TEST_P(AcksFunctionalityTest, CheckRollbackFromErrorAckTime)
     EXPECT_EQ(pViewItem->ackTimestamp, mFragmentAck.timestamp);
 }
 
-TEST_P(AcksFunctionalityTest, CreateStreamSubmitPersistedAckBeforeReceivedAckSuccess) {
+TEST_P(AcksFunctionalityTest, CreateStreamSubmitPersistedAckBeforeReceivedAckSuccess)
+{
     CreateScenarioTestClient();
     BOOL submittedAck = FALSE, didPutFrame, gotStreamData;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     UINT64 stopTime, currentTime;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
     STATUS retStatus;
@@ -92,7 +93,7 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitPersistedAckBeforeReceivedAckSuc
     CreateStreamSync();
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
-    //putFrame for 10 seconds, should finish putting at least 1 fragment
+    // putFrame for 10 seconds, should finish putting at least 1 fragment
     stopTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + 10 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
@@ -115,22 +116,19 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitPersistedAckBeforeReceivedAckSuc
             if (mockConsumer != NULL && mockConsumer->mAckQueue.size() > 0) {
                 switch (mockConsumer->mAckQueue.top().mFragmentAck.ackType) {
                     case FRAGMENT_ACK_TYPE_PERSISTED:
-                        EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK,
-                                FRAGMENT_ACK_TYPE_RECEIVED,
-                                mockConsumer->mAckQueue.top().mFragmentAck.timestamp,
-                                &submittedAck));
+                        EXPECT_EQ(STATUS_SUCCESS,
+                                  mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK, FRAGMENT_ACK_TYPE_RECEIVED,
+                                                                mockConsumer->mAckQueue.top().mFragmentAck.timestamp, &submittedAck));
                         break;
                     case FRAGMENT_ACK_TYPE_RECEIVED:
-                        EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK,
-                                FRAGMENT_ACK_TYPE_PERSISTED,
-                                mockConsumer->mAckQueue.top().mFragmentAck.timestamp,
-                                &submittedAck));
+                        EXPECT_EQ(STATUS_SUCCESS,
+                                  mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK, FRAGMENT_ACK_TYPE_PERSISTED,
+                                                                mockConsumer->mAckQueue.top().mFragmentAck.timestamp, &submittedAck));
                         break;
                     default:
-                        EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK,
-                                mockConsumer->mAckQueue.top().mFragmentAck.ackType,
-                                mockConsumer->mAckQueue.top().mFragmentAck.timestamp,
-                                &submittedAck));
+                        EXPECT_EQ(STATUS_SUCCESS,
+                                  mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK, mockConsumer->mAckQueue.top().mFragmentAck.ackType,
+                                                                mockConsumer->mAckQueue.top().mFragmentAck.timestamp, &submittedAck));
                 }
                 mockConsumer->mAckQueue.pop();
             }
@@ -139,10 +137,11 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitPersistedAckBeforeReceivedAckSuc
     VerifyStopStreamSyncAndFree();
 }
 
-TEST_P(AcksFunctionalityTest, CreateStreamSubmitReceivedAckBeforeBufferingAckSuccess) {
+TEST_P(AcksFunctionalityTest, CreateStreamSubmitReceivedAckBeforeBufferingAckSuccess)
+{
     CreateScenarioTestClient();
     BOOL submittedAck = FALSE, didPutFrame, gotStreamData;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     UINT64 stopTime, currentTime;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
     STATUS retStatus;
@@ -151,7 +150,7 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitReceivedAckBeforeBufferingAckSuc
     CreateStreamSync();
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
-    //putFrame for 10 seconds, should finish putting at least 1 fragment
+    // putFrame for 10 seconds, should finish putting at least 1 fragment
     stopTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + 10 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
@@ -174,22 +173,19 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitReceivedAckBeforeBufferingAckSuc
             if (mockConsumer != NULL && mockConsumer->mAckQueue.size() > 0) {
                 switch (mockConsumer->mAckQueue.top().mFragmentAck.ackType) {
                     case FRAGMENT_ACK_TYPE_RECEIVED:
-                        EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK,
-                                                                                FRAGMENT_ACK_TYPE_BUFFERING,
-                                                                                mockConsumer->mAckQueue.top().mFragmentAck.timestamp,
-                                                                                &submittedAck));
+                        EXPECT_EQ(STATUS_SUCCESS,
+                                  mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK, FRAGMENT_ACK_TYPE_BUFFERING,
+                                                                mockConsumer->mAckQueue.top().mFragmentAck.timestamp, &submittedAck));
                         break;
                     case FRAGMENT_ACK_TYPE_BUFFERING:
-                        EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK,
-                                                                                FRAGMENT_ACK_TYPE_RECEIVED,
-                                                                                mockConsumer->mAckQueue.top().mFragmentAck.timestamp,
-                                                                                &submittedAck));
+                        EXPECT_EQ(STATUS_SUCCESS,
+                                  mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK, FRAGMENT_ACK_TYPE_RECEIVED,
+                                                                mockConsumer->mAckQueue.top().mFragmentAck.timestamp, &submittedAck));
                         break;
                     default:
-                        EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK,
-                                                                                mockConsumer->mAckQueue.top().mFragmentAck.ackType,
-                                                                                mockConsumer->mAckQueue.top().mFragmentAck.timestamp,
-                                                                                &submittedAck));
+                        EXPECT_EQ(STATUS_SUCCESS,
+                                  mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK, mockConsumer->mAckQueue.top().mFragmentAck.ackType,
+                                                                mockConsumer->mAckQueue.top().mFragmentAck.timestamp, &submittedAck));
                 }
                 mockConsumer->mAckQueue.pop();
             }
@@ -198,10 +194,11 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitReceivedAckBeforeBufferingAckSuc
     VerifyStopStreamSyncAndFree();
 }
 
-TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsOutsideOfViewRangeFail) {
+TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsOutsideOfViewRangeFail)
+{
     CreateScenarioTestClient();
     BOOL submittedAck = FALSE, didPutFrame, gotStreamData;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     UINT64 stopTime, currentTime;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
     STATUS retStatus;
@@ -210,7 +207,7 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsOutsideOfViewRangeFail) {
     CreateStreamSync();
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
-    //putFrame for 10 seconds, should finish putting at least 1 fragment
+    // putFrame for 10 seconds, should finish putting at least 1 fragment
     stopTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + 10 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
@@ -231,16 +228,19 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsOutsideOfViewRangeFail) {
             VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             if (mockConsumer != NULL) {
                 // send one persisted ack falling in future timestamp, should fail as out of content view
-                EXPECT_EQ(STATUS_ACK_TIMESTAMP_NOT_IN_VIEW_WINDOW, mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK, FRAGMENT_ACK_TYPE_PERSISTED, stopTime + 1 * HUNDREDS_OF_NANOS_IN_A_SECOND, &submittedAck));
+                EXPECT_EQ(STATUS_ACK_TIMESTAMP_NOT_IN_VIEW_WINDOW,
+                          mockConsumer->submitNormalAck(SERVICE_CALL_RESULT_OK, FRAGMENT_ACK_TYPE_PERSISTED,
+                                                        stopTime + 1 * HUNDREDS_OF_NANOS_IN_A_SECOND, &submittedAck));
             }
         }
     } while (currentTime < stopTime && !submittedAck);
 }
 
-TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsTerminatedUploadHandle) {
+TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsTerminatedUploadHandle)
+{
     CreateScenarioTestClient();
     BOOL submittedAck = FALSE, didPutFrame, gotStreamData;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     UINT64 stopTime, currentTime, startTime;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
     STATUS retStatus;
@@ -305,5 +305,6 @@ TEST_P(AcksFunctionalityTest, CreateStreamSubmitACKsTerminatedUploadHandle) {
 }
 
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, AcksFunctionalityTest,
-                        Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
+                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(),
+                                 Values(0, TEST_REPLAY_DURATION)));
 #endif

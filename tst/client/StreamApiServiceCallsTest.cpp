@@ -1,7 +1,6 @@
 #include "ClientTestFixture.h"
 
-class StreamApiServiceCallsTest : public ClientTestBase {
-};
+class StreamApiServiceCallsTest : public ClientTestBase {};
 
 TEST_F(StreamApiServiceCallsTest, putFrame_DescribeStreamCreating)
 {

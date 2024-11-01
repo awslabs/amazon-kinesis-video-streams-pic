@@ -1,7 +1,6 @@
 #include "UtilTestFixture.h"
 
-class DoubleListFunctionalityTest : public UtilTestBase {
-};
+class DoubleListFunctionalityTest : public UtilTestBase {};
 
 TEST_F(DoubleListFunctionalityTest, NegativeInvalidInput_DoubleListCreate)
 {
@@ -193,7 +192,7 @@ TEST_F(DoubleListFunctionalityTest, NegativeInvalidInput_DoubleListGetNodeCount)
     EXPECT_NE(STATUS_SUCCESS, doubleListGetNodeCount(pList, NULL));
 }
 
-TEST_F(DoubleListFunctionalityTest,  DoubleListClear)
+TEST_F(DoubleListFunctionalityTest, DoubleListClear)
 {
     PDoubleList pList;
     UINT64 count = 10;
@@ -487,7 +486,8 @@ TEST_F(DoubleListFunctionalityTest, DoubleListInsertBeforeAfter)
     EXPECT_EQ(STATUS_SUCCESS, doubleListFree(pList));
 }
 
-TEST_F(DoubleListFunctionalityTest, DoubleListAppendNonEmptyList) {
+TEST_F(DoubleListFunctionalityTest, DoubleListAppendNonEmptyList)
+{
     PDoubleList pListDst, pListToAppend;
     PDoubleListNode pNode;
 
@@ -519,34 +519,34 @@ TEST_F(DoubleListFunctionalityTest, DoubleListAppendNonEmptyList) {
     EXPECT_NE(NULL, (UINT64) pNode);
     EXPECT_EQ(pNode->data, 10);
     EXPECT_EQ(STATUS_SUCCESS, doubleListGetNextNode(pNode, &pNode));
-    EXPECT_NE(NULL, (UINT64)  pNode);
+    EXPECT_NE(NULL, (UINT64) pNode);
     EXPECT_EQ(pNode->data, 20);
     EXPECT_EQ(STATUS_SUCCESS, doubleListGetNextNode(pNode, &pNode));
-    EXPECT_NE(NULL, (UINT64)  pNode);
+    EXPECT_NE(NULL, (UINT64) pNode);
     EXPECT_EQ(pNode->data, 30);
     EXPECT_EQ(STATUS_SUCCESS, doubleListGetNextNode(pNode, &pNode));
-    EXPECT_NE(NULL, (UINT64)  pNode);
+    EXPECT_NE(NULL, (UINT64) pNode);
     EXPECT_EQ(pNode->data, 40);
     EXPECT_EQ(STATUS_SUCCESS, doubleListGetNextNode(pNode, &pNode));
-    EXPECT_NE(NULL, (UINT64)  pNode);
+    EXPECT_NE(NULL, (UINT64) pNode);
     EXPECT_EQ(pNode->data, 50);
     EXPECT_EQ(STATUS_SUCCESS, doubleListGetNextNode(pNode, &pNode));
     EXPECT_EQ(NULL, pNode);
 
     EXPECT_EQ(STATUS_SUCCESS, doubleListGetTailNode(pListDst, &pNode));
-    EXPECT_NE(NULL, (UINT64)  pNode);
+    EXPECT_NE(NULL, (UINT64) pNode);
     EXPECT_EQ(pNode->data, 50);
     EXPECT_EQ(STATUS_SUCCESS, doubleListGetPrevNode(pNode, &pNode));
-    EXPECT_NE(NULL, (UINT64)  pNode);
+    EXPECT_NE(NULL, (UINT64) pNode);
     EXPECT_EQ(pNode->data, 40);
     EXPECT_EQ(STATUS_SUCCESS, doubleListGetPrevNode(pNode, &pNode));
-    EXPECT_NE(NULL, (UINT64)  pNode);
+    EXPECT_NE(NULL, (UINT64) pNode);
     EXPECT_EQ(pNode->data, 30);
     EXPECT_EQ(STATUS_SUCCESS, doubleListGetPrevNode(pNode, &pNode));
-    EXPECT_NE(NULL, (UINT64)  pNode);
+    EXPECT_NE(NULL, (UINT64) pNode);
     EXPECT_EQ(pNode->data, 20);
     EXPECT_EQ(STATUS_SUCCESS, doubleListGetPrevNode(pNode, &pNode));
-    EXPECT_NE(NULL, (UINT64)  pNode);
+    EXPECT_NE(NULL, (UINT64) pNode);
     EXPECT_EQ(pNode->data, 10);
     EXPECT_EQ(STATUS_SUCCESS, doubleListGetPrevNode(pNode, &pNode));
     EXPECT_EQ(NULL, pNode);
@@ -555,7 +555,8 @@ TEST_F(DoubleListFunctionalityTest, DoubleListAppendNonEmptyList) {
     EXPECT_EQ(STATUS_SUCCESS, doubleListFree(pListDst));
 }
 
-TEST_F(DoubleListFunctionalityTest, DoubleListAppendEmptyListOrNull) {
+TEST_F(DoubleListFunctionalityTest, DoubleListAppendEmptyListOrNull)
+{
     PDoubleList pListDst, pListToAppend;
     UINT64 data;
 

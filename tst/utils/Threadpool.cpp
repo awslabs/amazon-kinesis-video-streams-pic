@@ -2,13 +2,11 @@
 #include <thread>
 #include <chrono>
 
-class ThreadpoolFunctionalityTest : public UtilTestBase {
-};
+class ThreadpoolFunctionalityTest : public UtilTestBase {};
 
 MUTEX gTerminateMutex;
 SEMAPHORE_HANDLE gTerminateSemaphore;
 UINT8 gTerminateCount = 0;
-
 
 PVOID randomishTask(PVOID customData)
 {
@@ -28,7 +26,7 @@ PVOID exitOnTeardownTask(PVOID customData)
         MUTEX_LOCK(gTerminateMutex);
         terminate = *pTerminate;
         MUTEX_UNLOCK(gTerminateMutex);
-    } while(!terminate);
+    } while (!terminate);
 
     semaphoreRelease(gTerminateSemaphore);
 
@@ -84,7 +82,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicTryAddTest)
     MUTEX_UNLOCK(gTerminateMutex);
 
     // wait for threads to exit before test ends
-    for(auto i = 0; i < count; i++) {
+    for (auto i = 0; i < count; i++) {
         EXPECT_EQ(STATUS_SUCCESS, semaphoreAcquire(gTerminateSemaphore, INFINITE_TIME_VALUE));
     }
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
@@ -117,7 +115,7 @@ TEST_F(ThreadpoolFunctionalityTest, BasicPushTest)
     MUTEX_UNLOCK(gTerminateMutex);
 
     // wait for threads to exit before test ends
-    for(auto i = 0; i < enteredThreadCount; i++) {
+    for (auto i = 0; i < enteredThreadCount; i++) {
         EXPECT_EQ(STATUS_SUCCESS, semaphoreAcquire(gTerminateSemaphore, INFINITE_TIME_VALUE));
     }
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
@@ -171,7 +169,7 @@ TEST_F(ThreadpoolFunctionalityTest, GetThreadCountTest)
     MUTEX_UNLOCK(gTerminateMutex);
 
     // wait for threads to exit before test ends
-    for(auto i = 0; i < enteredThreadCount; i++) {
+    for (auto i = 0; i < enteredThreadCount; i++) {
         EXPECT_EQ(STATUS_SUCCESS, semaphoreAcquire(gTerminateSemaphore, INFINITE_TIME_VALUE));
     }
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
@@ -209,15 +207,13 @@ TEST_F(ThreadpoolFunctionalityTest, ThreadsExitGracefullyAfterThreadpoolFreeTest
     MUTEX_UNLOCK(gTerminateMutex);
 
     // wait for threads to exit before test ends
-    for(auto i = 0; i < enteredThreadCount; i++) {
+    for (auto i = 0; i < enteredThreadCount; i++) {
         EXPECT_EQ(STATUS_SUCCESS, semaphoreAcquire(gTerminateSemaphore, INFINITE_TIME_VALUE));
     }
     EXPECT_EQ(STATUS_SUCCESS, semaphoreFree(&gTerminateSemaphore));
     MUTEX_FREE(gTerminateMutex);
     THREAD_SLEEP(1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 }
-
-
 
 typedef struct __ThreadpoolUser {
     PThreadpool pThreadpool;

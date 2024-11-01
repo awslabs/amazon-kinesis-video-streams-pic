@@ -1,7 +1,6 @@
 #include "ClientTestFixture.h"
 
-class StreamDeviceTagsTest : public ClientTestBase {
-};
+class StreamDeviceTagsTest : public ClientTestBase {};
 
 TEST_F(StreamDeviceTagsTest, createDeviceTagsValid)
 {
@@ -9,7 +8,7 @@ TEST_F(StreamDeviceTagsTest, createDeviceTagsValid)
     CLIENT_HANDLE clientHandle = INVALID_CLIENT_HANDLE_VALUE;
     UINT32 tagCount = MAX_TAG_COUNT;
     PTag tags = (PTag) MEMALLOC(SIZEOF(Tag) * tagCount);
-    for(i = 0; i < tagCount; i++) {
+    for (i = 0; i < tagCount; i++) {
         tags[i].version = TAG_CURRENT_VERSION;
         tags[i].name = (PCHAR) MEMALLOC(MAX_TAG_NAME_LEN);
         STRCPY(tags[i].name, "TagName");
@@ -28,7 +27,7 @@ TEST_F(StreamDeviceTagsTest, createDeviceTagsValid)
     EXPECT_EQ(0, mTagCount);
 
     // Free the tags
-    for(i = 0; i < tagCount; i++) {
+    for (i = 0; i < tagCount; i++) {
         MEMFREE(tags[i].name);
         MEMFREE(tags[i].value);
     }
@@ -45,7 +44,7 @@ TEST_F(StreamDeviceTagsTest, createDeviceTagsLongNameInvalid)
     UINT32 tagCount = MAX_TAG_COUNT;
     PTag tags = (PTag) MEMALLOC(SIZEOF(Tag) * tagCount);
 
-    for(i = 0; i < tagCount; i++) {
+    for (i = 0; i < tagCount; i++) {
         tags[i].version = TAG_CURRENT_VERSION;
         tags[i].name = (PCHAR) MEMALLOC(MAX_TAG_NAME_LEN + 2);
         MEMSET(tags[i].name, 'A', MAX_TAG_NAME_LEN + 1);
@@ -62,7 +61,7 @@ TEST_F(StreamDeviceTagsTest, createDeviceTagsLongNameInvalid)
     EXPECT_EQ(0, mTagCount);
 
     // Free the tags
-    for(i = 0; i < tagCount; i++) {
+    for (i = 0; i < tagCount; i++) {
         MEMFREE(tags[i].name);
         MEMFREE(tags[i].value);
     }
@@ -78,7 +77,7 @@ TEST_F(StreamDeviceTagsTest, createDeviceTagsLongValueInvalid)
     CLIENT_HANDLE clientHandle = INVALID_CLIENT_HANDLE_VALUE;
     UINT32 tagCount = MAX_TAG_COUNT;
     PTag tags = (PTag) MEMALLOC(SIZEOF(Tag) * tagCount);
-    for(i = 0; i < tagCount; i++) {
+    for (i = 0; i < tagCount; i++) {
         tags[i].version = TAG_CURRENT_VERSION;
         tags[i].name = (PCHAR) MEMALLOC(MAX_TAG_NAME_LEN + 1);
         MEMSET(tags[i].name, 'A', MAX_TAG_NAME_LEN);
@@ -95,7 +94,7 @@ TEST_F(StreamDeviceTagsTest, createDeviceTagsLongValueInvalid)
     EXPECT_EQ(0, mTagCount);
 
     // Free the tags
-    for(i = 0; i < tagCount; i++) {
+    for (i = 0; i < tagCount; i++) {
         MEMFREE(tags[i].name);
         MEMFREE(tags[i].value);
     }
@@ -113,7 +112,7 @@ TEST_F(StreamDeviceTagsTest, createStreamTagsValid)
     STREAM_HANDLE streamHandle = INVALID_STREAM_HANDLE_VALUE;
 
     PTag tags = (PTag) MEMALLOC(SIZEOF(Tag) * tagCount);
-    for(i = 0; i < tagCount; i++) {
+    for (i = 0; i < tagCount; i++) {
         tags[i].version = TAG_CURRENT_VERSION;
         tags[i].name = (PCHAR) MEMALLOC(MAX_TAG_NAME_LEN);
         STRCPY(tags[i].name, "TagName");
@@ -135,10 +134,12 @@ TEST_F(StreamDeviceTagsTest, createStreamTagsValid)
     EXPECT_EQ(STATUS_SUCCESS, createStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAM_ARN));
     EXPECT_EQ(STATUS_SUCCESS, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK));
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN, SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 
     // Free the tags
-    for(i = 0; i < tagCount; i++) {
+    for (i = 0; i < tagCount; i++) {
         MEMFREE(tags[i].name);
         MEMFREE(tags[i].value);
     }
@@ -156,7 +157,7 @@ TEST_F(StreamDeviceTagsTest, createStreamTagsLongNameInvalid)
     STREAM_HANDLE streamHandle = INVALID_STREAM_HANDLE_VALUE;
 
     PTag tags = (PTag) MEMALLOC(SIZEOF(Tag) * tagCount);
-    for(i = 0; i < tagCount; i++) {
+    for (i = 0; i < tagCount; i++) {
         tags[i].version = TAG_CURRENT_VERSION;
         tags[i].name = (PCHAR) MEMALLOC(MAX_TAG_NAME_LEN + 2);
         MEMSET(tags[i].name, 'A', MAX_TAG_NAME_LEN + 1);
@@ -176,7 +177,7 @@ TEST_F(StreamDeviceTagsTest, createStreamTagsLongNameInvalid)
     EXPECT_EQ(0, mTagCount);
 
     // Free the tags
-    for(i = 0; i < tagCount; i++) {
+    for (i = 0; i < tagCount; i++) {
         MEMFREE(tags[i].name);
         MEMFREE(tags[i].value);
     }
@@ -194,7 +195,7 @@ TEST_F(StreamDeviceTagsTest, createStreamTagsLongValueInvalid)
     STREAM_HANDLE streamHandle = INVALID_STREAM_HANDLE_VALUE;
 
     PTag tags = (PTag) MEMALLOC(SIZEOF(Tag) * tagCount);
-    for(i = 0; i < tagCount; i++) {
+    for (i = 0; i < tagCount; i++) {
         tags[i].version = TAG_CURRENT_VERSION;
         tags[i].name = (PCHAR) MEMALLOC(MAX_TAG_NAME_LEN + 1);
         MEMSET(tags[i].name, 'A', MAX_TAG_NAME_LEN);
@@ -214,7 +215,7 @@ TEST_F(StreamDeviceTagsTest, createStreamTagsLongValueInvalid)
     EXPECT_EQ(0, mTagCount);
 
     // Free the tags
-    for(i = 0; i < tagCount; i++) {
+    for (i = 0; i < tagCount; i++) {
         MEMFREE(tags[i].name);
         MEMFREE(tags[i].value);
     }

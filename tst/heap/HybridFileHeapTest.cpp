@@ -1,15 +1,14 @@
 #include "HeapTestFixture.h"
 
-using ::testing::WithParamInterface;
 using ::testing::Bool;
-using ::testing::Values;
 using ::testing::Combine;
+using ::testing::Values;
+using ::testing::WithParamInterface;
 
-class HybridFileHeapTest : public HeapTestBase,
-                           public WithParamInterface<::std::tuple<HEAP_BEHAVIOR_FLAGS>>
-{
-protected:
-    VOID SetUp() {
+class HybridFileHeapTest : public HeapTestBase, public WithParamInterface<::std::tuple<HEAP_BEHAVIOR_FLAGS>> {
+  protected:
+    VOID SetUp()
+    {
         HeapTestBase::SetUp();
 
         HEAP_BEHAVIOR_FLAGS primaryHeapType;
@@ -45,7 +44,7 @@ TEST_P(HybridFileHeapTest, hybridFileHeapOperationsAivPrimaryHeap)
     PVOID pAlloc;
 
     // Split the 50% and allocate half from ram and half from file heap
-    memHeapLimit = (UINT32)(heapSize * ((DOUBLE)spillRatio / 100));
+    memHeapLimit = (UINT32) (heapSize * ((DOUBLE) spillRatio / 100));
     fileHeapLimit = heapSize - memHeapLimit;
     fileAllocSize = fileHeapLimit / numAlloc;
     ramAllocSize = memHeapLimit / numAlloc;
@@ -56,17 +55,13 @@ TEST_P(HybridFileHeapTest, hybridFileHeapOperationsAivPrimaryHeap)
     }
 
     // Initialize
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
-                                                spillRatio,
-                                                mHeapType,
-                                                NULL,
-                                                &pHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize, spillRatio, mHeapType, NULL, &pHeap)));
 
     DLOGV("Allocating from RAM");
 
     // Allocate from ram - should be 1 less due to service structs
     for (i = 0; i < numAlloc - 1; i++) {
-        EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, ramAllocSize, &handle)))  << "Failed allocating from direct heap with index: " << i;
+        EXPECT_TRUE(STATUS_SUCCEEDED(heapAlloc(pHeap, ramAllocSize, &handle))) << "Failed allocating from direct heap with index: " << i;
         EXPECT_TRUE(IS_VALID_ALLOCATION_HANDLE(handle)) << "Invalid direct allocation handle at index: " << i;
 
         // Store the handle for later processing
@@ -166,12 +161,7 @@ TEST_P(HybridFileHeapTest, hybridFileCreateHeapMemHeapSmall)
     PHeap pHeap;
 
     // Initialize should fail as MIN_HEAP_SIZE will be smaller for the mem heap with 20% reduction
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE,
-                                             20,
-                                             mHeapType,
-                                             NULL,
-                                             &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 20, mHeapType, NULL, &pHeap)));
 }
 
-INSTANTIATE_TEST_SUITE_P(PermutatedHeapType, HybridFileHeapTest,
-                        Values(FLAGS_USE_AIV_HEAP, FLAGS_USE_SYSTEM_HEAP));
+INSTANTIATE_TEST_SUITE_P(PermutatedHeapType, HybridFileHeapTest, Values(FLAGS_USE_AIV_HEAP, FLAGS_USE_SYSTEM_HEAP));

@@ -1,13 +1,9 @@
 #include "UtilTestFixture.h"
 
 class TimerQueueFunctionalityTest : public UtilTestBase {
-public:
-    TimerQueueFunctionalityTest() : testTimerId(MAX_UINT32),
-                                    invokeCount(0),
-                                    cancelAfterCount(MAX_UINT32),
-                                    retStatus(STATUS_SUCCESS),
-                                    checkTimerId(TRUE),
-                                    sleepFor(0)
+  public:
+    TimerQueueFunctionalityTest()
+        : testTimerId(MAX_UINT32), invokeCount(0), cancelAfterCount(MAX_UINT32), retStatus(STATUS_SUCCESS), checkTimerId(TRUE), sleepFor(0)
     {
     }
 
@@ -119,7 +115,8 @@ TEST_F(TimerQueueFunctionalityTest, addRemoveTimerApiTest)
     EXPECT_NE(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period, testTimerCallback, (UINT64) this, NULL));
 
     // Valid callback
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, period, testTimerCallback, (UINT64) this, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS,
+              timerQueueAddTimer(handle, 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, period, testTimerCallback, (UINT64) this, &timerId));
     ATOMIC_STORE(&testTimerId, (SIZE_T) timerId);
     THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(1, ATOMIC_LOAD(&invokeCount));
@@ -179,8 +176,7 @@ TEST_F(TimerQueueFunctionalityTest, multipleAddRemoveMax)
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
 
     for (i = 0; i < DEFAULT_TIMER_QUEUE_TIMER_COUNT; i++) {
-        EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period,
-                                                     testTimerCallback, (UINT64) this, &timerId));
+        EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period, testTimerCallback, (UINT64) this, &timerId));
 
         if (i == DEFAULT_TIMER_QUEUE_TIMER_COUNT / 2) {
             middleTimerId = timerId;
@@ -188,23 +184,18 @@ TEST_F(TimerQueueFunctionalityTest, multipleAddRemoveMax)
     }
 
     // We should fail with max timer error
-    EXPECT_EQ(STATUS_MAX_TIMER_COUNT_REACHED, timerQueueAddTimer(handle, startTime, period,
-                                                                 testTimerCallback, (UINT64) this, &timerId));
-
+    EXPECT_EQ(STATUS_MAX_TIMER_COUNT_REACHED, timerQueueAddTimer(handle, startTime, period, testTimerCallback, (UINT64) this, &timerId));
 
     // Remove one and add back again
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCancelTimer(handle, timerId, (UINT64) this));
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period,
-                                                 testTimerCallback, (UINT64) this, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period, testTimerCallback, (UINT64) this, &timerId));
 
     // Remove one in the middle and add back again
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCancelTimer(handle, middleTimerId, (UINT64) this));
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period,
-                                                 testTimerCallback, (UINT64) this, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period, testTimerCallback, (UINT64) this, &timerId));
 
     // We should fail with max timer error if we add again
-    EXPECT_EQ(STATUS_MAX_TIMER_COUNT_REACHED, timerQueueAddTimer(handle, startTime, period,
-                                                                 testTimerCallback, (UINT64) this, &timerId));
+    EXPECT_EQ(STATUS_MAX_TIMER_COUNT_REACHED, timerQueueAddTimer(handle, startTime, period, testTimerCallback, (UINT64) this, &timerId));
 
     THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(0, ATOMIC_LOAD(&invokeCount));
@@ -224,8 +215,7 @@ TEST_F(TimerQueueFunctionalityTest, addedTimerFiresBeforeOlder)
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
 
     for (i = 0; i < DEFAULT_TIMER_QUEUE_TIMER_COUNT; i++) {
-        EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period,
-                                                     testTimerCallback, (UINT64) this, &timerId));
+        EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period, testTimerCallback, (UINT64) this, &timerId));
 
         if (i == DEFAULT_TIMER_QUEUE_TIMER_COUNT / 2) {
             middleTimerId = timerId;
@@ -234,8 +224,8 @@ TEST_F(TimerQueueFunctionalityTest, addedTimerFiresBeforeOlder)
 
     // Remove one in the middle and add an earlier firing timer
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCancelTimer(handle, middleTimerId, (UINT64) this));
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, period,
-                                                 testTimerCallback, (UINT64) this, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS,
+              timerQueueAddTimer(handle, 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, period, testTimerCallback, (UINT64) this, &timerId));
     ATOMIC_STORE(&testTimerId, (SIZE_T) timerId);
 
     THREAD_SLEEP(200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
@@ -255,8 +245,7 @@ TEST_F(TimerQueueFunctionalityTest, timerStartTime)
     // Create a valid timer queue
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
 
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period,
-                                                 testTimerCallback, (UINT64) this, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period, testTimerCallback, (UINT64) this, &timerId));
     ATOMIC_STORE(&testTimerId, (SIZE_T) timerId);
 
     THREAD_SLEEP(10 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
@@ -290,11 +279,9 @@ TEST_F(TimerQueueFunctionalityTest, timerInterleavedSamePeriodDifferentStart)
     // Create a valid timer queue
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
 
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime1, period,
-                                                 testTimerCallback, (UINT64) this, &timerId1));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime1, period, testTimerCallback, (UINT64) this, &timerId1));
 
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime2, period,
-                                                 testTimerCallback, (UINT64) this, &timerId2));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime2, period, testTimerCallback, (UINT64) this, &timerId2));
 
     // Nothing should have fired yet
     EXPECT_EQ(0, ATOMIC_LOAD(&invokeCount));
@@ -340,8 +327,7 @@ TEST_F(TimerQueueFunctionalityTest, timerCancelFromCallback)
     // Create a valid timer queue
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
 
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period,
-                                                 testTimerCallback, (UINT64) this, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period, testTimerCallback, (UINT64) this, &timerId));
     ATOMIC_STORE(&testTimerId, (SIZE_T) timerId);
 
     // Make sure it hasn't fired yet
@@ -382,8 +368,7 @@ TEST_F(TimerQueueFunctionalityTest, timerCancelDirectly)
     // Create a valid timer queue
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
 
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period,
-                                                 testTimerCallback, (UINT64) this, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period, testTimerCallback, (UINT64) this, &timerId));
     ATOMIC_STORE(&testTimerId, (SIZE_T) timerId);
 
     // Make sure it hasn't fired yet
@@ -422,9 +407,8 @@ TEST_F(TimerQueueFunctionalityTest, timerSingleInvokeTimer)
     // Create a valid timer queue
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
 
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime,
-            TIMER_QUEUE_SINGLE_INVOCATION_PERIOD,
-            testTimerCallback, (UINT64) this, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS,
+              timerQueueAddTimer(handle, startTime, TIMER_QUEUE_SINGLE_INVOCATION_PERIOD, testTimerCallback, (UINT64) this, &timerId));
     ATOMIC_STORE(&testTimerId, (SIZE_T) timerId);
 
     // Make sure it hasn't fired yet
@@ -460,8 +444,7 @@ TEST_F(TimerQueueFunctionalityTest, timerDoesntCancelOnError)
     // Create a valid timer queue
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
 
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period,
-                                                 testTimerCallback, (UINT64) this, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime, period, testTimerCallback, (UINT64) this, &timerId));
     ATOMIC_STORE(&testTimerId, (SIZE_T) timerId);
 
     // Make sure it hasn't fired yet
@@ -502,10 +485,8 @@ TEST_F(TimerQueueFunctionalityTest, timerCancelDirectlyOneLeaveAnotherStart)
     // Create a valid timer queue
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
 
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime1, period,
-                                                 testTimerCallback, (UINT64) this, &timerId1));
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime2, period,
-                                                 testTimerCallback, (UINT64) this, &timerId2));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime1, period, testTimerCallback, (UINT64) this, &timerId1));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, startTime2, period, testTimerCallback, (UINT64) this, &timerId2));
 
     // Make sure it hasn't fired yet
     EXPECT_EQ(0, ATOMIC_LOAD(&invokeCount));
@@ -550,8 +531,7 @@ TEST_F(TimerQueueFunctionalityTest, miniStressTest)
 
     // Create timers that will start in a millisecond
     for (i = 0; i < DEFAULT_TIMER_QUEUE_TIMER_COUNT; i++) {
-        EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, 0, period,
-                                                     testTimerCallback, (UINT64) this, &timerIds[i]));
+        EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, 0, period, testTimerCallback, (UINT64) this, &timerIds[i]));
     }
 
     // Let it fire for a while
@@ -573,17 +553,16 @@ TEST_F(TimerQueueFunctionalityTest, miniStressTest)
 TEST_F(TimerQueueFunctionalityTest, multiUserAddAndCancelTest)
 {
     volatile BOOL user1Called = FALSE, user2Called = FALSE;
-    UINT64 start = 300 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, period = 10 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;;
+    UINT64 start = 300 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, period = 10 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    ;
     TIMER_QUEUE_HANDLE handle = INVALID_TIMER_QUEUE_HANDLE_VALUE;
     UINT32 user1TimerId, user2TimerId;
 
     // Create a valid timer queue
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, 0, period,
-                                                 multiUserAddAndCancelTestCallback, (UINT64) &user1Called, &user1TimerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, 0, period, multiUserAddAndCancelTestCallback, (UINT64) &user1Called, &user1TimerId));
     THREAD_SLEEP(50 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period,
-                                                 multiUserAddAndCancelTestCallback, (UINT64) &user2Called, &user2TimerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period, multiUserAddAndCancelTestCallback, (UINT64) &user2Called, &user2TimerId));
     THREAD_SLEEP(50 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     // user 1 may not be aware that it's timerid has exited and call cancel timer again.
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCancelTimer(handle, user1TimerId, (UINT64) &user1Called));
@@ -607,14 +586,10 @@ TEST_F(TimerQueueFunctionalityTest, cancelTimerWithCustomData)
     // Create a valid timer queue
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
 
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period,
-                                                 multiUserAddAndCancelTestCallback, (UINT64) &user1called, &timerId));
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period,
-                                                 multiUserAddAndCancelTestCallback, (UINT64) &user1called, &timerId));
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period,
-                                                 multiUserAddAndCancelTestCallback, (UINT64) &user2called, &timerId));
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period,
-                                                 multiUserAddAndCancelTestCallback, (UINT64) &user2called, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period, multiUserAddAndCancelTestCallback, (UINT64) &user1called, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period, multiUserAddAndCancelTestCallback, (UINT64) &user1called, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period, multiUserAddAndCancelTestCallback, (UINT64) &user2called, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period, multiUserAddAndCancelTestCallback, (UINT64) &user2called, &timerId));
 
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCancelTimersWithCustomData(handle, 3));
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCancelTimersWithCustomData(handle, (UINT64) NULL));
@@ -644,14 +619,10 @@ TEST_F(TimerQueueFunctionalityTest, cancelAllTimer)
     // Create a valid timer queue
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
 
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period,
-                                                 multiUserAddAndCancelTestCallback, (UINT64) &user1called, &timerId));
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period,
-                                                 multiUserAddAndCancelTestCallback, (UINT64) &user1called, &timerId));
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period,
-                                                 multiUserAddAndCancelTestCallback, (UINT64) &user2called, &timerId));
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period,
-                                                 multiUserAddAndCancelTestCallback, (UINT64) &user2called, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period, multiUserAddAndCancelTestCallback, (UINT64) &user1called, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period, multiUserAddAndCancelTestCallback, (UINT64) &user1called, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period, multiUserAddAndCancelTestCallback, (UINT64) &user2called, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period, multiUserAddAndCancelTestCallback, (UINT64) &user2called, &timerId));
 
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCancelAllTimers(handle));
     EXPECT_EQ(STATUS_SUCCESS, timerQueueGetTimerCount(handle, &timerCount));
@@ -680,14 +651,10 @@ TEST_F(TimerQueueFunctionalityTest, testGetTimersWithCustomData)
     // Create a valid timer queue
     EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
 
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period,
-                                                 multiUserAddAndCancelTestCallback, (UINT64) &user1called, &timerId));
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period,
-                                                 multiUserAddAndCancelTestCallback, (UINT64) &user1called, &timerId));
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period,
-                                                 multiUserAddAndCancelTestCallback, (UINT64) &user2called, &timerId));
-    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period,
-                                                 multiUserAddAndCancelTestCallback, (UINT64) &user2called, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period, multiUserAddAndCancelTestCallback, (UINT64) &user1called, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period, multiUserAddAndCancelTestCallback, (UINT64) &user1called, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period, multiUserAddAndCancelTestCallback, (UINT64) &user2called, &timerId));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, start, period, multiUserAddAndCancelTestCallback, (UINT64) &user2called, &timerId));
 
     EXPECT_EQ(STATUS_SUCCESS, timerQueueGetTimersWithCustomData(handle, (UINT64) &user1called, &timerCount, timerIds));
     EXPECT_EQ(2, timerCount);
@@ -782,7 +749,8 @@ TEST_F(TimerQueueFunctionalityTest, shutdownTimerQueueTest)
     EXPECT_LE(curTime + 3 * HUNDREDS_OF_NANOS_IN_A_SECOND, GETTIME());
 
     // Ensure we can't add a new timer
-    EXPECT_EQ(STATUS_TIMER_QUEUE_SHUTDOWN, timerQueueAddTimer(handle, 0, 200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, testTimerCallback, (UINT64) this, &timerId));
+    EXPECT_EQ(STATUS_TIMER_QUEUE_SHUTDOWN,
+              timerQueueAddTimer(handle, 0, 200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, testTimerCallback, (UINT64) this, &timerId));
 
     // Calling again has no effect
     EXPECT_EQ(STATUS_SUCCESS, timerQueueShutdown(handle));
@@ -804,7 +772,7 @@ TEST_F(TimerQueueFunctionalityTest, kickTimerQueueTest)
 
     EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, 0, 200 * HUNDREDS_OF_NANOS_IN_A_SECOND, testTimerCallback, (UINT64) this, &timerId));
 
-    //let timer start
+    // let timer start
     THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
     EXPECT_EQ(1, ATOMIC_LOAD(&invokeCount));
 
@@ -812,9 +780,9 @@ TEST_F(TimerQueueFunctionalityTest, kickTimerQueueTest)
     EXPECT_NE(STATUS_SUCCESS, timerQueueKick(INVALID_TIMER_QUEUE_HANDLE_VALUE, timerId));
     EXPECT_NE(STATUS_SUCCESS, timerQueueKick(handle, 0));
 
-    //let kick happen
+    // let kick happen
     THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
-    //check kick occurred
+    // check kick occurred
     EXPECT_EQ(2, ATOMIC_LOAD(&invokeCount));
 
     // Calling again has no effect

@@ -1,7 +1,6 @@
 #include "UtilTestFixture.h"
 
-class VersionsFunctionalityTest : public UtilTestBase {
-};
+class VersionsFunctionalityTest : public UtilTestBase {};
 
 TEST_F(VersionsFunctionalityTest, getOsVersion_Negative_Positive_Variations)
 {

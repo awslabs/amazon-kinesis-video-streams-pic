@@ -1,8 +1,9 @@
 #include "UtilTestFixture.h"
 
 class InstrumentedAllocatorsTest : public UtilTestBase {
-protected:
-    InstrumentedAllocatorsTest() : UtilTestBase(FALSE) {
+  protected:
+    InstrumentedAllocatorsTest() : UtilTestBase(FALSE)
+    {
         SRAND(12345);
     }
 

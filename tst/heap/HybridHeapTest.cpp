@@ -1,17 +1,16 @@
 #include "HeapTestFixture.h"
 
-using ::testing::WithParamInterface;
 using ::testing::Bool;
-using ::testing::Values;
 using ::testing::Combine;
+using ::testing::Values;
+using ::testing::WithParamInterface;
 
-class HybridHeapTest : public HeapTestBase,
-        public WithParamInterface<::std::tuple<HEAP_BEHAVIOR_FLAGS>>
-{
-protected:
+class HybridHeapTest : public HeapTestBase, public WithParamInterface<::std::tuple<HEAP_BEHAVIOR_FLAGS>> {
+  protected:
     static const UINT32 AllocationCount = 100;
 
-    VOID SetUp() {
+    VOID SetUp()
+    {
         HeapTestBase::SetUp();
 
         HEAP_BEHAVIOR_FLAGS primaryHeapType;
@@ -31,7 +30,8 @@ protected:
         mHeap = NULL;
     }
 
-    VOID freeAllocations() {
+    VOID freeAllocations()
+    {
         // Release the allocations in case of the system heap usage as heap release doesn't free allocations
         if (mHeap != NULL && (mHeapType & FLAGS_USE_SYSTEM_HEAP) != HEAP_FLAGS_NONE) {
             for (UINT32 i = 0; i < AllocationCount; i++) {
@@ -59,17 +59,13 @@ TEST_P(HybridHeapTest, hybridCreateHeap)
     UINT32 numAlloc = AllocationCount / 2;
 
     // Split the 50% and allocate half from ram and half from vram
-    memHeapLimit = (UINT32)(heapSize * ((DOUBLE)spillRatio / 100));
+    memHeapLimit = (UINT32) (heapSize * ((DOUBLE) spillRatio / 100));
     vramHeapLimit = heapSize - memHeapLimit;
     vramAllocSize = vramHeapLimit / numAlloc;
     ramAllocSize = memHeapLimit / numAlloc;
 
     // Initialize
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
-                                                spillRatio,
-                                                mHeapType,
-                                                NULL,
-                                                &mHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize, spillRatio, mHeapType, NULL, &mHeap)));
 
     // Validate internal calls
     EXPECT_EQ(mVramGetMaxCount, 1);
@@ -84,8 +80,7 @@ TEST_P(HybridHeapTest, hybridCreateHeap)
     EXPECT_EQ(mDlErrorCount, 0);
     EXPECT_EQ(mDlSymCount, 7);
 
-    DLOGV("Allocating from RAM type %s",
-          (mHeapType & FLAGS_USE_AIV_HEAP) != HEAP_FLAGS_NONE ? "AIV heap" : "System heap");
+    DLOGV("Allocating from RAM type %s", (mHeapType & FLAGS_USE_AIV_HEAP) != HEAP_FLAGS_NONE ? "AIV heap" : "System heap");
 
     // Allocate from ram - should be 1 less due to service structs
     for (UINT32 i = 0; i < numAlloc - 1; i++) {
@@ -149,11 +144,7 @@ TEST_P(HybridHeapTest, hybridCreateHeap)
 TEST_P(HybridHeapTest, hybridCreateHeapMemHeapSmall)
 {
     // Initialize should fail as MIN_HEAP_SIZE will be smaller for the mem heap with 20% reduction
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE,
-                                             20,
-                                             mHeapType,
-                                             NULL,
-                                             &mHeap)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 20, mHeapType, NULL, &mHeap)));
 }
 
 TEST_P(HybridHeapTest, hybridCreateHeapDlOpenCount)
@@ -161,21 +152,13 @@ TEST_P(HybridHeapTest, hybridCreateHeapDlOpenCount)
     UINT32 heapSize = MIN_HEAP_SIZE * 2 + 100000;
 
     // Initialize with one time opening
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
-                                                50,
-                                                mHeapType,
-                                                NULL,
-                                                &mHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize, 50, mHeapType, NULL, &mHeap)));
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(mHeap)));
     EXPECT_EQ(mDlCloseCount, 1);
     EXPECT_EQ(mDlOpenCount, 1);
 
     // Initialize with reopen
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
-                                                50,
-                                                mHeapType | FLAGS_REOPEN_VRAM_LIBRARY,
-                                                NULL,
-                                                &mHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize, 50, mHeapType | FLAGS_REOPEN_VRAM_LIBRARY, NULL, &mHeap)));
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(mHeap)));
     EXPECT_EQ(mDlCloseCount, 2);
     EXPECT_EQ(mDlOpenCount, 3);
@@ -188,11 +171,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapDlOpenError)
     // Set to produce an error
     mDlOpen = NULL;
 
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(heapSize,
-                                             50,
-                                             mHeapType,
-                                             NULL,
-                                             &mHeap)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(heapSize, 50, mHeapType, NULL, &mHeap)));
 
     // Validate the on error we don't attempt to close the library as the handle is NULL
     EXPECT_EQ(mDlCloseCount, 0);
@@ -205,12 +184,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapDlSymError)
     // Set to produce an error
     mDlSym = FALSE;
 
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(heapSize,
-                                             50,
-                                             mHeapType,
-                                             NULL,
-                                             &mHeap)));
-
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(heapSize, 50, mHeapType, NULL, &mHeap)));
 
     // Validate the on error we close the library
     EXPECT_EQ(mDlCloseCount, 1);
@@ -223,11 +197,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapDlCloseError)
     // Set to produce an error
     mDlClose = 1;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
-                                                50,
-                                                mHeapType,
-                                                NULL,
-                                                &mHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize, 50, mHeapType, NULL, &mHeap)));
 
     EXPECT_TRUE(STATUS_FAILED(heapRelease(mHeap)));
     // Validate the on error we close the library
@@ -242,11 +212,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapVRamInitError)
     mVramInit = 1;
 
     // Initialize should fail as we will fail to vram init
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(heapSize,
-                                             50,
-                                             mHeapType,
-                                             NULL,
-                                             &mHeap)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(heapSize, 50, mHeapType, NULL, &mHeap)));
 }
 
 TEST_P(HybridHeapTest, hybridCreateHeapGetMaxVramSmall)
@@ -257,11 +223,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapGetMaxVramSmall)
     mVramGetMax = MIN_HEAP_SIZE;
 
     // Initialize should fail as requested vram size will be smaller than the max vram
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(heapSize,
-                                             50,
-                                             mHeapType,
-                                             NULL,
-                                             &mHeap)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(heapSize, 50, mHeapType, NULL, &mHeap)));
 }
 
 TEST_P(HybridHeapTest, hybridCreateHeapVRamReleaseError)
@@ -271,11 +233,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapVRamReleaseError)
     // Set to produce an error
     mVramUninit = 1;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
-                                                50,
-                                                mHeapType,
-                                                NULL,
-                                                &mHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize, 50, mHeapType, NULL, &mHeap)));
 
     EXPECT_TRUE(STATUS_FAILED(heapRelease(mHeap)));
 }
@@ -292,7 +250,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapVRamAllocError)
     UINT32 numAlloc = AllocationCount / 2;
 
     // Split the 50% and allocate half from ram and half from vram
-    memHeapLimit = (UINT32)(heapSize * ((DOUBLE)spillRatio / 100));
+    memHeapLimit = (UINT32) (heapSize * ((DOUBLE) spillRatio / 100));
     vramHeapLimit = heapSize - memHeapLimit;
     vramAllocSize = vramHeapLimit / numAlloc;
     ramAllocSize = memHeapLimit / numAlloc;
@@ -300,11 +258,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapVRamAllocError)
     // Set to produce an error
     mVramAlloc = 0;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
-                                                spillRatio,
-                                                mHeapType,
-                                                NULL,
-                                                &mHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize, spillRatio, mHeapType, NULL, &mHeap)));
 
     DLOGV("Allocating from RAM");
 
@@ -338,7 +292,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapVRamMapError)
     UINT32 spillRatio = 50;
     UINT32 numAlloc = AllocationCount / 2;
     // Split the 50% and allocate half from ram and half from vram
-    memHeapLimit = (UINT32)(heapSize * ((DOUBLE)spillRatio / 100));
+    memHeapLimit = (UINT32) (heapSize * ((DOUBLE) spillRatio / 100));
     vramHeapLimit = heapSize - memHeapLimit;
     vramAllocSize = vramHeapLimit / numAlloc;
     ramAllocSize = memHeapLimit / numAlloc;
@@ -346,11 +300,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapVRamMapError)
     // Set to produce an error
     mVramLock = NULL;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
-                                                spillRatio,
-                                                mHeapType,
-                                                NULL,
-                                                &mHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize, spillRatio, mHeapType, NULL, &mHeap)));
 
     DLOGV("Allocating from RAM");
 
@@ -387,7 +337,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapVRamUnmapError)
     UINT32 spillRatio = 50;
     UINT32 numAlloc = AllocationCount / 2;
     // Split the 50% and allocate half from ram and half from vram
-    memHeapLimit = (UINT32)(heapSize * ((DOUBLE)spillRatio / 100));
+    memHeapLimit = (UINT32) (heapSize * ((DOUBLE) spillRatio / 100));
     vramHeapLimit = heapSize - memHeapLimit;
     vramAllocSize = vramHeapLimit / numAlloc;
     ramAllocSize = memHeapLimit / numAlloc;
@@ -395,11 +345,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapVRamUnmapError)
     // Set to produce an error
     mVramUnlock = 1;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
-                                                spillRatio,
-                                                mHeapType,
-                                                NULL,
-                                                &mHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize, spillRatio, mHeapType, NULL, &mHeap)));
 
     DLOGV("Allocating from RAM");
 
@@ -444,7 +390,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapVRamFreeError)
     UINT32 spillRatio = 50;
     UINT32 numAlloc = AllocationCount / 2;
     // Split the 50% and allocate half from ram and half from vram
-    memHeapLimit = (UINT32)(heapSize * ((DOUBLE)spillRatio / 100));
+    memHeapLimit = (UINT32) (heapSize * ((DOUBLE) spillRatio / 100));
     vramHeapLimit = heapSize - memHeapLimit;
     vramAllocSize = vramHeapLimit / numAlloc;
     ramAllocSize = memHeapLimit / numAlloc;
@@ -452,11 +398,7 @@ TEST_P(HybridHeapTest, hybridCreateHeapVRamFreeError)
     // Set to produce an error
     mVramFree = 1;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize,
-                                                spillRatio,
-                                                mHeapType,
-                                                NULL,
-                                                &mHeap)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(heapSize, spillRatio, mHeapType, NULL, &mHeap)));
 
     DLOGV("Allocating from RAM");
 
@@ -501,16 +443,12 @@ TEST_P(HybridHeapTest, hybridFillResizeAlloc)
     UINT32 numAlloc = AllocationCount / 2;
 
     // Split the 50% and allocate half from ram and half from vram
-    memHeapLimit = (UINT32)(heapSize * ((DOUBLE)spillRatio / 100));
+    memHeapLimit = (UINT32) (heapSize * ((DOUBLE) spillRatio / 100));
     vramHeapLimit = heapSize - memHeapLimit;
     vramAllocSize = vramHeapLimit / numAlloc;
     ramAllocSize = memHeapLimit / numAlloc;
 
-    EXPECT_EQ(STATUS_SUCCESS, heapInitialize(heapSize,
-                                             spillRatio,
-                                             mHeapType,
-                                             NULL,
-                                             &mHeap));
+    EXPECT_EQ(STATUS_SUCCESS, heapInitialize(heapSize, spillRatio, mHeapType, NULL, &mHeap));
 
     // Allocate from ram - account for the service structs
     // Store an allocation handle somewhere in the middle
@@ -548,5 +486,4 @@ TEST_P(HybridHeapTest, hybridFillResizeAlloc)
     EXPECT_EQ(STATUS_SUCCESS, heapRelease(mHeap));
 }
 
-INSTANTIATE_TEST_SUITE_P(PermutatedHeapType, HybridHeapTest,
-                        Values(FLAGS_USE_AIV_HEAP, FLAGS_USE_SYSTEM_HEAP));
+INSTANTIATE_TEST_SUITE_P(PermutatedHeapType, HybridHeapTest, Values(FLAGS_USE_AIV_HEAP, FLAGS_USE_SYSTEM_HEAP));

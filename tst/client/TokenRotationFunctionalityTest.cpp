@@ -1,15 +1,14 @@
 #include "ClientTestFixture.h"
 
-using ::testing::WithParamInterface;
 using ::testing::Bool;
-using ::testing::Values;
 using ::testing::Combine;
+using ::testing::Values;
+using ::testing::WithParamInterface;
 
-class TokenRotationFunctionalityTest : public ClientTestBase,
-                                        public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> >{
-
-protected:
-    void SetUp() {
+class TokenRotationFunctionalityTest : public ClientTestBase, public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> > {
+  protected:
+    void SetUp()
+    {
         ClientTestBase::SetUp();
 
         STREAMING_TYPE streamingType;
@@ -24,15 +23,14 @@ protected:
 };
 
 #ifdef ALIGNED_MEMORY_MODEL
-TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamWithResultEventAfterGracePeriodStopFreeSuccess) {
-
-    UINT64 currentTime, testTerminationTime,  startTestTime, stopPutFrameTime,
-            putStreamEventResultTime = INVALID_TIMESTAMP_VALUE;
+TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamWithResultEventAfterGracePeriodStopFreeSuccess)
+{
+    UINT64 currentTime, testTerminationTime, startTestTime, stopPutFrameTime, putStreamEventResultTime = INVALID_TIMESTAMP_VALUE;
 
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT32 tokenRotateCount = 0;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
 
     STATUS retStatus;
 
@@ -46,24 +44,21 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamWithResultEventAfterGrace
 
     mSubmitServiceCallResultMode = STOP_AT_GET_STREAMING_TOKEN;
 
-    UPLOAD_HANDLE localUploadHandle = mStreamingSession.addNewConsumerSession(mMockConsumerConfig,
-                                                                              mStreamHandle);
-    EXPECT_EQ(STATUS_SUCCESS,
-              putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, localUploadHandle));
+    UPLOAD_HANDLE localUploadHandle = mStreamingSession.addNewConsumerSession(mMockConsumerConfig, mStreamHandle);
+    EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, localUploadHandle));
 
     currentputStreamFuncCount = ATOMIC_LOAD(&mPutStreamFuncCount);
 
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
-    testTerminationTime = mClientCallbacks.getCurrentTimeFn((UINT64) this)
-            + 1 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 10 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    testTerminationTime =
+        mClientCallbacks.getCurrentTimeFn((UINT64) this) + 1 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 10 * HUNDREDS_OF_NANOS_IN_A_SECOND;
 
     startTestTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
 
     stopPutFrameTime = startTestTime + MIN_STREAMING_TOKEN_EXPIRATION_DURATION;
 
     do {
-
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
 
         if (currentTime < stopPutFrameTime) {
@@ -71,21 +66,15 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamWithResultEventAfterGrace
         }
 
         if (ATOMIC_LOAD(&mPutStreamFuncCount) > currentputStreamFuncCount) {
-
-            putStreamEventResultTime =
-                    currentTime + (STREAMING_TOKEN_EXPIRATION_GRACE_PERIOD - 1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
+            putStreamEventResultTime = currentTime + (STREAMING_TOKEN_EXPIRATION_GRACE_PERIOD - 1 * HUNDREDS_OF_NANOS_IN_A_SECOND);
             currentputStreamFuncCount++;
         }
 
         if (IS_VALID_TIMESTAMP(putStreamEventResultTime) && currentTime >= putStreamEventResultTime) {
-
-            UPLOAD_HANDLE localUploadHandle = mStreamingSession.addNewConsumerSession(mMockConsumerConfig,
-                                                                                      mStreamHandle);
-            EXPECT_EQ(STATUS_SUCCESS,
-                      putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, localUploadHandle));
+            UPLOAD_HANDLE localUploadHandle = mStreamingSession.addNewConsumerSession(mMockConsumerConfig, mStreamHandle);
+            EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, localUploadHandle));
 
             putStreamEventResultTime = INVALID_TIMESTAMP_VALUE;
-
         }
         mStreamingSession.getActiveUploadHandles(currentUploadHandles);
 
@@ -95,8 +84,7 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamWithResultEventAfterGrace
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
 
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-            EXPECT_EQ(STATUS_SUCCESS,
-                      mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
+            EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
             VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             if (retStatus == STATUS_END_OF_STREAM) {
                 tokenRotateCount++;
@@ -110,12 +98,13 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamWithResultEventAfterGrace
     VerifyStopStreamSyncAndFree();
 }
 
-TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamWithLargeBufferMultipleSessionsStopSyncFreeSuccess) {
+TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamWithLargeBufferMultipleSessionsStopSyncFreeSuccess)
+{
     UINT64 currentTime, testTerminationTime, startTestTime, endPutFrameTime;
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT32 tokenRotateCount = 0;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     STATUS retStatus;
 
     startTestTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
@@ -132,8 +121,8 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamWithLargeBufferMultipleSe
 
     endPutFrameTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + 5 * HUNDREDS_OF_NANOS_IN_A_SECOND;
 
-    testTerminationTime = mClientCallbacks.getCurrentTimeFn((UINT64) this)
-            + 1 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 5 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    testTerminationTime =
+        mClientCallbacks.getCurrentTimeFn((UINT64) this) + 1 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 5 * HUNDREDS_OF_NANOS_IN_A_SECOND;
 
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
@@ -143,7 +132,6 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamWithLargeBufferMultipleSe
     } while (currentTime < endPutFrameTime);
 
     do {
-
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
 
         mStreamingSession.getActiveUploadHandles(currentUploadHandles);
@@ -151,10 +139,8 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamWithLargeBufferMultipleSe
         for (int i = 0; i < currentUploadHandles.size(); i++) {
             UPLOAD_HANDLE uploadHandle = currentUploadHandles[i];
 
-            if (currentTime >
-                    (startTestTime + MIN_STREAMING_TOKEN_EXPIRATION_DURATION
-                            - STREAMING_TOKEN_EXPIRATION_GRACE_PERIOD) &&
-                    currentTime < (startTestTime + MIN_STREAMING_TOKEN_EXPIRATION_DURATION)) {
+            if (currentTime > (startTestTime + MIN_STREAMING_TOKEN_EXPIRATION_DURATION - STREAMING_TOKEN_EXPIRATION_GRACE_PERIOD) &&
+                currentTime < (startTestTime + MIN_STREAMING_TOKEN_EXPIRATION_DURATION)) {
                 DLOGV("Within Token expiration grace period");
             }
 
@@ -175,9 +161,10 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamWithLargeBufferMultipleSe
     VerifyStopStreamSyncAndFree();
 }
 
-TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamForMultipleRotationsStopSyncFreeSuccess) {
+TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamForMultipleRotationsStopSyncFreeSuccess)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT64 currentTime, testTerminationTime;
 
@@ -206,9 +193,10 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamForMultipleRotationsStopS
     VerifyStopStreamSyncAndFree();
 }
 
-TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamNewPutStreamResultComesFastButExistingSessionFailsRollsbackRestartsStopSyncFreeSuccess) {
+TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamNewPutStreamResultComesFastButExistingSessionFailsRollsbackRestartsStopSyncFreeSuccess)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT64 currentTime, testTerminationTime;
     UINT64 newUploadHandle = 2;
@@ -229,8 +217,7 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamNewPutStreamResultComesFa
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.timedPutFrame(currentTime, &didPutFrame));
 
         if (!eventReplied[ATOMIC_LOAD(&mPutStreamFuncCount)]) {
-            UPLOAD_HANDLE localUploadHandle = mStreamingSession.addNewConsumerSession(mMockConsumerConfig,
-                    mStreamHandle);
+            UPLOAD_HANDLE localUploadHandle = mStreamingSession.addNewConsumerSession(mMockConsumerConfig, mStreamHandle);
             UINT32 putStreamFuncCount = ATOMIC_LOAD(&mPutStreamFuncCount);
             switch (putStreamFuncCount) {
                 case 1:
@@ -255,8 +242,7 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamNewPutStreamResultComesFa
             } else {
                 mockConsumer = mStreamingSession.getConsumer(uploadHandle);
                 STATUS retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
-                EXPECT_EQ(STATUS_SUCCESS,
-                          mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_ACK_INTERNAL_ERROR, &submittedAck));
+                EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_ACK_INTERNAL_ERROR, &submittedAck));
                 VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
             }
         }
@@ -265,11 +251,11 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamNewPutStreamResultComesFa
     VerifyStopStreamSyncAndFree();
 }
 
-//CreateSync, Stream, at token rotation, getStreamingTokenResultEvent takes long time to return (after previous handle has hit eos.)
+// CreateSync, Stream, at token rotation, getStreamingTokenResultEvent takes long time to return (after previous handle has hit eos.)
 TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamAtTokenRotationLongDelayForGetStreamingTokenResult)
 {
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     BOOL didPutFrame, gotStreamData, submittedAck, gotStatusAwaitingAck = FALSE;
     UINT64 currentTime, streamStopTime;
 
@@ -279,8 +265,7 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamAtTokenRotationLongDelayF
     CreateStreamSync();
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
-    streamStopTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) +
-                     MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 5 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    streamStopTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 5 * HUNDREDS_OF_NANOS_IN_A_SECOND;
 
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
@@ -306,12 +291,10 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamAtTokenRotationLongDelayF
 
     // enable pic event chaining.
     mSubmitServiceCallResultMode = STOP_AT_PUT_STREAM;
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
-                                                           SERVICE_CALL_RESULT_OK,
-                                                           (PBYTE) TEST_STREAMING_TOKEN,
-                                                           SIZEOF(TEST_STREAMING_TOKEN),
-                                                           currentTime + HUNDREDS_OF_NANOS_IN_A_SECOND +
-                                                           MIN_STREAMING_TOKEN_EXPIRATION_DURATION));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN),
+                                           currentTime + HUNDREDS_OF_NANOS_IN_A_SECOND + MIN_STREAMING_TOKEN_EXPIRATION_DURATION));
     mockProducer.putFrame(); // put a frame to trigger putStreamResult
 
     // should stream out remaining buffer successfully.
@@ -319,5 +302,6 @@ TEST_P(TokenRotationFunctionalityTest, CreateSyncStreamAtTokenRotationLongDelayF
 }
 
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, TokenRotationFunctionalityTest,
-                        Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
+                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(),
+                                 Values(0, TEST_REPLAY_DURATION)));
 #endif

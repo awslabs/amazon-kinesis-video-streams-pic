@@ -1,7 +1,6 @@
 #include "ClientTestFixture.h"
 
-class StreamApiTest : public ClientTestBase {
-};
+class StreamApiTest : public ClientTestBase {};
 
 TEST_F(StreamApiTest, createKinesisVideoStream_NullInput)
 {
@@ -445,7 +444,6 @@ TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Length)
     Meta.imagePrefix = imagePrefixInvalid;
     MEMSET(imagePrefixInvalid, 'h', SIZEOF(imagePrefixInvalid) - 1);
     EXPECT_EQ(STATUS_INVALID_IMAGE_PREFIX_LENGTH, putKinesisVideoEventMetadata(mStreamHandle, STREAM_EVENT_TYPE_IMAGE_GENERATION, &Meta));
-
 }
 
 TEST_F(StreamApiTest, insertKinesisVideoEvent_Invalid_Name)

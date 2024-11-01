@@ -1,8 +1,6 @@
 #include "UtilTestFixture.h"
 
-class StackQueueFunctionalityTest : public UtilTestBase {
-};
-
+class StackQueueFunctionalityTest : public UtilTestBase {};
 
 TEST_F(StackQueueFunctionalityTest, NegativeInvalidInput_StackQueueCreate)
 {
@@ -126,7 +124,6 @@ TEST_F(StackQueueFunctionalityTest, StackQueueBasicOperations)
     EXPECT_EQ(STATUS_SUCCESS, stackQueueIsEmpty(pStackQueue, &isEmpty));
     EXPECT_TRUE(isEmpty);
 
-
     // Enqueue/push
     for (UINT64 i = 0; i < count; i++) {
         EXPECT_EQ(STATUS_SUCCESS, stackQueueEnqueue(pStackQueue, i));
@@ -146,7 +143,7 @@ TEST_F(StackQueueFunctionalityTest, StackQueueBasicOperations)
     for (UINT64 i = 0; i < count; i++) {
         EXPECT_EQ(STATUS_SUCCESS, stackQueueEnqueue(pStackQueue, i));
         EXPECT_EQ(STATUS_SUCCESS, stackQueuePush(pStackQueue, i));
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueEnqueueAfterIndex(pStackQueue, rand()%(i+1), i));
+        EXPECT_EQ(STATUS_SUCCESS, stackQueueEnqueueAfterIndex(pStackQueue, rand() % (i + 1), i));
     }
     // Validate the count
     EXPECT_EQ(STATUS_SUCCESS, stackQueueGetCount(pStackQueue, &retCount));
@@ -194,15 +191,15 @@ TEST_F(StackQueueFunctionalityTest, StackQueueEnqueueAfterValidation)
     }
 
     for (UINT64 j = 0; j < 5; j++) {
-        checkIndex[j] = rand()%count;
+        checkIndex[j] = rand() % count;
         EXPECT_EQ(STATUS_SUCCESS, stackQueueEnqueueAfterIndex(pStackQueue, checkIndex[j], j));
     }
 
     for (UINT64 init = 0; init < 5; init++) {
-        //placed AFTER the index, so always shifted at least 1 spot after
+        // placed AFTER the index, so always shifted at least 1 spot after
         indexShift[init]++;
-        for (UINT64 b = init+1; b < 5; b++) {
-            if((checkIndex[init] + indexShift[init]) > checkIndex[b]) {
+        for (UINT64 b = init + 1; b < 5; b++) {
+            if ((checkIndex[init] + indexShift[init]) > checkIndex[b]) {
                 indexShift[init]++;
             }
         }
@@ -260,7 +257,7 @@ TEST_F(StackQueueFunctionalityTest, StackQueuePutGetRemoveOperations)
 
     // Get at
     for (UINT64 i = 0; i < count; i++) {
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueGetAt(pStackQueue, (UINT32)i, &data));
+        EXPECT_EQ(STATUS_SUCCESS, stackQueueGetAt(pStackQueue, (UINT32) i, &data));
         EXPECT_EQ(count - i - 1, data);
         EXPECT_EQ(STATUS_SUCCESS, stackQueueGetIndexOf(pStackQueue, data, &index));
         EXPECT_EQ(i, index);
@@ -269,7 +266,7 @@ TEST_F(StackQueueFunctionalityTest, StackQueuePutGetRemoveOperations)
     // Remove at from the middle
     for (UINT64 i = 0; i < count / 2; i++) {
         // Peek first
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueRemoveAt(pStackQueue, (UINT32)(count / 2)));
+        EXPECT_EQ(STATUS_SUCCESS, stackQueueRemoveAt(pStackQueue, (UINT32) (count / 2)));
     }
 
     // Validate the count
@@ -280,7 +277,7 @@ TEST_F(StackQueueFunctionalityTest, StackQueuePutGetRemoveOperations)
 
     // Validate the half
     for (UINT64 i = 0; i < count / 2; i++) {
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueGetAt(pStackQueue, (UINT32)i, &data));
+        EXPECT_EQ(STATUS_SUCCESS, stackQueueGetAt(pStackQueue, (UINT32) i, &data));
         EXPECT_EQ(count - i - 1, data);
     }
 
@@ -334,7 +331,7 @@ TEST_F(StackQueueFunctionalityTest, StackQueuePutGetSetOperations)
 
     // Get at
     for (UINT64 i = 0; i < count; i++) {
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueGetAt(pStackQueue, (UINT32)i, &data));
+        EXPECT_EQ(STATUS_SUCCESS, stackQueueGetAt(pStackQueue, (UINT32) i, &data));
         EXPECT_EQ(count - i - 1, data);
         EXPECT_EQ(STATUS_SUCCESS, stackQueueGetIndexOf(pStackQueue, data, &index));
         EXPECT_EQ(i, index);
@@ -342,12 +339,12 @@ TEST_F(StackQueueFunctionalityTest, StackQueuePutGetSetOperations)
 
     // Set at
     for (UINT64 i = 0; i < count; i++) {
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueSetAt(pStackQueue, (UINT32)i, 1000 + i));
+        EXPECT_EQ(STATUS_SUCCESS, stackQueueSetAt(pStackQueue, (UINT32) i, 1000 + i));
     }
 
     // Get at - verify
     for (UINT64 i = 0; i < count; i++) {
-        EXPECT_EQ(STATUS_SUCCESS, stackQueueGetAt(pStackQueue, (UINT32)i, &data));
+        EXPECT_EQ(STATUS_SUCCESS, stackQueueGetAt(pStackQueue, (UINT32) i, &data));
         EXPECT_EQ(i + 1000, data);
         EXPECT_EQ(STATUS_SUCCESS, stackQueueGetIndexOf(pStackQueue, data, &index));
         EXPECT_EQ(i, index);
