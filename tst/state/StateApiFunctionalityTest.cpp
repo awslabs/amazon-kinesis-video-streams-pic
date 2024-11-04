@@ -1,8 +1,10 @@
 #include "StateTestFixture.h"
 
 class StateApiFunctionalityTest : public StateTestBase {
-public:
-    StateApiFunctionalityTest() : mTestStateCount(0) {}
+  public:
+    StateApiFunctionalityTest() : mTestStateCount(0)
+    {
+    }
 
     UINT32 mTestStateCount;
 };
@@ -86,7 +88,6 @@ CleanUp:
     return retStatus;
 }
 
-
 TEST_F(StateApiFunctionalityTest, nullExecuteFn)
 {
     PStateMachine pStateMachine;
@@ -104,12 +105,9 @@ TEST_F(StateApiFunctionalityTest, nullExecuteFn)
     // Set the state 1 execute function to null
     states[1].executeStateFn = NULL;
 
-    EXPECT_EQ(STATUS_SUCCESS, createStateMachine(states,
-                                                 TEST_STATE_MACHINE_STATE_COUNT,
-                                                 (UINT64) this,
-                                                 kinesisVideoStreamDefaultGetCurrentTime,
-                                                 (UINT64) this,
-                                                 &pStateMachine));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createStateMachine(states, TEST_STATE_MACHINE_STATE_COUNT, (UINT64) this, kinesisVideoStreamDefaultGetCurrentTime, (UINT64) this,
+                                 &pStateMachine));
 
     EXPECT_EQ(STATUS_SUCCESS, stepStateMachine(pStateMachine));
 
@@ -130,12 +128,9 @@ TEST_F(StateApiFunctionalityTest, nullGetNextStateFn)
     // Set the state 0 execute function to null
     states[0].getNextStateFn = NULL;
 
-    EXPECT_EQ(STATUS_SUCCESS, createStateMachine(states,
-                                                 TEST_STATE_MACHINE_STATE_COUNT,
-                                                 (UINT64) this,
-                                                 kinesisVideoStreamDefaultGetCurrentTime,
-                                                 (UINT64) this,
-                                                 &pStateMachine));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createStateMachine(states, TEST_STATE_MACHINE_STATE_COUNT, (UINT64) this, kinesisVideoStreamDefaultGetCurrentTime, (UINT64) this,
+                                 &pStateMachine));
 
     EXPECT_NE(STATUS_SUCCESS, stepStateMachine(pStateMachine));
 
@@ -248,4 +243,3 @@ TEST_F(StateApiFunctionalityTest, checkForStateMachineTransitionBasicTest)
     EXPECT_EQ(STATUS_SUCCESS, checkForStateTransition(mStateMachine, &transition));
     EXPECT_EQ(TRUE, transition);
 }
-

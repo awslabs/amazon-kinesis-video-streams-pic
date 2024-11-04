@@ -1,16 +1,15 @@
 #include "HeapTestFixture.h"
 
-class HeapPerfTest : public HeapTestBase {
-};
+class HeapPerfTest : public HeapTestBase {};
 
-#define HEAP_PERF_TEST_VIEW_ITEM_COUNT              1500
-#define HEAP_PERF_TEST_MULTI_VIEW_ITEM_COUNT        1500 * 1000
-#define HEAP_PERF_TEST_MIN_ALLOCATION               2000
-#define HEAP_PERF_TEST_MULTI_VIEW_MIN_ALLOCATION    64
-#define HEAP_PERF_TEST_ALLOCATION_DELTA             50
-#define HEAP_PERF_TEST_ITERATION_COUNT              1000000
-#define HEAP_PERF_TEST_MULTI_VIEW_ITERATION_COUNT   10000000
-#define HEAP_PERF_TEST_SIZE                         256 * 1024 * 1024
+#define HEAP_PERF_TEST_VIEW_ITEM_COUNT            1500
+#define HEAP_PERF_TEST_MULTI_VIEW_ITEM_COUNT      1500 * 1000
+#define HEAP_PERF_TEST_MIN_ALLOCATION             2000
+#define HEAP_PERF_TEST_MULTI_VIEW_MIN_ALLOCATION  64
+#define HEAP_PERF_TEST_ALLOCATION_DELTA           50
+#define HEAP_PERF_TEST_ITERATION_COUNT            1000000
+#define HEAP_PERF_TEST_MULTI_VIEW_ITERATION_COUNT 10000000
+#define HEAP_PERF_TEST_SIZE                       256 * 1024 * 1024
 
 VOID randomAllocFree(PHeap pHeap, UINT32 itemCount, UINT32 iterationCount, UINT32 allocSize)
 {
@@ -30,7 +29,6 @@ VOID randomAllocFree(PHeap pHeap, UINT32 itemCount, UINT32 iterationCount, UINT3
             EXPECT_EQ(STATUS_SUCCESS, heapFree(pHeap, handles[(i - itemCount) % itemCount]));
         }
     }
-
 }
 
 VOID singleAllocFree(PHeap pHeap)
@@ -41,7 +39,6 @@ VOID singleAllocFree(PHeap pHeap)
         EXPECT_EQ(STATUS_SUCCESS, heapAlloc(pHeap, 10000, &handle));
         EXPECT_EQ(STATUS_SUCCESS, heapFree(pHeap, handle));
     }
-
 }
 
 ///////////////////////////////////////////////////////////////
@@ -66,7 +63,8 @@ TEST_F(HeapPerfTest, randomAllocFreeWindowedPerf)
 
         durationSystem = endTime - time;
         iterationDurationSystem = (DOUBLE) durationSystem / HEAP_PERF_TEST_ITERATION_COUNT;
-        DLOGI("System Allocator perf time: %lf seconds, time per iteration: %lf nanos", (DOUBLE) durationSystem / HUNDREDS_OF_NANOS_IN_A_SECOND, iterationDurationSystem * DEFAULT_TIME_UNIT_IN_NANOS);
+        DLOGI("System Allocator perf time: %lf seconds, time per iteration: %lf nanos", (DOUBLE) durationSystem / HUNDREDS_OF_NANOS_IN_A_SECOND,
+              iterationDurationSystem * DEFAULT_TIME_UNIT_IN_NANOS);
 
         EXPECT_EQ(STATUS_SUCCESS, heapInitialize(HEAP_PERF_TEST_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap));
         time = GETTIME();
@@ -76,7 +74,8 @@ TEST_F(HeapPerfTest, randomAllocFreeWindowedPerf)
 
         duration = endTime - time;
         iterationDuration = (DOUBLE) duration / HEAP_PERF_TEST_ITERATION_COUNT;
-        DLOGI("Allocator perf time: %lf seconds, time per iteration: %lf nanos", (DOUBLE) duration / HUNDREDS_OF_NANOS_IN_A_SECOND, iterationDuration * DEFAULT_TIME_UNIT_IN_NANOS);
+        DLOGI("Allocator perf time: %lf seconds, time per iteration: %lf nanos", (DOUBLE) duration / HUNDREDS_OF_NANOS_IN_A_SECOND,
+              iterationDuration * DEFAULT_TIME_UNIT_IN_NANOS);
 
         // check if we are within 20% of the system heap speed
         if ((DOUBLE) duration <= (DOUBLE) durationSystem * 1.2 && iterationDuration <= iterationDurationSystem * 1.2) {
@@ -103,23 +102,27 @@ TEST_F(HeapPerfTest, randomAllocFreeMultiStreamWindowedPerf)
     for (; i < totalIteration; i++) {
         EXPECT_EQ(STATUS_SUCCESS, heapInitialize(HEAP_PERF_TEST_SIZE, 20, FLAGS_USE_SYSTEM_HEAP, NULL, &pHeap));
         time = GETTIME();
-        randomAllocFree(pHeap, HEAP_PERF_TEST_MULTI_VIEW_ITEM_COUNT, HEAP_PERF_TEST_MULTI_VIEW_ITERATION_COUNT, HEAP_PERF_TEST_MULTI_VIEW_MIN_ALLOCATION);
+        randomAllocFree(pHeap, HEAP_PERF_TEST_MULTI_VIEW_ITEM_COUNT, HEAP_PERF_TEST_MULTI_VIEW_ITERATION_COUNT,
+                        HEAP_PERF_TEST_MULTI_VIEW_MIN_ALLOCATION);
         endTime = GETTIME();
         EXPECT_EQ(STATUS_SUCCESS, heapRelease(pHeap));
 
         durationSystem = endTime - time;
         iterationDurationSystem = (DOUBLE) durationSystem / HEAP_PERF_TEST_MULTI_VIEW_ITERATION_COUNT;
-        DLOGI("System Allocator perf time: %lf seconds, time per iteration: %lf nanos", (DOUBLE) durationSystem / HUNDREDS_OF_NANOS_IN_A_SECOND, iterationDurationSystem * DEFAULT_TIME_UNIT_IN_NANOS);
+        DLOGI("System Allocator perf time: %lf seconds, time per iteration: %lf nanos", (DOUBLE) durationSystem / HUNDREDS_OF_NANOS_IN_A_SECOND,
+              iterationDurationSystem * DEFAULT_TIME_UNIT_IN_NANOS);
 
         EXPECT_EQ(STATUS_SUCCESS, heapInitialize(HEAP_PERF_TEST_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap));
         time = GETTIME();
-        randomAllocFree(pHeap, HEAP_PERF_TEST_MULTI_VIEW_ITEM_COUNT, HEAP_PERF_TEST_MULTI_VIEW_ITERATION_COUNT, HEAP_PERF_TEST_MULTI_VIEW_MIN_ALLOCATION);
+        randomAllocFree(pHeap, HEAP_PERF_TEST_MULTI_VIEW_ITEM_COUNT, HEAP_PERF_TEST_MULTI_VIEW_ITERATION_COUNT,
+                        HEAP_PERF_TEST_MULTI_VIEW_MIN_ALLOCATION);
         endTime = GETTIME();
         EXPECT_EQ(STATUS_SUCCESS, heapRelease(pHeap));
 
         duration = endTime - time;
         iterationDuration = (DOUBLE) duration / HEAP_PERF_TEST_MULTI_VIEW_ITERATION_COUNT;
-        DLOGI("Allocator perf time: %lf seconds, time per iteration: %lf nanos", (DOUBLE) duration / HUNDREDS_OF_NANOS_IN_A_SECOND, iterationDuration * DEFAULT_TIME_UNIT_IN_NANOS);
+        DLOGI("Allocator perf time: %lf seconds, time per iteration: %lf nanos", (DOUBLE) duration / HUNDREDS_OF_NANOS_IN_A_SECOND,
+              iterationDuration * DEFAULT_TIME_UNIT_IN_NANOS);
 
         // check if we are within 20% of the system heap speed
         if ((DOUBLE) duration <= (DOUBLE) durationSystem * 1.2 && iterationDuration <= iterationDurationSystem * 1.2) {
@@ -152,7 +155,8 @@ TEST_F(HeapPerfTest, singleAllocFreePerf)
 
         durationSystem = endTime - time;
         iterationDurationSystem = (DOUBLE) durationSystem / HEAP_PERF_TEST_ITERATION_COUNT;
-        DLOGI("System Allocator perf time: %lf seconds, time per iteration: %lf nanos", (DOUBLE) durationSystem / HUNDREDS_OF_NANOS_IN_A_SECOND, iterationDurationSystem * DEFAULT_TIME_UNIT_IN_NANOS);
+        DLOGI("System Allocator perf time: %lf seconds, time per iteration: %lf nanos", (DOUBLE) durationSystem / HUNDREDS_OF_NANOS_IN_A_SECOND,
+              iterationDurationSystem * DEFAULT_TIME_UNIT_IN_NANOS);
 
         EXPECT_EQ(STATUS_SUCCESS, heapInitialize(HEAP_PERF_TEST_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap));
         time = GETTIME();
@@ -162,7 +166,8 @@ TEST_F(HeapPerfTest, singleAllocFreePerf)
 
         duration = endTime - time;
         iterationDuration = (DOUBLE) duration / HEAP_PERF_TEST_ITERATION_COUNT;
-        DLOGI("Allocator perf time: %lf seconds, time per iteration: %lf nanos", (DOUBLE) duration / HUNDREDS_OF_NANOS_IN_A_SECOND, iterationDuration * DEFAULT_TIME_UNIT_IN_NANOS);
+        DLOGI("Allocator perf time: %lf seconds, time per iteration: %lf nanos", (DOUBLE) duration / HUNDREDS_OF_NANOS_IN_A_SECOND,
+              iterationDuration * DEFAULT_TIME_UNIT_IN_NANOS);
 
         // check if we are within 20% of the system heap speed
         if ((DOUBLE) duration <= (DOUBLE) durationSystem * 1.2 && iterationDuration <= iterationDurationSystem * 1.2) {

@@ -1,15 +1,14 @@
 #include "ClientTestFixture.h"
 
-using ::testing::WithParamInterface;
 using ::testing::Bool;
-using ::testing::Values;
 using ::testing::Combine;
+using ::testing::Values;
+using ::testing::WithParamInterface;
 
-class StreamFunctionalityTest : public ClientTestBase,
-                                public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> >
-{
-protected:
-    void SetUp() {
+class StreamFunctionalityTest : public ClientTestBase, public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> > {
+  protected:
+    void SetUp()
+    {
         ClientTestBase::SetUp();
 
         STREAMING_TYPE streamingType;
@@ -47,8 +46,8 @@ TEST_P(StreamFunctionalityTest, CreateSyncFreeSuccess)
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 }
 
-
-TEST_P(StreamFunctionalityTest, CreateSyncStopSyncFreePutFrameFail) {
+TEST_P(StreamFunctionalityTest, CreateSyncStopSyncFreePutFrameFail)
+{
     CreateScenarioTestClient();
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
     CreateStreamSync();
@@ -110,7 +109,8 @@ TEST_P(StreamFunctionalityTest, CreateSyncPutMultipleFramesFree)
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 }
 
-TEST_P(StreamFunctionalityTest, CreateSyncStopFreeSuccess) {
+TEST_P(StreamFunctionalityTest, CreateSyncStopFreeSuccess)
+{
     CreateScenarioTestClient();
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
     CreateStreamSync();
@@ -118,7 +118,8 @@ TEST_P(StreamFunctionalityTest, CreateSyncStopFreeSuccess) {
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 }
 
-TEST_P(StreamFunctionalityTest, CreateSyncPutFrameStopSyncFreeSuccess) {
+TEST_P(StreamFunctionalityTest, CreateSyncPutFrameStopSyncFreeSuccess)
+{
     CreateScenarioTestClient();
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
     CreateStreamSync();
@@ -128,7 +129,8 @@ TEST_P(StreamFunctionalityTest, CreateSyncPutFrameStopSyncFreeSuccess) {
 }
 
 // stopStreamSync should timeout since putStreamResult is never submitted.
-TEST_P(StreamFunctionalityTest, CreateAwaitPutFrameStopSyncFreeSuccess) {
+TEST_P(StreamFunctionalityTest, CreateAwaitPutFrameStopSyncFreeSuccess)
+{
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
     // the test is meant to timeout, use a shorter timeout to reduce test running time.
     mDeviceInfo.clientInfo.stopStreamTimeout = TEST_STOP_STREAM_TIMEOUT_SHORT;
@@ -138,7 +140,6 @@ TEST_P(StreamFunctionalityTest, CreateAwaitPutFrameStopSyncFreeSuccess) {
     EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame());
     VerifyStopStreamSyncAndFree(TRUE);
 }
-
 
 TEST_P(StreamFunctionalityTest, CreateAwaitReadyFree)
 {
@@ -178,7 +179,7 @@ TEST_P(StreamFunctionalityTest, CreateSyncPutFrameEoFR)
 {
     CreateScenarioTestClient();
     BOOL submittedAck = FALSE, gotStreamData;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     UINT64 stopTime, currentTime;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
     STATUS retStatus;
@@ -194,7 +195,7 @@ TEST_P(StreamFunctionalityTest, CreateSyncPutFrameEoFR)
     // Put a eofr frame
     EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(TRUE));
 
-    //give 5 seconds to get the single frame fragment
+    // give 5 seconds to get the single frame fragment
     stopTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + 10 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
@@ -329,8 +330,11 @@ TEST_P(StreamFunctionalityTest, StreamDescription_V0_Test)
     EXPECT_EQ(0, pKinesisVideoStream->retention);
 
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN, SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 }
 
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, StreamFunctionalityTest,
-                        Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
+                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(),
+                                 Values(0, TEST_REPLAY_DURATION)));

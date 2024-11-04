@@ -1,7 +1,6 @@
 #include "UtilTestFixture.h"
 
-class FindStringFunctionalityTest : public UtilTestBase {
-};
+class FindStringFunctionalityTest : public UtilTestBase {};
 
 TEST_F(FindStringFunctionalityTest, Negative_Positive_Variations)
 {

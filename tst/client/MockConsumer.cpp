@@ -1,23 +1,12 @@
 #include "ClientTestFixture.h"
 
-MockConsumer::MockConsumer(MockConsumerConfig config,
-                           UPLOAD_HANDLE mUploadHandle,
-                           STREAM_HANDLE mStreamHandle)
-        : mOldCurrent(0),
-          mDataBufferSize(config.mDataBufferSizeByte),
-          mUploadSpeed(config.mUploadSpeedBytesPerSecond),
-          mNextGetStreamDataTime(0),
-          mUploadHandle(mUploadHandle),
-          mStreamHandle(mStreamHandle),
-          mBufferingAckDelay(config.mBufferingAckDelayMs),
-          mReceiveAckDelay(config.mReceiveAckDelayMs),
-          mPersistAckDelay(config.mPersistAckDelayMs),
-          mCurrentInitialized(FALSE),
-          mConnectionClosed(FALSE),
-          mEnableAck(config.mEnableAck),
-          mRetention(config.mRetention),
-          mFragmentTimestamp(INVALID_TIMESTAMP_VALUE),
-          mLastGetStreamDataTime(INVALID_TIMESTAMP_VALUE) {
+MockConsumer::MockConsumer(MockConsumerConfig config, UPLOAD_HANDLE mUploadHandle, STREAM_HANDLE mStreamHandle)
+    : mOldCurrent(0), mDataBufferSize(config.mDataBufferSizeByte), mUploadSpeed(config.mUploadSpeedBytesPerSecond), mNextGetStreamDataTime(0),
+      mUploadHandle(mUploadHandle), mStreamHandle(mStreamHandle), mBufferingAckDelay(config.mBufferingAckDelayMs),
+      mReceiveAckDelay(config.mReceiveAckDelayMs), mPersistAckDelay(config.mPersistAckDelayMs), mCurrentInitialized(FALSE), mConnectionClosed(FALSE),
+      mEnableAck(config.mEnableAck), mRetention(config.mRetention), mFragmentTimestamp(INVALID_TIMESTAMP_VALUE),
+      mLastGetStreamDataTime(INVALID_TIMESTAMP_VALUE)
+{
     ATOMIC_STORE_BOOL(&mDataAvailable, FALSE);
 
     // init FragmentAck struct
@@ -29,7 +18,8 @@ MockConsumer::MockConsumer(MockConsumerConfig config,
     mDataBuffer = (PBYTE) MEMALLOC(mDataBufferSize);
 }
 
-void MockConsumer::enqueueAckItem(UINT64 fragmentTimestamp, PUINT64 submitAckTime) {
+void MockConsumer::enqueueAckItem(UINT64 fragmentTimestamp, PUINT64 submitAckTime)
+{
     AckItem ackItem;
     mFragmentAck.timestamp = fragmentTimestamp;
     mFragmentAck.result = SERVICE_CALL_RESULT_OK;
@@ -54,7 +44,8 @@ void MockConsumer::enqueueAckItem(UINT64 fragmentTimestamp, PUINT64 submitAckTim
     }
 }
 
-void MockConsumer::initOldCurrent() {
+void MockConsumer::initOldCurrent()
+{
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = NULL;
     PViewItem pViewItem;
@@ -81,7 +72,8 @@ void MockConsumer::initOldCurrent() {
     mCurrentInitialized = TRUE;
 }
 
-void MockConsumer::createAckEvent(BOOL isEosSent, UINT64 sendAckTime) {
+void MockConsumer::createAckEvent(BOOL isEosSent, UINT64 sendAckTime)
+{
     PKinesisVideoClient pKinesisVideoClient = NULL;
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
@@ -93,7 +85,7 @@ void MockConsumer::createAckEvent(BOOL isEosSent, UINT64 sendAckTime) {
         endIndex++;
     }
 
-    for(UINT64 i = mOldCurrent; i < endIndex; i++) {
+    for (UINT64 i = mOldCurrent; i < endIndex; i++) {
         /* not expecting contentViewGetItemAt to always succeed because it may fail in the negative scenario tests.
          * For example view items were deliberately dropped. */
         status = contentViewGetItemAt(pKinesisVideoStream->pView, i, &pViewItem);
@@ -147,15 +139,15 @@ void MockConsumer::purgeAckItemWithTimestamp(UINT64 ackTimestamp)
     }
 }
 
-STATUS MockConsumer::timedGetStreamData(UINT64 currentTime, PBOOL pDidGetStreamData, PUINT32 pRetrievedSize) {
+STATUS MockConsumer::timedGetStreamData(UINT64 currentTime, PBOOL pDidGetStreamData, PUINT32 pRetrievedSize)
+{
     STATUS retStatus = STATUS_SUCCESS;
     UINT32 actualDataSize;
     *pDidGetStreamData = FALSE;
 
     if (ATOMIC_LOAD_BOOL(&mDataAvailable) && (currentTime >= mNextGetStreamDataTime)) {
         *pDidGetStreamData = TRUE;
-        retStatus = getKinesisVideoStreamData(mStreamHandle, mUploadHandle, mDataBuffer, mDataBufferSize,
-                                              &actualDataSize);
+        retStatus = getKinesisVideoStreamData(mStreamHandle, mUploadHandle, mDataBuffer, mDataBufferSize, &actualDataSize);
 
         // stop calling getKinesisVideoStreamData if there is no more data.
         if (retStatus == STATUS_NO_MORE_DATA_AVAILABLE || retStatus == STATUS_AWAITING_PERSISTED_ACK) {
@@ -190,7 +182,8 @@ STATUS MockConsumer::timedGetStreamData(UINT64 currentTime, PBOOL pDidGetStreamD
     return retStatus;
 }
 
-STATUS MockConsumer::timedSubmitNormalAck(UINT64 currentTime, PBOOL pSubmittedAck) {
+STATUS MockConsumer::timedSubmitNormalAck(UINT64 currentTime, PBOOL pSubmittedAck)
+{
     STATUS retStatus = STATUS_SUCCESS;
     *pSubmittedAck = FALSE;
     AckItem ackItem;
@@ -206,7 +199,7 @@ STATUS MockConsumer::timedSubmitNormalAck(UINT64 currentTime, PBOOL pSubmittedAc
             CHK_STATUS(kinesisVideoStreamFragmentAck(mStreamHandle, mUploadHandle, &ackItem.mFragmentAck));
             *pSubmittedAck = TRUE;
 
-            switch(ackItem.mFragmentAck.ackType) {
+            switch (ackItem.mFragmentAck.ackType) {
                 case FRAGMENT_ACK_TYPE_PERSISTED:
                     DLOGD("got persisted ack. timestamp %llu", ackItem.mFragmentAck.timestamp);
                     break;
@@ -229,7 +222,8 @@ CleanUp:
     return retStatus;
 }
 
-STATUS MockConsumer::submitErrorAck(SERVICE_CALL_RESULT service_call_result, PBOOL pSubmittedAck) {
+STATUS MockConsumer::submitErrorAck(SERVICE_CALL_RESULT service_call_result, PBOOL pSubmittedAck)
+{
     STATUS retStatus = STATUS_SUCCESS;
     *pSubmittedAck = FALSE;
 
@@ -242,15 +236,16 @@ STATUS MockConsumer::submitErrorAck(SERVICE_CALL_RESULT service_call_result, PBO
         mFragmentAck.ackType = FRAGMENT_ACK_TYPE_ERROR;
         mFragmentAck.timestamp = mAckQueue.top().mFragmentAck.timestamp;
         purgeAckItemWithTimestamp(mFragmentAck.timestamp);
-        DLOGD("submitting error ack with call result %u, timestamp %" PRIu64 " to upload handle %" PRIu64,
-              service_call_result, mFragmentAck.timestamp, mUploadHandle);
+        DLOGD("submitting error ack with call result %u, timestamp %" PRIu64 " to upload handle %" PRIu64, service_call_result,
+              mFragmentAck.timestamp, mUploadHandle);
         retStatus = kinesisVideoStreamFragmentAck(mStreamHandle, mUploadHandle, &mFragmentAck);
     }
 
     return retStatus;
 }
 
-STATUS MockConsumer::submitErrorAck(SERVICE_CALL_RESULT service_call_result, UINT64 timestamp, PBOOL pSubmittedAck) {
+STATUS MockConsumer::submitErrorAck(SERVICE_CALL_RESULT service_call_result, UINT64 timestamp, PBOOL pSubmittedAck)
+{
     STATUS retStatus = STATUS_SUCCESS;
     *pSubmittedAck = FALSE;
 
@@ -261,15 +256,15 @@ STATUS MockConsumer::submitErrorAck(SERVICE_CALL_RESULT service_call_result, UIN
     mFragmentAck.ackType = FRAGMENT_ACK_TYPE_ERROR;
     mFragmentAck.timestamp = timestamp;
     purgeAckItemWithTimestamp(mFragmentAck.timestamp);
-    DLOGD("No ackItem used. submitting error ack with call result %u, timestamp %" PRIu64 " to upload handle %" PRIu64,
-          service_call_result, mFragmentAck.timestamp, mUploadHandle);
+    DLOGD("No ackItem used. submitting error ack with call result %u, timestamp %" PRIu64 " to upload handle %" PRIu64, service_call_result,
+          mFragmentAck.timestamp, mUploadHandle);
     retStatus = kinesisVideoStreamFragmentAck(mStreamHandle, mUploadHandle, &mFragmentAck);
 
     return retStatus;
 }
 
-STATUS MockConsumer::submitNormalAck(SERVICE_CALL_RESULT service_call_result, FRAGMENT_ACK_TYPE ackType,
-        UINT64 timestamp, PBOOL pSubmittedAck) {
+STATUS MockConsumer::submitNormalAck(SERVICE_CALL_RESULT service_call_result, FRAGMENT_ACK_TYPE ackType, UINT64 timestamp, PBOOL pSubmittedAck)
+{
     STATUS retStatus = STATUS_SUCCESS;
     *pSubmittedAck = FALSE;
 
@@ -285,7 +280,8 @@ STATUS MockConsumer::submitNormalAck(SERVICE_CALL_RESULT service_call_result, FR
     return retStatus;
 }
 
-STATUS MockConsumer::submitConnectionError(SERVICE_CALL_RESULT service_call_result) {
+STATUS MockConsumer::submitConnectionError(SERVICE_CALL_RESULT service_call_result)
+{
     mConnectionClosed = TRUE;
 
     // connection error can happen at any time.

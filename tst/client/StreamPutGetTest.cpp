@@ -1,7 +1,6 @@
 #include "ClientTestFixture.h"
 
-class StreamPutGetTest : public ClientTestBase {
-};
+class StreamPutGetTest : public ClientTestBase {};
 #ifdef ALIGNED_MEMORY_MODEL
 TEST_F(StreamPutGetTest, putFrame_PutGetFrameBoundary)
 {

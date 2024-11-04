@@ -1,7 +1,7 @@
 #include "ClientTestFixture.h"
 
 class ClientApiFunctionalityTest : public ClientTestBase {
-public:
+  public:
     VOID authIntegrationTest(BOOL sync);
 };
 
@@ -41,11 +41,9 @@ VOID ClientApiFunctionalityTest::authIntegrationTest(BOOL sync)
     mClientCallbacks.getSecurityTokenFn = NULL;
     // Currently provisioning is unsupported so it should fail
     if (!sync) {
-        EXPECT_EQ(STATUS_CLIENT_PROVISION_CALL_FAILED,
-                  createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle));
+        EXPECT_EQ(STATUS_CLIENT_PROVISION_CALL_FAILED, createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle));
     } else {
-        EXPECT_EQ(STATUS_CLIENT_PROVISION_CALL_FAILED,
-                  createKinesisVideoClientSync(&mDeviceInfo, &mClientCallbacks, &clientHandle));
+        EXPECT_EQ(STATUS_CLIENT_PROVISION_CALL_FAILED, createKinesisVideoClientSync(&mDeviceInfo, &mClientCallbacks, &clientHandle));
     }
 
     pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);
@@ -65,11 +63,9 @@ VOID ClientApiFunctionalityTest::authIntegrationTest(BOOL sync)
     mClientCallbacks.getDeviceFingerprintFn = NULL;
     // Currently provisioning is unsupported so it should fail
     if (!sync) {
-        EXPECT_EQ(STATUS_CLIENT_PROVISION_CALL_FAILED,
-                  createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle));
+        EXPECT_EQ(STATUS_CLIENT_PROVISION_CALL_FAILED, createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle));
     } else {
-        EXPECT_EQ(STATUS_CLIENT_PROVISION_CALL_FAILED,
-                  createKinesisVideoClientSync(&mDeviceInfo, &mClientCallbacks, &clientHandle));
+        EXPECT_EQ(STATUS_CLIENT_PROVISION_CALL_FAILED, createKinesisVideoClientSync(&mDeviceInfo, &mClientCallbacks, &clientHandle));
     }
 
     pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);
@@ -145,11 +141,9 @@ VOID ClientApiFunctionalityTest::authIntegrationTest(BOOL sync)
     mClientCallbacks.getDeviceFingerprintFn = getEmptyDeviceFingerprintFunc;
     // Currently provisioning is unsupported so it should fail
     if (!sync) {
-        EXPECT_EQ(STATUS_CLIENT_PROVISION_CALL_FAILED,
-                  createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle));
+        EXPECT_EQ(STATUS_CLIENT_PROVISION_CALL_FAILED, createKinesisVideoClient(&mDeviceInfo, &mClientCallbacks, &clientHandle));
     } else {
-        EXPECT_EQ(STATUS_CLIENT_PROVISION_CALL_FAILED,
-                  createKinesisVideoClientSync(&mDeviceInfo, &mClientCallbacks, &clientHandle));
+        EXPECT_EQ(STATUS_CLIENT_PROVISION_CALL_FAILED, createKinesisVideoClientSync(&mDeviceInfo, &mClientCallbacks, &clientHandle));
     }
 
     pKinesisVideoClient = FROM_CLIENT_HANDLE(clientHandle);

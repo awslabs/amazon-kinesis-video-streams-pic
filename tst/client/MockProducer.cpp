@@ -1,15 +1,9 @@
 #include "ClientTestFixture.h"
 
-MockProducer::MockProducer(MockProducerConfig config,
-             STREAM_HANDLE mStreamHandle)
-        : mFps(config.mFps),
-          mKeyFrameInterval(config.mKeyFrameInterval),
-          mIsLive(config.mIsLive),
-          mSetEOFR(config.mSetEOFR),
-          mStreamHandle(mStreamHandle),
-          mNextPutFrameTime(0),
-          mIndex(0),
-          mTimestamp(0) {
+MockProducer::MockProducer(MockProducerConfig config, STREAM_HANDLE mStreamHandle)
+    : mFps(config.mFps), mKeyFrameInterval(config.mKeyFrameInterval), mIsLive(config.mIsLive), mSetEOFR(config.mSetEOFR),
+      mStreamHandle(mStreamHandle), mNextPutFrameTime(0), mIndex(0), mTimestamp(0)
+{
     mFrame.frameData = (PBYTE) MEMALLOC(config.mFrameSizeByte);
     MEMSET(mFrame.frameData, 0x00, config.mFrameSizeByte);
     mFrame.size = config.mFrameSizeByte;
@@ -18,7 +12,8 @@ MockProducer::MockProducer(MockProducerConfig config,
     mFrame.duration = (UINT64) 1000 / mFps * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
 }
 
-STATUS MockProducer::putFrame(BOOL isEofr, UINT64 trackId) {
+STATUS MockProducer::putFrame(BOOL isEofr, UINT64 trackId)
+{
     STATUS retStatus = STATUS_SUCCESS;
 
     mFrame.trackId = trackId;
@@ -45,7 +40,8 @@ STATUS MockProducer::putFrame(BOOL isEofr, UINT64 trackId) {
     return retStatus;
 }
 
-STATUS MockProducer::timedPutFrame(UINT64 currentTime, PBOOL pDidPutFrame, UINT64 trackId) {
+STATUS MockProducer::timedPutFrame(UINT64 currentTime, PBOOL pDidPutFrame, UINT64 trackId)
+{
     STATUS putStatus = STATUS_SUCCESS, eofrPutStatus = STATUS_SUCCESS;
     *pDidPutFrame = FALSE;
 
@@ -73,6 +69,7 @@ STATUS MockProducer::timedPutFrame(UINT64 currentTime, PBOOL pDidPutFrame, UINT6
     }
 }
 
-PFrame MockProducer::getCurrentFrame() {
+PFrame MockProducer::getCurrentFrame()
+{
     return &mFrame;
 }

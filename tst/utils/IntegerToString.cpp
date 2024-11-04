@@ -1,15 +1,16 @@
 #include "UtilTestFixture.h"
 
-class ItoEFunctionalityTest : public UtilTestBase {
-};
+class ItoEFunctionalityTest : public UtilTestBase {};
 
-TEST_F(ItoEFunctionalityTest, InvalidInput_NullStrInput) {
+TEST_F(ItoEFunctionalityTest, InvalidInput_NullStrInput)
+{
     UINT32 size;
     EXPECT_NE(STATUS_SUCCESS, ULLTOSTR(1, NULL, 100, 10, &size));
     EXPECT_NE(STATUS_SUCCESS, ULTOSTR(1, NULL, 100, 10, &size));
 }
 
-TEST_F(ItoEFunctionalityTest, InvalidInput_ZeroSizeInput) {
+TEST_F(ItoEFunctionalityTest, InvalidInput_ZeroSizeInput)
+{
     UINT32 size;
     PCHAR pStr = (PCHAR) 1;
     EXPECT_NE(STATUS_SUCCESS, ULLTOSTR(1, pStr, 0, 10, &size));
@@ -19,8 +20,8 @@ TEST_F(ItoEFunctionalityTest, InvalidInput_ZeroSizeInput) {
     EXPECT_NE(STATUS_SUCCESS, ULTOSTR(1, pStr, 1, 10, &size));
 }
 
-
-TEST_F(ItoEFunctionalityTest, InvalidInput_InvalidBase) {
+TEST_F(ItoEFunctionalityTest, InvalidInput_InvalidBase)
+{
     UINT32 size;
     PCHAR pStr = (PCHAR) 1;
     EXPECT_NE(STATUS_SUCCESS, ULLTOSTR(1, pStr, 100, 0, &size));
@@ -33,14 +34,16 @@ TEST_F(ItoEFunctionalityTest, InvalidInput_InvalidBase) {
     EXPECT_NE(STATUS_SUCCESS, ULTOSTR(1, pStr, 100, 37, &size));
 }
 
-TEST_F(ItoEFunctionalityTest, InvalidInput_BufferTooSmall) {
+TEST_F(ItoEFunctionalityTest, InvalidInput_BufferTooSmall)
+{
     UINT32 size;
     CHAR temp[256];
     EXPECT_NE(STATUS_SUCCESS, ULLTOSTR(100, temp, 3, 10, &size));
     EXPECT_NE(STATUS_SUCCESS, ULTOSTR(100, temp, 3, 10, &size));
 }
 
-TEST_F(ItoEFunctionalityTest, ValidInput_SizeNotSpecified) {
+TEST_F(ItoEFunctionalityTest, ValidInput_SizeNotSpecified)
+{
     UINT32 size;
     CHAR temp[256];
 
@@ -63,7 +66,8 @@ TEST_F(ItoEFunctionalityTest, ValidInput_SizeNotSpecified) {
     EXPECT_TRUE(STRCMP(temp, "100") == 0);
 }
 
-TEST_F(ItoEFunctionalityTest, ValidInput_MinMaxValues) {
+TEST_F(ItoEFunctionalityTest, ValidInput_MinMaxValues)
+{
     CHAR temp[256];
 
     temp[0] = '\0';
@@ -83,7 +87,8 @@ TEST_F(ItoEFunctionalityTest, ValidInput_MinMaxValues) {
     EXPECT_TRUE(STRCMP(temp, "0") == 0);
 }
 
-TEST_F(ItoEFunctionalityTest, ValidInput_VariousBases) {
+TEST_F(ItoEFunctionalityTest, ValidInput_VariousBases)
+{
     CHAR temp[256];
     UINT32 value = 255;
 

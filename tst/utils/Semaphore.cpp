@@ -1,9 +1,9 @@
 #include "UtilTestFixture.h"
 
 class SemaphoreFunctionalityTest : public UtilTestBase {
-public:
-    SemaphoreFunctionalityTest() :
-            handle(INVALID_SEMAPHORE_HANDLE_VALUE) {
+  public:
+    SemaphoreFunctionalityTest() : handle(INVALID_SEMAPHORE_HANDLE_VALUE)
+    {
         ATOMIC_STORE_BOOL(&acquired, FALSE);
         ATOMIC_STORE_BOOL(&shutdown, FALSE);
         ATOMIC_STORE(&threadCount, 0);
@@ -22,10 +22,9 @@ public:
         SemaphoreFunctionalityTest* pThis = (SemaphoreFunctionalityTest*) arg;
         ATOMIC_INCREMENT(&pThis->threadCount);
         retStatus = semaphoreAcquire(pThis->handle, INFINITE_TIME_VALUE);
-        if(ATOMIC_LOAD_BOOL(&pThis->shutdown)) {
+        if (ATOMIC_LOAD_BOOL(&pThis->shutdown)) {
             EXPECT_EQ(STATUS_SEMAPHORE_OPERATION_AFTER_SHUTDOWN, retStatus);
-        }
-        else {
+        } else {
             EXPECT_EQ(STATUS_SUCCESS, retStatus);
         }
         ATOMIC_DECREMENT(&pThis->threadCount);
@@ -346,7 +345,8 @@ TEST_F(SemaphoreFunctionalityTest, emptySemaphoreAcquireFreeTest)
     THREAD_SLEEP(100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
 }
 
-TEST_F(SemaphoreFunctionalityTest, avoidLossySignalsTest) {
+TEST_F(SemaphoreFunctionalityTest, avoidLossySignalsTest)
+{
     UINT32 i;
     TID threadId;
     EXPECT_EQ(STATUS_SUCCESS, semaphoreEmptyCreate(100, &handle));

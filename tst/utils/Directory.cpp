@@ -1,7 +1,6 @@
 #include "UtilTestFixture.h"
 
-class DirectoryFunctionalityTest : public UtilTestBase {
-};
+class DirectoryFunctionalityTest : public UtilTestBase {};
 
 #if 0
 #pragma GCC diagnostic ignored "-Wwrite-strings"
@@ -62,7 +61,7 @@ STATUS createSubDirStruct(PCHAR dirPath, UINT32 depth, UINT32 numberOfFiles, UIN
         return STATUS_SUCCESS;
     }
 
-    UINT32 strLen = (UINT32)STRLEN(dirPath);
+    UINT32 strLen = (UINT32) STRLEN(dirPath);
 
     // Create the files first
     for (UINT32 i = 0; i < numberOfFiles; i++) {
@@ -155,7 +154,7 @@ TEST_F(DirectoryFunctionalityTest, CreateTraverseRemoveDirs)
 
     count = 0;
     EXPECT_EQ(STATUS_SUCCESS, traverseDirectory((PCHAR) TEMP_TEST_DIRECTORY_PATH, (UINT64) &count, TRUE, printDirInfo));
-    EXPECT_EQ((3 + 3 + 3 * (3 + 3  + 3 * (3 + 3))), count);
+    EXPECT_EQ((3 + 3 + 3 * (3 + 3 + 3 * (3 + 3))), count);
 
     count = 0;
     EXPECT_EQ(STATUS_SUCCESS, traverseDirectory((PCHAR) TEMP_TEST_DIRECTORY_PATH, (UINT64) &count, FALSE, printDirInfo));
@@ -168,7 +167,7 @@ TEST_F(DirectoryFunctionalityTest, CreateTraverseRemoveDirs)
 
     count = 0;
     EXPECT_EQ(STATUS_SUCCESS, traverseDirectory((PCHAR) (TEMP_TEST_DIRECTORY_PATH FPATHSEPARATOR_STR), (UINT64) &count, TRUE, printDirInfo));
-    EXPECT_EQ((3 + 3 + 3 * (3 + 3  + 3 * (3 + 3))), count);
+    EXPECT_EQ((3 + 3 + 3 * (3 + 3 + 3 * (3 + 3))), count);
 
     count = 0;
     EXPECT_EQ(STATUS_SUCCESS, traverseDirectory((PCHAR) (TEMP_TEST_DIRECTORY_PATH FPATHSEPARATOR_STR), (UINT64) &count, FALSE, printDirInfo));

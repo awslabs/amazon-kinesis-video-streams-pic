@@ -1,7 +1,6 @@
 #include "UtilTestFixture.h"
 
-class TagsFunctionalityTest : public UtilTestBase {
-};
+class TagsFunctionalityTest : public UtilTestBase {};
 
 TEST_F(TagsFunctionalityTest, basisTagsFunctionality)
 {

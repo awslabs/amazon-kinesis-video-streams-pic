@@ -1,18 +1,20 @@
 #include "TraceTestFixture.h"
 
-class TraceApiTest : public TraceTestBase {
-};
+class TraceApiTest : public TraceTestBase {};
 
-TEST_F(TraceApiTest, InvalidInputProfilerInitialize_NullPointer) {
+TEST_F(TraceApiTest, InvalidInputProfilerInitialize_NullPointer)
+{
     EXPECT_TRUE(STATUS_FAILED(profilerInitialize(1000000, TRACE_LEVEL_REPORT_ALWAYS, FLAGS_USE_AIV_TRACE_PROFILER_FORMAT, NULL)));
 }
 
-TEST_F(TraceApiTest, InvalidInputProfilerInitialize_SmallBuffer) {
+TEST_F(TraceApiTest, InvalidInputProfilerInitialize_SmallBuffer)
+{
     TRACE_PROFILER_HANDLE handle;
     EXPECT_TRUE(STATUS_FAILED(profilerInitialize(100, TRACE_LEVEL_REPORT_ALWAYS, FLAGS_USE_AIV_TRACE_PROFILER_FORMAT, &handle)));
 }
 
-TEST_F(TraceApiTest, InvalidInputProfilerRelease_InvalidHandleRelease) {
+TEST_F(TraceApiTest, InvalidInputProfilerRelease_InvalidHandleRelease)
+{
     TRACE_PROFILER_HANDLE handle;
     EXPECT_TRUE(STATUS_SUCCEEDED(profilerInitialize(1000000, TRACE_LEVEL_REPORT_ALWAYS, FLAGS_USE_AIV_TRACE_PROFILER_FORMAT, &handle)));
 
@@ -23,7 +25,8 @@ TEST_F(TraceApiTest, InvalidInputProfilerRelease_InvalidHandleRelease) {
     EXPECT_TRUE(STATUS_SUCCEEDED(profilerRelease(INVALID_TRACE_PROFILER_HANDLE)));
 }
 
-TEST_F(TraceApiTest, InvalidInputSetLevel_InvalidHandleRelease) {
+TEST_F(TraceApiTest, InvalidInputSetLevel_InvalidHandleRelease)
+{
     TRACE_PROFILER_HANDLE handle;
     EXPECT_TRUE(STATUS_SUCCEEDED(profilerInitialize(1000000, TRACE_LEVEL_REPORT_ALWAYS, FLAGS_USE_AIV_TRACE_PROFILER_FORMAT, &handle)));
 
@@ -44,7 +47,6 @@ TEST_F(TraceApiTest, InvalidInputSetLevel_InvalidHandleRelease) {
     EXPECT_TRUE(pTraceProfiler->traceStartFn == traceStartInternal);
     EXPECT_TRUE(pTraceProfiler->traceStopFn == traceStopInternal);
 
-
     EXPECT_TRUE(STATUS_SUCCEEDED(setProfilerLevel(handle, TRACE_LEVEL_DISABLED)));
     EXPECT_TRUE(STATUS_SUCCEEDED(setProfilerLevel(handle, TRACE_LEVEL_DISABLED)));
 
@@ -59,8 +61,8 @@ TEST_F(TraceApiTest, InvalidInputSetLevel_InvalidHandleRelease) {
     EXPECT_TRUE(STATUS_SUCCEEDED(profilerRelease(handle)));
 }
 
-
-TEST_F(TraceApiTest, InvalidInputGetBuffer_InvalidInput) {
+TEST_F(TraceApiTest, InvalidInputGetBuffer_InvalidInput)
+{
     TRACE_PROFILER_HANDLE handle;
     PCHAR pBuffer;
     UINT32 bufferSize;
@@ -83,12 +85,13 @@ TEST_F(TraceApiTest, InvalidInputGetBuffer_InvalidInput) {
     EXPECT_TRUE(STATUS_SUCCEEDED(profilerRelease(handle)));
 }
 
-TEST_F(TraceApiTest, InvalidInputFreeBuffer_NullPointer) {
+TEST_F(TraceApiTest, InvalidInputFreeBuffer_NullPointer)
+{
     EXPECT_TRUE(STATUS_SUCCEEDED(freeTraceBuffer(NULL)));
 }
 
-
-TEST_F(TraceApiTest, InvalidInputSetLevel_InvalidInputTraceStartStop) {
+TEST_F(TraceApiTest, InvalidInputSetLevel_InvalidInputTraceStartStop)
+{
     TRACE_PROFILER_HANDLE handle;
     TRACE_HANDLE traceHandle;
 

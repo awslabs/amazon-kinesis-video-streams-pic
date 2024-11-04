@@ -87,7 +87,7 @@ extern DOUBLE gMkvAACSamplingFrequencies[];
 extern UINT32 gMkvAACSamplingFrequenciesCount;
 #define MKV_AAC_SAMPLING_FREQUNECY_IDX_MAX gMkvAACSamplingFrequenciesCount
 // documented here: https://wiki.multimedia.cx/index.php/MPEG-4_Audio
-#define MKV_AAC_CHANNEL_CONFIG_MAX 8
+#define MKV_AAC_CHANNEL_CONFIG_MAX         8
 
 extern BYTE gMkvTrackInfoBits[];
 extern UINT32 gMkvTrackInfoBitsSize;
@@ -284,7 +284,7 @@ extern UINT32 gMkvTagStringBitsSize;
 /**
  * To and from MKV timestamp conversion factoring in the timecode
  */
-#define TIMESTAMP_TO_MKV_TIMECODE(ts, tcs) ((ts) * DEFAULT_TIME_UNIT_IN_NANOS / (tcs))
+#define TIMESTAMP_TO_MKV_TIMECODE(ts, tcs) ((ts) *DEFAULT_TIME_UNIT_IN_NANOS / (tcs))
 #define MKV_TIMECODE_TO_TIMESTAMP(tc, tcs) ((tc) * ((tcs) / DEFAULT_TIME_UNIT_IN_NANOS))
 
 /**

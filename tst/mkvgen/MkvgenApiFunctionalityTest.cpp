@@ -1,7 +1,6 @@
 #include "MkvgenTestFixture.h"
 
-class MkvgenApiFunctionalityTest : public MkvgenTestBase {
-};
+class MkvgenApiFunctionalityTest : public MkvgenTestBase {};
 
 TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_ClusterBoundaryKeyFrame)
 {
@@ -14,8 +13,9 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_ClusterBoundaryKeyFrame)
     TrackInfo trackInfo;
     trackInfo.trackId = MKV_TEST_TRACKID;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE,
-            MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator)));
+    EXPECT_TRUE(
+        STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                            MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator)));
 
     // Add a Non-key frame
     EXPECT_TRUE(STATUS_SUCCEEDED(mkvgenPackageFrame(mkvGenerator, &frame, &trackInfo, mBuffer, &size, &encodedFrameInfo)));
@@ -68,9 +68,9 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_LargeFrameTimecode)
     TrackInfo trackInfo;
     trackInfo.trackId = MKV_TEST_TRACKID;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MIN_TIMECODE_SCALE,
-                                                    MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo,
-                                                    mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator)));
+    EXPECT_TRUE(
+        STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MIN_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                            MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator)));
     // Add a Non-key frame
     EXPECT_TRUE(STATUS_SUCCEEDED(mkvgenPackageFrame(mkvGenerator, &frame, &trackInfo, mBuffer, &size, &encodedFrameInfo)));
 
@@ -99,7 +99,8 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvFromJpegAsH2
     Frame frame = {FRAME_CURRENT_VERSION, 0, FRAME_FLAG_KEY_FRAME, 0, 0, frameDuration, 0, frameBuf, MKV_TEST_TRACKID};
     UINT32 i, cpdSize, index;
     UINT64 fileSize;
-    BYTE cpd[] = {0x01, 0x42, 0x40, 0x15, 0xFF, 0xE1, 0x00, 0x09, 0x67, 0x42, 0x40, 0x28, 0x96, 0x54, 0x0a, 0x0f, 0xc8, 0x01, 0x00, 0x04, 0x68, 0xce, 0x3c, 0x80};
+    BYTE cpd[] = {0x01, 0x42, 0x40, 0x15, 0xFF, 0xE1, 0x00, 0x09, 0x67, 0x42, 0x40, 0x28,
+                  0x96, 0x54, 0x0a, 0x0f, 0xc8, 0x01, 0x00, 0x04, 0x68, 0xce, 0x3c, 0x80};
     CHAR tagName[MKV_MAX_TAG_NAME_LEN];
     CHAR tagVal[MKV_MAX_TAG_VALUE_LEN];
     TrackInfo trackInfo;
@@ -111,9 +112,9 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvFromJpegAsH2
     mTrackInfo.codecPrivateData = cpd;
 
     // Pretend it's h264 to enforce the video width and height inclusion in the track info
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_CONTENT_TYPE, MKV_GEN_IN_STREAM_TIME, MKV_TEST_TIMECODE_SCALE,
-                                                 2 * HUNDREDS_OF_NANOS_IN_A_SECOND, MKV_TEST_SEGMENT_UUID, &mTrackInfo,
-                                                 mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H264_CONTENT_TYPE, MKV_GEN_IN_STREAM_TIME, MKV_TEST_TIMECODE_SCALE, 2 * HUNDREDS_OF_NANOS_IN_A_SECOND,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator));
     for (i = 0, index = 0; i < 100; i++) {
         SNPRINTF(fileName, MAX_PATH_LEN, (PCHAR) "samples" FPATHSEPARATOR_STR "gif%03d.jpg", i);
         fileSize = MKV_TEST_BUFFER_SIZE;
@@ -127,15 +128,13 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvFromJpegAsH2
         frame.index = i;
         frame.presentationTs = frameDuration * i;
         frame.decodingTs = frameDuration * i;
-        frame.size = (UINT32)fileSize;
+        frame.size = (UINT32) fileSize;
 
         // Add a frame
         packagedSize = size;
         EXPECT_EQ(STATUS_SUCCESS, mkvgenPackageFrame(mkvGenerator, &frame, &trackInfo, mkvBuffer + index, &packagedSize, NULL));
         index += packagedSize;
         size -= packagedSize;
-
-
     }
 
     // Add tags
@@ -143,11 +142,7 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvFromJpegAsH2
         packagedSize = size;
         SNPRINTF(tagName, MKV_MAX_TAG_NAME_LEN, "testTag_%d", i);
         SNPRINTF(tagVal, MKV_MAX_TAG_VALUE_LEN, "testTag_%d_Value", i);
-        EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mkvGenerator,
-                                                    mkvBuffer + index,
-                                                    tagName,
-                                                    tagVal,
-                                                    &packagedSize));
+        EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mkvGenerator, mkvBuffer + index, tagName, tagVal, &packagedSize));
         index += packagedSize;
         size -= packagedSize;
     }
@@ -171,11 +166,8 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvFromJpegAsFo
     Frame frame = {FRAME_CURRENT_VERSION, 0, FRAME_FLAG_KEY_FRAME, 0, 0, frameDuration, 0, frameBuf, MKV_TEST_TRACKID};
     UINT32 i, cpdSize, index;
     UINT64 fileSize;
-    BYTE cpd[] = {0x28, 0x00, 0x00, 0x00, 0x80, 0x02, 0x00, 0x00,
-                  0xe0, 0x01, 0x00, 0x00, 0x01, 0x00, 0x18, 0x00,
-                  0x4d, 0x4a, 0x50, 0x47, 0x00, 0x10, 0x0e, 0x00,
-                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    BYTE cpd[] = {0x28, 0x00, 0x00, 0x00, 0x80, 0x02, 0x00, 0x00, 0xe0, 0x01, 0x00, 0x00, 0x01, 0x00, 0x18, 0x00, 0x4d, 0x4a, 0x50, 0x47,
+                  0x00, 0x10, 0x0e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     CHAR tagName[MKV_MAX_TAG_NAME_LEN];
     CHAR tagVal[MKV_MAX_TAG_VALUE_LEN];
     TrackInfo trackInfo;
@@ -187,9 +179,9 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvFromJpegAsFo
     mTrackInfo.codecPrivateData = cpd;
 
     // This is a M-JPG to enforce the video width and height inclusion in the track info
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_X_MKV_VIDEO_CONTENT_TYPE, MKV_GEN_IN_STREAM_TIME, MKV_TEST_TIMECODE_SCALE,
-                                                 2 * HUNDREDS_OF_NANOS_IN_A_SECOND, MKV_TEST_SEGMENT_UUID, &mTrackInfo,
-                                                 mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_X_MKV_VIDEO_CONTENT_TYPE, MKV_GEN_IN_STREAM_TIME, MKV_TEST_TIMECODE_SCALE, 2 * HUNDREDS_OF_NANOS_IN_A_SECOND,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator));
 
     for (i = 0, index = 0; i < 100; i++) {
         SNPRINTF(fileName, 24, (PCHAR) "samples" FPATHSEPARATOR_STR "gif%03d.jpg", i);
@@ -203,7 +195,7 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvFromJpegAsFo
         frame.index = i;
         frame.presentationTs = frameDuration * i;
         frame.decodingTs = frameDuration * i;
-        frame.size = (UINT32)fileSize;
+        frame.size = (UINT32) fileSize;
 
         // Add a frame
         packagedSize = size;
@@ -217,11 +209,7 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvFromJpegAsFo
         packagedSize = size;
         SNPRINTF(tagName, 16, (PCHAR) "testTag_%d", i);
         SNPRINTF(tagVal, 16, (PCHAR) "testTag_%d_Value", i);
-        EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mkvGenerator,
-                                                    mkvBuffer + index,
-                                                    tagName,
-                                                    tagVal,
-                                                    &packagedSize));
+        EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mkvGenerator, mkvBuffer + index, tagName, tagVal, &packagedSize));
         index += packagedSize;
         size -= packagedSize;
     }
@@ -244,28 +232,16 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvTagsOnly)
     STRCPY(mTrackInfo.codecId, (PCHAR) "V_MJPEG");
 
     // Pretend it's h264 to enforce the video width and height inclusion in the track info
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_CONTENT_TYPE,
-                                                 MKV_GEN_IN_STREAM_TIME,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 2 * HUNDREDS_OF_NANOS_IN_A_SECOND,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &mkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H264_CONTENT_TYPE, MKV_GEN_IN_STREAM_TIME, MKV_TEST_TIMECODE_SCALE, 2 * HUNDREDS_OF_NANOS_IN_A_SECOND,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator));
 
     // Add tags
     for (i = 0; i < MKV_TEST_TAG_COUNT; i++) {
         packagedSize = size;
         SNPRINTF(tagName, 16, (PCHAR) "testTag_%d", i);
         SNPRINTF(tagVal, 24, (PCHAR) "testTag_%d_Value", i);
-        EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mkvGenerator,
-                                                    mkvBuffer + index,
-                                                    tagName,
-                                                    tagVal,
-                                                    &packagedSize));
+        EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mkvGenerator, mkvBuffer + index, tagName, tagVal, &packagedSize));
         index += packagedSize;
         size -= packagedSize;
     }
@@ -275,7 +251,8 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvTagsOnly)
     EXPECT_EQ(STATUS_SUCCESS, freeMkvGenerator(mkvGenerator));
 }
 
-TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvMixedTags) {
+TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvMixedTags)
+{
     PMkvGenerator mkvGenerator;
     BYTE frameBuf[100];
     UINT32 size = 5000000, packagedSize;
@@ -283,11 +260,8 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvMixedTags) {
     UINT64 frameDuration = 500 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     Frame frame = {FRAME_CURRENT_VERSION, 0, FRAME_FLAG_NONE, 0, 0, frameDuration, SIZEOF(frameBuf), frameBuf, MKV_TEST_TRACKID};
     UINT32 frameIndex, i, cpdSize, index = 0;
-    BYTE cpd[] = {0x28, 0x00, 0x00, 0x00, 0x80, 0x02, 0x00, 0x00,
-                  0xe0, 0x01, 0x00, 0x00, 0x01, 0x00, 0x18, 0x00,
-                  0x4d, 0x4a, 0x50, 0x47, 0x00, 0x10, 0x0e, 0x00,
-                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    BYTE cpd[] = {0x28, 0x00, 0x00, 0x00, 0x80, 0x02, 0x00, 0x00, 0xe0, 0x01, 0x00, 0x00, 0x01, 0x00, 0x18, 0x00, 0x4d, 0x4a, 0x50, 0x47,
+                  0x00, 0x10, 0x0e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     CHAR tagName[MKV_MAX_TAG_NAME_LEN];
     CHAR tagVal[MKV_MAX_TAG_VALUE_LEN];
     TrackInfo trackInfo;
@@ -299,11 +273,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvMixedTags) {
     mTrackInfo.codecPrivateDataSize = cpdSize;
     mTrackInfo.codecPrivateData = cpd;
 
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_X_MKV_VIDEO_CONTENT_TYPE,
-                                                 MKV_GEN_IN_STREAM_TIME | MKV_GEN_KEY_FRAME_PROCESSING,
-                                                 MKV_TEST_TIMECODE_SCALE, 2 * HUNDREDS_OF_NANOS_IN_A_SECOND,
-                                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_X_MKV_VIDEO_CONTENT_TYPE, MKV_GEN_IN_STREAM_TIME | MKV_GEN_KEY_FRAME_PROCESSING, MKV_TEST_TIMECODE_SCALE,
+                                 2 * HUNDREDS_OF_NANOS_IN_A_SECOND, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &mkvGenerator));
 
     // Generate a key-frame every 10th frame
     for (frameIndex = 0; frameIndex < 100; frameIndex++) {
@@ -318,11 +291,7 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvMixedTags) {
                 packagedSize = size;
                 SNPRINTF(tagName, 16, (PCHAR) "testTag_%d", i);
                 SNPRINTF(tagVal, 24, "(PCHAR) testTag_%d_Value", i);
-                EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mkvGenerator,
-                                                            mkvBuffer + index,
-                                                            tagName,
-                                                            tagVal,
-                                                            &packagedSize));
+                EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mkvGenerator, mkvBuffer + index, tagName, tagVal, &packagedSize));
                 index += packagedSize;
                 size -= packagedSize;
             }
@@ -330,12 +299,7 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvMixedTags) {
 
         // Add a frame
         packagedSize = size;
-        EXPECT_EQ(STATUS_SUCCESS, mkvgenPackageFrame(mkvGenerator,
-                                                     &frame,
-                                                     &trackInfo,
-                                                     mkvBuffer + index,
-                                                     &packagedSize,
-                                                     NULL));
+        EXPECT_EQ(STATUS_SUCCESS, mkvgenPackageFrame(mkvGenerator, &frame, &trackInfo, mkvBuffer + index, &packagedSize, NULL));
         index += packagedSize;
         size -= packagedSize;
     }
@@ -345,11 +309,7 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CreateStoreMkvMixedTags) {
         packagedSize = size;
         SNPRINTF(tagName, 16, (PCHAR) "testTag_%d", i);
         SNPRINTF(tagVal, 24, (PCHAR) "testTag_%d_Value", i);
-        EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mkvGenerator,
-                                                    mkvBuffer + index,
-                                                    tagName,
-                                                    tagVal,
-                                                    &packagedSize));
+        EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mkvGenerator, mkvBuffer + index, tagName, tagVal, &packagedSize));
         index += packagedSize;
         size -= packagedSize;
     }
@@ -377,17 +337,9 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_CodecPrivateData)
         cpdSize = cpdSizes[i];
         mTrackInfo.codecPrivateDataSize = cpdSize;
         mTrackInfo.codecPrivateData = tempBuffer;
-        EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_TEST_CONTENT_TYPE,
-                                                     MKV_TEST_BEHAVIOR_FLAGS,
-                                                     MKV_TEST_TIMECODE_SCALE,
-                                                     MKV_TEST_CLUSTER_DURATION,
-                                                     MKV_TEST_SEGMENT_UUID,
-                                                     &mTrackInfo,
-                                                     mTrackInfoCount,
-                                                     MKV_TEST_CLIENT_ID,
-                                                     NULL,
-                                                     0,
-                                                     &mkvGenerator));
+        EXPECT_EQ(STATUS_SUCCESS,
+                  createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                     MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator));
 
         // Add a frame
         size = MKV_TEST_BUFFER_SIZE;
@@ -426,17 +378,9 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_ClusterBoundaryNonKeyFrame
     TrackInfo trackInfo;
     trackInfo.trackId = MKV_TEST_TRACKID;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE,
-                                                    MKV_GEN_IN_STREAM_TIME,
-                                                    MKV_TEST_TIMECODE_SCALE,
-                                                    MKV_TEST_CLUSTER_DURATION,
-                                                    MKV_TEST_SEGMENT_UUID,
-                                                    &mTrackInfo,
-                                                    mTrackInfoCount,
-                                                    MKV_TEST_CLIENT_ID,
-                                                    NULL,
-                                                    0,
-                                                    &mkvGenerator)));
+    EXPECT_TRUE(
+        STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_GEN_IN_STREAM_TIME, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                            MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator)));
 
     // Add a Non-key frame
     EXPECT_TRUE(STATUS_SUCCEEDED(mkvgenPackageFrame(mkvGenerator, &frame, &trackInfo, NULL, &size, &encodedFrameInfo)));
@@ -541,10 +485,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_TimeCallbackCalls)
     TrackInfo trackInfo;
     trackInfo.trackId = MKV_TEST_TRACKID;
 
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_GEN_KEY_FRAME_PROCESSING, MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo,
-                                                 mTrackInfoCount, MKV_TEST_CLIENT_ID, getTimeCallback,
-                                                 MKV_TEST_CUSTOM_DATA, &mkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_GEN_KEY_FRAME_PROCESSING, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, getTimeCallback, MKV_TEST_CUSTOM_DATA,
+                                 &mkvGenerator));
 
     // Add a key frame - get size first
     EXPECT_EQ(STATUS_SUCCESS, mkvgenPackageFrame(mkvGenerator, &frame, &trackInfo, NULL, &size, NULL));
@@ -581,11 +525,9 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenPackageFrame_TimeCallbackCallsNotCalled
     TrackInfo trackInfo;
     trackInfo.trackId = MKV_TEST_TRACKID;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS,
-                                                    MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
-                                                    MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount,
-                                                    MKV_TEST_CLIENT_ID, getTimeCallback,
-                                                    MKV_TEST_CUSTOM_DATA, &mkvGenerator)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE,
+                                                    MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount,
+                                                    MKV_TEST_CLIENT_ID, getTimeCallback, MKV_TEST_CUSTOM_DATA, &mkvGenerator)));
 
     // Add a key frame - get size first
     EXPECT_TRUE(STATUS_SUCCEEDED(mkvgenPackageFrame(mkvGenerator, &frame, &trackInfo, NULL, &size, NULL)));
@@ -619,10 +561,9 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenResetGenerator_Variations)
     TrackInfo trackInfo;
     trackInfo.trackId = MKV_TEST_TRACKID;
 
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS,
-                                                 MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator));
 
     // Add a Non-key frame
     EXPECT_EQ(STATUS_SUCCESS, mkvgenPackageFrame(mkvGenerator, &frame, &trackInfo, mBuffer, &size, &encodedFrameInfo));
@@ -695,17 +636,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenResetGeneratorWithAvccAdaptation_Variat
         putInt32((PINT32) (frame.frameData + i), runSize);
     }
 
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_TEST_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_AVCC_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &mkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_AVCC_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &mkvGenerator));
 
     // Add a Non-key frame
     EXPECT_EQ(STATUS_SUCCESS, mkvgenPackageFrame(mkvGenerator, &frame, &trackInfo, mBuffer, &size, &encodedFrameInfo));
@@ -785,17 +719,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenResetGeneratorWithAnnexBAdaptation_Vari
     adaptedSize = SIZEOF(frameBuf) / 100 + SIZEOF(frameBuf);
 
     // Try for non-video track type. The frame shouldn't get adapted
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_TEST_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &mkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &mkvGenerator));
 
     // Add a Non-key frame
     EXPECT_EQ(STATUS_SUCCESS, mkvgenPackageFrame(mkvGenerator, &frame, &trackInfo, mBuffer, &size, &encodedFrameInfo));
@@ -807,17 +734,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenResetGeneratorWithAnnexBAdaptation_Vari
 
     trackInfo.trackType = MKV_TRACK_INFO_TYPE_VIDEO;
     // Try for non-video track type. The frame shouldn't get adapted
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_TEST_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &mkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &mkvGenerator));
 
     size = MKV_TEST_BUFFER_SIZE;
     // Add a Non-key frame
@@ -878,8 +798,8 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenMkvTracksHeaderWithMultipleTrack)
     PMkvGenerator pMkvGenerator;
     UINT32 size = MKV_TEST_BUFFER_SIZE;
     BYTE videoCpd[] = {0x01, 0x4d, 0x00, 0x20, 0xff, 0xe1, 0x00, 0x23, 0x27, 0x4d, 0x00, 0x20, 0x89, 0x8b, 0x60, 0x28, 0x02,
-                        0xdd, 0x80, 0x9e, 0x00, 0x00, 0x4e, 0x20, 0x00, 0x0f, 0x42, 0x41, 0xc0, 0xc0, 0x01, 0x77, 0x00, 0x00,
-                        0x5d, 0xc1, 0x7b, 0xdf, 0x07, 0xc2, 0x21, 0x1b, 0x80, 0x01, 0x00, 0x04, 0x28, 0xee, 0x1f, 0x20};
+                       0xdd, 0x80, 0x9e, 0x00, 0x00, 0x4e, 0x20, 0x00, 0x0f, 0x42, 0x41, 0xc0, 0xc0, 0x01, 0x77, 0x00, 0x00,
+                       0x5d, 0xc1, 0x7b, 0xdf, 0x07, 0xc2, 0x21, 0x1b, 0x80, 0x01, 0x00, 0x04, 0x28, 0xee, 0x1f, 0x20};
     UINT32 videoCpdSize = SIZEOF(videoCpd);
     BYTE audioCpd[] = {0x12, 0x10, 0x56, 0xe5, 0x00};
     UINT32 audioCpdSize = SIZEOF(audioCpd);
@@ -917,17 +837,9 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenMkvTracksHeaderWithMultipleTrack)
     UINT32 mkvTracksElementSize = 0;
     UINT32 encodedCpdLen = 0;
 
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_AAC_MULTI_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 testTrackInfo,
-                                                 testTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H264_AAC_MULTI_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, testTrackInfo, testTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
     UINT32 encodedLen;
     mkvgenEbmlEncodeSegmentInfo((PStreamMkvGenerator) pMkvGenerator, NULL, 0, &encodedLen);
     EXPECT_EQ(STATUS_SUCCESS, mkvgenPackageFrame(pMkvGenerator, &frame, &trackInfo, mBuffer, &size, &encodedFrameInfo));
@@ -951,10 +863,7 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenMkvTracksHeaderWithMultipleTrack)
     pCurrentPnt += 4;
 
     // Calculate the EBML encoded cpd size for video cpd
-    mkvgenEbmlEncodeNumber(videoCpdSize,
-                           NULL,
-                           0,
-                           &encodedCpdLen);
+    mkvgenEbmlEncodeNumber(videoCpdSize, NULL, 0, &encodedCpdLen);
 
     // Jump to the beginning of video cpd bits. mkvgenGetMkvTrackHeaderSize includes MKV_TRACKS_ELEM_BITS_SIZE but we just
     // want the track entry size, therefore subtract MKV_TRACKS_ELEM_BITS_SIZE
@@ -966,10 +875,7 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenMkvTracksHeaderWithMultipleTrack)
     // Jump to the beginning of audio cpd bits
     pCurrentPnt += videoCpdSize;
 
-    mkvgenEbmlEncodeNumber(audioCpdSize,
-                           NULL,
-                           0,
-                           &encodedCpdLen);
+    mkvgenEbmlEncodeNumber(audioCpdSize, NULL, 0, &encodedCpdLen);
 
     // Jump to the beginning of audio cpd bits. mkvgenGetMkvTrackHeaderSize includes MKV_TRACKS_ELEM_BITS_SIZE but we just
     // want the track entry size, therefore subtract MKV_TRACKS_ELEM_BITS_SIZE
@@ -990,50 +896,40 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     PStreamMkvGenerator pStreamMkvGenerator;
     PTrackInfo pTrackInfo;
 
-    BYTE cpdH264[] = {0x00, 0x00, 0x00, 0x01, 0x67, 0x64, 0x00, 0x34, 0xAC, 0x2B, 0x40, 0x1E, 0x00, 0x78, 0xD8, 0x08,
-                      0x80, 0x00, 0x01, 0xF4, 0x00, 0x00, 0xEA, 0x60, 0x47, 0xA5, 0x50, 0x00, 0x00, 0x00, 0x01, 0x68,
-                      0xEE, 0x3C, 0xB0};
-    BYTE cpdH264Aud[] = {0x00, 0x00, 0x00, 0x01, 0x09, 0x10,
-                         0x00, 0x00, 0x00, 0x01, 0x67, 0x64, 0x00, 0x34, 0xAC, 0x2B, 0x40, 0x1E, 0x00, 0x78, 0xD8, 0x08,
-                         0x80, 0x00, 0x01, 0xF4, 0x00, 0x00, 0xEA, 0x60, 0x47, 0xA5, 0x50, 0x00, 0x00, 0x00, 0x01, 0x68,
-                         0xEE, 0x3C, 0xB0};
-    BYTE cpdH264_2[] =  {0x00, 0x00, 0x00, 0x01, 0x67, 0x42, 0x00, 0x1e,
-                         0xa9, 0x50, 0x14, 0x07, 0xb4, 0x20, 0x00, 0x00,
-                         0x7d, 0x00, 0x00, 0x1d, 0x4c, 0x00, 0x80, 0x00,
-                         0x00, 0x00, 0x01, 0x68, 0xce, 0x3c, 0x80};
-    BYTE cpdH265[] = {0x00, 0x00, 0x00, 0x01, 0x40, 0x01, 0x0c, 0x01, 0xff, 0xff, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00,
-                      0xb0, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x3c, 0xac, 0x59, 0x00, 0x00, 0x00, 0x01, 0x42,
-                      0x01, 0x01, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0xb0, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00,
-                      0x3c, 0xa0, 0x18, 0x20, 0x28, 0x71, 0x31, 0x39, 0x6b, 0xb9, 0x32, 0x4b, 0xb9, 0x48, 0x28, 0x10,
-                      0x10, 0x17, 0x68, 0x50, 0x94, 0x00, 0x00, 0x00, 0x01, 0x44, 0x01, 0xc0, 0xf1, 0x80, 0x04, 0x20};
-    BYTE cpdH265Aud[] = {0x00, 0x00, 0x00, 0x01, 0x09, 0x10,
-                         0x00, 0x00, 0x00, 0x01, 0x40, 0x01, 0x0c, 0x01, 0xff, 0xff, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00,
-                         0xb0, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x3c, 0xac, 0x59, 0x00, 0x00, 0x00, 0x01, 0x42,
-                         0x01, 0x01, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0xb0, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00,
-                         0x3c, 0xa0, 0x18, 0x20, 0x28, 0x71, 0x31, 0x39, 0x6b, 0xb9, 0x32, 0x4b, 0xb9, 0x48, 0x28, 0x10,
-                         0x10, 0x17, 0x68, 0x50, 0x94, 0x00, 0x00, 0x00, 0x01, 0x44, 0x01, 0xc0, 0xf1, 0x80, 0x04, 0x20};
+    BYTE cpdH264[] = {0x00, 0x00, 0x00, 0x01, 0x67, 0x64, 0x00, 0x34, 0xAC, 0x2B, 0x40, 0x1E, 0x00, 0x78, 0xD8, 0x08, 0x80, 0x00,
+                      0x01, 0xF4, 0x00, 0x00, 0xEA, 0x60, 0x47, 0xA5, 0x50, 0x00, 0x00, 0x00, 0x01, 0x68, 0xEE, 0x3C, 0xB0};
+    BYTE cpdH264Aud[] = {0x00, 0x00, 0x00, 0x01, 0x09, 0x10, 0x00, 0x00, 0x00, 0x01, 0x67, 0x64, 0x00, 0x34, 0xAC, 0x2B, 0x40, 0x1E, 0x00, 0x78, 0xD8,
+                         0x08, 0x80, 0x00, 0x01, 0xF4, 0x00, 0x00, 0xEA, 0x60, 0x47, 0xA5, 0x50, 0x00, 0x00, 0x00, 0x01, 0x68, 0xEE, 0x3C, 0xB0};
+    BYTE cpdH264_2[] = {0x00, 0x00, 0x00, 0x01, 0x67, 0x42, 0x00, 0x1e, 0xa9, 0x50, 0x14, 0x07, 0xb4, 0x20, 0x00, 0x00,
+                        0x7d, 0x00, 0x00, 0x1d, 0x4c, 0x00, 0x80, 0x00, 0x00, 0x00, 0x01, 0x68, 0xce, 0x3c, 0x80};
+    BYTE cpdH265[] = {0x00, 0x00, 0x00, 0x01, 0x40, 0x01, 0x0c, 0x01, 0xff, 0xff, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0xb0, 0x00, 0x00, 0x03,
+                      0x00, 0x00, 0x03, 0x00, 0x3c, 0xac, 0x59, 0x00, 0x00, 0x00, 0x01, 0x42, 0x01, 0x01, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00,
+                      0xb0, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x3c, 0xa0, 0x18, 0x20, 0x28, 0x71, 0x31, 0x39, 0x6b, 0xb9, 0x32, 0x4b,
+                      0xb9, 0x48, 0x28, 0x10, 0x10, 0x17, 0x68, 0x50, 0x94, 0x00, 0x00, 0x00, 0x01, 0x44, 0x01, 0xc0, 0xf1, 0x80, 0x04, 0x20};
+    BYTE cpdH265Aud[] = {0x00, 0x00, 0x00, 0x01, 0x09, 0x10, 0x00, 0x00, 0x00, 0x01, 0x40, 0x01, 0x0c, 0x01, 0xff, 0xff, 0x01, 0x60,
+                         0x00, 0x00, 0x03, 0x00, 0xb0, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x3c, 0xac, 0x59, 0x00, 0x00, 0x00,
+                         0x01, 0x42, 0x01, 0x01, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0xb0, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00,
+                         0x3c, 0xa0, 0x18, 0x20, 0x28, 0x71, 0x31, 0x39, 0x6b, 0xb9, 0x32, 0x4b, 0xb9, 0x48, 0x28, 0x10, 0x10, 0x17,
+                         0x68, 0x50, 0x94, 0x00, 0x00, 0x00, 0x01, 0x44, 0x01, 0xc0, 0xf1, 0x80, 0x04, 0x20};
 
     // I-frame from a real-life encoder output which is actually invalid Annex-B format (shortened after a few bytes of the actual frame)
-    BYTE cpdH264AudSeiExtra0[] = {0x00, 0x00, 0x00, 0x01, 0x09, 0x10, 0x00, 0x00, 0x00, 0x00, 0x01, 0x67, 0x64, 0x00, 0x1E, 0xAC,
-                        0x1B, 0x1A, 0x80, 0xB0, 0x3D, 0xFF, 0xFF, 0x00, 0x28, 0x00, 0x21, 0x6E, 0x0C, 0x0C, 0x0C, 0x80,
-                        0x00, 0x01, 0xF4, 0x00, 0x00, 0x75, 0x30, 0x74, 0x30, 0x07, 0xD0, 0x00, 0x01, 0x31, 0x2D, 0x5D,
-                        0xE5, 0xC6, 0x86, 0x00, 0xFA, 0x00, 0x00, 0x26, 0x25, 0xAB, 0xBC, 0xB8, 0x50, 0x00, 0x00, 0x00,
-                        0x00, 0x01, 0x68, 0xEE, 0x38, 0x30, 0x00, 0x00, 0x00, 0x00, 0x01, 0x06, 0x00, 0x0D, 0xBC, 0xFF,
-                        0x87, 0x49, 0xB5, 0x16, 0x3C, 0xFF, 0x87, 0x49, 0xB5, 0x16, 0x40, 0x01, 0x04, 0x00, 0x78, 0x08,
-                        0x10, 0x06, 0x01, 0xC4, 0x80, 0x00, 0x00, 0x00, 0x00, 0x01, 0x65, 0xB8, 0x00, 0x02, 0x00, 0x00,
-                        0x03, 0x02, 0x7F, 0xEC, 0x0E, 0xD0, 0xE1, 0xA7, 0x9D, 0xA3, 0x7C, 0x49, 0x42, 0xC2, 0x23, 0x59,};
+    BYTE cpdH264AudSeiExtra0[] = {
+        0x00, 0x00, 0x00, 0x01, 0x09, 0x10, 0x00, 0x00, 0x00, 0x00, 0x01, 0x67, 0x64, 0x00, 0x1E, 0xAC, 0x1B, 0x1A, 0x80, 0xB0, 0x3D, 0xFF,
+        0xFF, 0x00, 0x28, 0x00, 0x21, 0x6E, 0x0C, 0x0C, 0x0C, 0x80, 0x00, 0x01, 0xF4, 0x00, 0x00, 0x75, 0x30, 0x74, 0x30, 0x07, 0xD0, 0x00,
+        0x01, 0x31, 0x2D, 0x5D, 0xE5, 0xC6, 0x86, 0x00, 0xFA, 0x00, 0x00, 0x26, 0x25, 0xAB, 0xBC, 0xB8, 0x50, 0x00, 0x00, 0x00, 0x00, 0x01,
+        0x68, 0xEE, 0x38, 0x30, 0x00, 0x00, 0x00, 0x00, 0x01, 0x06, 0x00, 0x0D, 0xBC, 0xFF, 0x87, 0x49, 0xB5, 0x16, 0x3C, 0xFF, 0x87, 0x49,
+        0xB5, 0x16, 0x40, 0x01, 0x04, 0x00, 0x78, 0x08, 0x10, 0x06, 0x01, 0xC4, 0x80, 0x00, 0x00, 0x00, 0x00, 0x01, 0x65, 0xB8, 0x00, 0x02,
+        0x00, 0x00, 0x03, 0x02, 0x7F, 0xEC, 0x0E, 0xD0, 0xE1, 0xA7, 0x9D, 0xA3, 0x7C, 0x49, 0x42, 0xC2, 0x23, 0x59,
+    };
 
-    BYTE cpdH265WithIdr_N_Lp[] = {0x00, 0x00, 0x00, 0x01, 0x40, 0x01, 0x0c, 0x01, 0xff, 0xff, 0x01, 0x60,
-                                  0x00, 0x00, 0x03, 0x00, 0x90, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00,
-                                  0x5a, 0x95, 0x98, 0x09, 0x00, 0x00, 0x00, 0x01, 0x42, 0x01, 0x01, 0x01,
-                                  0x60, 0x00, 0x00, 0x03, 0x00, 0x90, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03,
-                                  0x00, 0x5a, 0xa0, 0x05, 0x02, 0x01, 0xe1, 0x65, 0x95, 0x9a, 0x49, 0x32,
-                                  0xbf, 0xfc, 0x00, 0x04, 0x00, 0x04, 0x04, 0x00, 0x00, 0x03, 0x00, 0x04,
-                                  0x00, 0x00, 0x03, 0x00, 0x64, 0x20, 0x00, 0x00, 0x00, 0x01, 0x44, 0x01,
-                                  0xc1, 0x72, 0xb4, 0x62, 0x40, 0x00, 0x00, 0x00, 0x01, 0x28, 0x01, 0xaf,
-                                  0x3c, 0x40, 0xeb, 0x4d, 0x2b, 0x2c, 0x9a, 0x4a, 0x2f, 0x09, 0x56, 0xe0,
-                                  0xdd, 0x7b, 0x56, 0xe5, 0x00, 0xc5, 0xb4, 0xbc, 0x5c, 0x27, 0x8a, 0xc0,
-                                  0x7e, 0xaa, 0x7d, 0xc6, 0xbf, 0xec, 0xc1, 0xb0, 0x8a, 0xfd, 0x07, 0x3a,};
+    BYTE cpdH265WithIdr_N_Lp[] = {
+        0x00, 0x00, 0x00, 0x01, 0x40, 0x01, 0x0c, 0x01, 0xff, 0xff, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0x90, 0x00, 0x00, 0x03, 0x00, 0x00,
+        0x03, 0x00, 0x5a, 0x95, 0x98, 0x09, 0x00, 0x00, 0x00, 0x01, 0x42, 0x01, 0x01, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0x90, 0x00, 0x00,
+        0x03, 0x00, 0x00, 0x03, 0x00, 0x5a, 0xa0, 0x05, 0x02, 0x01, 0xe1, 0x65, 0x95, 0x9a, 0x49, 0x32, 0xbf, 0xfc, 0x00, 0x04, 0x00, 0x04,
+        0x04, 0x00, 0x00, 0x03, 0x00, 0x04, 0x00, 0x00, 0x03, 0x00, 0x64, 0x20, 0x00, 0x00, 0x00, 0x01, 0x44, 0x01, 0xc1, 0x72, 0xb4, 0x62,
+        0x40, 0x00, 0x00, 0x00, 0x01, 0x28, 0x01, 0xaf, 0x3c, 0x40, 0xeb, 0x4d, 0x2b, 0x2c, 0x9a, 0x4a, 0x2f, 0x09, 0x56, 0xe0, 0xdd, 0x7b,
+        0x56, 0xe5, 0x00, 0xc5, 0xb4, 0xbc, 0x5c, 0x27, 0x8a, 0xc0, 0x7e, 0xaa, 0x7d, 0xc6, 0xbf, 0xec, 0xc1, 0xb0, 0x8a, 0xfd, 0x07, 0x3a,
+    };
 
     BYTE annexBStart[] = {0x00, 0x00, 0x00, 0x01};
 
@@ -1048,17 +944,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     // Non-key frame scenario
     //
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H264_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1084,17 +973,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     // Non-H264 frame scenario
     //
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator((PCHAR) "abc",
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator((PCHAR) "abc", MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1121,17 +1003,9 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     // No adaptation specified
     //
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H264_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1159,17 +1033,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     // CPD already specified
     //
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H264_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1194,17 +1061,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     // Invalid CPD - no I-frame bits
     //
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H264_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1232,17 +1092,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     // Invalid CPD
     //
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H264_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1271,17 +1124,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     // Invalid - H265 with invalid H264 content type
     //
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H264_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1315,17 +1161,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     // Valid H264
     //
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H264_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1359,17 +1198,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     // Valid H264 with AUD
     //
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H264_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1401,17 +1233,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     // Valid H265 with content type of H265
     //
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H265_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H265_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1443,17 +1268,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     // Valid H265 with content type of H265 with AUD
     //
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H265_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H265_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1487,17 +1305,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     mTrackInfo.codecPrivateDataSize = SIZEOF(cpdH264);
     mTrackInfo.codecPrivateData = cpdH264;
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H264_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1530,17 +1341,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     mTrackInfo.codecPrivateDataSize = 0;
     mTrackInfo.codecPrivateData = NULL;
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H264_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1634,17 +1438,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     // InValid H264 getting fixed up with content type of H264
     //
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H264_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS, MKV_TEST_TIMECODE_SCALE,
+                                 MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1675,17 +1472,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     // InValid H264 getting fixed up with content type of H264 with CPD adaptation
     //
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H264_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS | MKV_GEN_ADAPT_ANNEXB_CPD_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H264_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS | MKV_GEN_ADAPT_ANNEXB_CPD_NALS,
+                                 MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount,
+                                 MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1715,17 +1505,10 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_Variations)
     //
     // Valid H265 with IDR_N_LP in Annex-B format
     //
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_H265_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS | MKV_GEN_ADAPT_ANNEXB_CPD_NALS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_H265_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS | MKV_GEN_ADAPT_ANNEXB_CPD_NALS,
+                                 MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount,
+                                 MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     pTrackInfo = &pStreamMkvGenerator->trackInfoList[0];
@@ -1769,17 +1552,9 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_G711Alaw)
     STRCPY(trackInfo.codecId, (PCHAR) "audio/teststream");
     STRCPY(trackInfo.trackName, MKV_TEST_TRACK_NAME);
 
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_ALAW_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &trackInfo,
-                                                 1,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_ALAW_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, &trackInfo, 1, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     EXPECT_TRUE((DOUBLE) 8000 == pStreamMkvGenerator->trackInfoList->trackCustomData.trackAudioConfig.samplingFrequency);
@@ -1803,17 +1578,9 @@ TEST_F(MkvgenApiFunctionalityTest, mkvgenExtractCpd_G711Mulaw)
     STRCPY(trackInfo.codecId, (PCHAR) "audio/teststream");
     STRCPY(trackInfo.trackName, MKV_TEST_TRACK_NAME);
 
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_MULAW_CONTENT_TYPE,
-                                                 MKV_TEST_BEHAVIOR_FLAGS,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &trackInfo,
-                                                 1,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &pMkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_MULAW_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, &trackInfo, 1, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
 
     pStreamMkvGenerator = (PStreamMkvGenerator) pMkvGenerator;
     EXPECT_TRUE((DOUBLE) 8000 == pStreamMkvGenerator->trackInfoList->trackCustomData.trackAudioConfig.samplingFrequency);

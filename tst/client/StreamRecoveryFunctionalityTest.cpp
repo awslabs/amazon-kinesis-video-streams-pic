@@ -1,15 +1,14 @@
 #include "ClientTestFixture.h"
 
-using ::testing::WithParamInterface;
 using ::testing::Bool;
-using ::testing::Values;
 using ::testing::Combine;
+using ::testing::Values;
+using ::testing::WithParamInterface;
 
-class StreamRecoveryFunctionalityTest : public ClientTestBase,
-                                        public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> >{
-
-protected:
-    void SetUp() {
+class StreamRecoveryFunctionalityTest : public ClientTestBase, public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> > {
+  protected:
+    void SetUp()
+    {
         ClientTestBase::SetUp();
 
         STREAMING_TYPE streamingType;
@@ -26,7 +25,7 @@ protected:
 TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionEnsureRecovery)
 {
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT64 currentTime, streamStopTime, resetConnectionTime;
 
@@ -54,9 +53,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionEns
 
         if (IS_VALID_TIMESTAMP(resetConnectionTime) && currentTime >= resetConnectionTime) {
             // reset connection
-            EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mStreamHandle,
-                                                                   INVALID_UPLOAD_HANDLE_VALUE,
-                                                                   SERVICE_CALL_RESULT_OK));
+            EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mStreamHandle, INVALID_UPLOAD_HANDLE_VALUE, SERVICE_CALL_RESULT_OK));
             resetConnectionTime = INVALID_TIMESTAMP_VALUE; // reset connection only once.
         }
 
@@ -65,9 +62,10 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionEns
     VerifyStopStreamSyncAndFree();
 }
 
-TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionAfterTokenRotationEnsureRecovery) {
+TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionAfterTokenRotationEnsureRecovery)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT64 currentTime, streamStopTime, resetConnectionTime;
 
@@ -98,9 +96,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionAft
 
         if (IS_VALID_TIMESTAMP(resetConnectionTime) && currentTime >= resetConnectionTime) {
             // reset connection
-            EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mStreamHandle,
-                                                                   INVALID_UPLOAD_HANDLE_VALUE,
-                                                                   SERVICE_CALL_RESULT_OK));
+            EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mStreamHandle, INVALID_UPLOAD_HANDLE_VALUE, SERVICE_CALL_RESULT_OK));
             // restore slow speed after reset so all subsequent uploads are at normal speed
             mMockConsumerConfig.mUploadSpeedBytesPerSecond = 1000000;
             // restore speed for current active upload handles
@@ -121,10 +117,11 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionAft
 // Create stream, stream, last persisted ACK is before the rollback duration, the received ACK is
 // after the rollback duration, inject a fault indicating not-dead host and terminate session.
 // Make sure the rollback is to the received ACK + next fragment
-TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamRollbackToLastReceivedAckEnsureRecovery) {
+TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamRollbackToLastReceivedAckEnsureRecovery)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
     UPLOAD_HANDLE errorHandle = INVALID_UPLOAD_HANDLE_VALUE;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     BOOL didPutFrame, gotStreamData = FALSE, submittedAck;
     UINT64 currentTime, streamStopTime, rollbackTime, lastReceivedAckTime = 0, lastPersistedAckTime = 0;
     STATUS retStatus;
@@ -157,20 +154,16 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamRollbackToLastRece
                 // First getStreamData should trigger rollback
                 if (IS_VALID_TIMESTAMP(lastReceivedAckTime) && uploadHandle != errorHandle) {
                     UINT32 actualDataSize;
-                    retStatus = getKinesisVideoStreamData(mStreamHandle, mockConsumer->mUploadHandle,
-                            mockConsumer->mDataBuffer, 1, &actualDataSize);
+                    retStatus = getKinesisVideoStreamData(mStreamHandle, mockConsumer->mUploadHandle, mockConsumer->mDataBuffer, 1, &actualDataSize);
                     if (mStreamInfo.streamCaps.streamingType == STREAMING_TYPE_REALTIME) {
                         // Rollback to last received ack in realtime mode
-                        EXPECT_EQ(
-                                lastReceivedAckTime * HUNDREDS_OF_NANOS_IN_A_MILLISECOND,
-                                FROM_STREAM_HANDLE(mStreamHandle)->curViewItem.viewItem.ackTimestamp);
+                        EXPECT_EQ(lastReceivedAckTime * HUNDREDS_OF_NANOS_IN_A_MILLISECOND,
+                                  FROM_STREAM_HANDLE(mStreamHandle)->curViewItem.viewItem.ackTimestamp);
                     } else {
                         // Rollback to the tail in offline mode
-                        EXPECT_EQ(
-                                lastPersistedAckTime * HUNDREDS_OF_NANOS_IN_A_MILLISECOND
-                                + 1 * HUNDREDS_OF_NANOS_IN_A_SECOND *
-                                mMockProducerConfig.mKeyFrameInterval / mMockProducerConfig.mFps,
-                                FROM_STREAM_HANDLE(mStreamHandle)->curViewItem.viewItem.ackTimestamp);
+                        EXPECT_EQ(lastPersistedAckTime * HUNDREDS_OF_NANOS_IN_A_MILLISECOND +
+                                      1 * HUNDREDS_OF_NANOS_IN_A_SECOND * mMockProducerConfig.mKeyFrameInterval / mMockProducerConfig.mFps,
+                                  FROM_STREAM_HANDLE(mStreamHandle)->curViewItem.viewItem.ackTimestamp);
                     }
                     lastReceivedAckTime = INVALID_TIMESTAMP_VALUE; // only check when rollback happens
                 } else {
@@ -207,7 +200,8 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamRollbackToLastRece
             for (int i = 0; i < currentUploadHandles.size(); i++) {
                 UPLOAD_HANDLE uploadHandle = currentUploadHandles[i];
                 mockConsumer = mStreamingSession.getConsumer(uploadHandle);
-                EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR, lastReceivedAckTime, &submittedAck));
+                EXPECT_EQ(STATUS_SUCCESS,
+                          mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR, lastReceivedAckTime, &submittedAck));
                 if (submittedAck) {
                     rollbackTime = INVALID_TIMESTAMP_VALUE; // rollback only once.
                     errorHandle = uploadHandle;
@@ -223,9 +217,10 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamRollbackToLastRece
  * contentView: Frag1 | Frag2 | Frag3 ...
  * Send a non recoverable error ack to Frag1. Make sure that Frag1 is not streamed in the new connection
  */
-TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwayBadFragmentNearTail) {
+TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwayBadFragmentNearTail)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer = nullptr;
+    MockConsumer* mockConsumer = nullptr;
     BOOL gotStreamData = FALSE, submittedAck;
     UINT64 currentTime, stopTime;
     TID thread;
@@ -245,7 +240,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
     // need ack to count number of fragments streamed. No ack case should also work if with ack works.
-    for(i = 0; i < mMockProducerConfig.mKeyFrameInterval * totalFragmentPut; i++) {
+    for (i = 0; i < mMockProducerConfig.mKeyFrameInterval * totalFragmentPut; i++) {
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
     }
 
@@ -323,9 +318,10 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
  * contentView: Frag1 | Frag2 | Frag3 ...
  * Send a non recoverable error ack to Frag2 with a timestamp. Make sure that ONLY Frag2 is not streamed in the new connection
  */
-TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorWithTimestampThrowAwayBadFragmentMiddle) {
+TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorWithTimestampThrowAwayBadFragmentMiddle)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer = nullptr;
+    MockConsumer* mockConsumer = nullptr;
     BOOL gotStreamData = FALSE, submittedAck;
     UINT64 currentTime, stopTime, ackTime = 0, duration;
     TID thread;
@@ -374,7 +370,9 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorWithTime
     // submit a fatal error ack to current upload handle at timestamp corresponding to the second fragment
     mStreamingSession.getActiveUploadHandles(currentUploadHandles);
     EXPECT_EQ(1, currentUploadHandles.size());
-    EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_FRAGMENT_DURATION_REACHED, ackTime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND, &submittedAck));
+    EXPECT_EQ(
+        STATUS_SUCCESS,
+        mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_FRAGMENT_DURATION_REACHED, ackTime / HUNDREDS_OF_NANOS_IN_A_MILLISECOND, &submittedAck));
     EXPECT_EQ(TRUE, submittedAck);
     errorHandle = mockConsumer->mUploadHandle;
 
@@ -430,9 +428,10 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorWithTime
  * Send a non recoverable error ack on the 4th fragment ingestion without a timestamp.
  * Make sure that the earlier fragments are not streamed in the new connection.
  */
-TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorWithoutTimestampThrowAwayBadFragmentMiddle) {
+TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorWithoutTimestampThrowAwayBadFragmentMiddle)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer = nullptr;
+    MockConsumer* mockConsumer = nullptr;
     BOOL gotStreamData = FALSE, submittedAck;
     UINT64 currentTime, stopTime;
     TID thread;
@@ -533,9 +532,10 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorWithoutT
  * without a timestamp. Make sure that the first fragment is rolled back to and streamed whioe
  * the fragments from the persistent ACK till current are skipped in the new connection
  */
-TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorWithoutTimestampThrowAwayBadFromPersist) {
+TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorWithoutTimestampThrowAwayBadFromPersist)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer = nullptr;
+    MockConsumer* mockConsumer = nullptr;
     BOOL gotStreamData = FALSE, submittedAck;
     UINT64 currentTime, stopTime;
     TID thread;
@@ -651,9 +651,10 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorWithoutT
  * contentView: Frag1_Frame1 Frag1_Frame2 Frag1_Frame3 ...
  * Send a non recoverable error ack to Frag1 while it is not completed. Make sure that Frag1 is not streamed in the new connection
  */
-TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwayBadFragmentAtHeadPartiallyStreamed) {
+TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwayBadFragmentAtHeadPartiallyStreamed)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer = nullptr;
+    MockConsumer* mockConsumer = nullptr;
     BOOL gotStreamData = FALSE, submittedAck;
     UINT64 currentTime, stopTime;
     TID thread;
@@ -671,7 +672,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
     // put some frames but not all for the first fragment
-    for(i = 0; i < mMockProducerConfig.mKeyFrameInterval - 5; i++) {
+    for (i = 0; i < mMockProducerConfig.mKeyFrameInterval - 5; i++) {
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
     }
 
@@ -706,12 +707,12 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
     } while (!gotStreamData);
 
     // finishing putting all frames for the first fragment.
-    for(i = 0; i < 5; i++) {
+    for (i = 0; i < 5; i++) {
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
     }
 
     // put in more fragments. At the end we are expecting totalFragmentPut * 3 acks.
-    for(i = 0; i < mMockProducerConfig.mKeyFrameInterval * (totalFragmentPut-1); i++) {
+    for (i = 0; i < mMockProducerConfig.mKeyFrameInterval * (totalFragmentPut - 1); i++) {
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
     }
 
@@ -759,9 +760,10 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
  * Send a non recoverable error ack to Frag1 while Frag1 is completed (next frame will be the start of Frag2).
  * Make sure that Frag1 is not streamed in the new connection
  */
-TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwayBadFragmentAtHeadFullyStreamed) {
+TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwayBadFragmentAtHeadFullyStreamed)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer = nullptr;
+    MockConsumer* mockConsumer = nullptr;
     BOOL gotStreamData = FALSE, submittedAck;
     UINT64 currentTime, stopTime;
     TID thread;
@@ -779,7 +781,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
     // put all frames for the first fragment
-    for(i = 0; i < mMockProducerConfig.mKeyFrameInterval; i++) {
+    for (i = 0; i < mMockProducerConfig.mKeyFrameInterval; i++) {
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
     }
 
@@ -814,7 +816,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
     } while (!gotStreamData);
 
     // put in more fragments. At the end we are expecting totalFragmentPut * 3 acks.
-    for(i = 0; i < mMockProducerConfig.mKeyFrameInterval * (totalFragmentPut-1); i++) {
+    for (i = 0; i < mMockProducerConfig.mKeyFrameInterval * (totalFragmentPut - 1); i++) {
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
     }
 
@@ -861,9 +863,10 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamFatalErrorThrowAwa
  * contentView: Frag1_Frame1 Frag1_Frame2 Frag1_Frame3 ... Frag2_fram1,.... FragN_frameN
  * Timeout the upload handle with current view non-zero. Ensure immediate auto-recovery with rollback
  */
-TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithBuffer) {
+TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithBuffer)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer = nullptr;
+    MockConsumer* mockConsumer = nullptr;
     BOOL gotStreamData = FALSE, submittedAck;
     UINT64 currentTime, stopTime;
     TID thread;
@@ -915,7 +918,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithBuffer)
     } while (!gotStreamData);
 
     // put in more fragments. At the end we are expecting totalFragmentPut * 3 acks.
-    for (i = 0; i < mMockProducerConfig.mKeyFrameInterval * (totalFragmentPut -1 ); i++) {
+    for (i = 0; i < mMockProducerConfig.mKeyFrameInterval * (totalFragmentPut - 1); i++) {
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
     }
 
@@ -959,9 +962,10 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithBuffer)
  * contentView: Frag1_Frame1 Frag1_Frame2 Frag1_Frame3 ... Frag2_fram1,.... FragN_frameN
  * Timeout the upload handle with current view zero. Ensure no immediate auto-recovery
  */
-TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithoutBuffer) {
+TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithoutBuffer)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer = nullptr;
+    MockConsumer* mockConsumer = nullptr;
     BOOL gotStreamData = FALSE, submittedAck;
     UINT64 currentTime, stopTime;
     TID thread;
@@ -1059,9 +1063,7 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithoutBuff
     EXPECT_TRUE(currentUploadHandles[0] != errorHandle);
 
     // Validate that the new upload handle has a rolled back proper start stream
-    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle,
-                                                        currentUploadHandles[0], dataBuf,
-                                                        dataBufSize, &retrievedSize));
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, currentUploadHandles[0], dataBuf, dataBufSize, &retrievedSize));
     EXPECT_EQ(dataBufSize, retrievedSize);
 
     pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
@@ -1075,11 +1077,9 @@ TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamTimeoutWithoutBuff
     // until the next key frame which will become the stream start
     for (i = 0; i < TEST_DEFAULT_PRODUCER_CONFIG_FRAME_SIZE; i++) {
         if (mStreamInfo.streamCaps.replayDuration == 0) {
-            EXPECT_EQ((numFragments + 1) * mMockProducerConfig.mKeyFrameInterval, dataBuf[i + overhead])
-                                << "Failed on " << i;
+            EXPECT_EQ((numFragments + 1) * mMockProducerConfig.mKeyFrameInterval, dataBuf[i + overhead]) << "Failed on " << i;
         } else {
-            EXPECT_EQ(0, dataBuf[i + overhead])
-                                << "Failed on " << i;
+            EXPECT_EQ(0, dataBuf[i + overhead]) << "Failed on " << i;
         }
     }
 
@@ -1122,7 +1122,7 @@ TEST_P(StreamRecoveryFunctionalityTest, streamStartViewDroppedBeforeFullyConsume
     BOOL didPutFrame, gotStreamData = FALSE, submittedAck;
     UINT32 tokenRotateCount = 0, i;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     STATUS status = STATUS_SUCCESS;
 
     CreateScenarioTestClient();
@@ -1143,7 +1143,7 @@ TEST_P(StreamRecoveryFunctionalityTest, streamStartViewDroppedBeforeFullyConsume
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
     /* fill the content view */
-    for(i = 0; i < 40; ++i) {
+    for (i = 0; i < 40; ++i) {
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
     }
 
@@ -1162,7 +1162,7 @@ TEST_P(StreamRecoveryFunctionalityTest, streamStartViewDroppedBeforeFullyConsume
     }
 
     /* put 40 frames again. The first 40 frames are now all dropped */
-    for(i = 0; i < 40; ++i) {
+    for (i = 0; i < 40; ++i) {
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
     }
 
@@ -1180,17 +1180,17 @@ TEST_P(StreamRecoveryFunctionalityTest, streamStartViewDroppedBeforeFullyConsume
     VerifyStopStreamSyncAndFree();
 }
 
-TEST_P(StreamRecoveryFunctionalityTest, FragmentMetadataStartStreamFailRecovery) {
+TEST_P(StreamRecoveryFunctionalityTest, FragmentMetadataStartStreamFailRecovery)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer = nullptr;
+    MockConsumer* mockConsumer = nullptr;
     BOOL gotStreamData = FALSE, submittedAck, firstChunk = TRUE;
     UINT64 currentTime, stopTime;
     TID thread;
     STATUS retStatus = STATUS_SUCCESS;
     BYTE dataBuf[TEST_DEFAULT_PRODUCER_CONFIG_FRAME_SIZE + 1000];
     BYTE storedDataBuf[SIZEOF(dataBuf)];
-    UINT32 i, ackReceived = 0, dataBufSize = SIZEOF(dataBuf), retrievedSize,
-            storedRetrievedSize, overhead, numFragments = 1;
+    UINT32 i, ackReceived = 0, dataBufSize = SIZEOF(dataBuf), retrievedSize, storedRetrievedSize, overhead, numFragments = 1;
     UPLOAD_HANDLE errorHandle;
     PKinesisVideoStream pKinesisVideoStream;
     PStreamMkvGenerator pStreamMkvGenerator;
@@ -1253,9 +1253,7 @@ TEST_P(StreamRecoveryFunctionalityTest, FragmentMetadataStartStreamFailRecovery)
     EXPECT_NE(errorHandle, currentUploadHandles[0]);
 
     // Get the data with the new handle
-    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle,
-                                                        currentUploadHandles[0], dataBuf,
-                                                        dataBufSize, &retrievedSize));
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, currentUploadHandles[0], dataBuf, dataBufSize, &retrievedSize));
     EXPECT_EQ(storedRetrievedSize, retrievedSize);
 
     EXPECT_EQ(0, MEMCMP(dataBuf, storedDataBuf, storedRetrievedSize));
@@ -1263,17 +1261,17 @@ TEST_P(StreamRecoveryFunctionalityTest, FragmentMetadataStartStreamFailRecovery)
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 }
 
-TEST_P(StreamRecoveryFunctionalityTest, EventMetadataStartStreamFailRecovery) {
+TEST_P(StreamRecoveryFunctionalityTest, EventMetadataStartStreamFailRecovery)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer = nullptr;
+    MockConsumer* mockConsumer = nullptr;
     BOOL gotStreamData = FALSE, submittedAck, firstChunk = TRUE;
     UINT64 currentTime, stopTime;
     TID thread;
     STATUS retStatus = STATUS_SUCCESS;
     BYTE dataBuf[TEST_DEFAULT_PRODUCER_CONFIG_FRAME_SIZE + 1000];
     BYTE storedDataBuf[SIZEOF(dataBuf)];
-    UINT32 i, ackReceived = 0, dataBufSize = SIZEOF(dataBuf), retrievedSize,
-            storedRetrievedSize, overhead, numFragments = 1;
+    UINT32 i, ackReceived = 0, dataBufSize = SIZEOF(dataBuf), retrievedSize, storedRetrievedSize, overhead, numFragments = 1;
     UPLOAD_HANDLE errorHandle;
     PKinesisVideoStream pKinesisVideoStream;
     PStreamMkvGenerator pStreamMkvGenerator;
@@ -1337,9 +1335,7 @@ TEST_P(StreamRecoveryFunctionalityTest, EventMetadataStartStreamFailRecovery) {
     EXPECT_NE(errorHandle, currentUploadHandles[0]);
 
     // Get the data with the new handle
-    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle,
-                                                        currentUploadHandles[0], dataBuf,
-                                                        dataBufSize, &retrievedSize));
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, currentUploadHandles[0], dataBuf, dataBufSize, &retrievedSize));
     EXPECT_EQ(storedRetrievedSize, retrievedSize);
 
     EXPECT_EQ(0, MEMCMP(dataBuf, storedDataBuf, storedRetrievedSize));
@@ -1348,6 +1344,7 @@ TEST_P(StreamRecoveryFunctionalityTest, EventMetadataStartStreamFailRecovery) {
 }
 
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, StreamRecoveryFunctionalityTest,
-                        Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
+                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(),
+                                 Values(0, TEST_REPLAY_DURATION)));
 
 #endif

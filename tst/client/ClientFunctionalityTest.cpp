@@ -1,14 +1,15 @@
 #include "ClientTestFixture.h"
 
-using ::testing::WithParamInterface;
 using ::testing::Bool;
-using ::testing::Values;
 using ::testing::Combine;
+using ::testing::Values;
+using ::testing::WithParamInterface;
 
 class ClientFunctionalityTest : public ClientTestBase,
-                                public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t, DEVICE_STORAGE_TYPE> >{
-protected:
-    void SetUp() {
+                                public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t, DEVICE_STORAGE_TYPE> > {
+  protected:
+    void SetUp()
+    {
         ClientTestBase::SetUp();
 
         STREAMING_TYPE streamingType;
@@ -60,7 +61,7 @@ TEST_P(ClientFunctionalityTest, CreateSyncAndFree)
 
 TEST_P(ClientFunctionalityTest, CreateAndFree)
 {
-    //Free the existing client
+    // Free the existing client
     if (IS_VALID_CLIENT_HANDLE(mClientHandle)) {
         EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&mClientHandle));
     }
@@ -129,7 +130,7 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncStopStreamFreeClient
     EXPECT_TRUE(!IS_VALID_CLIENT_HANDLE(mClientHandle));
 }
 #ifdef ALIGNED_MEMORY_MODEL
-//Create Producer, Create Streams, Await Ready, Put Frame, Free Producer
+// Create Producer, Create Streams, Await Ready, Put Frame, Free Producer
 TEST_P(ClientFunctionalityTest, CreateClientCreateStreamPutFrameFreeClient)
 {
     CreateScenarioTestClient();
@@ -143,16 +144,15 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamPutFrameFreeClient)
     {
         MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
-        //Stream is ready by now, so putFrame should succeed
+        // Stream is ready by now, so putFrame should succeed
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame());
     }
-
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&mClientHandle));
     EXPECT_TRUE(!IS_VALID_CLIENT_HANDLE(mClientHandle));
 }
 
-//Create Producer, Create Streams, Await Ready, Put Frame, Stop Stream, Free Producer
+// Create Producer, Create Streams, Await Ready, Put Frame, Stop Stream, Free Producer
 TEST_P(ClientFunctionalityTest, CreateClientCreateStreamPutFrameStopStreamFreeClient)
 {
     CreateScenarioTestClient();
@@ -166,7 +166,7 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamPutFrameStopStreamFreeCl
     {
         MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
-        //Stream is ready by now, so putFrame should succeed
+        // Stream is ready by now, so putFrame should succeed
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame());
     }
 
@@ -176,7 +176,7 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamPutFrameStopStreamFreeCl
     EXPECT_TRUE(ATOMIC_LOAD(&mDroppedFrameReportFuncCount) > 0); // the frame put should be dropped.
 }
 
-//Create Producer, Create Streams Sync, Await Ready, Put Frame, Free Producer
+// Create Producer, Create Streams Sync, Await Ready, Put Frame, Free Producer
 TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncPutFrameFreeClient)
 {
     TID thread;
@@ -211,7 +211,7 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncPutFrameFreeClient)
     {
         MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
-        //Stream is ready by now, so putFrame should succeed
+        // Stream is ready by now, so putFrame should succeed
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame());
     }
 
@@ -219,7 +219,7 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncPutFrameFreeClient)
     EXPECT_TRUE(!IS_VALID_CLIENT_HANDLE(mClientHandle));
 }
 
-//Create Producer, Create Streams Sync, Await Ready, Put Frame, Stop Stream, Free Producer
+// Create Producer, Create Streams Sync, Await Ready, Put Frame, Stop Stream, Free Producer
 TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncPutFrameStopStreamFreeClient)
 {
     TID thread;
@@ -254,7 +254,7 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncPutFrameStopStreamFr
     {
         MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
-        //Stream is ready by now, so putFrame should succeed
+        // Stream is ready by now, so putFrame should succeed
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame());
     }
 
@@ -263,7 +263,7 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncPutFrameStopStreamFr
     EXPECT_TRUE(!IS_VALID_CLIENT_HANDLE(mClientHandle));
 }
 #endif
-//Create producer, create streams sync, create same stream and fail, free client
+// Create producer, create streams sync, create same stream and fail, free client
 TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncCreateSameStreamAndFailFreeClient)
 {
     TID thread;
@@ -298,7 +298,7 @@ TEST_P(ClientFunctionalityTest, CreateClientCreateStreamSyncCreateSameStreamAndF
     EXPECT_TRUE(!IS_VALID_CLIENT_HANDLE(mClientHandle));
 }
 
-//Create Stream, call streamformatchanged twice with audio and video. make sure proper mkv header is generated.
+// Create Stream, call streamformatchanged twice with audio and video. make sure proper mkv header is generated.
 TEST_P(ClientFunctionalityTest, StreamFormatChangedAudioVideoCorrectMkvHeader)
 {
     CreateScenarioTestClient();
@@ -322,10 +322,9 @@ TEST_P(ClientFunctionalityTest, StreamFormatChangedAudioVideoCorrectMkvHeader)
     mStreamInfo.streamCaps.trackInfoCount = 2;
 
     BYTE audioCpd[] = {0x11, 0x90, 0x56, 0xe5, 0x00};
-    BYTE videoCpd[] = {0x01, 0x4d, 0x00, 0x20, 0xff, 0xe1, 0x00, 0x22, 0x27, 0x4d, 0x00, 0x20, 0x89,
-                       0x8b, 0x60, 0x28, 0x02, 0xdd, 0x80, 0x88, 0x00, 0x01, 0x38, 0x80, 0x00, 0x3d,
-                       0x09, 0x07, 0x03, 0x00, 0x05, 0xdc, 0x00, 0x01, 0x77, 0x05, 0xef, 0x7c, 0x1f,
-                       0x08, 0x84, 0x6e, 0x01, 0x00, 0x04, 0x28, 0xee, 0x1f, 0x20};
+    BYTE videoCpd[] = {0x01, 0x4d, 0x00, 0x20, 0xff, 0xe1, 0x00, 0x22, 0x27, 0x4d, 0x00, 0x20, 0x89, 0x8b, 0x60, 0x28, 0x02,
+                       0xdd, 0x80, 0x88, 0x00, 0x01, 0x38, 0x80, 0x00, 0x3d, 0x09, 0x07, 0x03, 0x00, 0x05, 0xdc, 0x00, 0x01,
+                       0x77, 0x05, 0xef, 0x7c, 0x1f, 0x08, 0x84, 0x6e, 0x01, 0x00, 0x04, 0x28, 0xee, 0x1f, 0x20};
 
     STRNCPY(mStreamInfo.streamCaps.contentType, TEST_AUDIO_VIDEO_CONTENT_TYPE, MAX_CONTENT_TYPE_LEN);
 
@@ -352,7 +351,7 @@ TEST_P(ClientFunctionalityTest, StreamFormatChangedAudioVideoCorrectMkvHeader)
     EXPECT_TRUE(!IS_VALID_CLIENT_HANDLE(mClientHandle));
 }
 
-//Create Stream, call streamformatchanged twice with audio and video. make sure proper mkv header is generated.
+// Create Stream, call streamformatchanged twice with audio and video. make sure proper mkv header is generated.
 TEST_P(ClientFunctionalityTest, StreamFormatChangedPcmAudioVideoCorrectMkvHeader)
 {
     CreateScenarioTestClient();
@@ -376,10 +375,9 @@ TEST_P(ClientFunctionalityTest, StreamFormatChangedPcmAudioVideoCorrectMkvHeader
     mStreamInfo.streamCaps.trackInfoCount = 2;
 
     BYTE audioCpd[] = {0x06, 0x00, 0x01, 0x00, 0x40, 0x1f, 0x00, 0x00, 0x80, 0x3e, 0x00, 0x00, 0x02, 0x00, 0x10, 0x00, 0x00, 0x00};
-    BYTE videoCpd[] = {0x01, 0x4d, 0x00, 0x20, 0xff, 0xe1, 0x00, 0x22, 0x27, 0x4d, 0x00, 0x20, 0x89,
-                       0x8b, 0x60, 0x28, 0x02, 0xdd, 0x80, 0x88, 0x00, 0x01, 0x38, 0x80, 0x00, 0x3d,
-                       0x09, 0x07, 0x03, 0x00, 0x05, 0xdc, 0x00, 0x01, 0x77, 0x05, 0xef, 0x7c, 0x1f,
-                       0x08, 0x84, 0x6e, 0x01, 0x00, 0x04, 0x28, 0xee, 0x1f, 0x20};
+    BYTE videoCpd[] = {0x01, 0x4d, 0x00, 0x20, 0xff, 0xe1, 0x00, 0x22, 0x27, 0x4d, 0x00, 0x20, 0x89, 0x8b, 0x60, 0x28, 0x02,
+                       0xdd, 0x80, 0x88, 0x00, 0x01, 0x38, 0x80, 0x00, 0x3d, 0x09, 0x07, 0x03, 0x00, 0x05, 0xdc, 0x00, 0x01,
+                       0x77, 0x05, 0xef, 0x7c, 0x1f, 0x08, 0x84, 0x6e, 0x01, 0x00, 0x04, 0x28, 0xee, 0x1f, 0x20};
 
     STRNCPY(mStreamInfo.streamCaps.contentType, "video/h264,audio/alaw", MAX_CONTENT_TYPE_LEN);
 
@@ -449,11 +447,7 @@ TEST_P(ClientFunctionalityTest, StreamFormatChangedGeneratedPcmAlawAudioDirectCp
     BYTE cpd[KVS_PCM_CPD_SIZE_BYTE];
     UINT32 cpdSize = SIZEOF(cpd);
 
-    EXPECT_EQ(STATUS_SUCCESS, mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE_ALAW,
-            8000,
-            2,
-            cpd,
-            cpdSize));
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE_ALAW, 8000, 2, cpd, cpdSize));
 
     TrackInfo trackInfo[1];
     trackInfo[0].trackId = 1;
@@ -493,11 +487,7 @@ TEST_P(ClientFunctionalityTest, StreamFormatChangedGeneratedPcmMlawAudioDirectCp
     BYTE cpd[KVS_PCM_CPD_SIZE_BYTE];
     UINT32 cpdSize = SIZEOF(cpd);
 
-    EXPECT_EQ(STATUS_SUCCESS, mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE_MULAW,
-                                                   8000,
-                                                   2,
-                                                   cpd,
-                                                   cpdSize));
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE_MULAW, 8000, 2, cpd, cpdSize));
 
     TrackInfo trackInfo[1];
     trackInfo[0].trackId = 1;
@@ -537,11 +527,7 @@ TEST_P(ClientFunctionalityTest, StreamFormatChangedGeneratedAacAudioDirectCpdPas
     BYTE cpd[KVS_AAC_CPD_SIZE_BYTE];
     UINT32 cpdSize = SIZEOF(cpd);
 
-    EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateAacCpd(AAC_MAIN,
-                                                   16000,
-                                                   2,
-                                                   cpd,
-                                                   cpdSize));
+    EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateAacCpd(AAC_MAIN, 16000, 2, cpd, cpdSize));
 
     TrackInfo trackInfo[1];
     trackInfo[0].trackId = 1;
@@ -576,8 +562,6 @@ TEST_P(ClientFunctionalityTest, StreamFormatChangedGeneratedAacAudioDirectCpdPas
 }
 
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, ClientFunctionalityTest,
-                        Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE),
-                                Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR),
-                                Bool(),
-                                Values(0, TEST_REPLAY_DURATION),
-                                Values(DEVICE_STORAGE_TYPE_IN_MEM, DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC)));
+                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(),
+                                 Values(0, TEST_REPLAY_DURATION),
+                                 Values(DEVICE_STORAGE_TYPE_IN_MEM, DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC)));

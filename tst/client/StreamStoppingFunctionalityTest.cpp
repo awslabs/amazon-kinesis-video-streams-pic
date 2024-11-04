@@ -1,15 +1,14 @@
 #include "ClientTestFixture.h"
 
-using ::testing::WithParamInterface;
 using ::testing::Bool;
-using ::testing::Values;
 using ::testing::Combine;
+using ::testing::Values;
+using ::testing::WithParamInterface;
 
-class StreamStoppingFunctionalityTest : public ClientTestBase,
-        public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> >{
-
-protected:
-    void SetUp() {
+class StreamStoppingFunctionalityTest : public ClientTestBase, public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> > {
+  protected:
+    void SetUp()
+    {
         ClientTestBase::SetUp();
 
         STREAMING_TYPE streamingType;
@@ -44,13 +43,13 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncResetConnectionSuccess)
 
 #ifdef ALIGNED_MEMORY_MODEL
 
-TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamWithTwoUploadHandlesStopSyncFreeSuccess) {
-
+TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamWithTwoUploadHandlesStopSyncFreeSuccess)
+{
     UINT64 currentTime, testTerminationTime;
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT32 tokenRotateCount = 0;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
 
     CreateScenarioTestClient();
 
@@ -58,8 +57,8 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamWithTwoUploadHandlesStop
 
     CreateStreamSync();
 
-    testTerminationTime = mClientCallbacks.getCurrentTimeFn((UINT64) this)
-        + 2 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 15 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    testTerminationTime =
+        mClientCallbacks.getCurrentTimeFn((UINT64) this) + 2 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 15 * HUNDREDS_OF_NANOS_IN_A_SECOND;
 
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
@@ -72,7 +71,7 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamWithTwoUploadHandlesStop
         for (int i = 0; i < currentUploadHandles.size(); i++) {
             UPLOAD_HANDLE uploadHandle = currentUploadHandles[i];
             mockConsumer = mStreamingSession.getConsumer(uploadHandle);
-            //GetStreamedData and SubmitAck
+            // GetStreamedData and SubmitAck
             STATUS retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
             EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
             VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
@@ -88,10 +87,10 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamWithTwoUploadHandlesStop
     VerifyStopStreamSyncAndFree();
 }
 
-
-TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamHighDensityStopSyncTimeoutFreeSuccess) {
+TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamHighDensityStopSyncTimeoutFreeSuccess)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT64 currentTime, testTerminationTime;
 
@@ -125,7 +124,7 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamHighDensityStopSyncTimeo
 TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamHighDensityStopSyncStreamOutRest)
 {
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT64 currentTime, streamStopTime;
     StreamMetrics streamMetrics;
@@ -160,7 +159,8 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamHighDensityStopSyncStrea
     } while (currentTime < streamStopTime);
 
     EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamMetrics(mStreamHandle, &streamMetrics));
-    DLOGD("stream metric at stream stop: currentViewSize %llu byte, overallViewSize %llu byte", streamMetrics.currentViewSize, streamMetrics.overallViewSize);
+    DLOGD("stream metric at stream stop: currentViewSize %llu byte, overallViewSize %llu byte", streamMetrics.currentViewSize,
+          streamMetrics.overallViewSize);
 
     VerifyStopStreamSyncAndFree();
 }
@@ -168,7 +168,7 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamHighDensityStopSyncStrea
 TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamStopSyncFree)
 {
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT64 currentTime, streamStopTime;
 
@@ -200,7 +200,7 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamStopSyncFree)
 TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamStopSyncErrorAckWhileStreamingRemainingBits)
 {
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     BOOL didPutFrame, gotStreamData, submittedAck, submittedErrorAck = FALSE;
     UINT64 currentTime, streamStopTime;
 
@@ -211,8 +211,8 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamStopSyncErrorAckWhileStr
     CreateStreamSync();
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
-    streamStopTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + 1 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION +
-            5 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    streamStopTime =
+        mClientCallbacks.getCurrentTimeFn((UINT64) this) + 1 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 5 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.timedPutFrame(currentTime, &didPutFrame));
@@ -238,7 +238,7 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamStopSyncErrorAckWhileStr
     } while (!submittedErrorAck);
 
     // remaining buffer should be streamed out successfully and stream closed callback called.
-    consumeStream((STREAM_CLOSED_TIMEOUT_DURATION_IN_SECONDS) * HUNDREDS_OF_NANOS_IN_A_SECOND);
+    consumeStream((STREAM_CLOSED_TIMEOUT_DURATION_IN_SECONDS) *HUNDREDS_OF_NANOS_IN_A_SECOND);
     EXPECT_TRUE(mStreamingSession.mConsumerList.empty());
     EXPECT_EQ(TRUE, ATOMIC_LOAD_BOOL(&mStreamClosed));
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
@@ -248,4 +248,5 @@ TEST_P(StreamStoppingFunctionalityTest, CreateSyncStreamStopSyncErrorAckWhileStr
 #endif
 
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, StreamStoppingFunctionalityTest,
-                        Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
+                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(),
+                                 Values(0, TEST_REPLAY_DURATION)));
