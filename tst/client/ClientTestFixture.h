@@ -371,7 +371,7 @@ class ClientTestBase : public ::testing::Test {
 
     void initTestMembers()
     {
-        UINT32 logLevel = 0;
+        UINT32 logLevel = LOG_LEVEL_WARN;
         STATUS retStatus = STATUS_SUCCESS;
         auto logLevelStr = GETENV("AWS_KVS_LOG_LEVEL");
         if (logLevelStr != NULL) {

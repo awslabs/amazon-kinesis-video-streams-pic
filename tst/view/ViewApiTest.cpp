@@ -1,16 +1,19 @@
 #include "ViewTestFixture.h"
 
-class ViewApiTest : public ViewTestBase {
-};
+class ViewApiTest : public ViewTestBase {};
 
 TEST_F(ViewApiTest, createContentView_InvalidInput)
 {
     PContentView pContentView;
 
-    EXPECT_TRUE(STATUS_FAILED(createContentView(MIN_CONTENT_VIEW_ITEMS, MIN_CONTENT_VIEW_BUFFER_DURATION + 1, NULL, 0, CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START, &pContentView)));
-    EXPECT_TRUE(STATUS_FAILED(createContentView(MIN_CONTENT_VIEW_ITEMS + 1, MIN_CONTENT_VIEW_BUFFER_DURATION, NULL, 0, CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START, &pContentView)));
-    EXPECT_TRUE(STATUS_FAILED(createContentView(MIN_CONTENT_VIEW_ITEMS, MIN_CONTENT_VIEW_BUFFER_DURATION, NULL, 0, CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START, &pContentView)));
-    EXPECT_TRUE(STATUS_FAILED(createContentView(MIN_CONTENT_VIEW_ITEMS + 1, MIN_CONTENT_VIEW_BUFFER_DURATION + 1, NULL, 0, CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START, NULL)));
+    EXPECT_TRUE(STATUS_FAILED(createContentView(MIN_CONTENT_VIEW_ITEMS, MIN_CONTENT_VIEW_BUFFER_DURATION + 1, NULL, 0,
+                                                CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START, &pContentView)));
+    EXPECT_TRUE(STATUS_FAILED(createContentView(MIN_CONTENT_VIEW_ITEMS + 1, MIN_CONTENT_VIEW_BUFFER_DURATION, NULL, 0,
+                                                CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START, &pContentView)));
+    EXPECT_TRUE(STATUS_FAILED(createContentView(MIN_CONTENT_VIEW_ITEMS, MIN_CONTENT_VIEW_BUFFER_DURATION, NULL, 0,
+                                                CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START, &pContentView)));
+    EXPECT_TRUE(STATUS_FAILED(createContentView(MIN_CONTENT_VIEW_ITEMS + 1, MIN_CONTENT_VIEW_BUFFER_DURATION + 1, NULL, 0,
+                                                CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START, NULL)));
 }
 
 TEST_F(ViewApiTest, freeContentView_NullPointer)
@@ -18,7 +21,8 @@ TEST_F(ViewApiTest, freeContentView_NullPointer)
     PContentView pContentView;
 
     // Create a valid view
-    EXPECT_TRUE(STATUS_SUCCEEDED(createContentView(MIN_CONTENT_VIEW_ITEMS + 1, MIN_CONTENT_VIEW_BUFFER_DURATION + 1, NULL, 0, CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START, &pContentView)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(createContentView(MIN_CONTENT_VIEW_ITEMS + 1, MIN_CONTENT_VIEW_BUFFER_DURATION + 1, NULL, 0,
+                                                   CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START, &pContentView)));
 
     // Free the view
     EXPECT_TRUE(STATUS_SUCCEEDED(freeContentView(pContentView)));
@@ -198,9 +202,9 @@ TEST_F(ViewApiTest, contentViewGetTail_NullPointer)
     // Add a few items, try to get the tail (success), remove tail for all,
     // get the head again - the view should have no items but
     // getting the tail should succeed
-    EXPECT_EQ(STATUS_SUCCESS,contentViewAddItem(mContentView, 5, 5, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_STREAM_START));
-    EXPECT_EQ(STATUS_SUCCESS,contentViewAddItem(mContentView, 6, 6, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_FRAGMENT_START));
-    EXPECT_EQ(STATUS_SUCCESS,contentViewAddItem(mContentView, 7, 7, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_NONE));
+    EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView, 5, 5, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_STREAM_START));
+    EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView, 6, 6, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_FRAGMENT_START));
+    EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView, 7, 7, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_NONE));
     EXPECT_EQ(STATUS_SUCCESS, contentViewGetWindowItemCount(mContentView, &currentCount, &windowCount));
     EXPECT_EQ(3, currentCount);
     EXPECT_EQ(3, windowCount);
@@ -233,9 +237,9 @@ TEST_F(ViewApiTest, contentViewGetHead_NullPointer)
     // Add a few items, try to get the head (success), remove tail for all,
     // get the head again - the view should have no items but
     // getting the head should succeed
-    EXPECT_EQ(STATUS_SUCCESS,contentViewAddItem(mContentView, 5, 5, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_STREAM_START));
-    EXPECT_EQ(STATUS_SUCCESS,contentViewAddItem(mContentView, 6, 6, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_FRAGMENT_START));
-    EXPECT_EQ(STATUS_SUCCESS,contentViewAddItem(mContentView, 7, 7, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_NONE));
+    EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView, 5, 5, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_STREAM_START));
+    EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView, 6, 6, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_FRAGMENT_START));
+    EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView, 7, 7, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_NONE));
     EXPECT_EQ(STATUS_SUCCESS, contentViewGetWindowItemCount(mContentView, &currentCount, &windowCount));
     EXPECT_EQ(3, currentCount);
     EXPECT_EQ(3, windowCount);
@@ -277,13 +281,15 @@ TEST_F(ViewApiTest, contentViewAddItem_InvalidTime)
     EXPECT_TRUE(STATUS_SUCCEEDED(contentViewAddItem(mContentView, 40, 40, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_NONE)));
 
     // Add with older timestamp
-    EXPECT_EQ(STATUS_CONTENT_VIEW_INVALID_TIMESTAMP, contentViewAddItem(mContentView, 39, 39, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_NONE));
+    EXPECT_EQ(STATUS_CONTENT_VIEW_INVALID_TIMESTAMP,
+              contentViewAddItem(mContentView, 39, 39, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_NONE));
 
     // contentViewAddItem should succeed as long as timestamp dont overlap.
     EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView, 49, 49, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 1, ITEM_FLAG_NONE));
 
     // Add a 0-length item
-    EXPECT_EQ(STATUS_INVALID_CONTENT_VIEW_LENGTH, contentViewAddItem(mContentView, 60, 60, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 0, ITEM_FLAG_NONE));
+    EXPECT_EQ(STATUS_INVALID_CONTENT_VIEW_LENGTH,
+              contentViewAddItem(mContentView, 60, 60, 10, INVALID_ALLOCATION_HANDLE_VALUE, 0, 0, ITEM_FLAG_NONE));
 }
 
 TEST_F(ViewApiTest, contentViewGetWindowDuration_NullPointer)

@@ -52,7 +52,7 @@ VOID HeapTestBase::SetUpInternal()
     mVramUnlockCount = 0;
     mVramUninitCount = 0;
 
-    mDlOpen = (PVOID)(UINT64)MOCK_LIB_HANDLE;
+    mDlOpen = (PVOID) (UINT64) MOCK_LIB_HANDLE;
     mDlClose = 0;
     mDlSym = TRUE;
 

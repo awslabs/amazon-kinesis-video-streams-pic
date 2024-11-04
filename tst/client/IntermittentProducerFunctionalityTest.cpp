@@ -1,14 +1,15 @@
 #include "ClientTestFixture.h"
 
-using ::testing::WithParamInterface;
 using ::testing::Bool;
-using ::testing::Values;
 using ::testing::Combine;
+using ::testing::Values;
+using ::testing::WithParamInterface;
 
 class IntermittentProducerFunctionalityTest : public ClientTestBase,
-                                public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> >{
-protected:
-    void SetUp() {
+                                              public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> > {
+  protected:
+    void SetUp()
+    {
         ClientTestBase::SetUp();
 
         STREAMING_TYPE streamingType;
@@ -22,12 +23,13 @@ protected:
     }
 };
 #ifdef ALIGNED_MEMORY_MODEL
-TEST_P(IntermittentProducerFunctionalityTest, CreateSyncStreamWithLargeBufferAwaitForLastAckStopSyncFreeSuccess) {
+TEST_P(IntermittentProducerFunctionalityTest, CreateSyncStreamWithLargeBufferAwaitForLastAckStopSyncFreeSuccess)
+{
     UINT64 currentTime, testTerminationTime, endPutFrameTime;
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT32 tokenRotateCount = 0;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     STATUS retStatus;
 
     int intermittentProducerSessionCount = 0;
@@ -37,7 +39,6 @@ TEST_P(IntermittentProducerFunctionalityTest, CreateSyncStreamWithLargeBufferAwa
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
 
     do {
-
         CreateStreamSync();
 
         MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
@@ -51,9 +52,8 @@ TEST_P(IntermittentProducerFunctionalityTest, CreateSyncStreamWithLargeBufferAwa
 
         } while (currentTime < endPutFrameTime);
 
-
-        testTerminationTime = mClientCallbacks.getCurrentTimeFn((UINT64) this)
-                + 1 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 5 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+        testTerminationTime =
+            mClientCallbacks.getCurrentTimeFn((UINT64) this) + 1 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 5 * HUNDREDS_OF_NANOS_IN_A_SECOND;
 
         do {
             currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
@@ -63,7 +63,7 @@ TEST_P(IntermittentProducerFunctionalityTest, CreateSyncStreamWithLargeBufferAwa
             for (int i = 0; i < currentUploadHandles.size(); i++) {
                 UPLOAD_HANDLE uploadHandle = currentUploadHandles[i];
                 mockConsumer = mStreamingSession.getConsumer(uploadHandle);
-                //GetStreamedData and SubmitAck
+                // GetStreamedData and SubmitAck
                 retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
                 EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
                 VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
@@ -72,7 +72,7 @@ TEST_P(IntermittentProducerFunctionalityTest, CreateSyncStreamWithLargeBufferAwa
                 }
             }
 
-        } while (currentTime < testTerminationTime );
+        } while (currentTime < testTerminationTime);
 
         EXPECT_TRUE(mStreamingSession.mActiveUploadHandles.size() == 0);
 
@@ -81,12 +81,12 @@ TEST_P(IntermittentProducerFunctionalityTest, CreateSyncStreamWithLargeBufferAwa
         mStreamingSession.clearSessions();
 
     } while (intermittentProducerSessionCount++ < 2);
-
 }
 
-TEST_P(IntermittentProducerFunctionalityTest, CreateSyncStreamStopSyncFreeRepeatSuccess) {
+TEST_P(IntermittentProducerFunctionalityTest, CreateSyncStreamStopSyncFreeRepeatSuccess)
+{
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT64 currentTime, testTerminationTime;
 
@@ -122,14 +122,14 @@ TEST_P(IntermittentProducerFunctionalityTest, RepeatedCreateSyncStopSyncFree)
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
     UINT32 repeatTime = 10, i;
 
-    for(i = 0; i < repeatTime; i ++) {
+    for (i = 0; i < repeatTime; i++) {
         CreateStreamSync();
         stopKinesisVideoStreamSync(mStreamHandle);
         freeKinesisVideoStream(&mStreamHandle);
     }
 }
 
-
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, IntermittentProducerFunctionalityTest,
-                        Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
+                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(),
+                                 Values(0, TEST_REPLAY_DURATION)));
 #endif

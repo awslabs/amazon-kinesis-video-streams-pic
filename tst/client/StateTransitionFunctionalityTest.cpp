@@ -1,14 +1,14 @@
 #include "ClientTestFixture.h"
 
-using ::testing::WithParamInterface;
 using ::testing::Bool;
-using ::testing::Values;
 using ::testing::Combine;
+using ::testing::Values;
+using ::testing::WithParamInterface;
 
-class StateTransitionFunctionalityTest : public ClientTestBase,
-                                         public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> >{
-protected:
-    void SetUp() {
+class StateTransitionFunctionalityTest : public ClientTestBase, public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> > {
+  protected:
+    void SetUp()
+    {
         ClientTestBase::SetUp();
 
         STREAMING_TYPE streamingType;
@@ -22,7 +22,7 @@ protected:
     }
 };
 
-//Create stream, fault inject retriable error the first call for Describe, Create, Tag, Get Endpoint, Get Token, ensure retry
+// Create stream, fault inject retriable error the first call for Describe, Create, Tag, Get Endpoint, Get Token, ensure retry
 TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallRetryOnRetriableError)
 {
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
@@ -56,20 +56,16 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallRetryOnRetriable
     EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
 
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
-                                                           SERVICE_CALL_UNKNOWN,
-                                                           (PBYTE) TEST_STREAMING_TOKEN,
-                                                           SIZEOF(TEST_STREAMING_TOKEN),
-                                                           TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, (PBYTE) TEST_STREAMING_TOKEN, SIZEOF(TEST_STREAMING_TOKEN),
+                                           TEST_AUTH_EXPIRATION));
     EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
-                                                           SERVICE_CALL_RESULT_OK,
-                                                           (PBYTE) TEST_STREAMING_TOKEN,
-                                                           SIZEOF(TEST_STREAMING_TOKEN),
-                                                           TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 }
 
-//Create stream, fault inject non-retriable error the first call for Describe, Create, Tag, Get Endpoint, Get Token, ensure error returned
+// Create stream, fault inject non-retriable error the first call for Describe, Create, Tag, Get Endpoint, Get Token, ensure error returned
 TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallReturnNonRetriableError)
 {
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
@@ -86,7 +82,8 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallReturnNonRetriab
 
     setupStreamDescription();
     // submit non-retriable error
-    EXPECT_EQ(STATUS_SERVICE_CALL_INVALID_ARG_ERROR, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_INVALID_ARG, &mStreamDescription));
+    EXPECT_EQ(STATUS_SERVICE_CALL_INVALID_ARG_ERROR,
+              describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_INVALID_ARG, &mStreamDescription));
     // submit not found result to move to create state
     EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESOURCE_NOT_FOUND, &mStreamDescription));
 
@@ -96,19 +93,16 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallReturnNonRetriab
     EXPECT_EQ(STATUS_SERVICE_CALL_INVALID_ARG_ERROR, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_INVALID_ARG));
     EXPECT_EQ(STATUS_SUCCESS, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK));
 
-    EXPECT_EQ(STATUS_SERVICE_CALL_INVALID_ARG_ERROR, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_INVALID_ARG, TEST_STREAMING_ENDPOINT));
+    EXPECT_EQ(STATUS_SERVICE_CALL_INVALID_ARG_ERROR,
+              getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_INVALID_ARG, TEST_STREAMING_ENDPOINT));
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
 
-    EXPECT_EQ(STATUS_SERVICE_CALL_INVALID_ARG_ERROR, getStreamingTokenResultEvent(mCallContext.customData,
-                                                                                  SERVICE_CALL_INVALID_ARG,
-                                                                                  (PBYTE) TEST_STREAMING_TOKEN,
-                                                                                  SIZEOF(TEST_STREAMING_TOKEN),
-                                                                                  TEST_AUTH_EXPIRATION));
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
-                                                           SERVICE_CALL_RESULT_OK,
-                                                           (PBYTE) TEST_STREAMING_TOKEN,
-                                                           SIZEOF(TEST_STREAMING_TOKEN),
-                                                           TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SERVICE_CALL_INVALID_ARG_ERROR,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_INVALID_ARG, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 }
 
 TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallReturnNotAuthorizedError)
@@ -144,17 +138,13 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallReturnNotAuthori
     EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
 
-    EXPECT_EQ(STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, getStreamingTokenResultEvent(mCallContext.customData,
-                                                           SERVICE_CALL_NOT_AUTHORIZED,
-                                                           (PBYTE) TEST_STREAMING_TOKEN,
-                                                           SIZEOF(TEST_STREAMING_TOKEN),
-                                                           TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_NOT_AUTHORIZED, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
     EXPECT_EQ(1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
-                                                           SERVICE_CALL_RESULT_OK,
-                                                           (PBYTE) TEST_STREAMING_TOKEN,
-                                                           SIZEOF(TEST_STREAMING_TOKEN),
-                                                           TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 }
 
 // Create stream, fault inject all calls for Describe, Create, Tag, Get Endpoint, Get Token, ensure fails at the end
@@ -175,7 +165,7 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallExhaustRetry)
 
     // exhaust retry for describeStreamResultEvent
     EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoStream(mClientHandle, &mStreamInfo, &mStreamHandle));
-    for(i = 0; i < SERVICE_CALL_MAX_RETRY_COUNT; i++) {
+    for (i = 0; i < SERVICE_CALL_MAX_RETRY_COUNT; i++) {
         EXPECT_EQ(i + 1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
         EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, &mStreamDescription));
     }
@@ -186,7 +176,7 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallExhaustRetry)
     EXPECT_EQ(STATUS_SUCCESS, createKinesisVideoStream(mClientHandle, &mStreamInfo, &mStreamHandle));
     // move to create state
     EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESOURCE_NOT_FOUND, &mStreamDescription));
-    for(i = 0; i < SERVICE_CALL_MAX_RETRY_COUNT; i++) {
+    for (i = 0; i < SERVICE_CALL_MAX_RETRY_COUNT; i++) {
         EXPECT_EQ(i + 1, ATOMIC_LOAD(&mCreateStreamFuncCount));
         EXPECT_EQ(STATUS_SUCCESS, createStreamResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, TEST_STREAM_ARN));
     }
@@ -201,7 +191,7 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallExhaustRetry)
 
     // tagStream is special because it is not critical to streaming. After retries are exhausted it will move to the next
     // state and return success.
-    for(i = 0; i < SERVICE_CALL_MAX_RETRY_COUNT; i++) {
+    for (i = 0; i < SERVICE_CALL_MAX_RETRY_COUNT; i++) {
         EXPECT_EQ(i + 1, ATOMIC_LOAD(&mTagResourceFuncCount));
         EXPECT_EQ(STATUS_SUCCESS, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN));
     }
@@ -217,11 +207,12 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallExhaustRetry)
     EXPECT_EQ(STATUS_SUCCESS, createStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAM_ARN));
     EXPECT_EQ(STATUS_SUCCESS, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK));
 
-    for(i = 0; i < SERVICE_CALL_MAX_RETRY_COUNT; i++) {
+    for (i = 0; i < SERVICE_CALL_MAX_RETRY_COUNT; i++) {
         EXPECT_EQ(i + 1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
         EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, TEST_STREAMING_ENDPOINT));
     }
-    EXPECT_EQ(STATUS_GET_STREAMING_ENDPOINT_CALL_FAILED, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, TEST_STREAMING_ENDPOINT));
+    EXPECT_EQ(STATUS_GET_STREAMING_ENDPOINT_CALL_FAILED,
+              getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, TEST_STREAMING_ENDPOINT));
     freeKinesisVideoStream(&mStreamHandle);
 
     // exhaust retry for getStreamingTokenResultEvent
@@ -232,19 +223,15 @@ TEST_P(StateTransitionFunctionalityTest, ControlPlaneServiceCallExhaustRetry)
     EXPECT_EQ(STATUS_SUCCESS, tagResourceResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK));
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
 
-    for(i = 0; i < SERVICE_CALL_MAX_RETRY_COUNT; i++) {
+    for (i = 0; i < SERVICE_CALL_MAX_RETRY_COUNT; i++) {
         EXPECT_EQ(i + 1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
-        EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
-                                                               SERVICE_CALL_UNKNOWN,
-                                                               (PBYTE) TEST_STREAMING_TOKEN,
-                                                               SIZEOF(TEST_STREAMING_TOKEN),
-                                                               TEST_AUTH_EXPIRATION));
+        EXPECT_EQ(STATUS_SUCCESS,
+                  getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, (PBYTE) TEST_STREAMING_TOKEN,
+                                               SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
     }
-    EXPECT_EQ(STATUS_GET_STREAMING_TOKEN_CALL_FAILED, getStreamingTokenResultEvent(mCallContext.customData,
-                                                                                   SERVICE_CALL_UNKNOWN,
-                                                                                   (PBYTE) TEST_STREAMING_TOKEN,
-                                                                                   SIZEOF(TEST_STREAMING_TOKEN),
-                                                                                   TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_GET_STREAMING_TOKEN_CALL_FAILED,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_UNKNOWN, (PBYTE) TEST_STREAMING_TOKEN, SIZEOF(TEST_STREAMING_TOKEN),
+                                           TEST_AUTH_EXPIRATION));
     freeKinesisVideoStream(&mStreamHandle);
 }
 #ifdef ALIGNED_MEMORY_MODEL
@@ -255,16 +242,10 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToGetEndpointState
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
     UINT32 oldGetStreamingEndpointFuncCount, oldDescribeFuncCount, oldGetTokenFuncCount;
     initDefaultProducer();
-    std::vector<SERVICE_CALL_RESULT> getEndpointStateResults = {SERVICE_CALL_RESULT_OK,
-                                                                SERVICE_CALL_DEVICE_LIMIT,
-                                                                SERVICE_CALL_STREAM_LIMIT,
-                                                                SERVICE_CALL_BAD_REQUEST,
-                                                                SERVICE_CALL_REQUEST_TIMEOUT,
-                                                                SERVICE_CALL_GATEWAY_TIMEOUT,
-                                                                SERVICE_CALL_NETWORK_READ_TIMEOUT,
-                                                                SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT,
-                                                                SERVICE_CALL_NOT_AUTHORIZED,
-                                                                SERVICE_CALL_FORBIDDEN};
+    std::vector<SERVICE_CALL_RESULT> getEndpointStateResults = {
+        SERVICE_CALL_RESULT_OK,       SERVICE_CALL_DEVICE_LIMIT,    SERVICE_CALL_STREAM_LIMIT,         SERVICE_CALL_BAD_REQUEST,
+        SERVICE_CALL_REQUEST_TIMEOUT, SERVICE_CALL_GATEWAY_TIMEOUT, SERVICE_CALL_NETWORK_READ_TIMEOUT, SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT,
+        SERVICE_CALL_NOT_AUTHORIZED,  SERVICE_CALL_FORBIDDEN};
 
     mStreamInfo.streamCaps.recoverOnError = TRUE;
 
@@ -340,16 +321,14 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToDescribeState)
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
     UINT32 oldDescribeStreamFuncCount;
     initDefaultProducer();
-    std::vector<SERVICE_CALL_RESULT> describeStreamStateResults = {SERVICE_CALL_RESOURCE_IN_USE,
-                                                                   SERVICE_CALL_INTERNAL_ERROR,
-                                                                   SERVICE_CALL_RESULT_ACK_INTERNAL_ERROR,
-                                                                   SERVICE_CALL_RESOURCE_NOT_FOUND,
+    std::vector<SERVICE_CALL_RESULT> describeStreamStateResults = {SERVICE_CALL_RESOURCE_IN_USE, SERVICE_CALL_INTERNAL_ERROR,
+                                                                   SERVICE_CALL_RESULT_ACK_INTERNAL_ERROR, SERVICE_CALL_RESOURCE_NOT_FOUND,
                                                                    SERVICE_CALL_RESOURCE_DELETED};
 
     mStreamInfo.streamCaps.recoverOnError = TRUE;
 
     for (int i = 0; i < describeStreamStateResults.size(); i++) {
-            SERVICE_CALL_RESULT service_call_result = describeStreamStateResults[i];
+        SERVICE_CALL_RESULT service_call_result = describeStreamStateResults[i];
         CreateStreamSync();
         MockProducer producer(mMockProducerConfig, mStreamHandle);
 
@@ -374,8 +353,7 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToGetTokenState)
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
     UINT32 oldGetStreamingTokenFuncCount;
     initDefaultProducer();
-    std::vector<SERVICE_CALL_RESULT> getStreamingTokenStateResults = {SERVICE_CALL_NOT_AUTHORIZED,
-                                                                      SERVICE_CALL_FORBIDDEN};
+    std::vector<SERVICE_CALL_RESULT> getStreamingTokenStateResults = {SERVICE_CALL_NOT_AUTHORIZED, SERVICE_CALL_FORBIDDEN};
 
     mStreamInfo.streamCaps.recoverOnError = TRUE;
 
@@ -406,9 +384,7 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToNewState)
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
     UINT32 oldDescribeStreamFuncCount;
     initDefaultProducer();
-    std::vector<SERVICE_CALL_RESULT> newStateResults = {SERVICE_CALL_UNKNOWN,
-                                                        SERVICE_CALL_INVALID_ARG,
-                                                        SERVICE_CALL_DEVICE_NOT_FOUND,
+    std::vector<SERVICE_CALL_RESULT> newStateResults = {SERVICE_CALL_UNKNOWN, SERVICE_CALL_INVALID_ARG, SERVICE_CALL_DEVICE_NOT_FOUND,
                                                         SERVICE_CALL_INTERNAL_ERROR};
 
     for (int i = 0; i < newStateResults.size(); i++) {
@@ -432,11 +408,12 @@ TEST_P(StateTransitionFunctionalityTest, StreamTerminatedAndGoToNewState)
 
 // Create stream, stream and leave large buffer, StopSync, inject a fault and terminate the upload handle
 // check the behavior for re-streaming with no putFrame.
-TEST_P(StateTransitionFunctionalityTest, FaultInjectUploadHandleAfterStopBeforeTokenRotation) {
+TEST_P(StateTransitionFunctionalityTest, FaultInjectUploadHandleAfterStopBeforeTokenRotation)
+{
     mDeviceInfo.clientInfo.stopStreamTimeout = STREAM_CLOSED_TIMEOUT_DURATION_IN_SECONDS * HUNDREDS_OF_NANOS_IN_A_SECOND;
     CreateScenarioTestClient();
     BOOL submittedErrorAck = FALSE, didPutFrame, gotStreamData;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     UINT64 stopTime, currentTime;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
     STATUS retStatus;
@@ -456,7 +433,7 @@ TEST_P(StateTransitionFunctionalityTest, FaultInjectUploadHandleAfterStopBeforeT
     // stop while having large buffer not sent
     EXPECT_EQ(STATUS_SUCCESS, stopKinesisVideoStream(mStreamHandle));
 
-    //give 10 seconds to getStreamData and submit error ack on the first fragment
+    // give 10 seconds to getStreamData and submit error ack on the first fragment
     stopTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + 10 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
@@ -484,11 +461,12 @@ TEST_P(StateTransitionFunctionalityTest, FaultInjectUploadHandleAfterStopBeforeT
     VerifyStopStreamSyncAndFree();
 }
 
-TEST_P(StateTransitionFunctionalityTest, FaultInjectUploadHandleAfterStopDuringTokenRotation) {
+TEST_P(StateTransitionFunctionalityTest, FaultInjectUploadHandleAfterStopDuringTokenRotation)
+{
     mDeviceInfo.clientInfo.stopStreamTimeout = STREAM_CLOSED_TIMEOUT_DURATION_IN_SECONDS * HUNDREDS_OF_NANOS_IN_A_SECOND;
     CreateScenarioTestClient();
     BOOL submittedErrorAck = FALSE, didPutFrame, gotStreamData;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     UINT64 stopTime, currentTime;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
     STATUS retStatus;
@@ -508,7 +486,7 @@ TEST_P(StateTransitionFunctionalityTest, FaultInjectUploadHandleAfterStopDuringT
     // stop while having large buffer not sent
     EXPECT_EQ(STATUS_SUCCESS, stopKinesisVideoStream(mStreamHandle));
 
-    //give 10 seconds to getStreamData and submit error ack on upload handle 0 (first upload handle)
+    // give 10 seconds to getStreamData and submit error ack on upload handle 0 (first upload handle)
     stopTime = mClientCallbacks.getCurrentTimeFn((UINT64) this) + 10 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     do {
         currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
@@ -520,7 +498,7 @@ TEST_P(StateTransitionFunctionalityTest, FaultInjectUploadHandleAfterStopDuringT
 
             retStatus = mockConsumer->timedGetStreamData(currentTime, &gotStreamData);
             VerifyGetStreamDataResult(retStatus, gotStreamData, uploadHandle, &currentTime, &mockConsumer);
-            if (mockConsumer != NULL && uploadHandle == 0 && !submittedErrorAck){
+            if (mockConsumer != NULL && uploadHandle == 0 && !submittedErrorAck) {
                 EXPECT_EQ(STATUS_SUCCESS, mockConsumer->submitErrorAck(SERVICE_CALL_RESULT_FRAGMENT_ARCHIVAL_ERROR, &submittedErrorAck));
             }
         }
@@ -532,10 +510,11 @@ TEST_P(StateTransitionFunctionalityTest, FaultInjectUploadHandleAfterStopDuringT
     VerifyStopStreamSyncAndFree();
 }
 
-TEST_P(StateTransitionFunctionalityTest, basicResetConnectionTest) {
+TEST_P(StateTransitionFunctionalityTest, basicResetConnectionTest)
+{
     CreateScenarioTestClient();
     BOOL didPutFrame = FALSE, gotStreamData = FALSE, submittedAck = FALSE;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
     UINT64 stopTime, currentTime, resetConnectionTime;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
     STATUS retStatus;
@@ -592,8 +571,7 @@ TEST_P(StateTransitionFunctionalityTest, TestExecutionOfStreamStateMachineErrorH
 
     PKinesisVideoClient pKinesisVideoClient = FROM_STREAM_HANDLE(mCallContext.customData)->pKinesisVideoClient;
     KvsRetryStrategy* kvsRetryStrategy = &(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy);
-    PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState =
-        TO_EXPONENTIAL_BACKOFF_STATE(kvsRetryStrategy->pRetryStrategy);
+    PExponentialBackoffRetryStrategyState pExponentialBackoffRetryStrategyState = TO_EXPONENTIAL_BACKOFF_STATE(kvsRetryStrategy->pRetryStrategy);
 
     EXPECT_EQ(0, pExponentialBackoffRetryStrategyState->currentRetryCount);
 
@@ -618,4 +596,5 @@ TEST_P(StateTransitionFunctionalityTest, TestExecutionOfStreamStateMachineErrorH
 }
 
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, StateTransitionFunctionalityTest,
-                        Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
+                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(),
+                                 Values(0, TEST_REPLAY_DURATION)));

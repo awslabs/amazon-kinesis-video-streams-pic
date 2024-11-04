@@ -1,7 +1,6 @@
 #include "ClientTestFixture.h"
 
-class StreamApiFunctionalityTest : public ClientTestBase {
-};
+class StreamApiFunctionalityTest : public ClientTestBase {};
 
 TEST_F(StreamApiFunctionalityTest, putFrame_DescribeStreamDeleted)
 {
@@ -60,7 +59,9 @@ TEST_F(StreamApiFunctionalityTest, putFrame_DescribeStreamNotExisting)
     // Move to the next state
     // Reset the stream name
     mStreamName[0] = '\0';
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN, SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 
     // Ensure the callbacks have been called
     EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
@@ -82,7 +83,8 @@ TEST_F(StreamApiFunctionalityTest, putFrame_DescribeStreamNotExisting_CreateNotA
     // Reset the stream name
     EXPECT_EQ(0, ATOMIC_LOAD(&mCreateStreamFuncCount));
     // Make sure if it doesn't exist we do not end up creating it
-    EXPECT_EQ(STATUS_SERVICE_CALL_RESOURCE_NOT_FOUND_ERROR, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESOURCE_NOT_FOUND, NULL));
+    EXPECT_EQ(STATUS_SERVICE_CALL_RESOURCE_NOT_FOUND_ERROR,
+              describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESOURCE_NOT_FOUND, NULL));
 
     // Verify describe was called only once, stream not existing is a fatal error and should not be re-tried
     EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
@@ -95,7 +97,6 @@ TEST_F(StreamApiFunctionalityTest, putFrame_DescribeStreamNotExisting_CreateNotA
     EXPECT_EQ(0, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
     EXPECT_EQ(0, ATOMIC_LOAD(&mPutStreamFuncCount));
 }
-
 
 TEST_F(StreamApiFunctionalityTest, streamFormatChange_stateCheck)
 {
@@ -129,7 +130,9 @@ TEST_F(StreamApiFunctionalityTest, streamFormatChange_stateCheck)
     // Ensure we can successfully set the CPD
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamFormatChanged(mStreamHandle, SIZEOF(cpd), cpd, TEST_TRACKID));
 
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN, SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 
     // Ensure we can successfully set the CPD
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamFormatChanged(mStreamHandle, SIZEOF(cpd), cpd, TEST_TRACKID));
@@ -205,7 +208,9 @@ TEST_F(StreamApiFunctionalityTest, setNalAdaptionFlags_stateCheck)
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamSetNalAdaptationFlags(mStreamHandle, nalFlags));
     EXPECT_EQ(nalFlags, pKinesisVideoStream->streamInfo.streamCaps.nalAdaptationFlags);
     EXPECT_EQ(MKV_NALS_ADAPT_AVCC, ((PStreamMkvGenerator) pKinesisVideoStream->pMkvGenerator)->nalsAdaptation);
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN, SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 
     // Ensure we can successfully set the nal flags
     nalFlags = NAL_ADAPTATION_ANNEXB_CPD_NALS;
@@ -251,7 +256,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_BasicPutTestItemLimit)
     ReadyStream();
 
     // We should have space for 40 seconds
-    maxIteration = 24 * ((UINT32)(TEST_BUFFER_DURATION / HUNDREDS_OF_NANOS_IN_A_SECOND));
+    maxIteration = 24 * ((UINT32) (TEST_BUFFER_DURATION / HUNDREDS_OF_NANOS_IN_A_SECOND));
 
     // Iterate 2 items over the buffer limit
     for (i = 0, timestamp = 0; i < maxIteration + 2; timestamp += TEST_FRAME_DURATION, i++) {
@@ -304,7 +309,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_BasicPutTestItemLimitDropFragment)
     ReadyStream();
 
     // We should have space for 40 seconds
-    maxIteration = 24 * ((UINT32)(TEST_BUFFER_DURATION / HUNDREDS_OF_NANOS_IN_A_SECOND));
+    maxIteration = 24 * ((UINT32) (TEST_BUFFER_DURATION / HUNDREDS_OF_NANOS_IN_A_SECOND));
 
     // Iterate 2 items over the buffer limit
     for (i = 0, timestamp = 0; i < maxIteration + 2; timestamp += TEST_FRAME_DURATION, i++) {
@@ -486,19 +491,13 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetUnderflow)
 
     // Now try to retrieve the data
     for (timestamp = 0; timestamp < TEST_BUFFER_DURATION / 2; timestamp += TEST_LONG_FRAME_DURATION) {
-        EXPECT_EQ(STATUS_SUCCESS,
-                  getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                                            &filledSize));
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize));
         EXPECT_EQ(SIZEOF(getDataBuffer), filledSize);
     }
 
-    EXPECT_TRUE(STATUS_FAILED(
-            getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                                      &filledSize)));
+    EXPECT_TRUE(STATUS_FAILED(getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize)));
 
-    EXPECT_TRUE(STATUS_FAILED(
-            getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                                      &filledSize)));
+    EXPECT_TRUE(STATUS_FAILED(getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize)));
 }
 
 TEST_F(StreamApiFunctionalityTest, putFrame_PutGetNextKeyFrame)
@@ -546,9 +545,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetNextKeyFrame)
     EXPECT_EQ(0, mFrameTime);
 
     // Now, the first frame should be the 10th
-    EXPECT_EQ(STATUS_SUCCESS,
-              getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                                        &filledSize));
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize));
     EXPECT_EQ(SIZEOF(getDataBuffer), filledSize);
     pData = getDataBuffer;
 
@@ -620,9 +617,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetNextKeyFrameDropFragment)
     EXPECT_EQ(9 * TEST_LONG_FRAME_DURATION, mFrameTime);
 
     // Now, the first frame should be the 10th
-    EXPECT_EQ(STATUS_SUCCESS,
-              getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                                        &filledSize));
+    EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize));
     EXPECT_EQ(SIZEOF(getDataBuffer), filledSize);
     pData = getDataBuffer;
 
@@ -989,9 +984,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetRestartOkResult)
 
     // Now try to retrieve the data
     for (timestamp = 0; timestamp < TEST_BUFFER_DURATION / 2; timestamp += TEST_LONG_FRAME_DURATION) {
-        EXPECT_EQ(STATUS_SUCCESS,
-                  getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                                            &filledSize));
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize));
         EXPECT_EQ(SIZEOF(getDataBuffer), filledSize);
     }
 
@@ -1070,9 +1063,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetRestartStreamLimitResult)
 
     // Now try to retrieve the data
     for (timestamp = 0; timestamp < TEST_BUFFER_DURATION / 2; timestamp += TEST_LONG_FRAME_DURATION) {
-        EXPECT_EQ(STATUS_SUCCESS,
-                  getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                                            &filledSize));
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize));
         EXPECT_EQ(SIZEOF(getDataBuffer), filledSize);
     }
 
@@ -1151,9 +1142,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetRestartUnauthorizedResult)
 
     // Now try to retrieve the data
     for (timestamp = 0; timestamp < TEST_BUFFER_DURATION / 2; timestamp += TEST_LONG_FRAME_DURATION) {
-        EXPECT_EQ(STATUS_SUCCESS,
-                  getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                                            &filledSize));
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize));
         EXPECT_EQ(SIZEOF(getDataBuffer), filledSize);
     }
 
@@ -1232,9 +1221,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetRestartOtherResult)
 
     // Now try to retrieve the data
     for (timestamp = 0; timestamp < TEST_BUFFER_DURATION / 2; timestamp += TEST_LONG_FRAME_DURATION) {
-        EXPECT_EQ(STATUS_SUCCESS,
-                  getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                                            &filledSize));
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize));
         EXPECT_EQ(SIZEOF(getDataBuffer), filledSize);
     }
 
@@ -1315,9 +1302,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetRestartNotFoundResult)
 
     // Now try to retrieve the data
     for (timestamp = 0; timestamp < TEST_BUFFER_DURATION / 2; timestamp += TEST_LONG_FRAME_DURATION) {
-        EXPECT_EQ(STATUS_SUCCESS,
-                  getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                                            &filledSize));
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize));
         EXPECT_EQ(SIZEOF(getDataBuffer), filledSize);
     }
 
@@ -1396,14 +1381,13 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetRestartBadResult)
 
     // Now try to retrieve the data
     for (timestamp = 0; timestamp < TEST_BUFFER_DURATION / 2; timestamp += TEST_LONG_FRAME_DURATION) {
-        EXPECT_EQ(STATUS_SUCCESS,
-                  getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                                            &filledSize));
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize));
         EXPECT_EQ(SIZEOF(getDataBuffer), filledSize);
     }
 
     // Send a terminate event to warm reset the stream
-    EXPECT_EQ(STATUS_SERVICE_CALL_INVALID_ARG_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_INVALID_ARG));
+    EXPECT_EQ(STATUS_SERVICE_CALL_INVALID_ARG_ERROR,
+              kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_INVALID_ARG));
 
     // Try streaming again and ensure the right callbacks are fired
     frame.index++;
@@ -1459,9 +1443,7 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetRestartBadResultRestart)
 
     // Now try to retrieve the data
     for (timestamp = 0; timestamp < TEST_BUFFER_DURATION / 2; timestamp += TEST_LONG_FRAME_DURATION) {
-        EXPECT_EQ(STATUS_SUCCESS,
-                  getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                                            &filledSize));
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize));
         EXPECT_EQ(SIZEOF(getDataBuffer), filledSize);
     }
 
@@ -1547,7 +1529,8 @@ TEST_F(StreamApiFunctionalityTest, putFrame_StreamDataAvailable)
 
     // Should be encoded size
     EXPECT_EQ(SIZEOF(tempBuffer) + mkvgenGetMkvHeaderOverhead((PStreamMkvGenerator) FROM_STREAM_HANDLE(mStreamHandle)->pMkvGenerator) +
-              SIZEOF(tempBuffer) + MKV_SIMPLE_BLOCK_OVERHEAD, mDataReadySize);
+                  SIZEOF(tempBuffer) + MKV_SIMPLE_BLOCK_OVERHEAD,
+              mDataReadySize);
 }
 
 TEST_F(StreamApiFunctionalityTest, putFrame_SubmitAckWithTimecodeZero)
@@ -1651,8 +1634,7 @@ TEST_F(StreamApiFunctionalityTest, submitAck_shouldBeInWindowPutStreamResultAfte
 
     EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, uploadHandle));
 
-    retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                                          &filledSize);
+    retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize);
     EXPECT_EQ(true, STATUS_SUCCESS == retStatus || STATUS_NO_MORE_DATA_AVAILABLE == retStatus);
     EXPECT_EQ(true, filledSize > 0);
 
@@ -1725,8 +1707,7 @@ TEST_F(StreamApiFunctionalityTest, submitAck_shouldBeInWindowAfterErrorAck)
         }
     }
 
-    retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                                          &filledSize);
+    retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize);
     EXPECT_EQ(true, STATUS_SUCCESS == retStatus || STATUS_NO_MORE_DATA_AVAILABLE == retStatus);
     EXPECT_EQ(true, filledSize > 0);
 
@@ -1740,8 +1721,7 @@ TEST_F(StreamApiFunctionalityTest, submitAck_shouldBeInWindowAfterErrorAck)
     uploadHandle++;
     EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, uploadHandle));
 
-    retStatus = getKinesisVideoStreamData(mStreamHandle, uploadHandle, getDataBuffer, SIZEOF(getDataBuffer),
-                                          &filledSize);
+    retStatus = getKinesisVideoStreamData(mStreamHandle, uploadHandle, getDataBuffer, SIZEOF(getDataBuffer), &filledSize);
     EXPECT_EQ(true, STATUS_SUCCESS == retStatus || STATUS_NO_MORE_DATA_AVAILABLE == retStatus);
     EXPECT_EQ(true, filledSize > 0);
 
@@ -1784,12 +1764,11 @@ TEST_F(StreamApiFunctionalityTest, PutGet_ConnectionStaleNotification)
 
         // Return a put stream result on 1st
         if (i == 1) {
-           EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
+            EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
         }
 
         if (i >= 1) {
-            retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                    &filledSize);
+            retStatus = getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize);
             EXPECT_EQ(true, STATUS_SUCCESS == retStatus || STATUS_NO_MORE_DATA_AVAILABLE == retStatus);
             EXPECT_EQ(true, filledSize > 0);
         }
@@ -1829,18 +1808,14 @@ TEST_F(StreamApiFunctionalityTest, streamingTokenJitter_none)
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
 
     // Ensure it fails on less than min duration
-    EXPECT_EQ(STATUS_INVALID_TOKEN_EXPIRATION, getStreamingTokenResultEvent(mCallContext.customData,
-                                                           SERVICE_CALL_RESULT_OK,
-                                                           (PBYTE) TEST_STREAMING_TOKEN,
-                                                           SIZEOF(TEST_STREAMING_TOKEN),
-                                                           getTestTimeVal() + MIN_STREAMING_TOKEN_EXPIRATION_DURATION - 1));
+    EXPECT_EQ(STATUS_INVALID_TOKEN_EXPIRATION,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), getTestTimeVal() + MIN_STREAMING_TOKEN_EXPIRATION_DURATION - 1));
 
     UINT64 expiration = getTestTimeVal() + AUTH_INFO_EXPIRATION_RANDOMIZATION_DURATION_THRESHOLD;
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
-                                                           SERVICE_CALL_RESULT_OK,
-                                                           (PBYTE) TEST_STREAMING_TOKEN,
-                                                           SIZEOF(TEST_STREAMING_TOKEN),
-                                                           expiration));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), expiration));
 
     // Ensure no jitter has been introduced
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
@@ -1867,17 +1842,13 @@ TEST_F(StreamApiFunctionalityTest, streamingTokenJitter_random)
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
 
     // Ensure it fails on less than min duration
-    EXPECT_EQ(STATUS_INVALID_TOKEN_EXPIRATION, getStreamingTokenResultEvent(mCallContext.customData,
-                                                                            SERVICE_CALL_RESULT_OK,
-                                                                            (PBYTE) TEST_STREAMING_TOKEN,
-                                                                            SIZEOF(TEST_STREAMING_TOKEN),
-                                                                            getTestTimeVal() + MIN_STREAMING_TOKEN_EXPIRATION_DURATION - 1));
+    EXPECT_EQ(STATUS_INVALID_TOKEN_EXPIRATION,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), getTestTimeVal() + MIN_STREAMING_TOKEN_EXPIRATION_DURATION - 1));
 
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
-                                                           SERVICE_CALL_RESULT_OK,
-                                                           (PBYTE) TEST_STREAMING_TOKEN,
-                                                           SIZEOF(TEST_STREAMING_TOKEN),
-                                                           TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 
     // Ensure random jitter has been introduced
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
@@ -1908,17 +1879,13 @@ TEST_F(StreamApiFunctionalityTest, streamingTokenJitter_preset_min)
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
 
     // Ensure it fails on less than min duration
-    EXPECT_EQ(STATUS_INVALID_TOKEN_EXPIRATION, getStreamingTokenResultEvent(mCallContext.customData,
-                                                                            SERVICE_CALL_RESULT_OK,
-                                                                            (PBYTE) TEST_STREAMING_TOKEN,
-                                                                            SIZEOF(TEST_STREAMING_TOKEN),
-                                                                            getTestTimeVal() + MIN_STREAMING_TOKEN_EXPIRATION_DURATION - 1));
+    EXPECT_EQ(STATUS_INVALID_TOKEN_EXPIRATION,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), getTestTimeVal() + MIN_STREAMING_TOKEN_EXPIRATION_DURATION - 1));
 
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
-                                                           SERVICE_CALL_RESULT_OK,
-                                                           (PBYTE) TEST_STREAMING_TOKEN,
-                                                           SIZEOF(TEST_STREAMING_TOKEN),
-                                                           TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 
     // Ensure known jitter has been introduced as the overriden random generator function is returned
     // an expected random value which we can validate here.
@@ -1948,17 +1915,13 @@ TEST_F(StreamApiFunctionalityTest, streamingTokenJitter_preset_max)
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
 
     // Ensure it fails on less than min duration
-    EXPECT_EQ(STATUS_INVALID_TOKEN_EXPIRATION, getStreamingTokenResultEvent(mCallContext.customData,
-                                                                            SERVICE_CALL_RESULT_OK,
-                                                                            (PBYTE) TEST_STREAMING_TOKEN,
-                                                                            SIZEOF(TEST_STREAMING_TOKEN),
-                                                                            getTestTimeVal() + MIN_STREAMING_TOKEN_EXPIRATION_DURATION - 1));
+    EXPECT_EQ(STATUS_INVALID_TOKEN_EXPIRATION,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), getTestTimeVal() + MIN_STREAMING_TOKEN_EXPIRATION_DURATION - 1));
 
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
-                                                           SERVICE_CALL_RESULT_OK,
-                                                           (PBYTE) TEST_STREAMING_TOKEN,
-                                                           SIZEOF(TEST_STREAMING_TOKEN),
-                                                           TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 
     // Ensure max amount of jitter has been introduced as the controlled random function creates a jitter which
     // is greater than the max permitted jitter value controlled by MAX_AUTH_INFO_EXPIRATION_RANDOMIZATION define.
@@ -1972,10 +1935,8 @@ TEST_F(StreamApiFunctionalityTest, streamingTokenJitter_preset_max)
 
 TEST_F(StreamApiFunctionalityTest, putFrame_AdaptAnnexB)
 {
-    BYTE frameData[] = {0x00, 0x00, 0x00, 0x01, 0x67, 0x42, 0x00, 0x1e,
-                        0xa9, 0x50, 0x14, 0x07, 0xb4, 0x20, 0x00, 0x00,
-                        0x7d, 0x00, 0x00, 0x1d, 0x4c, 0x00, 0x80, 0x00,
-                        0x00, 0x00, 0x01, 0x68, 0xce, 0x3c, 0x80};
+    BYTE frameData[] = {0x00, 0x00, 0x00, 0x01, 0x67, 0x42, 0x00, 0x1e, 0xa9, 0x50, 0x14, 0x07, 0xb4, 0x20, 0x00, 0x00,
+                        0x7d, 0x00, 0x00, 0x1d, 0x4c, 0x00, 0x80, 0x00, 0x00, 0x00, 0x01, 0x68, 0xce, 0x3c, 0x80};
     UINT32 frameDataSize = SIZEOF(frameData);
     Frame frame;
 

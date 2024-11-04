@@ -1,7 +1,6 @@
 #include "UtilTestFixture.h"
 
-class TrimStringFunctionalityTest : public UtilTestBase {
-};
+class TrimStringFunctionalityTest : public UtilTestBase {};
 
 TEST_F(TrimStringFunctionalityTest, ltrim_Negative_Positive_Variations)
 {
@@ -197,7 +196,8 @@ TEST_F(TrimStringFunctionalityTest, trimall_Negative_Positive_Variations)
     EXPECT_EQ(' ', *pEnd);
     EXPECT_EQ('c', *(pEnd - 1));
 
-    EXPECT_EQ(STATUS_SUCCESS, TRIMSTRALL((PCHAR) "  \t   \r  \n  \v   \f  abc", (UINT32) STRLEN((PCHAR) "  \t   \r  \n  \v   \f  abc"), &pStart, &pEnd));
+    EXPECT_EQ(STATUS_SUCCESS,
+              TRIMSTRALL((PCHAR) "  \t   \r  \n  \v   \f  abc", (UINT32) STRLEN((PCHAR) "  \t   \r  \n  \v   \f  abc"), &pStart, &pEnd));
     EXPECT_EQ('a', *pStart);
     EXPECT_EQ('\0', *pEnd);
     EXPECT_EQ('c', *(pEnd - 1));
@@ -219,7 +219,9 @@ TEST_F(TrimStringFunctionalityTest, trimall_Negative_Positive_Variations)
     EXPECT_EQ(' ', *pEnd);
     EXPECT_EQ('\t', *(pEnd - 1));
 
-    EXPECT_EQ(STATUS_SUCCESS, TRIMSTRALL((PCHAR) "  \t   \r  \n  \v   \f  abc  \t   \r  \n  \v   \f  ", (UINT32) STRLEN((PCHAR) "  \t   \r  \n  \v   \f  abc  \t   \r  \n  \v   \f  "), &pStart, &pEnd));
+    EXPECT_EQ(STATUS_SUCCESS,
+              TRIMSTRALL((PCHAR) "  \t   \r  \n  \v   \f  abc  \t   \r  \n  \v   \f  ",
+                         (UINT32) STRLEN((PCHAR) "  \t   \r  \n  \v   \f  abc  \t   \r  \n  \v   \f  "), &pStart, &pEnd));
     EXPECT_EQ('a', *pStart);
     EXPECT_EQ(' ', *pEnd);
     EXPECT_EQ('c', *(pEnd - 1));

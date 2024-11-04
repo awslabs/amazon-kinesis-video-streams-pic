@@ -1,7 +1,6 @@
 #include "UtilTestFixture.h"
 
-class Crc32Test : public UtilTestBase {
-};
+class Crc32Test : public UtilTestBase {};
 
 TEST_F(Crc32Test, crc32FunctionalityTest)
 {

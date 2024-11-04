@@ -1,16 +1,15 @@
 #include "ViewTestFixture.h"
 
-using ::testing::WithParamInterface;
 using ::testing::Bool;
-using ::testing::Values;
 using ::testing::Combine;
+using ::testing::Values;
+using ::testing::WithParamInterface;
 
-class ViewDropPolicyFunctionalityTest : public ViewTestBase,
-                                        public WithParamInterface< ::std::tuple<CONTENT_VIEW_OVERFLOW_POLICY> >{
-
-    protected:
+class ViewDropPolicyFunctionalityTest : public ViewTestBase, public WithParamInterface< ::std::tuple<CONTENT_VIEW_OVERFLOW_POLICY> > {
+  protected:
     CONTENT_VIEW_OVERFLOW_POLICY mOverflowPolicy;
-    void SetUp() {
+    void SetUp()
+    {
         ViewTestBase::SetUp();
         std::tie(mOverflowPolicy) = GetParam();
     }
@@ -31,16 +30,11 @@ TEST_P(ViewDropPolicyFunctionalityTest, retainedItemTrimedByContentViewTrimTail)
     // buffer duration will run out first
     CreateContentView(mOverflowPolicy, 10000, TEST_MAX_BUFFER_DURATION);
 
-    for(i = 0; i < 3 * FPS; ++i) {
+    for (i = 0; i < 3 * FPS; ++i) {
         allocHandle = i == 0 ? FIRST_FRAME_ALLOCATION_HANDLE : INVALID_ALLOCATION_HANDLE_VALUE;
-        EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
-                                                     timestamp,
-                                                     timestamp,
-                                                     TEST_VIEW_ITEM_DURATION,
-                                                     allocHandle,
-                                                     0,
-                                                     VIEW_ITEM_ALLOCAITON_SIZE,
-                                                     i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
+        EXPECT_EQ(STATUS_SUCCESS,
+                  contentViewAddItem(mContentView, timestamp, timestamp, TEST_VIEW_ITEM_DURATION, allocHandle, 0, VIEW_ITEM_ALLOCAITON_SIZE,
+                                     i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
 
         if (i == 0) {
             // get next view item, simulating upper layer start consuming first view item, and it will be retained
@@ -54,14 +48,9 @@ TEST_P(ViewDropPolicyFunctionalityTest, retainedItemTrimedByContentViewTrimTail)
     EXPECT_EQ(0, gCallCount);
 
     // should trigger a fragment getting dropped
-    EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
-                                                 timestamp,
-                                                 timestamp,
-                                                 TEST_VIEW_ITEM_DURATION,
-                                                 INVALID_ALLOCATION_HANDLE_VALUE,
-                                                 0,
-                                                 VIEW_ITEM_ALLOCAITON_SIZE,
-                                                 i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
+    EXPECT_EQ(STATUS_SUCCESS,
+              contentViewAddItem(mContentView, timestamp, timestamp, TEST_VIEW_ITEM_DURATION, INVALID_ALLOCATION_HANDLE_VALUE, 0,
+                                 VIEW_ITEM_ALLOCAITON_SIZE, i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
     // more than one frame dropped
     EXPECT_GT(gCallCount, 0);
 
@@ -93,16 +82,11 @@ TEST_P(ViewDropPolicyFunctionalityTest, retainedItemTrimedByDropFrameAfterConsum
     // buffer duration will run out first
     CreateContentView(mOverflowPolicy, 10000, TEST_MAX_BUFFER_DURATION);
 
-    for(i = 0; i < 3 * FPS; ++i) {
+    for (i = 0; i < 3 * FPS; ++i) {
         allocHandle = i == 0 ? FIRST_FRAME_ALLOCATION_HANDLE : INVALID_ALLOCATION_HANDLE_VALUE;
-        EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
-                                                     timestamp,
-                                                     timestamp,
-                                                     TEST_VIEW_ITEM_DURATION,
-                                                     allocHandle,
-                                                     0,
-                                                     VIEW_ITEM_ALLOCAITON_SIZE,
-                                                     i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
+        EXPECT_EQ(STATUS_SUCCESS,
+                  contentViewAddItem(mContentView, timestamp, timestamp, TEST_VIEW_ITEM_DURATION, allocHandle, 0, VIEW_ITEM_ALLOCAITON_SIZE,
+                                     i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
         if (i == 0) {
             // get next view item, simulating upper layer start consuming first view item, and it will be retained
             EXPECT_EQ(STATUS_SUCCESS, contentViewGetNext(mContentView, &pViewItem));
@@ -115,14 +99,9 @@ TEST_P(ViewDropPolicyFunctionalityTest, retainedItemTrimedByDropFrameAfterConsum
     EXPECT_EQ(0, gCallCount);
 
     // should trigger a fragment getting dropped
-    EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
-                                                 timestamp,
-                                                 timestamp,
-                                                 TEST_VIEW_ITEM_DURATION,
-                                                 INVALID_ALLOCATION_HANDLE_VALUE,
-                                                 0,
-                                                 VIEW_ITEM_ALLOCAITON_SIZE,
-                                                 i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
+    EXPECT_EQ(STATUS_SUCCESS,
+              contentViewAddItem(mContentView, timestamp, timestamp, TEST_VIEW_ITEM_DURATION, INVALID_ALLOCATION_HANDLE_VALUE, 0,
+                                 VIEW_ITEM_ALLOCAITON_SIZE, i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
     timestamp += TEST_VIEW_ITEM_DURATION;
 
     // more than one frame dropped
@@ -141,15 +120,10 @@ TEST_P(ViewDropPolicyFunctionalityTest, retainedItemTrimedByDropFrameAfterConsum
     gCallCount = 0;
 
     // put 2 more fragment. should cause frame drop
-    for(i = 0; i < 2 * FPS; ++i) {
-        EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
-                                                     timestamp,
-                                                     timestamp,
-                                                     TEST_VIEW_ITEM_DURATION,
-                                                     INVALID_ALLOCATION_HANDLE_VALUE,
-                                                     0,
-                                                     VIEW_ITEM_ALLOCAITON_SIZE,
-                                                     i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
+    for (i = 0; i < 2 * FPS; ++i) {
+        EXPECT_EQ(STATUS_SUCCESS,
+                  contentViewAddItem(mContentView, timestamp, timestamp, TEST_VIEW_ITEM_DURATION, INVALID_ALLOCATION_HANDLE_VALUE, 0,
+                                     VIEW_ITEM_ALLOCAITON_SIZE, i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
 
         timestamp += TEST_VIEW_ITEM_DURATION;
     }
@@ -177,15 +151,10 @@ TEST_P(ViewDropPolicyFunctionalityTest, retainingViewItemWhileDroppingStillReduc
     // buffer duration will run out first
     CreateContentView(mOverflowPolicy, 10000, TEST_MAX_BUFFER_DURATION);
 
-    for(i = 0; i < 3 * FPS; ++i) {
-        EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
-                                                     timestamp,
-                                                     timestamp,
-                                                     TEST_VIEW_ITEM_DURATION,
-                                                     INVALID_ALLOCATION_HANDLE_VALUE,
-                                                     0,
-                                                     VIEW_ITEM_ALLOCAITON_SIZE,
-                                                     i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
+    for (i = 0; i < 3 * FPS; ++i) {
+        EXPECT_EQ(STATUS_SUCCESS,
+                  contentViewAddItem(mContentView, timestamp, timestamp, TEST_VIEW_ITEM_DURATION, INVALID_ALLOCATION_HANDLE_VALUE, 0,
+                                     VIEW_ITEM_ALLOCAITON_SIZE, i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
 
         if (i == 0) {
             // get next view item, simulating upper layer start consuming first view item, and it will be retained
@@ -199,16 +168,10 @@ TEST_P(ViewDropPolicyFunctionalityTest, retainingViewItemWhileDroppingStillReduc
     EXPECT_EQ(0, gCallCount);
     EXPECT_EQ(STATUS_SUCCESS, contentViewGetWindowDuration(mContentView, &currentDuration, &windowDurationBeforeDrop));
 
-
     // should trigger a fragment getting dropped
-    EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
-                                                 timestamp,
-                                                 timestamp,
-                                                 TEST_VIEW_ITEM_DURATION,
-                                                 INVALID_ALLOCATION_HANDLE_VALUE,
-                                                 0,
-                                                 VIEW_ITEM_ALLOCAITON_SIZE,
-                                                 i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
+    EXPECT_EQ(STATUS_SUCCESS,
+              contentViewAddItem(mContentView, timestamp, timestamp, TEST_VIEW_ITEM_DURATION, INVALID_ALLOCATION_HANDLE_VALUE, 0,
+                                 VIEW_ITEM_ALLOCAITON_SIZE, i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
     timestamp += TEST_VIEW_ITEM_DURATION;
 
     // more than one frame dropped
@@ -235,14 +198,9 @@ TEST_P(ViewDropPolicyFunctionalityTest, consumedViewItemStayRetained)
     // keep putting view item until at least 100 view items have been dropped
     while (gCallCount < 100) {
         allocHandle = i == 0 ? FIRST_FRAME_ALLOCATION_HANDLE : INVALID_ALLOCATION_HANDLE_VALUE;
-        EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
-                                                     timestamp,
-                                                     timestamp,
-                                                     TEST_VIEW_ITEM_DURATION,
-                                                     allocHandle,
-                                                     0,
-                                                     VIEW_ITEM_ALLOCAITON_SIZE,
-                                                     i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
+        EXPECT_EQ(STATUS_SUCCESS,
+                  contentViewAddItem(mContentView, timestamp, timestamp, TEST_VIEW_ITEM_DURATION, allocHandle, 0, VIEW_ITEM_ALLOCAITON_SIZE,
+                                     i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
         if (i == 0) {
             // get next view item, simulating upper layer start consuming first view item, and it will be retained
             EXPECT_EQ(STATUS_SUCCESS, contentViewGetNext(mContentView, &pViewItem));
@@ -264,14 +222,9 @@ TEST_P(ViewDropPolicyFunctionalityTest, consumedViewItemStayRetained)
 
     // put until new drop frame
     while (gCallCount == 0) {
-        EXPECT_EQ(STATUS_SUCCESS, contentViewAddItem(mContentView,
-                                                     timestamp,
-                                                     timestamp,
-                                                     TEST_VIEW_ITEM_DURATION,
-                                                     INVALID_ALLOCATION_HANDLE_VALUE,
-                                                     0,
-                                                     VIEW_ITEM_ALLOCAITON_SIZE,
-                                                     i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
+        EXPECT_EQ(STATUS_SUCCESS,
+                  contentViewAddItem(mContentView, timestamp, timestamp, TEST_VIEW_ITEM_DURATION, INVALID_ALLOCATION_HANDLE_VALUE, 0,
+                                     VIEW_ITEM_ALLOCAITON_SIZE, i % KEY_FRAME_INTERVAL == 0 ? ITEM_FLAG_FRAGMENT_START : ITEM_FLAG_NONE));
 
         timestamp += TEST_VIEW_ITEM_DURATION;
         i++;
@@ -283,4 +236,4 @@ TEST_P(ViewDropPolicyFunctionalityTest, consumedViewItemStayRetained)
 }
 
 INSTANTIATE_TEST_SUITE_P(PermutatedDropPolicy, ViewDropPolicyFunctionalityTest,
-                        Values(CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM, CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START));
+                         Values(CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM, CONTENT_VIEW_OVERFLOW_POLICY_DROP_UNTIL_FRAGMENT_START));

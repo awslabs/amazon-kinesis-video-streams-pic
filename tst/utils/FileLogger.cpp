@@ -1,22 +1,24 @@
 #include "UtilTestFixture.h"
 
 // length of time and log level string in log: "2019-11-09 19:11:16.xxx VERBOSE "
-#define TIMESTRING_OFFSET               32
+#define TIMESTRING_OFFSET 32
 
 #ifdef _WIN32
-#define TEST_TEMP_DIR_PATH                                      (PCHAR) "C:\\Windows\\Temp\\"
-#define TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR                   (PCHAR) "C:\\Windows\\Temp"
+#define TEST_TEMP_DIR_PATH                    (PCHAR) "C:\\Windows\\Temp\\"
+#define TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR (PCHAR) "C:\\Windows\\Temp"
 #else
-#define TEST_TEMP_DIR_PATH                                      (PCHAR) "/tmp/"
-#define TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR                   (PCHAR) "/tmp"
+#define TEST_TEMP_DIR_PATH                    (PCHAR) "/tmp/"
+#define TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR (PCHAR) "/tmp"
 #endif
 
-class FileLoggerTest : public UtilTestBase
-{
-public:
-    FileLoggerTest() :  UtilTestBase() {}
+class FileLoggerTest : public UtilTestBase {
+  public:
+    FileLoggerTest() : UtilTestBase()
+    {
+    }
 
-    void SetUp() {
+    void SetUp()
+    {
         UtilTestBase::SetUp();
 
         // Tests will fail if log level is not warn
@@ -43,10 +45,7 @@ TEST_F(FileLoggerTest, basicFileLoggerUsage)
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLog.2");
     DLOGW("Testing log line");
 
-    createFileLogger(MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
-                     5,
-                     (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
-                     FALSE, TRUE, &logFunc);
+    createFileLogger(MIN_FILE_LOGGER_STRING_BUFFER_SIZE, 5, (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR, FALSE, TRUE, &logFunc);
     logFunc(LOG_LEVEL_VERBOSE, NULL, (PCHAR) "%s", logMessage);
     logFunc(LOG_LEVEL_VERBOSE, NULL, (PCHAR) "%s", logMessage);
     // low log level logs have no effect
@@ -97,24 +96,21 @@ TEST_F(FileLoggerTest, checkFileRotation)
 
     // make sure the files dont exist
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogIndex");
-    for(; i < logIterationCount; ++i) {
+    for (; i < logIterationCount; ++i) {
         SNPRINTF(filePath, 1024, TEST_TEMP_DIR_PATH "kvsFileLog.%u", i);
         FREMOVE(filePath);
     }
 
-    createFileLogger(MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
-                     maxLogFileCount,
-                     (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
-                     FALSE, TRUE, &logFunc);
+    createFileLogger(MIN_FILE_LOGGER_STRING_BUFFER_SIZE, maxLogFileCount, (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR, FALSE, TRUE, &logFunc);
 
     // should create 12 files if limit allows
-    for(i = 0; i < logIterationCount; ++i) {
+    for (i = 0; i < logIterationCount; ++i) {
         logFunc(LOG_LEVEL_ERROR, NULL, (PCHAR) "%s", logMessage);
     }
 
     RELEASE_FILE_LOGGER();
 
-    for(i = 0; i < logIterationCount; ++i) {
+    for (i = 0; i < logIterationCount; ++i) {
         SNPRINTF(filePath, 1024, TEST_TEMP_DIR_PATH "kvsFileLog.%u", i);
         EXPECT_EQ(STATUS_SUCCESS, fileExists(filePath, &fileFound));
         // only log file with index from 6 to 11 should remain. The rest are rotated out.
@@ -148,12 +144,11 @@ TEST_F(FileLoggerTest, fileLoggerPicksUpFromLastFileIndex)
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogIndex");
 
     ULLTOSTR(128, fileIndexBuffer, ARRAY_SIZE(fileIndexBuffer), 10, &fileIndexStrSize);
-    EXPECT_EQ(STATUS_SUCCESS, writeFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogIndex"), TRUE, FALSE, (PBYTE) fileIndexBuffer, STRLEN(fileIndexBuffer) * SIZEOF(CHAR)));
+    EXPECT_EQ(
+        STATUS_SUCCESS,
+        writeFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogIndex"), TRUE, FALSE, (PBYTE) fileIndexBuffer, STRLEN(fileIndexBuffer) * SIZEOF(CHAR)));
 
-    createFileLogger(MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
-                     5,
-                     (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
-                     FALSE, TRUE, &logFunc);
+    createFileLogger(MIN_FILE_LOGGER_STRING_BUFFER_SIZE, 5, (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR, FALSE, TRUE, &logFunc);
 
     // Cause a log flush.
     logFunc(LOG_LEVEL_ERROR, NULL, (PCHAR) "%s", logMessage);
@@ -201,10 +196,7 @@ TEST_F(FileLoggerTest, logMessageLongerThanStringBuffer)
         logMessage[i] = 'b';
     }
 
-    createFileLogger(MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
-                     5,
-                     (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
-                     FALSE, TRUE, &logFunc);
+    createFileLogger(MIN_FILE_LOGGER_STRING_BUFFER_SIZE, 5, (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR, FALSE, TRUE, &logFunc);
 
     logFunc(LOG_LEVEL_ERROR, NULL, (PCHAR) "%s", logMessage);
 
@@ -246,10 +238,7 @@ TEST_F(FileLoggerTest, oldLogFileOverrittenByFlushTriggerredByNewLog)
     MEMSET(logMessage, 'a', logMessageSize);
     logMessage[logMessageSize] = '\0';
 
-    createFileLogger(MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
-                     3,
-                     (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
-                     FALSE, TRUE, &logFunc);
+    createFileLogger(MIN_FILE_LOGGER_STRING_BUFFER_SIZE, 3, (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR, FALSE, TRUE, &logFunc);
 
     logFunc(LOG_LEVEL_ERROR, NULL, (PCHAR) "%s", logMessage);
     logFunc(LOG_LEVEL_ERROR, NULL, (PCHAR) "%s", logMessage);
@@ -308,10 +297,7 @@ TEST_F(FileLoggerTest, oldLogFileOverrittenByFlushTriggerredByFreeCallbacks)
     MEMSET(logMessage, 'a', logMessageSize);
     logMessage[logMessageSize] = '\0';
 
-    createFileLogger(MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
-                     1,
-                     (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
-                     FALSE, TRUE, &logFunc);
+    createFileLogger(MIN_FILE_LOGGER_STRING_BUFFER_SIZE, 1, (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR, FALSE, TRUE, &logFunc);
 
     logFunc(LOG_LEVEL_ERROR, NULL, (PCHAR) "%s", logMessage);
 
@@ -365,12 +351,8 @@ TEST_F(FileLoggerTest, basicFilterFileLoggerUsage)
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex");
 
     // Test disabling all permitted levels and the filtered level - in short, no log files would be generated
-    createFileLoggerWithLevelFiltering(MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
-                                       5,
-                                       (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
-                                       FALSE,
-                                       FALSE,
-                                       FALSE, 0, &logFunc);
+    createFileLoggerWithLevelFiltering(MIN_FILE_LOGGER_STRING_BUFFER_SIZE, 5, (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR, FALSE, FALSE, FALSE, 0,
+                                       &logFunc);
 
     logFunc(LOG_LEVEL_VERBOSE, NULL, (PCHAR) "%s", logMessage);
     logFunc(LOG_LEVEL_VERBOSE, NULL, (PCHAR) "%s", logMessage);
@@ -388,12 +370,8 @@ TEST_F(FileLoggerTest, basicFilterFileLoggerUsage)
     RELEASE_FILE_LOGGER();
 
     // Test disabling all permitted levels and allow log files generated only for the filtered level
-    createFileLoggerWithLevelFiltering(MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
-                                       5,
-                                       (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
-                                       FALSE,
-                                       FALSE,
-                                       FALSE, LOG_LEVEL_WARN, &logFunc);
+    createFileLoggerWithLevelFiltering(MIN_FILE_LOGGER_STRING_BUFFER_SIZE, 5, (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR, FALSE, FALSE, FALSE,
+                                       LOG_LEVEL_WARN, &logFunc);
 
     logFunc(LOG_LEVEL_WARN, NULL, (PCHAR) "%s", logMessage);
 
@@ -405,7 +383,6 @@ TEST_F(FileLoggerTest, basicFilterFileLoggerUsage)
     EXPECT_EQ(FALSE, fileFound);
 
     RELEASE_FILE_LOGGER(); // This ensures the file is closed before running other checks
-
 
     EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.0"), &fileFound));
     EXPECT_EQ(TRUE, fileFound);
@@ -425,12 +402,8 @@ TEST_F(FileLoggerTest, basicFilterFileLoggerUsage)
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex");
 
     // Test enabling all permitted levels and the filtered level
-    createFileLoggerWithLevelFiltering(MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
-                                       5,
-                                       (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
-                                        FALSE,
-                                        FALSE,
-                                        TRUE, LOG_LEVEL_WARN, &logFunc);
+    createFileLoggerWithLevelFiltering(MIN_FILE_LOGGER_STRING_BUFFER_SIZE, 5, (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR, FALSE, FALSE, TRUE,
+                                       LOG_LEVEL_WARN, &logFunc);
 
     logFunc(LOG_LEVEL_WARN, NULL, (PCHAR) "%s", logMessage);
     logFunc(LOG_LEVEL_ERROR, NULL, (PCHAR) "%s", logMessage);
@@ -470,7 +443,6 @@ TEST_F(FileLoggerTest, basicFilterFileLoggerUsage)
     MEMFREE(fileBuffer);
 }
 
-
 TEST_F(FileLoggerTest, FileRotationFilterFileLoggerUsage)
 {
     UINT32 logMessageSize = MIN_FILE_LOGGER_STRING_BUFFER_SIZE / 2;
@@ -489,12 +461,8 @@ TEST_F(FileLoggerTest, FileRotationFilterFileLoggerUsage)
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex");
 
     // Test disabling all permitted levels and allow log files generated only for the filtered level
-    createFileLoggerWithLevelFiltering(MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
-                                       2,
-                                       (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
-                                       FALSE,
-                                       FALSE,
-                                       FALSE, LOG_LEVEL_WARN, &logFunc);
+    createFileLoggerWithLevelFiltering(MIN_FILE_LOGGER_STRING_BUFFER_SIZE, 2, (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR, FALSE, FALSE, FALSE,
+                                       LOG_LEVEL_WARN, &logFunc);
 
     logFunc(LOG_LEVEL_WARN, NULL, (PCHAR) "%s", logMessage);
     logMessage[logMessageSize] = '\0';
@@ -542,4 +510,4 @@ TEST_F(FileLoggerTest, FileRotationFilterFileLoggerUsage)
 
     MEMFREE(logMessage);
     MEMFREE(fileBuffer);
- }
+}

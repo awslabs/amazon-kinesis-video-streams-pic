@@ -2,8 +2,7 @@
 
 BOOL gTimeCallbackCalled = FALSE;
 
-class MkvgenApiTest : public MkvgenTestBase {
-};
+class MkvgenApiTest : public MkvgenTestBase {};
 
 TEST_F(MkvgenApiTest, createMkvGenerator_InvalidInput)
 {
@@ -15,53 +14,90 @@ TEST_F(MkvgenApiTest, createMkvGenerator_InvalidInput)
     BYTE zeroSegmentUUID[MKV_SEGMENT_UUID_LEN];
     MEMSET(zeroSegmentUUID, 0, MKV_SEGMENT_UUID_LEN);
 
-    EXPECT_EQ(STATUS_MKV_INVALID_CONTENT_TYPE_LENGTH, createMkvGenerator(contentTypeExceedMaxLen, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
-    EXPECT_EQ(STATUS_MKV_INVALID_TIMECODE_SCALE, createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MIN_TIMECODE_SCALE - 1, MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
-    EXPECT_EQ(STATUS_MKV_INVALID_TIMECODE_SCALE, createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MAX_TIMECODE_SCALE + 1, MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
-    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MIN_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator)));
+    EXPECT_EQ(STATUS_MKV_INVALID_CONTENT_TYPE_LENGTH,
+              createMkvGenerator(contentTypeExceedMaxLen, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
+    EXPECT_EQ(STATUS_MKV_INVALID_TIMECODE_SCALE,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MIN_TIMECODE_SCALE - 1, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
+    EXPECT_EQ(STATUS_MKV_INVALID_TIMECODE_SCALE,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MAX_TIMECODE_SCALE + 1, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
+    EXPECT_TRUE(
+        STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MIN_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                            MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator)));
     EXPECT_TRUE(STATUS_SUCCEEDED(freeMkvGenerator(pMkvGenerator)));
-    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MIN_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION, NULL, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MIN_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                                    NULL, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator)));
     EXPECT_TRUE(STATUS_SUCCEEDED(freeMkvGenerator(pMkvGenerator)));
-    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MAX_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator)));
+    EXPECT_TRUE(
+        STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MAX_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                            MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator)));
     EXPECT_TRUE(STATUS_SUCCEEDED(freeMkvGenerator(pMkvGenerator)));
-    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MAX_CLUSTER_DURATION + 1, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator)));
+    EXPECT_TRUE(
+        STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MAX_CLUSTER_DURATION + 1,
+                                            MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator)));
     EXPECT_TRUE(STATUS_SUCCEEDED(freeMkvGenerator(pMkvGenerator)));
-    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION - 1, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator)));
+    EXPECT_TRUE(
+        STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION - 1,
+                                            MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator)));
     EXPECT_TRUE(STATUS_SUCCEEDED(freeMkvGenerator(pMkvGenerator)));
-    EXPECT_EQ(STATUS_MKV_INVALID_CLUSTER_DURATION, createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_GEN_FLAG_NONE, MKV_TEST_TIMECODE_SCALE, MAX_CLUSTER_DURATION + 1, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
-    EXPECT_EQ(STATUS_MKV_INVALID_CLUSTER_DURATION, createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_GEN_FLAG_NONE, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION - 1, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
+    EXPECT_EQ(STATUS_MKV_INVALID_CLUSTER_DURATION,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_GEN_FLAG_NONE, MKV_TEST_TIMECODE_SCALE, MAX_CLUSTER_DURATION + 1, MKV_TEST_SEGMENT_UUID,
+                                 &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
+    EXPECT_EQ(STATUS_MKV_INVALID_CLUSTER_DURATION,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_GEN_FLAG_NONE, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION - 1, MKV_TEST_SEGMENT_UUID,
+                                 &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
 
     MEMSET(mTrackInfo.codecId, 'a', MKV_MAX_CODEC_ID_LEN + 1); // codecId is not null terminated
-    EXPECT_EQ(STATUS_MKV_INVALID_CODEC_ID_LENGTH, createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
+    EXPECT_EQ(STATUS_MKV_INVALID_CODEC_ID_LENGTH,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
     STRCPY(mTrackInfo.codecId, MKV_TEST_CODEC_ID);
     MEMSET(mTrackInfo.trackName, 'a', MKV_MAX_TRACK_NAME_LEN + 1); // trackName is not null terminated
-    EXPECT_EQ(STATUS_MKV_INVALID_TRACK_NAME_LENGTH, createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
+    EXPECT_EQ(STATUS_MKV_INVALID_TRACK_NAME_LENGTH,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
     STRCPY(mTrackInfo.trackName, MKV_TEST_TRACK_NAME);
-    EXPECT_TRUE(STATUS_FAILED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, NULL)));
+    EXPECT_TRUE(STATUS_FAILED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION,
+                                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, NULL)));
 
     // invalid cpd buffer being NULL
     mTrackInfo.codecPrivateDataSize = 1;
-    EXPECT_EQ(STATUS_MKV_CODEC_PRIVATE_NULL, createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
+    EXPECT_EQ(STATUS_MKV_CODEC_PRIVATE_NULL,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID,
+                                 &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
 
     // invalid cpd size
     mTrackInfo.codecPrivateDataSize = MKV_MAX_CODEC_PRIVATE_LEN + 1;
     mTrackInfo.codecPrivateData = (PBYTE) 0x11;
-    EXPECT_EQ(STATUS_MKV_INVALID_CODEC_PRIVATE_LENGTH, createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
+    EXPECT_EQ(STATUS_MKV_INVALID_CODEC_PRIVATE_LENGTH,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID,
+                                 &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
     mTrackInfo.codecPrivateDataSize = 0;
     mTrackInfo.codecPrivateData = NULL;
 
-    EXPECT_EQ(STATUS_MKV_BOTH_ANNEXB_AND_AVCC_SPECIFIED, createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS | MKV_GEN_ADAPT_AVCC_NALS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION, NULL, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
+    EXPECT_EQ(STATUS_MKV_BOTH_ANNEXB_AND_AVCC_SPECIFIED,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS | MKV_GEN_ADAPT_ANNEXB_NALS | MKV_GEN_ADAPT_AVCC_NALS,
+                                 MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION, NULL, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0,
+                                 &pMkvGenerator));
 
     // zero segmentUUID
-    EXPECT_EQ(STATUS_MKV_INVALID_SEGMENT_UUID, createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION, zeroSegmentUUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
+    EXPECT_EQ(STATUS_MKV_INVALID_SEGMENT_UUID,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION, zeroSegmentUUID,
+                                 &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator));
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator)));
+    EXPECT_TRUE(
+        STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION,
+                                            MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator)));
     EXPECT_TRUE(STATUS_SUCCEEDED(freeMkvGenerator(pMkvGenerator)));
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, NULL, NULL, 0, &pMkvGenerator)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION,
+                                                    MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, NULL, NULL, 0, &pMkvGenerator)));
     EXPECT_TRUE(STATUS_SUCCEEDED(freeMkvGenerator(pMkvGenerator)));
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, EMPTY_STRING, NULL, 0, &pMkvGenerator)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION,
+                                                    MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, EMPTY_STRING, NULL, 0, &pMkvGenerator)));
     EXPECT_TRUE(STATUS_SUCCEEDED(freeMkvGenerator(pMkvGenerator)));
 }
 
@@ -70,7 +106,9 @@ TEST_F(MkvgenApiTest, freeMkvGenerator_Idempotency)
     PMkvGenerator pMkvGenerator = NULL;
 
     // Create a valid generator
-    EXPECT_TRUE(STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION, MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator)));
+    EXPECT_TRUE(
+        STATUS_SUCCEEDED(createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_TEST_BEHAVIOR_FLAGS, MKV_TEST_TIMECODE_SCALE, MIN_CLUSTER_DURATION,
+                                            MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &pMkvGenerator)));
 
     // Free the generator
     EXPECT_TRUE(STATUS_SUCCEEDED(freeMkvGenerator(pMkvGenerator)));
@@ -235,49 +273,25 @@ TEST_F(MkvgenApiTest, mkvgenGenerateHeader_TrackNameCodecIdGenerationTest)
     mTrackInfo.trackCustomData.trackVideoConfig.videoWidth = 1280;
     mTrackInfo.trackCustomData.trackVideoConfig.videoHeight = 720;
 
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_TEST_CONTENT_TYPE,
-                                                 MKV_GEN_IN_STREAM_TIME,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &mkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_GEN_IN_STREAM_TIME, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator));
     storedSize = mkvgenGetMkvHeaderSize((PStreamMkvGenerator) mkvGenerator);
     EXPECT_EQ(STATUS_SUCCESS, freeMkvGenerator(mkvGenerator));
     mkvGenerator = NULL;
 
     // Same but client id = NULL
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_TEST_CONTENT_TYPE,
-                                                 MKV_GEN_IN_STREAM_TIME,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 NULL,
-                                                 NULL,
-                                                 0,
-                                                 &mkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_GEN_IN_STREAM_TIME, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, NULL, NULL, 0, &mkvGenerator));
     storedSizeNull = mkvgenGetMkvHeaderSize((PStreamMkvGenerator) mkvGenerator);
     EXPECT_EQ(STATUS_SUCCESS, freeMkvGenerator(mkvGenerator));
     mkvGenerator = NULL;
 
     // Same but client id = EMPTY
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_TEST_CONTENT_TYPE,
-                                                 MKV_GEN_IN_STREAM_TIME,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 EMPTY_STRING,
-                                                 NULL,
-                                                 0,
-                                                 &mkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_GEN_IN_STREAM_TIME, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, EMPTY_STRING, NULL, 0, &mkvGenerator));
     storedSizeEmpty = mkvgenGetMkvHeaderSize((PStreamMkvGenerator) mkvGenerator);
     EXPECT_EQ(STATUS_SUCCESS, freeMkvGenerator(mkvGenerator));
     mkvGenerator = NULL;
@@ -290,38 +304,21 @@ TEST_F(MkvgenApiTest, mkvgenGenerateHeader_TrackNameCodecIdGenerationTest)
     STRCPY(mTrackInfo.codecId, longCodecId);
     STRCPY(mTrackInfo.trackName, longTrackName);
 
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_TEST_CONTENT_TYPE,
-                                                 MKV_GEN_IN_STREAM_TIME,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &mkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_GEN_IN_STREAM_TIME, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator));
     size = mkvgenGetMkvHeaderSize((PStreamMkvGenerator) mkvGenerator);
     EXPECT_EQ(STATUS_SUCCESS, freeMkvGenerator(mkvGenerator));
     mkvGenerator = NULL;
 
-    EXPECT_EQ(STRLEN(longTrackName) - STRLEN(shortTrackName) + STRLEN(longCodecId) - STRLEN(shortCodecId),
-              size - storedSize);
+    EXPECT_EQ(STRLEN(longTrackName) - STRLEN(shortTrackName) + STRLEN(longCodecId) - STRLEN(shortCodecId), size - storedSize);
 
     // empty trackname and codec id
     mTrackInfo.codecId[0] = '\0';
     mTrackInfo.trackName[0] = '\0';
-    EXPECT_EQ(STATUS_SUCCESS, createMkvGenerator(MKV_TEST_CONTENT_TYPE,
-                                                 MKV_GEN_IN_STREAM_TIME,
-                                                 MKV_TEST_TIMECODE_SCALE,
-                                                 MKV_TEST_CLUSTER_DURATION,
-                                                 MKV_TEST_SEGMENT_UUID,
-                                                 &mTrackInfo,
-                                                 mTrackInfoCount,
-                                                 MKV_TEST_CLIENT_ID,
-                                                 NULL,
-                                                 0,
-                                                 &mkvGenerator));
+    EXPECT_EQ(STATUS_SUCCESS,
+              createMkvGenerator(MKV_TEST_CONTENT_TYPE, MKV_GEN_IN_STREAM_TIME, MKV_TEST_TIMECODE_SCALE, MKV_TEST_CLUSTER_DURATION,
+                                 MKV_TEST_SEGMENT_UUID, &mTrackInfo, mTrackInfoCount, MKV_TEST_CLIENT_ID, NULL, 0, &mkvGenerator));
     size = mkvgenGetMkvHeaderSize((PStreamMkvGenerator) mkvGenerator);
     EXPECT_EQ(STATUS_SUCCESS, freeMkvGenerator(mkvGenerator));
     mkvGenerator = NULL;
@@ -417,8 +414,7 @@ TEST_F(MkvgenApiTest, mkvgenGenerateTagsChain_PositiveAndNegativeTest)
     STRCPY(tagValue, "TestTagValue");
     tempBuffer = (PBYTE) MEMALLOC(size);
 
-    for(int i = 0; static_cast<MKV_TREE_TYPE>(i) < MKV_TREE_LAST; i++)
-    {
+    for (int i = 0; static_cast<MKV_TREE_TYPE>(i) < MKV_TREE_LAST; i++) {
         EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, NULL, tagValue, &size, static_cast<MKV_TREE_TYPE>(i)));
         EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, tagName, NULL, &size, static_cast<MKV_TREE_TYPE>(i)));
         EXPECT_NE(STATUS_SUCCESS, mkvgenGenerateTagsChain(tempBuffer, tagName, tagValue, NULL, static_cast<MKV_TREE_TYPE>(i)));
@@ -464,15 +460,15 @@ TEST_F(MkvgenApiTest, mkvgenGenerateTagsChain_OriginalAPICheck)
     EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTag(mMkvGenerator, originalAPIBuffer, tagName, tagValue, &size));
     EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTagsChain(tagsChainAPIBuffer, tagName, tagValue, &size, MKV_TREE_TAGS));
 
-    //TAGS equal check
+    // TAGS equal check
     EXPECT_EQ(0, MEMCMP(tagsChainAPIBuffer, originalAPIBuffer, size));
 
-    //reset and check TAG
+    // reset and check TAG
     MEMSET(tagsChainAPIBuffer, 0, size);
     EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTagsChain(tagsChainAPIBuffer, tagName, tagValue, &size, MKV_TREE_TAG));
     EXPECT_EQ(0, MEMCMP(tagsChainAPIBuffer, originalAPIBuffer + MKV_TAG_ELEMENT_OFFSET, size));
 
-    //reset and check SIMPLE
+    // reset and check SIMPLE
     MEMSET(tagsChainAPIBuffer, 0, size);
     EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTagsChain(tagsChainAPIBuffer, tagName, tagValue, &size, MKV_TREE_SIMPLE));
     EXPECT_EQ(0, MEMCMP(tagsChainAPIBuffer, originalAPIBuffer + MKV_SIMPLE_TAG_ELEMENT_OFFSET, size));
@@ -490,25 +486,25 @@ TEST_F(MkvgenApiTest, mkvgenGenerateTagsChain_MaxStringsCheck)
     CHAR temp;
     PBYTE tagsChainAPIBuffer = (PBYTE) MEMCALLOC(1, size);
 
-    //randomize the name
-    for(int i = 0; i < MKV_MAX_TAG_NAME_LEN; i++) {
-        //generate random ascii character
-        temp = ( rand()%223 ) + 32;
+    // randomize the name
+    for (int i = 0; i < MKV_MAX_TAG_NAME_LEN; i++) {
+        // generate random ascii character
+        temp = (rand() % 223) + 32;
 
-        //no delete character
-        if(temp == 127) {
+        // no delete character
+        if (temp == 127) {
             temp++;
         }
         tagName[i] = temp;
     }
 
-    //randomize the value
-    for(int i = 0; i < MKV_MAX_TAG_VALUE_LEN; i++) {
-        //generate random ascii character
-        temp = ( rand()%223 ) + 32;
+    // randomize the value
+    for (int i = 0; i < MKV_MAX_TAG_VALUE_LEN; i++) {
+        // generate random ascii character
+        temp = (rand() % 223) + 32;
 
-        //no delete character
-        if(temp == 127) {
+        // no delete character
+        if (temp == 127) {
             temp++;
         }
         tagValue[i] = temp;
@@ -516,11 +512,13 @@ TEST_F(MkvgenApiTest, mkvgenGenerateTagsChain_MaxStringsCheck)
 
     EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTagsChain(tagsChainAPIBuffer, tagName, tagValue, &size, MKV_TREE_SIMPLE));
 
-    //Check name
-    EXPECT_EQ(0, MEMCMP(tagName, tagsChainAPIBuffer + 2*(MKV_GENERIC_ELEMENT_SIZE_OFFSET + MKV_GENERIC_ELEMENT_OFFSET), MKV_MAX_TAG_NAME_LEN));
+    // Check name
+    EXPECT_EQ(0, MEMCMP(tagName, tagsChainAPIBuffer + 2 * (MKV_GENERIC_ELEMENT_SIZE_OFFSET + MKV_GENERIC_ELEMENT_OFFSET), MKV_MAX_TAG_NAME_LEN));
 
-    //Check string
-    EXPECT_EQ(0, MEMCMP(tagValue, tagsChainAPIBuffer + 3*(MKV_GENERIC_ELEMENT_SIZE_OFFSET + MKV_GENERIC_ELEMENT_OFFSET) + MKV_MAX_TAG_NAME_LEN, MKV_MAX_TAG_VALUE_LEN));
+    // Check string
+    EXPECT_EQ(0,
+              MEMCMP(tagValue, tagsChainAPIBuffer + 3 * (MKV_GENERIC_ELEMENT_SIZE_OFFSET + MKV_GENERIC_ELEMENT_OFFSET) + MKV_MAX_TAG_NAME_LEN,
+                     MKV_MAX_TAG_VALUE_LEN));
 
     MEMFREE(tagsChainAPIBuffer);
 }
@@ -534,16 +532,16 @@ TEST_F(MkvgenApiTest, mkvgenIncreaseTagsTagSize_FunctionalityTest)
     EXPECT_EQ(STATUS_INVALID_ARG, mkvgenIncreaseTagsTagSize(NULL, 0));
 
     /*** RANDOMIZATION TESTING ***/
-    randomSize = rand()%(0x000fffffffffffff); //UINT64, first byte is occupied,
+    randomSize = rand() % (0x000fffffffffffff); // UINT64, first byte is occupied,
     EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateTagsChain(tagsMkvHolder, (PCHAR) "TEST_NAME", (PCHAR) "TEST_VALUE", &size, MKV_TREE_TAGS));
     EXPECT_EQ(STATUS_SUCCESS, mkvgenIncreaseTagsTagSize(tagsMkvHolder, randomSize));
 
-    //grab size, and verify it increase by the expected amount.
-    encodedSize = GET_UNALIGNED_BIG_ENDIAN((PUINT64)(tagsMkvHolder + MKV_TAGS_ELEMENT_SIZE_OFFSET));
+    // grab size, and verify it increase by the expected amount.
+    encodedSize = GET_UNALIGNED_BIG_ENDIAN((PUINT64) (tagsMkvHolder + MKV_TAGS_ELEMENT_SIZE_OFFSET));
     EXPECT_EQ(encodedSize, randomSize + size - MKV_TAG_ELEMENT_OFFSET);
 
-    //check TAG size as well.
-    encodedSize = GET_UNALIGNED_BIG_ENDIAN((PUINT64)(tagsMkvHolder + MKV_TAG_ELEMENT_SIZE_OFFSET));
+    // check TAG size as well.
+    encodedSize = GET_UNALIGNED_BIG_ENDIAN((PUINT64) (tagsMkvHolder + MKV_TAG_ELEMENT_SIZE_OFFSET));
     EXPECT_EQ(encodedSize, randomSize + size - MKV_SIMPLE_TAG_ELEMENT_OFFSET);
 
     SAFE_MEMFREE(tagsMkvHolder);
@@ -574,11 +572,10 @@ TEST_F(MkvgenApiTest, mkvgenContentType_GetContentType)
     EXPECT_EQ(MKV_CONTENT_TYPE_H264, mkvgenGetContentTypeFromContentTypeString((PCHAR) "video/h264,"));
     EXPECT_EQ(MKV_CONTENT_TYPE_H264 | MKV_CONTENT_TYPE_UNKNOWN, mkvgenGetContentTypeFromContentTypeString((PCHAR) "video/h264, video/h265"));
     EXPECT_EQ(MKV_CONTENT_TYPE_UNKNOWN | MKV_CONTENT_TYPE_H265, mkvgenGetContentTypeFromContentTypeString((PCHAR) "video/h264 ,video/h265"));
-    EXPECT_EQ(MKV_CONTENT_TYPE_H264 | MKV_CONTENT_TYPE_H265 | MKV_CONTENT_TYPE_AAC |
-              MKV_CONTENT_TYPE_X_MKV_VIDEO | MKV_CONTENT_TYPE_X_MKV_AUDIO,
+    EXPECT_EQ(MKV_CONTENT_TYPE_H264 | MKV_CONTENT_TYPE_H265 | MKV_CONTENT_TYPE_AAC | MKV_CONTENT_TYPE_X_MKV_VIDEO | MKV_CONTENT_TYPE_X_MKV_AUDIO,
               mkvgenGetContentTypeFromContentTypeString((PCHAR) "video/h264,video/h265,audio/aac,video/x-matroska,audio/x-matroska"));
-    EXPECT_EQ(MKV_CONTENT_TYPE_H264 | MKV_CONTENT_TYPE_H265 | MKV_CONTENT_TYPE_AAC |
-              MKV_CONTENT_TYPE_X_MKV_VIDEO | MKV_CONTENT_TYPE_X_MKV_AUDIO | MKV_CONTENT_TYPE_UNKNOWN,
+    EXPECT_EQ(MKV_CONTENT_TYPE_H264 | MKV_CONTENT_TYPE_H265 | MKV_CONTENT_TYPE_AAC | MKV_CONTENT_TYPE_X_MKV_VIDEO | MKV_CONTENT_TYPE_X_MKV_AUDIO |
+                  MKV_CONTENT_TYPE_UNKNOWN,
               mkvgenGetContentTypeFromContentTypeString((PCHAR) "video/h264,video/h265,audio/aac,blah,video/x-matroska,audio/x-matroska"));
 }
 
@@ -602,27 +599,17 @@ TEST_F(MkvgenApiTest, mkvGenGetAudioConfigFromAmsAcmCpdNegativeCase)
     BYTE cpdTooShort[] = {0x07, 0x00, 0x01, 0x00, 0x40};
     TrackCustomData audioData;
 
-    EXPECT_EQ(STATUS_MKV_INVALID_AMS_ACM_CPD, getAudioConfigFromAmsAcmCpd(cpdWrongFormatCode,
-                                                                          SIZEOF(cpdWrongFormatCode),
-                                                                          &audioData.trackAudioConfig.samplingFrequency,
-                                                                          &audioData.trackAudioConfig.channelConfig,
-                                                                          &audioData.trackAudioConfig.bitDepth));
+    EXPECT_EQ(STATUS_MKV_INVALID_AMS_ACM_CPD,
+              getAudioConfigFromAmsAcmCpd(cpdWrongFormatCode, SIZEOF(cpdWrongFormatCode), &audioData.trackAudioConfig.samplingFrequency,
+                                          &audioData.trackAudioConfig.channelConfig, &audioData.trackAudioConfig.bitDepth));
 
-    EXPECT_EQ(STATUS_MKV_INVALID_AMS_ACM_CPD, getAudioConfigFromAmsAcmCpd(cpdTooShort,
-                                                                          SIZEOF(cpdTooShort),
-                                                                          &audioData.trackAudioConfig.samplingFrequency,
-                                                                          &audioData.trackAudioConfig.channelConfig,
-                                                                          &audioData.trackAudioConfig.bitDepth));
+    EXPECT_EQ(STATUS_MKV_INVALID_AMS_ACM_CPD,
+              getAudioConfigFromAmsAcmCpd(cpdTooShort, SIZEOF(cpdTooShort), &audioData.trackAudioConfig.samplingFrequency,
+                                          &audioData.trackAudioConfig.channelConfig, &audioData.trackAudioConfig.bitDepth));
 
-    EXPECT_EQ(STATUS_NULL_ARG, getAudioConfigFromAmsAcmCpd(cpdTooShort,
-                                                           SIZEOF(cpdTooShort),
-                                                           NULL,
-                                                           NULL,
-                                                           NULL));
+    EXPECT_EQ(STATUS_NULL_ARG, getAudioConfigFromAmsAcmCpd(cpdTooShort, SIZEOF(cpdTooShort), NULL, NULL, NULL));
 
-    EXPECT_EQ(STATUS_NULL_ARG, getAudioConfigFromAmsAcmCpd(NULL,
-                                                           SIZEOF(cpdTooShort),
-                                                           &audioData.trackAudioConfig.samplingFrequency,
-                                                           &audioData.trackAudioConfig.channelConfig,
-                                                           &audioData.trackAudioConfig.bitDepth));
+    EXPECT_EQ(STATUS_NULL_ARG,
+              getAudioConfigFromAmsAcmCpd(NULL, SIZEOF(cpdTooShort), &audioData.trackAudioConfig.samplingFrequency,
+                                          &audioData.trackAudioConfig.channelConfig, &audioData.trackAudioConfig.bitDepth));
 }

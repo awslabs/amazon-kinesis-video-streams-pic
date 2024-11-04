@@ -1,7 +1,6 @@
 #include "UtilTestFixture.h"
 
-class EndiannessFunctionalityTest : public UtilTestBase {
-};
+class EndiannessFunctionalityTest : public UtilTestBase {};
 
 TEST_F(EndiannessFunctionalityTest, InitializeEndianness)
 {
@@ -82,7 +81,7 @@ TEST_F(EndiannessFunctionalityTest, UnalignedPut)
     if (isBigEndian()) {
         EXPECT_EQ(data[0], 0x01);
         EXPECT_EQ(data[1], 0x02);
-    }else {
+    } else {
         EXPECT_EQ(data[0], 0x02);
         EXPECT_EQ(data[1], 0x01);
     }
@@ -94,7 +93,7 @@ TEST_F(EndiannessFunctionalityTest, UnalignedPut)
         EXPECT_EQ(data[1], 0x02);
         EXPECT_EQ(data[2], 0x03);
         EXPECT_EQ(data[3], 0x04);
-    }else {
+    } else {
         EXPECT_EQ(data[0], 0x04);
         EXPECT_EQ(data[1], 0x03);
         EXPECT_EQ(data[2], 0x02);
@@ -112,7 +111,7 @@ TEST_F(EndiannessFunctionalityTest, UnalignedPut)
         EXPECT_EQ(data[5], 0x06);
         EXPECT_EQ(data[6], 0x07);
         EXPECT_EQ(data[7], 0x08);
-    }else {
+    } else {
         EXPECT_EQ(data[0], 0x08);
         EXPECT_EQ(data[1], 0x07);
         EXPECT_EQ(data[2], 0x06);
@@ -143,7 +142,7 @@ TEST_F(EndiannessFunctionalityTest, UnalignedPut)
     if (isBigEndian()) {
         EXPECT_EQ(data[1], 0x01);
         EXPECT_EQ(data[2], 0x02);
-    }else {
+    } else {
         EXPECT_EQ(data[1], 0x02);
         EXPECT_EQ(data[2], 0x01);
     }
@@ -156,7 +155,7 @@ TEST_F(EndiannessFunctionalityTest, UnalignedPut)
         EXPECT_EQ(data[2], 0x02);
         EXPECT_EQ(data[3], 0x03);
         EXPECT_EQ(data[4], 0x04);
-    }else {
+    } else {
         EXPECT_EQ(data[1], 0x04);
         EXPECT_EQ(data[2], 0x03);
         EXPECT_EQ(data[3], 0x02);
@@ -175,7 +174,7 @@ TEST_F(EndiannessFunctionalityTest, UnalignedPut)
         EXPECT_EQ(data[6], 0x06);
         EXPECT_EQ(data[7], 0x07);
         EXPECT_EQ(data[8], 0x08);
-    }else {
+    } else {
         EXPECT_EQ(data[1], 0x08);
         EXPECT_EQ(data[2], 0x07);
         EXPECT_EQ(data[3], 0x06);

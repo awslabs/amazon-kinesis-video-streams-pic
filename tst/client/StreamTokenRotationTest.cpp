@@ -1,7 +1,6 @@
 #include "ClientTestFixture.h"
 
-class StreamTokenRotationTest : public ClientTestBase {
-};
+class StreamTokenRotationTest : public ClientTestBase {};
 
 UINT64 gPresetTimeValue = 0;
 UINT32 gPutStreamFuncCount = 0;
@@ -17,14 +16,8 @@ UINT64 getCurrentTimePreset(UINT64 customData)
     return gPresetTimeValue;
 }
 
-STATUS testPutStream(UINT64 customData,
-                     PCHAR streamName,
-                     PCHAR containerType,
-                     UINT64 streamStartTime,
-                     BOOL absoluteFragmentTimestamp,
-                     BOOL ackRequired,
-                     PCHAR streamingEndpoint,
-                     PServiceCallContext pCallbackContext)
+STATUS testPutStream(UINT64 customData, PCHAR streamName, PCHAR containerType, UINT64 streamStartTime, BOOL absoluteFragmentTimestamp,
+                     BOOL ackRequired, PCHAR streamingEndpoint, PServiceCallContext pCallbackContext)
 {
     UNUSED_PARAM(customData);
     UNUSED_PARAM(streamName);
@@ -98,12 +91,15 @@ TEST_F(StreamTokenRotationTest, basicTokenRotationNonPersistAwait)
 
     EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, &mStreamDescription));
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
-    EXPECT_EQ(STATUS_INVALID_TOKEN_EXPIRATION, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) gStreamingToken, SIZEOF(gStreamingToken), MIN_STREAMING_TOKEN_EXPIRATION_DURATION - 1));
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) gStreamingToken, SIZEOF(gStreamingToken), MIN_STREAMING_TOKEN_EXPIRATION_DURATION));
+    EXPECT_EQ(STATUS_INVALID_TOKEN_EXPIRATION,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) gStreamingToken, SIZEOF(gStreamingToken),
+                                           MIN_STREAMING_TOKEN_EXPIRATION_DURATION - 1));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) gStreamingToken, SIZEOF(gStreamingToken),
+                                           MIN_STREAMING_TOKEN_EXPIRATION_DURATION));
 
     // Produce and consume the buffer
     for (i = 0, timestamp = 0; timestamp <= runDuration; timestamp += TEST_LONG_FRAME_DURATION, i++) {
-
         frame.index = i;
         frame.decodingTs = timestamp;
         frame.presentationTs = timestamp;
@@ -120,22 +116,19 @@ TEST_F(StreamTokenRotationTest, basicTokenRotationNonPersistAwait)
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(streamHandle, &frame));
 
         // Check for rotation
-        if (timestamp > (UINT64)(rotation * MIN_STREAMING_TOKEN_EXPIRATION_DURATION - STREAMING_TOKEN_EXPIRATION_GRACE_PERIOD + TEST_LONG_FRAME_DURATION)) {
+        if (timestamp >
+            (UINT64) (rotation * MIN_STREAMING_TOKEN_EXPIRATION_DURATION - STREAMING_TOKEN_EXPIRATION_GRACE_PERIOD + TEST_LONG_FRAME_DURATION)) {
             EXPECT_EQ(rotation + 1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
             EXPECT_EQ(rotation, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
             EXPECT_EQ(rotation, gPutStreamFuncCount);
 
-            EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData,
-                                                                      SERVICE_CALL_RESULT_OK,
-                                                                      TEST_STREAMING_ENDPOINT));
+            EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
             EXPECT_EQ(rotation + 1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
             EXPECT_EQ(rotation + 1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
             EXPECT_EQ(rotation, gPutStreamFuncCount);
-            EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
-                                                                   SERVICE_CALL_RESULT_OK,
-                                                                   (PBYTE) gStreamingToken,
-                                                                   SIZEOF(gStreamingToken),
-                                                                   (rotation + 1) * MIN_STREAMING_TOKEN_EXPIRATION_DURATION));
+            EXPECT_EQ(STATUS_SUCCESS,
+                      getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) gStreamingToken, SIZEOF(gStreamingToken),
+                                                   (rotation + 1) * MIN_STREAMING_TOKEN_EXPIRATION_DURATION));
 
             // Validate the put stream count
             EXPECT_EQ(rotation + 1, gPutStreamFuncCount);
@@ -154,11 +147,8 @@ TEST_F(StreamTokenRotationTest, basicTokenRotationNonPersistAwait)
         if (i != 0 && (i % 10 == 0)) {
             iterate = TRUE;
             while (iterate) {
-                status = getKinesisVideoStreamData(streamHandle, uploadHandle, getDataBuffer, SIZEOF(getDataBuffer),
-                                                   &filledSize);
-                EXPECT_TRUE(status == STATUS_SUCCESS ||
-                            status == STATUS_END_OF_STREAM ||
-                            status == STATUS_NO_MORE_DATA_AVAILABLE);
+                status = getKinesisVideoStreamData(streamHandle, uploadHandle, getDataBuffer, SIZEOF(getDataBuffer), &filledSize);
+                EXPECT_TRUE(status == STATUS_SUCCESS || status == STATUS_END_OF_STREAM || status == STATUS_NO_MORE_DATA_AVAILABLE);
                 switch (status) {
                     case STATUS_SUCCESS:
                         break;
@@ -175,10 +165,9 @@ TEST_F(StreamTokenRotationTest, basicTokenRotationNonPersistAwait)
         }
     }
 
-
     EXPECT_EQ(0, ATOMIC_LOAD(&mStreamErrorReportFuncCount));
     EXPECT_EQ(STATUS_SUCCESS, mStatus);
-    EXPECT_TRUE(uploadHandle > TEST_UPLOAD_HANDLE); //upload handle rotated at least once.
+    EXPECT_TRUE(uploadHandle > TEST_UPLOAD_HANDLE); // upload handle rotated at least once.
 
     if (IS_VALID_CLIENT_HANDLE(clientHandle)) {
         freeKinesisVideoClient(&clientHandle);
@@ -254,12 +243,15 @@ TEST_F(StreamTokenRotationTest, rotationWithAwaitingCheck)
 
     EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, &mStreamDescription));
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
-    EXPECT_EQ(STATUS_INVALID_TOKEN_EXPIRATION, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) gStreamingToken, SIZEOF(gStreamingToken), MIN_STREAMING_TOKEN_EXPIRATION_DURATION - 1));
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) gStreamingToken, SIZEOF(gStreamingToken), MIN_STREAMING_TOKEN_EXPIRATION_DURATION));
+    EXPECT_EQ(STATUS_INVALID_TOKEN_EXPIRATION,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) gStreamingToken, SIZEOF(gStreamingToken),
+                                           MIN_STREAMING_TOKEN_EXPIRATION_DURATION - 1));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) gStreamingToken, SIZEOF(gStreamingToken),
+                                           MIN_STREAMING_TOKEN_EXPIRATION_DURATION));
 
     // Produce and consume the buffer
     for (i = 0, timestamp = 0; timestamp <= runDuration; timestamp += TEST_LONG_FRAME_DURATION, i++) {
-
         frame.index = i;
         frame.decodingTs = timestamp;
         frame.presentationTs = timestamp;
@@ -276,22 +268,19 @@ TEST_F(StreamTokenRotationTest, rotationWithAwaitingCheck)
         EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(streamHandle, &frame));
 
         // Check for rotation
-        if ((INT64) timestamp > rotation * MIN_STREAMING_TOKEN_EXPIRATION_DURATION - STREAMING_TOKEN_EXPIRATION_GRACE_PERIOD + TEST_LONG_FRAME_DURATION) {
+        if ((INT64) timestamp >
+            rotation * MIN_STREAMING_TOKEN_EXPIRATION_DURATION - STREAMING_TOKEN_EXPIRATION_GRACE_PERIOD + TEST_LONG_FRAME_DURATION) {
             EXPECT_EQ(rotation + 1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
             EXPECT_EQ(rotation, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
             EXPECT_EQ(rotation, gPutStreamFuncCount);
 
-            EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData,
-                                                                      SERVICE_CALL_RESULT_OK,
-                                                                      TEST_STREAMING_ENDPOINT));
+            EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
             EXPECT_EQ(rotation + 1, ATOMIC_LOAD(&mGetStreamingEndpointFuncCount));
             EXPECT_EQ(rotation + 1, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
             EXPECT_EQ(rotation, gPutStreamFuncCount);
-            EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData,
-                                                                   SERVICE_CALL_RESULT_OK,
-                                                                   (PBYTE) gStreamingToken,
-                                                                   SIZEOF(gStreamingToken),
-                                                                   (rotation + 1) * MIN_STREAMING_TOKEN_EXPIRATION_DURATION));
+            EXPECT_EQ(STATUS_SUCCESS,
+                      getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) gStreamingToken, SIZEOF(gStreamingToken),
+                                                   (rotation + 1) * MIN_STREAMING_TOKEN_EXPIRATION_DURATION));
 
             // Validate the put stream count
             EXPECT_EQ(rotation + 1, gPutStreamFuncCount);
@@ -311,11 +300,8 @@ TEST_F(StreamTokenRotationTest, rotationWithAwaitingCheck)
         if (i != 0 && (i % 10 == 0)) {
             iterate = TRUE;
             while (iterate) {
-                status = getKinesisVideoStreamData(streamHandle, uploadHandle, getDataBuffer, SIZEOF(getDataBuffer),
-                                                   &filledSize);
-                EXPECT_TRUE(status == STATUS_SUCCESS ||
-                            status == STATUS_END_OF_STREAM ||
-                            status == STATUS_NO_MORE_DATA_AVAILABLE ||
+                status = getKinesisVideoStreamData(streamHandle, uploadHandle, getDataBuffer, SIZEOF(getDataBuffer), &filledSize);
+                EXPECT_TRUE(status == STATUS_SUCCESS || status == STATUS_END_OF_STREAM || status == STATUS_NO_MORE_DATA_AVAILABLE ||
                             status == STATUS_AWAITING_PERSISTED_ACK);
                 switch (status) {
                     case STATUS_SUCCESS:
@@ -330,8 +316,7 @@ TEST_F(StreamTokenRotationTest, rotationWithAwaitingCheck)
                         // The last bits should be EOS tag.
                         // We can check the EOS tag by checking the value part of the
                         // tag which should be empty
-                        EXPECT_EQ(0, MEMCMP(emptyTagValue, getDataBuffer + filledSize - gMkvTagStringBitsSize,
-                                            gMkvTagStringBitsSize));
+                        EXPECT_EQ(0, MEMCMP(emptyTagValue, getDataBuffer + filledSize - gMkvTagStringBitsSize, gMkvTagStringBitsSize));
 
                         // Send the ACK
                         pUploadHandleInfo = getStreamUploadInfo(FROM_STREAM_HANDLE(streamHandle), uploadHandle);
@@ -346,7 +331,7 @@ TEST_F(StreamTokenRotationTest, rotationWithAwaitingCheck)
     }
 
     EXPECT_EQ(0, ATOMIC_LOAD(&mStreamErrorReportFuncCount));
-    EXPECT_TRUE(uploadHandle > TEST_UPLOAD_HANDLE); //upload handle rotated at least once.
+    EXPECT_TRUE(uploadHandle > TEST_UPLOAD_HANDLE); // upload handle rotated at least once.
 
     if (IS_VALID_CLIENT_HANDLE(clientHandle)) {
         freeKinesisVideoClient(&clientHandle);

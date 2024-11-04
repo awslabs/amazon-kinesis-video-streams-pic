@@ -1,7 +1,6 @@
 #include "ClientTestFixture.h"
 
-class FrameOrderCoordinatorTest : public ClientTestBase {
-};
+class FrameOrderCoordinatorTest : public ClientTestBase {};
 
 TEST_F(FrameOrderCoordinatorTest, avTsComparatorVariations)
 {
