@@ -18,34 +18,31 @@ jobs:
   mac-tests:
     strategy:
       matrix:
-        os: [ macos-13, macos-15 ]
+        os:
+          - name: Mac Intel
+            runner: macos-13
+          - name: Mac Apple Silicon
+            runner: macos-15
+        compiler: [ gcc, clang ]
         config:
           - name: Default Build
             cmake_flags: "-DBUILD_TEST=TRUE"
           - name: Aligned Memory Model Build
             cmake_flags: "-DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE"
-        compiler: [ gcc, clang ]
       fail-fast: false
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os.runner }}
+    name: ${{ matrix.os.name }}, ${{ matrix.compiler }}, ${{ matrix.config.name }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up compiler
-        run: |
-          if [[ "${{ matrix.compiler }}" == "gcc" ]]; then
-            brew install gcc
-          else
-            brew install llvm
-          fi
-
       - name: Configure and build ${{ matrix.config.name }}
         run: |
           if [[ "${{ matrix.compiler }}" == "gcc" ]]; then
-            export CC="gcc"
-            export CXX="g++"
+            export CC="gcc-14"
+            export CXX="g++-14"
           else
             export CC="clang"
             export CXX="clang++"
