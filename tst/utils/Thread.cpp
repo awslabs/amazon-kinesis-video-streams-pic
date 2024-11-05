@@ -246,7 +246,7 @@ TEST_F(ThreadFunctionalityTest, VerifyStackSize)
     EXPECT_NE(0, threadId2);
     EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(threadId2, NULL));
     EXPECT_EQ(0, threadInfo2.failure);
-    EXPECT_EQ(threadStack, threadInfo2.stackSize);
+    EXPECT_EQ(threadStack2, threadInfo2.stackSize);
 }
 
 #endif
