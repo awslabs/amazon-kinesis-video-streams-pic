@@ -15,6 +15,10 @@ struct sleep_times {
 
 PVOID testThreadRoutine(PVOID arg)
 {
+    if (arg == NULL) {
+        FAIL() << "TestThreadRoutine requires args!";
+    }
+
     MUTEX_LOCK(gThreadMutex);
     gThreadCount++;
     struct sleep_times* st = (struct sleep_times*) arg;
@@ -34,6 +38,11 @@ PVOID testThreadRoutine(PVOID arg)
 
     gThreadCount--;
     MUTEX_UNLOCK(gThreadMutex);
+    return NULL;
+}
+
+PVOID emptyRoutine(PVOID arg)
+{
     return NULL;
 }
 
@@ -130,7 +139,7 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheckWithStack)
         st[index].threadVisited = FALSE;
         st[index].threadCleared = FALSE;
         st[index].threadSleepTime = index * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
-        EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threads[index], testThreadRoutine, threadStack, (PVOID)&st[index]));
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threads[index], testThreadRoutine, threadStack, (PVOID) &st[index]));
     }
 
     // Await for the threads to finish
@@ -150,21 +159,85 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheckWithStack)
     MUTEX_FREE(gThreadMutex);
 }
 
+TEST_F(ThreadFunctionalityTest, ThreadCreateUseDefaultsTest)
+{
+    TID threadId = 0;
+
+    // 0 passed into the size parameter means to use the defaults.
+    EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threadId, emptyRoutine, 0, NULL));
+    EXPECT_NE(0, threadId);
+    EXPECT_EQ(STATUS_SUCESSS, THREAD_JOIN(threadId, NULL))
+}
+
 TEST_F(ThreadFunctionalityTest, NegativeTest)
 {
-    UINT64 index;
-    TID threads[TEST_THREAD_COUNT];
-    gThreadMutex = MUTEX_CREATE(FALSE);
-    SIZE_T threadStack = 16 * 1024;
-    struct sleep_times st[TEST_THREAD_COUNT];
+    TID threadId = 0;
+    SIZE_T threadStack = 512 * 1024; // 0.5 MiB
 
-    gThreadCount = 0;
-    EXPECT_NE(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(NULL, testThreadRoutine, threadStack, NULL));
+    // No out value case
+    EXPECT_NE(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(NULL, emptyRoutine, threadStack, NULL));
+
+    // Request too large stack size case
+    EXPECT_NE(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threadId, emptyRoutine, SIZE_MAX, NULL));
+    EXPECT_EQ(0, threadId);
+
+    // No out value case
     EXPECT_NE(STATUS_SUCCESS, THREAD_CREATE(NULL, testThreadRoutine, NULL));
-
-    MUTEX_LOCK(gThreadMutex);
-    EXPECT_EQ(0, gThreadCount);
-    MUTEX_UNLOCK(gThreadMutex);
-
-    MUTEX_FREE(gThreadMutex);
 }
+
+// Linux-only test
+#if !defined _WIN32 && !defined _WIN64 && !defined __CYGWIN__ && !defined __APPLE__ && !defined __MACH__
+
+// Struct to hold the stack size information for passing back to main
+typedef struct {
+    SIZE_T stackSize;
+    INT32 failure;
+} TestThreadInfo;
+
+// Function to retrieve and print the stack size from within the thread
+PVOID fetchStackSizeThreadRoutine(PVOID arg)
+{
+    pthread_attr_t attr;
+    SIZE_T stackSize;
+    INT32 result = 0;
+    TestThreadInfo* pThreadInfo = (TestThreadInfo*) arg;
+
+    // Initialize the thread attributes for the running thread
+    result = pthread_getattr_np(pthread_self(), &attr); // Linux-specific function
+    if (result != 0) {
+        goto CleanUp;
+    }
+
+    // Retrieve the stack size from the thread attributes
+    result = pthread_attr_getstacksize(&attr, &stackSize);
+    if (result != 0) {
+        goto CleanUp;
+    }
+
+    pThreadInfo->stackSize = stackSize;
+
+CleanUp:
+    pThreadInfo->failure = result;
+    pthread_attr_destroy(&attr);
+
+    return NULL;
+}
+
+// Create a thread with the min stack size + 512 KiB
+// Then check that the thread has the requested size.
+TEST_F(ThreadFunctionalityTest, VerifyStackSize)
+{
+    TID threadId;
+    SIZE_T threadStack = 512 * 1024; // 0.5 MiB
+
+    TestThreadInfo threadInfo = {.stackSize = 0, .failure = 0};
+
+    EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threadId, fetchStackSizeThreadRoutine, threadStack, &threadInfo));
+
+    EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(threadId, NULL));
+
+    EXPECT_EQ(0, threadInfo.failure);
+    EXPECT_EQ(threadStack, threadInfo.stackSize);
+}
+
+#endif

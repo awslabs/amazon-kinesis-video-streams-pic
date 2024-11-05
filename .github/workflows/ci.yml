@@ -215,6 +215,17 @@ jobs:
           cmake .. ${{ matrix.config.cmake_flags }}
           make -j$(nproc)
 
+  cmake-flags-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run CMake Flag Combination Test
+        run: |
+          ./tst/scripts/test_cmake_flags.sh >> $GITHUB_STEP_SUMMARY
+
   windows-msvc:
     runs-on: windows-2022
     env:
