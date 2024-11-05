@@ -16,7 +16,8 @@ struct sleep_times {
 PVOID testThreadRoutine(PVOID arg)
 {
     if (arg == NULL) {
-        FAIL() << "TestThreadRoutine requires args!";
+        DLOGE("Arguments passed to this shouldn't be null!");
+        return NULL;
     }
 
     MUTEX_LOCK(gThreadMutex);
@@ -166,7 +167,7 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateUseDefaultsTest)
     // 0 passed into the size parameter means to use the defaults.
     EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threadId, emptyRoutine, 0, NULL));
     EXPECT_NE(0, threadId);
-    EXPECT_EQ(STATUS_SUCESSS, THREAD_JOIN(threadId, NULL))
+    EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(threadId, NULL));
 }
 
 TEST_F(ThreadFunctionalityTest, NegativeTest)
@@ -227,17 +228,25 @@ CleanUp:
 // Then check that the thread has the requested size.
 TEST_F(ThreadFunctionalityTest, VerifyStackSize)
 {
-    TID threadId;
+    TID threadId = 0, threadId2 = 0;
     SIZE_T threadStack = 512 * 1024; // 0.5 MiB
-
     TestThreadInfo threadInfo = {.stackSize = 0, .failure = 0};
+    SIZE_T threadStack2 = 1024 * 1024; // 1 MiB
+    TestThreadInfo threadInfo2 = {.stackSize = 0, .failure = 0};
 
+    // Check case 1: 0.5 MiB
     EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threadId, fetchStackSizeThreadRoutine, threadStack, &threadInfo));
-
+    EXPECT_NE(0, threadId);
     EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(threadId, NULL));
-
     EXPECT_EQ(0, threadInfo.failure);
     EXPECT_EQ(threadStack, threadInfo.stackSize);
+
+    // Check case 2: 1 MiB
+    EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threadId2, fetchStackSizeThreadRoutine, threadStack2, &threadInfo2));
+    EXPECT_NE(0, threadId2);
+    EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(threadId2, NULL));
+    EXPECT_EQ(0, threadInfo2.failure);
+    EXPECT_EQ(threadStack, threadInfo2.stackSize);
 }
 
 #endif
