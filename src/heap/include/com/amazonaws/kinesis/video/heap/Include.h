@@ -147,7 +147,7 @@ typedef struct {
 /**
  * Creates and initializes the heap
  */
-PUBLIC_API STATUS heapInitialize(UINT64, UINT32, UINT32, PCHAR, PHeap*);
+PUBLIC_API STATUS heapInitialize(UINT64, UINT32, UINT32, PCHAR, UINT32, PHeap*);
 
 /**
  * Releases the entire heap.

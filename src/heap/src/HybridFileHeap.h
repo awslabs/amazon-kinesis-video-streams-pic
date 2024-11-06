@@ -62,7 +62,7 @@ typedef struct {
 /**
  * Hybrid heap internal functions
  */
-STATUS hybridFileCreateHeap(PHeap, UINT32, PCHAR, PHybridFileHeap*);
+STATUS hybridFileCreateHeap(PHeap, UINT32, PCHAR, UINT32, PHybridFileHeap*);
 
 /**
  * Allocate a buffer from the heap

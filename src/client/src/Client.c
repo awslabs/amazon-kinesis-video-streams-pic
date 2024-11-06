@@ -254,7 +254,8 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
         ? MEMORY_BASED_HEAP_FLAGS
         : FILE_BASED_HEAP_FLAGS;
     CHK_STATUS(heapInitialize(pKinesisVideoClient->deviceInfo.storageInfo.storageSize, pKinesisVideoClient->deviceInfo.storageInfo.spillRatio,
-                              heapFlags, pKinesisVideoClient->deviceInfo.storageInfo.rootDirectory, &pKinesisVideoClient->pHeap));
+                              heapFlags, pKinesisVideoClient->deviceInfo.storageInfo.rootDirectory, 
+                              pKinesisVideoClient->deviceInfo.storageInfo.fileHeapStartingFileIndex, &pKinesisVideoClient->pHeap));
 
     // Using content store allocator if needed
     // IMPORTANT! This will not be multi-client-safe

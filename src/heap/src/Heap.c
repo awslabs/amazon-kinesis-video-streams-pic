@@ -34,9 +34,10 @@ CleanUp:
  *      @spillRatio - Spill ratio in percentage of direct allocation RAM vs. vRAM in the hybrid heap scenario
  *      @behaviorFlags - Flags controlling the behavior/type of the heap
  *      @pRootDirectoru - Optional path to the root directory in case of the file-based heap
+ *      @fileHeapStartingFileIndex - Starting file index for file-based heaps
  *      @ppHeap - The returned pointer to the Heap object
  */
-STATUS heapInitialize(UINT64 heapLimit, UINT32 spillRatio, UINT32 behaviorFlags, PCHAR pRootDirectory, PHeap* ppHeap)
+STATUS heapInitialize(UINT64 heapLimit, UINT32 spillRatio, UINT32 behaviorFlags, PCHAR pRootDirectory, UINT32 fileHeapStartingFileIndex, PHeap* ppHeap)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -76,7 +77,7 @@ STATUS heapInitialize(UINT64 heapLimit, UINT32 spillRatio, UINT32 behaviorFlags,
         pHeap = (PHeap) pHybridHeap;
     } else if ((behaviorFlags & FLAGS_USE_HYBRID_FILE_HEAP) != HEAP_FLAGS_NONE) {
         DLOGI("Creating hybrid file heap with flags: 0x%08x", behaviorFlags);
-        CHK_STATUS(hybridFileCreateHeap(pHeap, spillRatio, pRootDirectory, &pFileHeap));
+        CHK_STATUS(hybridFileCreateHeap(pHeap, spillRatio, pRootDirectory, fileHeapStartingFileIndex, &pFileHeap));
 
         // Store the file hybrid heap as the returned heap object
         pHeap = (PHeap) pFileHeap;

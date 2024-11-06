@@ -17,7 +17,7 @@ ALLOCATION_FOOTER gFileFooter = {0};
 
 #define FILE_ALLOCATION_HEADER_SIZE SIZEOF(gFileHeader)
 
-STATUS hybridFileCreateHeap(PHeap pHeap, UINT32 spillRatio, PCHAR pRootDirectory, PHybridFileHeap* ppHybridHeap)
+STATUS hybridFileCreateHeap(PHeap pHeap, UINT32 spillRatio, PCHAR pRootDirectory, UINT32 fileHeapStartingFileIndex, PHybridFileHeap* ppHybridHeap)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -37,7 +37,8 @@ STATUS hybridFileCreateHeap(PHeap pHeap, UINT32 spillRatio, PCHAR pRootDirectory
     pHybridHeap->spillRatio = (DOUBLE) spillRatio / 100;
 
     // IMPORTANT: We should start from a non-zero handle num to avoid a collision with the invalid handle value
-    pHybridHeap->handleNum = FILE_HEAP_STARTING_FILE_INDEX;
+    // Set the handleNum to the provided fileHeapStartingFileIndex if valid, otherwise use default
+    pHybridHeap->handleNum = (fileHeapStartingFileIndex > 0) ? fileHeapStartingFileIndex : FILE_HEAP_STARTING_FILE_INDEX;
 
     // Set the root path. Use default if not specified
     if (pRootDirectory == NULL || pRootDirectory[0] == '\0') {

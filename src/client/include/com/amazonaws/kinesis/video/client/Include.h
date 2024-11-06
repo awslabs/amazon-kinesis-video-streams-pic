@@ -1134,6 +1134,9 @@ struct __StorageInfo {
     // Spillover ratio for the hybrid heaps in 0 - 100%
     UINT32 spillRatio;
 
+    // starting file index for hybrid file heap  
+    UINT32 fileHeapStartingFileIndex;
+
     // File location in case of the file based storage
     CHAR rootDirectory[MAX_PATH_LEN + 1];
 };
