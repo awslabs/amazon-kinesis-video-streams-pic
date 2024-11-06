@@ -228,25 +228,25 @@ CleanUp:
 // Then check that the thread has the requested size.
 TEST_F(ThreadFunctionalityTest, VerifyStackSize)
 {
-    TID threadId = 0, threadId2 = 0;
-    SIZE_T threadStack = 512 * 1024; // 0.5 MiB
-    TestThreadInfo threadInfo = {.stackSize = 0, .failure = 0};
-    SIZE_T threadStack2 = 1024 * 1024; // 1 MiB
-    TestThreadInfo threadInfo2 = {.stackSize = 0, .failure = 0};
+    TID halfMiBThreadId = 0, oneMiBThreadId = 0;
+    SIZE_T halfMiBThreadStackSize = 512 * 1024; // 0.5 MiB
+    TestThreadInfo halfMiBThreadInfo = {.stackSize = 0, .failure = 0};
+    SIZE_T oneMiBThreadStackSize = 1024 * 1024; // 1 MiB
+    TestThreadInfo oneMiBThreadInfo = {.stackSize = 0, .failure = 0};
 
     // Check case 1: 0.5 MiB
-    EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threadId, fetchStackSizeThreadRoutine, threadStack, &threadInfo));
-    EXPECT_NE(0, threadId);
-    EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(threadId, NULL));
-    EXPECT_EQ(0, threadInfo.failure);
-    EXPECT_EQ(threadStack, threadInfo.stackSize);
+    EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&halfMiBThreadId, fetchStackSizeThreadRoutine, halfMiBThreadStackSize, &halfMiBThreadInfo));
+    EXPECT_NE(0, halfMiBThreadId);
+    EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(halfMiBThreadId, NULL));
+    EXPECT_EQ(0, halfMiBThreadInfo.failure);
+    EXPECT_EQ(halfMiBThreadStackSize, halfMiBThreadInfo.stackSize);
 
     // Check case 2: 1 MiB
-    EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threadId2, fetchStackSizeThreadRoutine, threadStack2, &threadInfo2));
-    EXPECT_NE(0, threadId2);
-    EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(threadId2, NULL));
-    EXPECT_EQ(0, threadInfo2.failure);
-    EXPECT_EQ(threadStack2, threadInfo2.stackSize);
+    EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&oneMiBThreadId, fetchStackSizeThreadRoutine, oneMiBThreadStackSize, &oneMiBThreadInfo));
+    EXPECT_NE(0, oneMiBThreadId);
+    EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(oneMiBThreadId, NULL));
+    EXPECT_EQ(0, oneMiBThreadInfo.failure);
+    EXPECT_EQ(oneMiBThreadStackSize, oneMiBThreadInfo.stackSize);
 }
 
 #endif
