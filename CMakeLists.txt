@@ -7,6 +7,8 @@ include(GNUInstallDirs)
 
 # User Flags
 option(BUILD_DEPENDENCIES "Whether or not to build depending libraries from source" ON)
+option(CONSTRAINED_DEVICE "Change default pthread stack size to 0.5 MiB. Not available for Windows. Not compatible with KVS_DEFAULT_STACK_SIZE." OFF)
+option(KVS_DEFAULT_STACK_SIZE "Change default pthread stack size to specified value (bytes), from system default. Not compatible with CONSTRAINED_DEVICE." OFF)
 
 # Developer Flags
 option(BUILD_TEST "Build the testing tree." OFF)
