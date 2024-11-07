@@ -7,8 +7,20 @@ include(GNUInstallDirs)
 
 # User Flags
 option(BUILD_DEPENDENCIES "Whether or not to build depending libraries from source" ON)
-option(CONSTRAINED_DEVICE "Change default pthread stack size to 0.5 MiB. Not available for Windows. Not compatible with KVS_DEFAULT_STACK_SIZE." OFF)
-option(KVS_DEFAULT_STACK_SIZE "Change default pthread stack size to specified value (bytes), from system default. Not compatible with CONSTRAINED_DEVICE." OFF)
+#option(CONSTRAINED_DEVICE "Change default pthread stack size to 0.5 MiB. Not available for Windows. Not compatible with KVS_DEFAULT_STACK_SIZE." OFF)
+#option(KVS_DEFAULT_STACK_SIZE "Change default pthread stack size to specified value (bytes), from system default. Not compatible with CONSTRAINED_DEVICE." OFF)
+
+option(KVS_DEFAULT_STACK_SIZE "Set default stack size in bytes" "")
+option(CONSTRAINED_DEVICE "Enable constrained device mode" OFF)
+
+# Ensure variables are available as non-cache variables
+if (DEFINED KVS_DEFAULT_STACK_SIZE)
+  set(KVS_DEFAULT_STACK_SIZE ${KVS_DEFAULT_STACK_SIZE} CACHE STRING "Stack size in bytes" FORCE)
+endif()
+
+if (DEFINED CONSTRAINED_DEVICE)
+  set(CONSTRAINED_DEVICE ${CONSTRAINED_DEVICE} CACHE BOOL "Flag for constrained devices" FORCE)
+endif()
 
 # Developer Flags
 option(BUILD_TEST "Build the testing tree." OFF)
