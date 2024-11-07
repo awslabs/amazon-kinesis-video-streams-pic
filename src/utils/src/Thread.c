@@ -217,6 +217,10 @@ PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID 
 {
     STATUS retStatus = STATUS_SUCCESS;
 
+#if defined(KVS_DEFAULT_STACK_SIZE_BYTES) && defined(CONSTRAINED_DEVICE)
+    DLOGW("KVS_DEFAULT_STACK_SIZE_BYTES and CONSTRAINED_DEVICE are both defined. KVS_DEFAULT_STACK_SIZE_BYTES will take priority.");
+#endif
+
 #if defined(KVS_DEFAULT_STACK_SIZE_BYTES)
     CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, (SIZE_T) KVS_DEFAULT_STACK_SIZE_BYTES, args));
 #elif defined(CONSTRAINED_DEVICE)

@@ -203,6 +203,11 @@ PVOID fetchStackSizeThreadRoutine(PVOID arg)
     INT32 result = 0;
     TestThreadInfo* pThreadInfo = (TestThreadInfo*) arg;
 
+    if (arg == NULL) {
+        DLOGE("fetchStackSizeThreadRoutine requires a TestThreadInfo* as an argument!");
+        return NULL;
+    }
+
     // Initialize the thread attributes for the running thread
     result = pthread_getattr_np(pthread_self(), &attr); // Linux-specific function
     if (result != 0) {
