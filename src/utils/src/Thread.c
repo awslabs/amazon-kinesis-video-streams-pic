@@ -68,7 +68,8 @@ CleanUp:
 PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID args)
 {
     STATUS retStatus = STATUS_SUCCESS;
-    ThreadParams threadParams = {.version = 0};
+    ThreadParams threadParams;
+    threadParams.version = 0;
 
 #if defined(KVS_DEFAULT_STACK_SIZE_BYTES)
     threadParams.stackSize = (SIZE_T) KVS_DEFAULT_STACK_SIZE_BYTES;
@@ -223,7 +224,8 @@ CleanUp:
 PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID args)
 {
     STATUS retStatus = STATUS_SUCCESS;
-    ThreadParams threadParams = {.version = 0};
+    ThreadParams threadParams;
+    threadParams.version = 0;
 
 #if defined(KVS_DEFAULT_STACK_SIZE_BYTES) && defined(CONSTRAINED_DEVICE)
     DLOGW("KVS_DEFAULT_STACK_SIZE_BYTES and CONSTRAINED_DEVICE are both defined. KVS_DEFAULT_STACK_SIZE_BYTES will take priority.");

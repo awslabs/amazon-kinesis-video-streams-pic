@@ -132,7 +132,7 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheckWithStack)
     srand(GETTIME());
     SIZE_T threadStack = 64 * 1024;
     struct sleep_times st[TEST_THREAD_COUNT];
-    ThreadParams threadParams = {.version = 0, .stackSize = threadStack};
+    ThreadParams thread_params[TEST_THREAD_COUNT];
 
     gThreadCount = 0;
 
@@ -141,7 +141,9 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheckWithStack)
         st[index].threadVisited = FALSE;
         st[index].threadCleared = FALSE;
         st[index].threadSleepTime = index * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
-        EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threads[index], &threadParams, testThreadRoutine, (PVOID) &st[index]));
+        thread_params[index].version = 0;
+        thread_params[index].stackSize = threadStack;
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threads[index], &thread_params[index], testThreadRoutine, (PVOID) &st[index]));
     }
 
     // Await for the threads to finish
@@ -164,7 +166,9 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateAndReleaseSimpleCheckWithStack)
 TEST_F(ThreadFunctionalityTest, ThreadCreateUseDefaultsTest)
 {
     TID threadId = 0;
-    ThreadParams threadParams = {.version = 0, .stackSize = 0};
+    ThreadParams threadParams;
+    threadParams.version = 0;
+    threadParams.stackSize = 0;
 
     // 0 passed into the size parameter means to use the defaults.
     EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threadId, &threadParams, emptyRoutine, NULL));
@@ -176,7 +180,9 @@ TEST_F(ThreadFunctionalityTest, NegativeTest)
 {
     TID threadId = 0;
     SIZE_T threadStack = 512 * 1024; // 0.5 MiB
-    ThreadParams threadParams = {.version = 0, .stackSize = threadStack};
+    ThreadParams threadParams;
+    threadParams.version = 0;
+    threadParams.stackSize = threadStack;
 
     // No out value case
     EXPECT_NE(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(NULL, &threadParams, emptyRoutine, NULL));
@@ -246,13 +252,23 @@ CleanUp:
 // Then check that the thread has the requested size.
 TEST_F(ThreadFunctionalityTest, VerifyStackSize)
 {
-    TID halfMiBThreadId = 0, oneMiBThreadId = 0;
+    TID halfMiBThreadId = 0;
     SIZE_T halfMiBThreadStackSize = 512 * 1024; // 0.5 MiB
-    TestThreadInfo halfMiBThreadInfo = {.stackSize = 0, .failure = 0};
-    ThreadParams halfMiBThreadParams = {.version = 0, .stackSize = halfMiBThreadStackSize};
+    TestThreadInfo halfMiBThreadInfo;
+    halfMiBThreadInfo.stackSize = 0;
+    halfMiBThreadInfo.failure = 0;
+    ThreadParams halfMiBThreadParams;
+    halfMibThreadParams.version = 0;
+    halfMibThreadParams.stackSize = halfMiBThreadStackSize;
+
+    TID oneMiBThreadId = 0;
     SIZE_T oneMiBThreadStackSize = 1024 * 1024; // 1 MiB
-    TestThreadInfo oneMiBThreadInfo = {.stackSize = 0, .failure = 0};
-    ThreadParams oneMiBThreadParams = {.version = 0, .stackSize = oneMiBThreadStackSize};
+    TestThreadInfo oneMiBThreadInfo;
+    oneMiBThreadInfo.stackSize = 0;
+    oneMiBThreadInfo.failure = 0;
+    ThreadParams oneMiBThreadParams;
+    oneMiBThreadParams.version = 0;
+    oneMiBThreadParams.stackSize = oneMiBThreadStackSize;
 
     // Check case 1: 0.5 MiB
     EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&halfMiBThreadId, &halfMiBThreadParams, fetchStackSizeThreadRoutine, &halfMiBThreadInfo));
