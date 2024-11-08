@@ -258,8 +258,8 @@ TEST_F(ThreadFunctionalityTest, VerifyStackSize)
     halfMiBThreadInfo.stackSize = 0;
     halfMiBThreadInfo.failure = 0;
     ThreadParams halfMiBThreadParams;
-    halfMibThreadParams.version = 0;
-    halfMibThreadParams.stackSize = halfMiBThreadStackSize;
+    halfMiBThreadParams.version = 0;
+    halfMiBThreadParams.stackSize = halfMiBThreadStackSize;
 
     TID oneMiBThreadId = 0;
     SIZE_T oneMiBThreadStackSize = 1024 * 1024; // 1 MiB
