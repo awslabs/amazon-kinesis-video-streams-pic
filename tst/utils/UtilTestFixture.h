@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 #include <com/amazonaws/kinesis/video/utils/Include.h>
 #include <src/utils/src/Include_i.h>
+#include <com/amazonaws/kinesis/video/common/CommonDefs.h>
 
 //
 // Default allocator functions

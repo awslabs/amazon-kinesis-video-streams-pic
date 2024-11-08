@@ -711,6 +711,21 @@ extern getTime globalGetTime;
 extern getTime globalGetRealTime;
 extern getTmTime globalGetThreadSafeTmTime;
 
+/**
+ * Current version of the thread parameters structure
+ */
+#define THREAD_PARAMS_CURRENT_VERSION 0
+
+typedef struct __ThreadParams ThreadParams;
+struct __ThreadParams {
+    // Version of the struct
+    UINT32 version;
+
+    // Stack size, in bytes. 0 = use defaults
+    SIZE_T stackSize;
+};
+typedef struct __ThreadParams* PThreadParams;
+
 //
 // Thread library function definitions
 //
@@ -721,7 +736,7 @@ typedef VOID (*unlockMutex)(MUTEX);
 typedef BOOL (*tryLockMutex)(MUTEX);
 typedef VOID (*freeMutex)(MUTEX);
 typedef STATUS (*createThread)(PTID, startRoutine, PVOID);
-typedef STATUS (*createThreadWithParams)(PTID, startRoutine, SIZE_T, PVOID);
+typedef STATUS (*createThreadWithParams)(PTID, PThreadParams, startRoutine, PVOID);
 typedef STATUS (*joinThread)(TID, PVOID*);
 typedef VOID (*threadSleep)(UINT64);
 typedef VOID (*threadSleepUntil)(UINT64);
