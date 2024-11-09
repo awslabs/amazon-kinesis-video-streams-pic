@@ -176,7 +176,7 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateUseDefaultsTest)
     EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(threadId, NULL));
 }
 
-TEST_F(ThreadFunctionalityTest, NegativeTest)
+TEST_F(ThreadFunctionalityTest, ThreadCreateWithParamsNegativeTest)
 {
     TID threadId = 0;
     SIZE_T threadStack = 512 * 1024; // 0.5 MiB
@@ -185,23 +185,23 @@ TEST_F(ThreadFunctionalityTest, NegativeTest)
     threadParams.stackSize = threadStack;
 
     // No out value case
-    EXPECT_NE(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(NULL, &threadParams, emptyRoutine, NULL));
+    EXPECT_EQ(STATUS_NULL_ARG, THREAD_CREATE_WITH_PARAMS(NULL, &threadParams, emptyRoutine, NULL));
 
     // Request too large stack size case
     threadParams.stackSize = SIZE_MAX;
-    EXPECT_NE(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threadId, &threadParams, emptyRoutine, NULL));
+    EXPECT_EQ(STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED, THREAD_CREATE_WITH_PARAMS(&threadId, &threadParams, emptyRoutine, NULL));
     EXPECT_EQ(0, threadId);
 
     // No out value case
-    EXPECT_NE(STATUS_SUCCESS, THREAD_CREATE(NULL, emptyRoutine, NULL));
+    EXPECT_EQ(STATUS_NULL_ARG, THREAD_CREATE(NULL, emptyRoutine, NULL));
 
     // Invalid version
     threadParams.version = THREAD_PARAMS_CURRENT_VERSION + 100;
-    EXPECT_NE(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threadId, &threadParams, emptyRoutine, NULL));
+    EXPECT_EQ(STATUS_INVALID_THREAD_PARAMS_VERSION, THREAD_CREATE_WITH_PARAMS(&threadId, &threadParams, emptyRoutine, NULL));
     EXPECT_EQ(0, threadId);
 
     // NULL params
-    EXPECT_NE(STATUS_SUCCESS, THREAD_CREATE_WITH_PARAMS(&threadId, NULL, emptyRoutine, NULL));
+    EXPECT_EQ(STATUS_NULL_ARG, THREAD_CREATE_WITH_PARAMS(&threadId, NULL, emptyRoutine, NULL));
     EXPECT_EQ(0, threadId);
 }
 

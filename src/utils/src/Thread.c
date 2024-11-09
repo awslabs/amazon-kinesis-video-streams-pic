@@ -178,7 +178,7 @@ PUBLIC_API STATUS defaultCreateThreadWithParams(PTID pThreadId, PThreadParams pT
     pthread_attr_t* pAttr = NULL;
 
     CHK(pThreadId != NULL && pThreadParams != NULL, STATUS_NULL_ARG); // TODO: Move to own validation function.
-    CHK(pThreadParams->version <= THREAD_PARAMS_CURRENT_VERSION, STATUS_UTILS_INVALID_THREAD_PARAMS_VERSION);
+    CHK(pThreadParams->version <= THREAD_PARAMS_CURRENT_VERSION, STATUS_INVALID_THREAD_PARAMS_VERSION);
 
     stackSize = pThreadParams->stackSize;
 
