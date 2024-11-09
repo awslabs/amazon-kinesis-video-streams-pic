@@ -184,7 +184,7 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateWithParamsNegativeTest)
     ThreadParams threadParams;
     threadParams.version = 0;
     threadParams.stackSize = threadStack;
-    STATUS tooLargeStatus = STATUS_SUCCESS;
+    STATUS threadCreateStatus = STATUS_SUCCESS;
 
     // No out value case
     EXPECT_EQ(STATUS_NULL_ARG, THREAD_CREATE_WITH_PARAMS(NULL, &threadParams, emptyRoutine, NULL));
@@ -194,9 +194,9 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateWithParamsNegativeTest)
     // On Ubuntu Linux, returns STATUS_THREAD_INVALID_ARG
     // On Windows, returns STATUS_CREATE_THREAD_FAILED
     threadParams.stackSize = SIZE_MAX;
-    tooLargeStatus = THREAD_CREATE_WITH_PARAMS(&threadId, &threadParams, emptyRoutine, NULL);
-    EXPECT_TRUE(tooLargeStatus == STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED || tooLargeStatus == STATUS_THREAD_INVALID_ARG ||
-                tooLargeStatus == STATUS_CREATE_THREAD_FAILED);
+    threadCreateStatus = THREAD_CREATE_WITH_PARAMS(&threadId, &threadParams, emptyRoutine, NULL);
+    EXPECT_TRUE(threadCreateStatus == STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED || threadCreateStatus == STATUS_THREAD_INVALID_ARG ||
+                threadCreateStatus == STATUS_CREATE_THREAD_FAILED);
     EXPECT_EQ(0, threadId);
 
     // No out value case
