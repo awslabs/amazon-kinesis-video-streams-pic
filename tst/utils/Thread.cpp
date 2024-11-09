@@ -26,9 +26,10 @@ PVOID testThreadRoutine(PVOID arg)
 
     // Mark as visited
     st->threadVisited = TRUE;
+    UINT64 sleepTime = st->threadSleepTime;
+
     MUTEX_UNLOCK(gThreadMutex);
 
-    UINT64 sleepTime = st->threadSleepTime;
     // Just sleep for some time
     THREAD_SLEEP(sleepTime);
 
