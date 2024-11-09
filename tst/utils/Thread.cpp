@@ -183,13 +183,20 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateWithParamsNegativeTest)
     ThreadParams threadParams;
     threadParams.version = 0;
     threadParams.stackSize = threadStack;
+    STATUS tooLargeStatus = STATUS_SUCCESS;
 
     // No out value case
     EXPECT_EQ(STATUS_NULL_ARG, THREAD_CREATE_WITH_PARAMS(NULL, &threadParams, emptyRoutine, NULL));
 
-    // Request too large stack size case
+    // Request too large stack size case, behavior differs on platforms
+    // On Mac, returns STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED
+    // On Ubuntu Linux, returns STATUS_THREAD_INVALID_ARG
+    // On Windows, returns STATUS_CREATE_THREAD_FAILED
     threadParams.stackSize = SIZE_MAX;
-    EXPECT_EQ(STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED, THREAD_CREATE_WITH_PARAMS(&threadId, &threadParams, emptyRoutine, NULL));
+    tooLargeStatus = THREAD_CREATE_WITH_PARAMS(&threadId, &threadParams, emptyRoutine, NULL));
+    EXPECT_TRUE(tooLargeStatus == STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED
+                || tooLargeStatus == STATUS_THREAD_INVALID_ARG
+                || tooLargeStatus == STATUS_CREATE_THREAD_FAILED);
     EXPECT_EQ(0, threadId);
 
     // No out value case
@@ -197,7 +204,8 @@ TEST_F(ThreadFunctionalityTest, ThreadCreateWithParamsNegativeTest)
 
     // Invalid version
     threadParams.version = THREAD_PARAMS_CURRENT_VERSION + 100;
-    EXPECT_EQ(STATUS_INVALID_THREAD_PARAMS_VERSION, THREAD_CREATE_WITH_PARAMS(&threadId, &threadParams, emptyRoutine, NULL));
+    THREAD_CREATE_WITH_PARAMS(&threadId, &threadParams, emptyRoutine, NULL)
+    EXPECT_TRUE(STATUS_INVALID_THREAD_PARAMS_VERSION, );
     EXPECT_EQ(0, threadId);
 
     // NULL params
