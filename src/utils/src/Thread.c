@@ -44,7 +44,7 @@ PUBLIC_API STATUS defaultCreateThreadWithParams(PTID pThreadId, PThreadParams pT
     PWindowsThreadRoutineWrapper pWrapper = NULL;
 
     CHK(pThreadId != NULL && pThreadParams != NULL, STATUS_NULL_ARG);
-    CHK(pThreadParams->version <= THREAD_PARAMS_CURRENT_VERSION, STATUS_UTILS_INVALID_THREAD_PARAMS_VERSION);
+    CHK(pThreadParams->version <= THREAD_PARAMS_CURRENT_VERSION, STATUS_INVALID_THREAD_PARAMS_VERSION);
 
     // Allocate temporary wrapper and store it
     pWrapper = (PWindowsThreadRoutineWrapper) MEMALLOC(SIZEOF(WindowsThreadRoutineWrapper));
