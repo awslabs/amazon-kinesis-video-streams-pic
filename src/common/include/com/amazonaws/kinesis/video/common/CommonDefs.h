@@ -500,6 +500,7 @@ typedef INT_PTR SSIZE_T, *PSSIZE_T;
 #define STATUS_THREAD_ATTR_INIT_FAILED           STATUS_BASE + 0x0000001c
 #define STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED STATUS_BASE + 0x0000001d
 #define STATUS_MEMORY_NOT_FREED                  STATUS_BASE + 0x0000001e
+#define STATUS_INVALID_THREAD_PARAMS_VERSION     STATUS_BASE + 0x0000001f
 
 #include <stdlib.h>
 #include <string.h>
@@ -711,6 +712,21 @@ extern getTime globalGetTime;
 extern getTime globalGetRealTime;
 extern getTmTime globalGetThreadSafeTmTime;
 
+/**
+ * Current version of the thread parameters structure
+ */
+#define THREAD_PARAMS_CURRENT_VERSION 0
+
+typedef struct __ThreadParams ThreadParams;
+struct __ThreadParams {
+    // Version of the struct
+    UINT32 version;
+
+    // Stack size, in bytes. 0 = use defaults
+    SIZE_T stackSize;
+};
+typedef struct __ThreadParams* PThreadParams;
+
 //
 // Thread library function definitions
 //
@@ -721,7 +737,7 @@ typedef VOID (*unlockMutex)(MUTEX);
 typedef BOOL (*tryLockMutex)(MUTEX);
 typedef VOID (*freeMutex)(MUTEX);
 typedef STATUS (*createThread)(PTID, startRoutine, PVOID);
-typedef STATUS (*createThreadWithParams)(PTID, startRoutine, SIZE_T, PVOID);
+typedef STATUS (*createThreadWithParams)(PTID, PThreadParams, startRoutine, PVOID);
 typedef STATUS (*joinThread)(TID, PVOID*);
 typedef VOID (*threadSleep)(UINT64);
 typedef VOID (*threadSleepUntil)(UINT64);

@@ -66,6 +66,8 @@ elseif(KVS_DEFAULT_STACK_SIZE)
 elseif(CONSTRAINED_DEVICE)
   message(STATUS "Building for constrained device with stack size set to 512 KiB (0.5 MiB)")
   add_definitions(-DCONSTRAINED_DEVICE)
+else()
+  message(STATUS "Using system default stack size")
 endif()
 
 if(ADDRESS_SANITIZER)

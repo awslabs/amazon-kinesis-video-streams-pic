@@ -37,13 +37,14 @@ PUBLIC_API DWORD WINAPI startWrapperRoutine(LPVOID data)
     return retVal;
 }
 
-PUBLIC_API STATUS defaultCreateThreadWithParams(PTID pThreadId, startRoutine start, SIZE_T stackSize, PVOID args)
+PUBLIC_API STATUS defaultCreateThreadWithParams(PTID pThreadId, PThreadParams pThreadParams, startRoutine start, PVOID args)
 {
     STATUS retStatus = STATUS_SUCCESS;
     HANDLE threadHandle;
     PWindowsThreadRoutineWrapper pWrapper = NULL;
 
-    CHK(pThreadId != NULL, STATUS_NULL_ARG);
+    CHK(pThreadId != NULL && pThreadParams != NULL, STATUS_NULL_ARG);
+    CHK(pThreadParams->version <= THREAD_PARAMS_CURRENT_VERSION, STATUS_INVALID_THREAD_PARAMS_VERSION);
 
     // Allocate temporary wrapper and store it
     pWrapper = (PWindowsThreadRoutineWrapper) MEMALLOC(SIZEOF(WindowsThreadRoutineWrapper));
@@ -51,7 +52,7 @@ PUBLIC_API STATUS defaultCreateThreadWithParams(PTID pThreadId, startRoutine sta
     pWrapper->storedArgs = args;
     pWrapper->storedStartRoutine = start;
 
-    threadHandle = CreateThread(NULL, stackSize, startWrapperRoutine, pWrapper, 0, NULL);
+    threadHandle = CreateThread(NULL, pThreadParams->stackSize, startWrapperRoutine, pWrapper, 0, NULL);
     CHK(threadHandle != NULL, STATUS_CREATE_THREAD_FAILED);
 
     *pThreadId = (TID) threadHandle;
@@ -67,12 +68,15 @@ CleanUp:
 PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID args)
 {
     STATUS retStatus = STATUS_SUCCESS;
+    ThreadParams threadParams;
+    threadParams.version = 0;
 
 #if defined(KVS_DEFAULT_STACK_SIZE_BYTES)
-    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, (SIZE_T) KVS_DEFAULT_STACK_SIZE_BYTES, args));
+    threadParams.stackSize = (SIZE_T) KVS_DEFAULT_STACK_SIZE_BYTES;
 #else
-    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, 0, args));
+    threadParams.stackSize = 0;
 #endif
+    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, &threadParams, start, args));
 
 CleanUp:
 
@@ -165,14 +169,18 @@ PUBLIC_API TID defaultGetThreadId()
     return (TID) pthread_self();
 }
 
-PUBLIC_API STATUS defaultCreateThreadWithParams(PTID pThreadId, startRoutine start, SIZE_T stackSize, PVOID args)
+PUBLIC_API STATUS defaultCreateThreadWithParams(PTID pThreadId, PThreadParams pThreadParams, startRoutine start, PVOID args)
 {
     STATUS retStatus = STATUS_SUCCESS;
     pthread_t threadId;
     INT32 result;
+    SIZE_T stackSize;
     pthread_attr_t* pAttr = NULL;
 
-    CHK(pThreadId != NULL, STATUS_NULL_ARG);
+    CHK(pThreadId != NULL && pThreadParams != NULL, STATUS_NULL_ARG); // TODO: Move to own validation function.
+    CHK(pThreadParams->version <= THREAD_PARAMS_CURRENT_VERSION, STATUS_INVALID_THREAD_PARAMS_VERSION);
+
+    stackSize = pThreadParams->stackSize;
 
     pthread_attr_t attr;
     if (stackSize != 0) {
@@ -216,18 +224,22 @@ CleanUp:
 PUBLIC_API STATUS defaultCreateThread(PTID pThreadId, startRoutine start, PVOID args)
 {
     STATUS retStatus = STATUS_SUCCESS;
+    ThreadParams threadParams;
+    threadParams.version = 0;
 
 #if defined(KVS_DEFAULT_STACK_SIZE_BYTES) && defined(CONSTRAINED_DEVICE)
     DLOGW("KVS_DEFAULT_STACK_SIZE_BYTES and CONSTRAINED_DEVICE are both defined. KVS_DEFAULT_STACK_SIZE_BYTES will take priority.");
 #endif
 
 #if defined(KVS_DEFAULT_STACK_SIZE_BYTES)
-    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, (SIZE_T) KVS_DEFAULT_STACK_SIZE_BYTES, args));
+    threadParams.stackSize = (SIZE_T) KVS_DEFAULT_STACK_SIZE_BYTES;
 #elif defined(CONSTRAINED_DEVICE)
-    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, (SIZE_T) THREAD_STACK_SIZE_ON_CONSTRAINED_DEVICE, args));
+    threadParams.stackSize = THREAD_STACK_SIZE_ON_CONSTRAINED_DEVICE;
 #else
-    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, start, 0, args));
+    threadParams.stackSize = 0;
 #endif
+
+    CHK_STATUS(defaultCreateThreadWithParams(pThreadId, &threadParams, start, args));
 
 CleanUp:
 
