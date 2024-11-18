@@ -35,7 +35,7 @@ typedef struct AIV_ALLOCATION_HEADER {
     // Chaining left and right
     struct AIV_ALLOCATION_HEADER* pNext;
     struct AIV_ALLOCATION_HEADER* pPrev;
-}* PAIV_ALLOCATION_HEADER;
+} * PAIV_ALLOCATION_HEADER;
 
 // Macros to convert to and from handle
 #define AIV_HANDLE_SHIFT_BITS    2

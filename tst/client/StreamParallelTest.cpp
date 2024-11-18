@@ -1,7 +1,6 @@
 #include "ClientTestFixture.h"
 
-class StreamParallelTest : public ClientTestBase {
-};
+class StreamParallelTest : public ClientTestBase {};
 
 StreamParallelTest* gParallelTest = NULL;
 
@@ -83,10 +82,9 @@ PVOID ClientTestBase::basicConsumerRoutine(UINT64 streamId)
     while (!ATOMIC_LOAD_BOOL(&mTerminate)) {
         DLOGV("Consumer for stream %llu TID %016llx", streamId, GETTID());
         // Consume frames
-        retStatus = getKinesisVideoStreamData(streamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer),
-                                              &filledSize);
-        EXPECT_TRUE(retStatus == STATUS_SUCCESS || retStatus == STATUS_NO_MORE_DATA_AVAILABLE ||
-                    retStatus == STATUS_END_OF_STREAM || retStatus == STATUS_UPLOAD_HANDLE_ABORTED);
+        retStatus = getKinesisVideoStreamData(streamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize);
+        EXPECT_TRUE(retStatus == STATUS_SUCCESS || retStatus == STATUS_NO_MORE_DATA_AVAILABLE || retStatus == STATUS_END_OF_STREAM ||
+                    retStatus == STATUS_UPLOAD_HANDLE_ABORTED);
 
         if (retStatus == STATUS_SUCCESS) {
             EXPECT_EQ(SIZEOF(getDataBuffer), filledSize);
@@ -145,8 +143,7 @@ TEST_F(StreamParallelTest, putFrame_BasicParallelPutGet)
         // Move the next state
         // Reset the stream name
         mStreamName[0] = '\0';
-        EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCustomDatas[mStreamCount], SERVICE_CALL_RESULT_OK,
-                                                                  TEST_STREAMING_ENDPOINT));
+        EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCustomDatas[mStreamCount], SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
 
         // Ensure the get token is called
         EXPECT_EQ(0, STRCMP(streamName, mStreamName));
@@ -155,11 +152,9 @@ TEST_F(StreamParallelTest, putFrame_BasicParallelPutGet)
         // Move to the next state
         // Reset the stream name
         mStreamName[0] = '\0';
-        EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCustomDatas[mStreamCount],
-                                                               SERVICE_CALL_RESULT_OK,
-                                                               (PBYTE) TEST_STREAMING_TOKEN,
-                                                               SIZEOF(TEST_STREAMING_TOKEN),
-                                                               TEST_AUTH_EXPIRATION));
+        EXPECT_EQ(STATUS_SUCCESS,
+                  getStreamingTokenResultEvent(mCustomDatas[mStreamCount], SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                               SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 
         DLOGV("Creating the producer and consumer threads");
 

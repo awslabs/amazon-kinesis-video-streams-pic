@@ -1,7 +1,6 @@
 #include "HeapTestFixture.h"
 
-class HeapApiFunctionalityTest : public HeapTestBase {
-};
+class HeapApiFunctionalityTest : public HeapTestBase {};
 
 VOID zeroHandleArray(PALLOCATION_HANDLE handles, UINT32 count)
 {
@@ -70,7 +69,7 @@ VOID multipleLargeAlloc(PHeap pHeap)
         handles[i] = handle;
     }
 
-    EXPECT_EQ(STATUS_SUCCESS,heapAlloc(pHeap, size, &handle));
+    EXPECT_EQ(STATUS_SUCCESS, heapAlloc(pHeap, size, &handle));
     EXPECT_FALSE(IS_VALID_ALLOCATION_HANDLE(handle));
 
     // Free the allocations as in system heap mode we will leak
@@ -78,7 +77,7 @@ VOID multipleLargeAlloc(PHeap pHeap)
         EXPECT_EQ(STATUS_SUCCESS, heapFree(pHeap, handles[i]));
     }
 
-    EXPECT_EQ(STATUS_SUCCESS,heapRelease(pHeap));
+    EXPECT_EQ(STATUS_SUCCESS, heapRelease(pHeap));
 }
 
 VOID minBlockFitAlloc(PHeap pHeap)
@@ -433,7 +432,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeEdgeCases)
         EXPECT_EQ(STATUS_SUCCESS, heapAlloc(pHeap, size, &handle));
         EXPECT_TRUE(IS_VALID_ALLOCATION_HANDLE(handle));
         EXPECT_EQ(STATUS_SUCCESS, heapMap(pHeap, handle, &pAlloc, &setSize));
-        MEMSET(pAlloc, (BYTE)i, setSize);
+        MEMSET(pAlloc, (BYTE) i, setSize);
         EXPECT_EQ(STATUS_SUCCESS, heapUnmap(pHeap, pAlloc));
         handles[i] = handle;
     }
@@ -547,7 +546,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeUpDownBottomUp)
         EXPECT_EQ(STATUS_SUCCESS, heapAlloc(pHeap, size, &handle));
         EXPECT_TRUE(IS_VALID_ALLOCATION_HANDLE(handle));
         EXPECT_EQ(STATUS_SUCCESS, heapMap(pHeap, handle, &pAlloc, &setSize));
-        MEMSET(pAlloc, (BYTE)i, setSize);
+        MEMSET(pAlloc, (BYTE) i, setSize);
         EXPECT_EQ(STATUS_SUCCESS, heapUnmap(pHeap, pAlloc));
         handles[i] = handle;
     }
@@ -566,9 +565,9 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeUpDownBottomUp)
             EXPECT_EQ(j, setSize);
             EXPECT_EQ(STATUS_SUCCESS, heapMap(pHeap, handle, &pAlloc, &setSize));
             // Validate that the first, mid and last elements are correct
-            EXPECT_EQ((BYTE)i, ((PBYTE)pAlloc)[0]);
-            EXPECT_EQ((BYTE)i, ((PBYTE)pAlloc)[setSize - 1]);
-            EXPECT_EQ((BYTE)i, ((PBYTE)pAlloc)[(setSize - 1) / 2]);
+            EXPECT_EQ((BYTE) i, ((PBYTE) pAlloc)[0]);
+            EXPECT_EQ((BYTE) i, ((PBYTE) pAlloc)[setSize - 1]);
+            EXPECT_EQ((BYTE) i, ((PBYTE) pAlloc)[(setSize - 1) / 2]);
             EXPECT_EQ(STATUS_SUCCESS, heapUnmap(pHeap, pAlloc));
         }
     }
@@ -617,7 +616,7 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeUpDownTopDown)
         EXPECT_EQ(STATUS_SUCCESS, heapAlloc(pHeap, size, &handle));
         EXPECT_TRUE(IS_VALID_ALLOCATION_HANDLE(handle));
         EXPECT_EQ(STATUS_SUCCESS, heapMap(pHeap, handle, &pAlloc, &setSize));
-        MEMSET(pAlloc, (BYTE)i, setSize);
+        MEMSET(pAlloc, (BYTE) i, setSize);
         EXPECT_EQ(STATUS_SUCCESS, heapUnmap(pHeap, pAlloc));
         handles[i] = handle;
     }
@@ -636,9 +635,9 @@ TEST_F(HeapApiFunctionalityTest, AivHeapResizeUpDownTopDown)
             EXPECT_EQ(j, setSize);
             EXPECT_EQ(STATUS_SUCCESS, heapMap(pHeap, handle, &pAlloc, &setSize));
             // Validate that the first, mid and last elements are correct
-            EXPECT_EQ((BYTE)(NUM_ITERATIONS - 2 - i), ((PBYTE)pAlloc)[0]);
-            EXPECT_EQ((BYTE)(NUM_ITERATIONS - 2 - i), ((PBYTE)pAlloc)[setSize - 1]);
-            EXPECT_EQ((BYTE)(NUM_ITERATIONS - 2 - i), ((PBYTE)pAlloc)[(setSize - 1) / 2]);
+            EXPECT_EQ((BYTE) (NUM_ITERATIONS - 2 - i), ((PBYTE) pAlloc)[0]);
+            EXPECT_EQ((BYTE) (NUM_ITERATIONS - 2 - i), ((PBYTE) pAlloc)[setSize - 1]);
+            EXPECT_EQ((BYTE) (NUM_ITERATIONS - 2 - i), ((PBYTE) pAlloc)[(setSize - 1) / 2]);
             EXPECT_EQ(STATUS_SUCCESS, heapUnmap(pHeap, pAlloc));
         }
     }

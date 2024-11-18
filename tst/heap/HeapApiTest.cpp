@@ -1,142 +1,66 @@
 #include "HeapTestFixture.h"
 
-class HeapApiTest : public HeapTestBase {
-};
+class HeapApiTest : public HeapTestBase {};
 
-TEST_F(HeapApiTest, InvalidInputHeapInitialize_HeapPointerNull) {
+TEST_F(HeapApiTest, InvalidInputHeapInitialize_HeapPointerNull)
+{
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, NULL)));
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP, NULL, NULL)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE,
-                                             20,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
-                                             NULL,
-                                             NULL)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE,
-                                             20,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY,
-                                             NULL,
-                                             NULL)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE,
-                                             20,
-                                             FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
-                                             NULL,
-                                             NULL)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE,
-                                             20,
-                                             FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY,
-                                             NULL,
-                                             NULL)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE,
-                                             20,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_FILE_HEAP,
-                                             NULL,
-                                             NULL)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE,
-                                             20,
-                                             FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_FILE_HEAP,
-                                             NULL,
-                                             NULL)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP, NULL, NULL)));
+    EXPECT_TRUE(
+        STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY, NULL, NULL)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP, NULL, NULL)));
+    EXPECT_TRUE(
+        STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY, NULL, NULL)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_FILE_HEAP, NULL, NULL)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_FILE_HEAP, NULL, NULL)));
 }
 
-TEST_F(HeapApiTest, InvalidInputHeapInitialize_MinHeapSize) {
+TEST_F(HeapApiTest, InvalidInputHeapInitialize_MinHeapSize)
+{
     PHeap pHeap;
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE - 1, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE - 1, 20, FLAGS_USE_SYSTEM_HEAP, NULL, &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE - 1,
-                                             20,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
-                                             NULL,
-                                             &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE - 1,
-                                             20,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY,
-                                             NULL,
-                                             &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE - 1,
-                                             20,
-                                             FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
-                                             NULL,
-                                             &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE - 1,
-                                             20,
-                                             FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY,
-                                             NULL,
-                                             &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE - 1,
-                                             20,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_FILE_HEAP,
-                                             NULL,
-                                             &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE - 1,
-                                             20,
-                                             FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_FILE_HEAP,
-                                             NULL,
-                                             &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE - 1, 20, FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP, NULL, &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(
+        heapInitialize(MIN_HEAP_SIZE - 1, 20, FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY, NULL, &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE - 1, 20, FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP, NULL, &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(
+        heapInitialize(MIN_HEAP_SIZE - 1, 20, FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY, NULL, &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE - 1, 20, FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_FILE_HEAP, NULL, &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE - 1, 20, FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_FILE_HEAP, NULL, &pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidInputHeapInitialize_MaxHeapSize) {
+TEST_F(HeapApiTest, InvalidInputHeapInitialize_MaxHeapSize)
+{
     PHeap pHeap;
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(MAX_HEAP_SIZE + 1, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(MAX_HEAP_SIZE + 1, 20, FLAGS_USE_SYSTEM_HEAP, NULL, &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MAX_HEAP_SIZE + 1,
-                                             20,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
-                                             NULL,
-                                             &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MAX_HEAP_SIZE + 1,
-                                             20,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY,
-                                             NULL,
-                                             &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MAX_HEAP_SIZE + 1,
-                                             20,
-                                             FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
-                                             NULL,
-                                             &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MAX_HEAP_SIZE + 1,
-                                             20,
-                                             FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY,
-                                             NULL,
-                                             &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MAX_HEAP_SIZE + 1, 20, FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP, NULL, &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(
+        heapInitialize(MAX_HEAP_SIZE + 1, 20, FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY, NULL, &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MAX_HEAP_SIZE + 1, 20, FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP, NULL, &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(
+        heapInitialize(MAX_HEAP_SIZE + 1, 20, FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY, NULL, &pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidInputHeapInitialize_SpillRatio) {
+TEST_F(HeapApiTest, InvalidInputHeapInitialize_SpillRatio)
+{
     PHeap pHeap;
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 101, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 101, FLAGS_USE_SYSTEM_HEAP, NULL, &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE,
-                                             101,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
-                                             NULL,
-                                             &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE,
-                                             101,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY,
-                                             NULL,
-                                             &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE,
-                                             101,
-                                             FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
-                                             NULL,
-                                             &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE,
-                                             101,
-                                             FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY,
-                                             NULL,
-                                             &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE,
-                                             101,
-                                             FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_FILE_HEAP,
-                                             NULL,
-                                             &pHeap)));
-    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE,
-                                             101,
-                                             FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_FILE_HEAP,
-                                             NULL,
-                                             &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 101, FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP, NULL, &pHeap)));
+    EXPECT_TRUE(
+        STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 101, FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY, NULL, &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 101, FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP, NULL, &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(
+        heapInitialize(MIN_HEAP_SIZE, 101, FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP | FLAGS_REOPEN_VRAM_LIBRARY, NULL, &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 101, FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_FILE_HEAP, NULL, &pHeap)));
+    EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 101, FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_FILE_HEAP, NULL, &pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidInputHeapInitialize_HeapTypeFlags) {
+TEST_F(HeapApiTest, InvalidInputHeapInitialize_HeapTypeFlags)
+{
     PHeap pHeap;
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 20, HEAP_FLAGS_NONE, NULL, &pHeap)));
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_HYBRID_VRAM_HEAP, NULL, &pHeap)));
@@ -146,7 +70,8 @@ TEST_F(HeapApiTest, InvalidInputHeapInitialize_HeapTypeFlags) {
     EXPECT_TRUE(STATUS_FAILED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_HYBRID_FILE_HEAP | FLAGS_REOPEN_VRAM_LIBRARY, NULL, &pHeap)));
 }
 
-TEST_F(HeapApiTest, IdempotentHeapRelease_NullHeapRelease) {
+TEST_F(HeapApiTest, IdempotentHeapRelease_NullHeapRelease)
+{
     PHeap pHeap;
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
@@ -157,7 +82,8 @@ TEST_F(HeapApiTest, IdempotentHeapRelease_NullHeapRelease) {
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(NULL)));
 }
 
-TEST_F(HeapApiTest, InvalidHeapGetSize_NullHeap) {
+TEST_F(HeapApiTest, InvalidHeapGetSize_NullHeap)
+{
     PHeap pHeap = (PHeap) 12345;
     UINT64 size;
 
@@ -166,12 +92,14 @@ TEST_F(HeapApiTest, InvalidHeapGetSize_NullHeap) {
     EXPECT_TRUE(STATUS_FAILED(heapGetSize(NULL, NULL)));
 }
 
-TEST_F(HeapApiTest, InvalidHeapDebugCheckAllocator_NullHeapDebugCheckAllocator) {
+TEST_F(HeapApiTest, InvalidHeapDebugCheckAllocator_NullHeapDebugCheckAllocator)
+{
     EXPECT_TRUE(STATUS_FAILED(heapDebugCheckAllocator(NULL, TRUE)));
     EXPECT_TRUE(STATUS_FAILED(heapDebugCheckAllocator(NULL, FALSE)));
 }
 
-TEST_F(HeapApiTest, InvalidHeapAlloc_NullHeap) {
+TEST_F(HeapApiTest, InvalidHeapAlloc_NullHeap)
+{
     PHeap pHeap;
     ALLOCATION_HANDLE handle;
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
@@ -183,7 +111,8 @@ TEST_F(HeapApiTest, InvalidHeapAlloc_NullHeap) {
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidHeapGetAllocSize_NullHeapHandle) {
+TEST_F(HeapApiTest, InvalidHeapGetAllocSize_NullHeapHandle)
+{
     PHeap pHeap;
     UINT64 size;
     ALLOCATION_HANDLE handle;
@@ -206,7 +135,8 @@ TEST_F(HeapApiTest, InvalidHeapGetAllocSize_NullHeapHandle) {
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidHeapAlloc_NullHandle) {
+TEST_F(HeapApiTest, InvalidHeapAlloc_NullHandle)
+{
     PHeap pHeap;
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
@@ -218,7 +148,8 @@ TEST_F(HeapApiTest, InvalidHeapAlloc_NullHandle) {
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidHeapAlloc_ZeroAlloc) {
+TEST_F(HeapApiTest, InvalidHeapAlloc_ZeroAlloc)
+{
     PHeap pHeap;
     ALLOCATION_HANDLE handle;
 
@@ -231,7 +162,8 @@ TEST_F(HeapApiTest, InvalidHeapAlloc_ZeroAlloc) {
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidHeapAlloc_MaxAlloc) {
+TEST_F(HeapApiTest, InvalidHeapAlloc_MaxAlloc)
+{
     PHeap pHeap;
     ALLOCATION_HANDLE handle;
 
@@ -244,7 +176,8 @@ TEST_F(HeapApiTest, InvalidHeapAlloc_MaxAlloc) {
     EXPECT_EQ(STATUS_SUCCESS, heapRelease(pHeap));
 }
 
-TEST_F(HeapApiTest, InvalidHeapFree_NullHeap) {
+TEST_F(HeapApiTest, InvalidHeapFree_NullHeap)
+{
     PHeap pHeap;
     ALLOCATION_HANDLE handle;
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
@@ -259,7 +192,8 @@ TEST_F(HeapApiTest, InvalidHeapFree_NullHeap) {
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidHeapFree_InvalidHandle) {
+TEST_F(HeapApiTest, InvalidHeapFree_InvalidHandle)
+{
     PHeap pHeap;
     ALLOCATION_HANDLE handle;
 
@@ -275,7 +209,8 @@ TEST_F(HeapApiTest, InvalidHeapFree_InvalidHandle) {
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidHeapMap_NullHeap) {
+TEST_F(HeapApiTest, InvalidHeapMap_NullHeap)
+{
     PHeap pHeap;
     ALLOCATION_HANDLE handle;
     PVOID pAlloc;
@@ -294,7 +229,8 @@ TEST_F(HeapApiTest, InvalidHeapMap_NullHeap) {
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidHeapMap_InvalidHandle) {
+TEST_F(HeapApiTest, InvalidHeapMap_InvalidHandle)
+{
     PHeap pHeap;
     ALLOCATION_HANDLE handle;
     PVOID pAlloc;
@@ -313,7 +249,8 @@ TEST_F(HeapApiTest, InvalidHeapMap_InvalidHandle) {
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidHeapMap_NullAllocation) {
+TEST_F(HeapApiTest, InvalidHeapMap_NullAllocation)
+{
     PHeap pHeap;
     ALLOCATION_HANDLE handle;
     UINT64 size;
@@ -331,7 +268,8 @@ TEST_F(HeapApiTest, InvalidHeapMap_NullAllocation) {
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidHeapMap_NullSize) {
+TEST_F(HeapApiTest, InvalidHeapMap_NullSize)
+{
     PHeap pHeap = NULL;
     ALLOCATION_HANDLE handle;
     PVOID pAlloc = NULL;
@@ -349,7 +287,8 @@ TEST_F(HeapApiTest, InvalidHeapMap_NullSize) {
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidHeapUnmap_NullHeap) {
+TEST_F(HeapApiTest, InvalidHeapUnmap_NullHeap)
+{
     PHeap pHeap;
     PVOID pAlloc = (PVOID) 12345;
 
@@ -362,7 +301,8 @@ TEST_F(HeapApiTest, InvalidHeapUnmap_NullHeap) {
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidHeapUnmap_InvalidAllocation) {
+TEST_F(HeapApiTest, InvalidHeapUnmap_InvalidAllocation)
+{
     PHeap pHeap;
 
     EXPECT_TRUE(STATUS_SUCCEEDED(heapInitialize(MIN_HEAP_SIZE, 20, FLAGS_USE_AIV_HEAP, NULL, &pHeap)));
@@ -374,7 +314,8 @@ TEST_F(HeapApiTest, InvalidHeapUnmap_InvalidAllocation) {
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidFileHeapCreate_InvalidParams) {
+TEST_F(HeapApiTest, InvalidFileHeapCreate_InvalidParams)
+{
     PHeap pHeap = NULL;
     CHAR filePath[MAX_PATH_LEN + 2];
 
@@ -393,16 +334,17 @@ TEST_F(HeapApiTest, InvalidFileHeapCreate_InvalidParams) {
     EXPECT_TRUE(STATUS_SUCCEEDED(heapRelease(pHeap)));
 }
 
-TEST_F(HeapApiTest, InvalidHeapResize_InvalidValues) {
+TEST_F(HeapApiTest, InvalidHeapResize_InvalidValues)
+{
     PHeap pHeap;
     ALLOCATION_HANDLE handle, storedHandle, invalidHandle = INVALID_ALLOCATION_HANDLE_VALUE;
     UINT64 heapSize = MIN_HEAP_SIZE * 2 + 100000;
     UINT32 heapTypes[] = {FLAGS_USE_AIV_HEAP,
-                           FLAGS_USE_SYSTEM_HEAP,
-                           FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
-                           FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
-                           FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_FILE_HEAP,
-                           FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_FILE_HEAP};
+                          FLAGS_USE_SYSTEM_HEAP,
+                          FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
+                          FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_VRAM_HEAP,
+                          FLAGS_USE_AIV_HEAP | FLAGS_USE_HYBRID_FILE_HEAP,
+                          FLAGS_USE_SYSTEM_HEAP | FLAGS_USE_HYBRID_FILE_HEAP};
 
     for (UINT32 heapType = 0; heapType < ARRAY_SIZE(heapTypes); heapType++) {
         EXPECT_EQ(STATUS_SUCCESS, heapInitialize(heapSize, 50, heapTypes[heapType], NULL, &pHeap));

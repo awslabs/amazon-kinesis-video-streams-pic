@@ -1,7 +1,6 @@
 #include "UtilTestFixture.h"
 
-class MathTest : public UtilTestBase {
-};
+class MathTest : public UtilTestBase {};
 
 TEST_F(MathTest, testPowerAPI)
 {

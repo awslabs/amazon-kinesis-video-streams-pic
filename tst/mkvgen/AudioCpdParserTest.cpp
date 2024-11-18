@@ -1,7 +1,6 @@
 #include "MkvgenTestFixture.h"
 
-class AudioCpdParserTest : public MkvgenTestBase {
-};
+class AudioCpdParserTest : public MkvgenTestBase {};
 
 TEST_F(AudioCpdParserTest, audioCpdParser_InvalidInput)
 {
@@ -52,7 +51,8 @@ TEST_F(AudioCpdParserTest, audioCpdParser_invalidSamplingFrequencyIndex)
     DOUBLE samplingFrequency;
     UINT16 channelConfig;
 
-    EXPECT_EQ(STATUS_MKV_INVALID_AAC_CPD_SAMPLING_FREQUENCY_INDEX, getSamplingFreqAndChannelFromAacCpd(cpd, cpdSize, &samplingFrequency, &channelConfig));
+    EXPECT_EQ(STATUS_MKV_INVALID_AAC_CPD_SAMPLING_FREQUENCY_INDEX,
+              getSamplingFreqAndChannelFromAacCpd(cpd, cpdSize, &samplingFrequency, &channelConfig));
 }
 
 TEST_F(AudioCpdParserTest, audioCpdParser_invalidChannelConfig)
@@ -65,7 +65,8 @@ TEST_F(AudioCpdParserTest, audioCpdParser_invalidChannelConfig)
     EXPECT_EQ(STATUS_MKV_INVALID_AAC_CPD_CHANNEL_CONFIG, getSamplingFreqAndChannelFromAacCpd(cpd, cpdSize, &samplingFrequency, &channelConfig));
 }
 
-TEST_F(AudioCpdParserTest, generateAacCpdTest) {
+TEST_F(AudioCpdParserTest, generateAacCpdTest)
+{
     BYTE cpd[] = {0x11, 0x90};
     UINT32 samplingFrequency = 48000;
     UINT16 channelConfig = 2;
@@ -74,14 +75,12 @@ TEST_F(AudioCpdParserTest, generateAacCpdTest) {
 
     EXPECT_EQ(STATUS_NULL_ARG, mkvgenGenerateAacCpd(AAC_LC, samplingFrequency, channelConfig, NULL, cpdSize));
     // invalid cpd size
-    EXPECT_EQ(STATUS_INVALID_ARG,
-              mkvgenGenerateAacCpd(AAC_LC, samplingFrequency, channelConfig, buffer, KVS_AAC_CPD_SIZE_BYTE - 1));
+    EXPECT_EQ(STATUS_INVALID_ARG, mkvgenGenerateAacCpd(AAC_LC, samplingFrequency, channelConfig, buffer, KVS_AAC_CPD_SIZE_BYTE - 1));
     // invalid sampling frequency
     EXPECT_EQ(STATUS_INVALID_ARG, mkvgenGenerateAacCpd(AAC_LC, 12345, channelConfig, buffer, cpdSize));
     // invalid channel config
     EXPECT_EQ(STATUS_INVALID_ARG, mkvgenGenerateAacCpd(AAC_LC, samplingFrequency, 0, buffer, cpdSize));
-    EXPECT_EQ(STATUS_INVALID_ARG,
-              mkvgenGenerateAacCpd(AAC_LC, samplingFrequency, MKV_AAC_CHANNEL_CONFIG_MAX, buffer, cpdSize));
+    EXPECT_EQ(STATUS_INVALID_ARG, mkvgenGenerateAacCpd(AAC_LC, samplingFrequency, MKV_AAC_CHANNEL_CONFIG_MAX, buffer, cpdSize));
 
     EXPECT_EQ(STATUS_SUCCESS, mkvgenGenerateAacCpd(AAC_LC, samplingFrequency, channelConfig, buffer, cpdSize));
     EXPECT_EQ(0, MEMCMP(cpd, buffer, cpdSize));
@@ -103,8 +102,10 @@ TEST_F(AudioCpdParserTest, generatePcmCpdTest)
     // NULL buffer
     EXPECT_EQ(STATUS_NULL_ARG, mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE_ALAW, samplingFrequency, channelConfig, NULL, 0));
     // invalid sampling frequency
-    EXPECT_EQ(STATUS_INVALID_ARG, mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE_ALAW, MIN_PCM_SAMPLING_RATE - 1, channelConfig, buffer, ARRAY_SIZE(buffer)));
-    EXPECT_EQ(STATUS_INVALID_ARG, mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE_ALAW, MAX_PCM_SAMPLING_RATE + 1, channelConfig, buffer, ARRAY_SIZE(buffer)));
+    EXPECT_EQ(STATUS_INVALID_ARG,
+              mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE_ALAW, MIN_PCM_SAMPLING_RATE - 1, channelConfig, buffer, ARRAY_SIZE(buffer)));
+    EXPECT_EQ(STATUS_INVALID_ARG,
+              mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE_ALAW, MAX_PCM_SAMPLING_RATE + 1, channelConfig, buffer, ARRAY_SIZE(buffer)));
     // invalid channel config
     EXPECT_EQ(STATUS_INVALID_ARG, mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE_ALAW, samplingFrequency, 0, buffer, ARRAY_SIZE(buffer)));
     EXPECT_EQ(STATUS_INVALID_ARG, mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE_ALAW, samplingFrequency, 3, buffer, ARRAY_SIZE(buffer)));
@@ -123,4 +124,3 @@ TEST_F(AudioCpdParserTest, generatePcmCpdTest)
     EXPECT_EQ(STATUS_SUCCESS, mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE_ALAW, samplingFrequency, 1, buffer, ARRAY_SIZE(buffer)));
     EXPECT_EQ(STATUS_SUCCESS, mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE_ALAW, samplingFrequency, 2, buffer, ARRAY_SIZE(buffer)));
 }
-

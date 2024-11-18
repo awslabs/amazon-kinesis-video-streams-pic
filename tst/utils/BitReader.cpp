@@ -1,7 +1,6 @@
 #include "UtilTestFixture.h"
 
-class BitReaderFunctionalityTest : public UtilTestBase {
-};
+class BitReaderFunctionalityTest : public UtilTestBase {};
 
 TEST_F(BitReaderFunctionalityTest, NegativeInvalidInput_BitReaderReset)
 {

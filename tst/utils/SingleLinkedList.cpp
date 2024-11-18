@@ -1,7 +1,6 @@
 #include "UtilTestFixture.h"
 
-class SingleListFunctionalityTest : public UtilTestBase {
-};
+class SingleListFunctionalityTest : public UtilTestBase {};
 
 TEST_F(SingleListFunctionalityTest, NegativeInvalidInput_SingleListCreate)
 {
@@ -245,7 +244,7 @@ TEST_F(SingleListFunctionalityTest, SingleListBasicOperationsCreateInsertGetDele
     for (UINT64 i = 0; i < count; i++) {
         EXPECT_EQ(STATUS_SUCCESS, singleListGetNodeDataAt(pList, (UINT32) i, &data));
         EXPECT_EQ(data, count - i - 1);
-        EXPECT_EQ(STATUS_SUCCESS, singleListGetNodeAt(pList, (UINT32)i, &pNode));
+        EXPECT_EQ(STATUS_SUCCESS, singleListGetNodeAt(pList, (UINT32) i, &pNode));
         EXPECT_EQ(pNode->data, count - i - 1);
     }
 
@@ -505,7 +504,8 @@ TEST_F(SingleListFunctionalityTest, SingleListInsertAfter)
     EXPECT_EQ(STATUS_SUCCESS, singleListFree(pList));
 }
 
-TEST_F(SingleListFunctionalityTest, SingleListAppendNonEmptyList) {
+TEST_F(SingleListFunctionalityTest, SingleListAppendNonEmptyList)
+{
     PSingleList pListDst, pListToAppend;
     UINT64 data;
 
@@ -548,7 +548,8 @@ TEST_F(SingleListFunctionalityTest, SingleListAppendNonEmptyList) {
     EXPECT_EQ(STATUS_SUCCESS, singleListFree(pListDst));
 }
 
-TEST_F(SingleListFunctionalityTest, SingleListAppendEmptyListOrNull) {
+TEST_F(SingleListFunctionalityTest, SingleListAppendEmptyListOrNull)
+{
     PSingleList pListDst, pListToAppend;
     UINT64 data;
 

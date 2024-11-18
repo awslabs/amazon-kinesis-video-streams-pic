@@ -74,7 +74,7 @@ extern "C" {
 // 64/32 bit check on GCC
 //
 #if defined __GNUC__ || defined __GNUG__
-#if defined __x86_64__ || defined __ppc64__ || __aarch64__
+#if defined __x86_64__ || defined __ppc64__ || defined __aarch64__
 #define SIZE_64
 #if defined __APPLE__
 #define __LLP64__
@@ -437,7 +437,7 @@ typedef INT_PTR SSIZE_T, *PSSIZE_T;
 #define SAFE_DELETE_ARRAY(p)                                                                                                                         \
     do {                                                                                                                                             \
         if (p) {                                                                                                                                     \
-            delete[] (p);                                                                                                                            \
+            delete[](p);                                                                                                                             \
             (p) = NULL;                                                                                                                              \
         }                                                                                                                                            \
     } while (0)
@@ -500,6 +500,7 @@ typedef INT_PTR SSIZE_T, *PSSIZE_T;
 #define STATUS_THREAD_ATTR_INIT_FAILED           STATUS_BASE + 0x0000001c
 #define STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED STATUS_BASE + 0x0000001d
 #define STATUS_MEMORY_NOT_FREED                  STATUS_BASE + 0x0000001e
+#define STATUS_INVALID_THREAD_PARAMS_VERSION     STATUS_BASE + 0x0000001f
 
 #include <stdlib.h>
 #include <string.h>
@@ -536,11 +537,11 @@ typedef INT_PTR SSIZE_T, *PSSIZE_T;
 #endif
 
 #ifndef S_ISDIR
-#define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
+#define S_ISDIR(mode) (((mode) &S_IFMT) == S_IFDIR)
 #endif
 
 #ifndef S_ISREG
-#define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
+#define S_ISREG(mode) (((mode) &S_IFMT) == S_IFREG)
 #endif
 
 // Definition of the mkdir for Windows with 1 param
@@ -711,6 +712,21 @@ extern getTime globalGetTime;
 extern getTime globalGetRealTime;
 extern getTmTime globalGetThreadSafeTmTime;
 
+/**
+ * Current version of the thread parameters structure
+ */
+#define THREAD_PARAMS_CURRENT_VERSION 0
+
+typedef struct __ThreadParams ThreadParams;
+struct __ThreadParams {
+    // Version of the struct
+    UINT32 version;
+
+    // Stack size, in bytes. 0 = use defaults
+    SIZE_T stackSize;
+};
+typedef struct __ThreadParams* PThreadParams;
+
 //
 // Thread library function definitions
 //
@@ -721,6 +737,7 @@ typedef VOID (*unlockMutex)(MUTEX);
 typedef BOOL (*tryLockMutex)(MUTEX);
 typedef VOID (*freeMutex)(MUTEX);
 typedef STATUS (*createThread)(PTID, startRoutine, PVOID);
+typedef STATUS (*createThreadWithParams)(PTID, PThreadParams, startRoutine, PVOID);
 typedef STATUS (*joinThread)(TID, PVOID*);
 typedef VOID (*threadSleep)(UINT64);
 typedef VOID (*threadSleepUntil)(UINT64);
@@ -763,6 +780,7 @@ extern unlockMutex globalUnlockMutex;
 extern tryLockMutex globalTryLockMutex;
 extern freeMutex globalFreeMutex;
 extern createThread globalCreateThread;
+extern createThreadWithParams globalCreateThreadWithParams;
 extern joinThread globalJoinThread;
 extern threadSleep globalThreadSleep;
 extern threadSleepUntil globalThreadSleepUntil;
@@ -1043,12 +1061,14 @@ extern PUBLIC_API atomicXor globalAtomicXor;
 //
 // Thread functionality
 //
-#define THREAD_CREATE      globalCreateThread
-#define THREAD_JOIN        globalJoinThread
-#define THREAD_SLEEP       globalThreadSleep
-#define THREAD_SLEEP_UNTIL globalThreadSleepUntil
-#define THREAD_CANCEL      globalCancelThread
-#define THREAD_DETACH      globalDetachThread
+// Wrappers around OS specific utilities for threads. Takes arguments as given.
+#define THREAD_CREATE             globalCreateThread
+#define THREAD_CREATE_WITH_PARAMS globalCreateThreadWithParams
+#define THREAD_JOIN               globalJoinThread
+#define THREAD_SLEEP              globalThreadSleep
+#define THREAD_SLEEP_UNTIL        globalThreadSleepUntil
+#define THREAD_CANCEL             globalCancelThread
+#define THREAD_DETACH             globalDetachThread
 
 //
 // Static initializers
@@ -1112,9 +1132,9 @@ typedef SIZE_T ATOMIC_BOOL;
 #define LOW_INT32(x)  ((INT32) (x))
 #define HIGH_INT32(x) ((INT32) (((INT64) (x) >> 32) & 0xFFFFFFFF))
 
-#define MAKE_INT16(a, b) ((INT16) (((UINT8) ((UINT16) (a) & 0xff)) | ((UINT16) ((UINT8) ((UINT16) (b) & 0xff))) << 8))
-#define MAKE_INT32(a, b) ((INT32) (((UINT16) ((UINT32) (a) & 0xffff)) | ((UINT32) ((UINT16) ((UINT32) (b) & 0xffff))) << 16))
-#define MAKE_INT64(a, b) ((INT64) (((UINT32) ((UINT64) (a) & 0xffffffff)) | ((UINT64) ((UINT32) ((UINT64) (b) & 0xffffffff))) << 32))
+#define MAKE_INT16(a, b) ((INT16) (((UINT8) ((UINT16) (a) &0xff)) | ((UINT16) ((UINT8) ((UINT16) (b) &0xff))) << 8))
+#define MAKE_INT32(a, b) ((INT32) (((UINT16) ((UINT32) (a) &0xffff)) | ((UINT32) ((UINT16) ((UINT32) (b) &0xffff))) << 16))
+#define MAKE_INT64(a, b) ((INT64) (((UINT32) ((UINT64) (a) &0xffffffff)) | ((UINT64) ((UINT32) ((UINT64) (b) &0xffffffff))) << 32))
 
 #define SWAP_INT16(x) MAKE_INT16(HIGH_BYTE(x), LOW_BYTE(x))
 

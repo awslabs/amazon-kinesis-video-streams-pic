@@ -1,7 +1,6 @@
 #include "MkvgenTestFixture.h"
 
-class AvccNalAdapterTest : public MkvgenTestBase {
-};
+class AvccNalAdapterTest : public MkvgenTestBase {};
 
 TEST_F(AvccNalAdapterTest, nalAdapter_InvalidInput)
 {
@@ -113,10 +112,10 @@ TEST_F(AvccNalAdapterTest, nalAdapter_OutOfBounds)
 {
     UINT32 frameDataSize;
     BYTE frameDatas[][21] = {
-            {0, 0, 0, 4, 2, 3, 4, 5, 0, 0, 0, 10, 0, 0, 0, 1, 6, 0, 0, 0, 0}, // 0
-            {0, 0, 0, 4, 2, 3, 4, 5, 0, 0, 0, 8, 0, 0, 0, 1, 6, 0, 0, 0, 0}, // 1
-            {0, 0, 0, 4, 2, 3, 4, 5, 0, 0, 0, 7, 0, 0, 0, 1, 6, 0, 0, 0, 0}, // 1
-            {0, 0, 0, 4, 2, 3, 4, 5, 0, 0, 0, 6, 0, 0, 0, 1, 6, 0, 0, 0, 0}, // 1
+        {0, 0, 0, 4, 2, 3, 4, 5, 0, 0, 0, 10, 0, 0, 0, 1, 6, 0, 0, 0, 0}, // 0
+        {0, 0, 0, 4, 2, 3, 4, 5, 0, 0, 0, 8, 0, 0, 0, 1, 6, 0, 0, 0, 0},  // 1
+        {0, 0, 0, 4, 2, 3, 4, 5, 0, 0, 0, 7, 0, 0, 0, 1, 6, 0, 0, 0, 0},  // 1
+        {0, 0, 0, 4, 2, 3, 4, 5, 0, 0, 0, 6, 0, 0, 0, 1, 6, 0, 0, 0, 0},  // 1
     };
 
     for (UINT32 i = 0; i < SIZEOF(frameDatas) / SIZEOF(frameDatas[0]); i++) {

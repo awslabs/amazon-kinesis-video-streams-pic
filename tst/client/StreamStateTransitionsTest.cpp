@@ -1,7 +1,6 @@
 #include "ClientTestFixture.h"
 
-class StreamStateTransitionsTest : public ClientTestBase {
-};
+class StreamStateTransitionsTest : public ClientTestBase {};
 
 TEST_F(StreamStateTransitionsTest, stopStateFromCreate)
 {
@@ -67,7 +66,9 @@ TEST_F(StreamStateTransitionsTest, stopStateFromGetToken)
     mStreamDescription.creationTime = GETTIME();
     EXPECT_EQ(STATUS_SUCCESS, describeStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, &mStreamDescription));
     EXPECT_EQ(STATUS_SUCCESS, getStreamingEndpointResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_STREAMING_ENDPOINT));
-    EXPECT_EQ(STATUS_SUCCESS, getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN, SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
+    EXPECT_EQ(STATUS_SUCCESS,
+              getStreamingTokenResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, (PBYTE) TEST_STREAMING_TOKEN,
+                                           SIZEOF(TEST_STREAMING_TOKEN), TEST_AUTH_EXPIRATION));
 
     EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESULT_OK));
 }
@@ -327,7 +328,8 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingLimitNoRecovery)
 
     mSubmitServiceCallResultMode = STOP_AT_PUT_STREAM;
 
-    EXPECT_EQ(STATUS_SERVICE_CALL_STREAM_LIMIT_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_STREAM_LIMIT));
+    EXPECT_EQ(STATUS_SERVICE_CALL_STREAM_LIMIT_ERROR,
+              kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_STREAM_LIMIT));
 
     // Validate that we have not restarted
     EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
@@ -338,7 +340,8 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingLimitNoRecovery)
     EXPECT_EQ(1, ATOMIC_LOAD(&mStreamReadyFuncCount));
     EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
 
-    EXPECT_EQ(STATUS_SERVICE_CALL_DEVICE_LIMIT_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_DEVICE_LIMIT));
+    EXPECT_EQ(STATUS_SERVICE_CALL_DEVICE_LIMIT_ERROR,
+              kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_DEVICE_LIMIT));
 
     // Validate that we have not restarted
     EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
@@ -477,7 +480,8 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingNotAuthorizedNoRecovery
 
     mSubmitServiceCallResultMode = STOP_AT_PUT_STREAM;
 
-    EXPECT_EQ(STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_NOT_AUTHORIZED));
+    EXPECT_EQ(STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR,
+              kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_NOT_AUTHORIZED));
 
     // Validate that we have not restarted
     EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
@@ -488,7 +492,8 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingNotAuthorizedNoRecovery
     EXPECT_EQ(1, ATOMIC_LOAD(&mStreamReadyFuncCount));
     EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
 
-    EXPECT_EQ(STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_FORBIDDEN));
+    EXPECT_EQ(STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR,
+              kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_FORBIDDEN));
 
     // Validate that we have not restarted
     EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
@@ -628,7 +633,8 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingResourceInUseNoRecovery
 
     mSubmitServiceCallResultMode = STOP_AT_PUT_STREAM;
 
-    EXPECT_EQ(STATUS_SERVICE_CALL_RESOURCE_IN_USE_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESOURCE_IN_USE));
+    EXPECT_EQ(STATUS_SERVICE_CALL_RESOURCE_IN_USE_ERROR,
+              kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESOURCE_IN_USE));
 
     // Validate that we have not restarted
     EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
@@ -767,7 +773,8 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingInternalNoRecovery)
 
     mSubmitServiceCallResultMode = STOP_AT_PUT_STREAM;
 
-    EXPECT_EQ(STATUS_ACK_ERR_ACK_INTERNAL_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESULT_ACK_INTERNAL_ERROR));
+    EXPECT_EQ(STATUS_ACK_ERR_ACK_INTERNAL_ERROR,
+              kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESULT_ACK_INTERNAL_ERROR));
 
     // Validate that we have not restarted
     EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
@@ -906,7 +913,8 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingResourceNotFoundNoRecov
 
     mSubmitServiceCallResultMode = STOP_AT_PUT_STREAM;
 
-    EXPECT_EQ(STATUS_SERVICE_CALL_RESOURCE_NOT_FOUND_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESOURCE_NOT_FOUND));
+    EXPECT_EQ(STATUS_SERVICE_CALL_RESOURCE_NOT_FOUND_ERROR,
+              kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESOURCE_NOT_FOUND));
 
     // Validate that we have not restarted
     EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
@@ -917,7 +925,8 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingResourceNotFoundNoRecov
     EXPECT_EQ(1, ATOMIC_LOAD(&mStreamReadyFuncCount));
     EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
 
-    EXPECT_EQ(STATUS_SERVICE_CALL_RESOURCE_DELETED_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESOURCE_DELETED));
+    EXPECT_EQ(STATUS_SERVICE_CALL_RESOURCE_DELETED_ERROR,
+              kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_RESOURCE_DELETED));
 
     // Validate that we have not restarted
     EXPECT_EQ(1, ATOMIC_LOAD(&mDescribeStreamFuncCount));
@@ -1045,6 +1054,7 @@ TEST_F(StreamStateTransitionsTest, stopStateFromStreamingOtherNoRecovery)
 
     mSubmitServiceCallResultMode = STOP_AT_PUT_STREAM;
 
-    EXPECT_EQ(STATUS_SERVICE_CALL_DEVICE_NOT_FOND_ERROR, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_DEVICE_NOT_FOUND));
+    EXPECT_EQ(STATUS_SERVICE_CALL_DEVICE_NOT_FOND_ERROR,
+              kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_DEVICE_NOT_FOUND));
 }
 #endif

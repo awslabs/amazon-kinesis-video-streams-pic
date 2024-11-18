@@ -1,14 +1,15 @@
 #include "ClientTestFixture.h"
 
-using ::testing::WithParamInterface;
 using ::testing::Bool;
-using ::testing::Values;
 using ::testing::Combine;
+using ::testing::Values;
+using ::testing::WithParamInterface;
 
 class StreamApiFunctionalityScenarioTest : public ClientTestBase,
-                                           public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> >{
-protected:
-    void SetUp() {
+                                           public WithParamInterface< ::std::tuple<STREAMING_TYPE, uint64_t, bool, uint64_t> > {
+  protected:
+    void SetUp()
+    {
         ClientTestBase::SetUp();
 
         STREAMING_TYPE streamingType;
@@ -36,14 +37,14 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationBasicScenario)
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT32 tokenRotateCount = 0;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
 
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
 
     CreateStreamSync();
     // should make 1 token rotations within this time.
-    testTerminationTime = mClientCallbacks.getCurrentTimeFn((UINT64) this)
-                          + 1 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 2 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    testTerminationTime =
+        mClientCallbacks.getCurrentTimeFn((UINT64) this) + 1 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 2 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
     do {
@@ -78,13 +79,13 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationBasicScenarioFaultInject
     BOOL didPutFrame, gotStreamData, submittedAck, didSubmitErrorAck = FALSE;
     UINT32 tokenRotateCount = 0;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
 
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
 
     CreateStreamSync();
-    testTerminationTime = mClientCallbacks.getCurrentTimeFn((UINT64) this)
-                          + 2 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    testTerminationTime =
+        mClientCallbacks.getCurrentTimeFn((UINT64) this) + 2 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
     do {
@@ -101,7 +102,7 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationBasicScenarioFaultInject
             if (retStatus == STATUS_END_OF_STREAM) {
                 tokenRotateCount++;
             }
-            if (mockConsumer != NULL ) {
+            if (mockConsumer != NULL) {
                 EXPECT_EQ(STATUS_SUCCESS, mockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
 
                 // fault inject upload handle 1 once.
@@ -137,14 +138,14 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationBasicScenarioEOFR)
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT32 tokenRotateCount = 0;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
 
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
 
     CreateStreamSync();
     // should make 1 token rotations within this time.
-    testTerminationTime = mClientCallbacks.getCurrentTimeFn((UINT64) this)
-                          + 1 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 2 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    testTerminationTime =
+        mClientCallbacks.getCurrentTimeFn((UINT64) this) + 1 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 2 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
     do {
@@ -181,7 +182,7 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationFragmentMultiTrackScenar
     BOOL gotStreamData, submittedAck;
     UINT32 tokenRotateCount = 0, frameCount = 0;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
 
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
 
@@ -252,7 +253,7 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationFragmentMultiTrackScenar
     BOOL gotStreamData, submittedAck;
     UINT32 tokenRotateCount = 0, frameCount = 0;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
 
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
 
@@ -323,7 +324,7 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationIntermittentMultiTrackSc
     BOOL gotStreamData, submittedAck;
     UINT32 tokenRotateCount = 0, frameCount = 0;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
 
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
 
@@ -394,7 +395,7 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationIntermittentMultiTrackSc
     BOOL gotStreamData, submittedAck;
     UINT32 tokenRotateCount = 0, frameCount = 0;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
 
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
 
@@ -465,7 +466,7 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationBasicMultiTrackPassThrou
     BOOL didPutFrame, gotStreamData, submittedAck;
     UINT32 tokenRotateCount = 0, frameCount = 0;
     std::vector<UPLOAD_HANDLE> currentUploadHandles;
-    MockConsumer *mockConsumer;
+    MockConsumer* mockConsumer;
 
     PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
 
@@ -483,8 +484,8 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationBasicMultiTrackPassThrou
     CreateStreamSync();
 
     // should make 1 token rotations within this time.
-    testTerminationTime = mClientCallbacks.getCurrentTimeFn((UINT64) this)
-                          + 1 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 2 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    testTerminationTime =
+        mClientCallbacks.getCurrentTimeFn((UINT64) this) + 1 * MIN_STREAMING_TOKEN_EXPIRATION_DURATION + 2 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
 
     do {
@@ -516,6 +517,7 @@ TEST_P(StreamApiFunctionalityScenarioTest, TokenRotationBasicMultiTrackPassThrou
 }
 
 INSTANTIATE_TEST_SUITE_P(PermutatedStreamInfo, StreamApiFunctionalityScenarioTest,
-                        Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(), Values(0, TEST_REPLAY_DURATION)));
+                         Combine(Values(STREAMING_TYPE_REALTIME, STREAMING_TYPE_OFFLINE), Values(0, 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR), Bool(),
+                                 Values(0, TEST_REPLAY_DURATION)));
 
 #endif

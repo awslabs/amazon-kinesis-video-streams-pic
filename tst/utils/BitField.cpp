@@ -1,7 +1,6 @@
 #include "UtilTestFixture.h"
 
-class BitfieldFunctionalityTest : public UtilTestBase {
-};
+class BitfieldFunctionalityTest : public UtilTestBase {};
 
 TEST_F(BitfieldFunctionalityTest, NegativeInvalidInput_BitFieldCreate)
 {
@@ -111,7 +110,6 @@ TEST_F(BitfieldFunctionalityTest, GetPutResetSubByteItemBitField)
 
     EXPECT_EQ(STATUS_SUCCESS, bitFieldGet(pBitField, 0, &isSet));
     EXPECT_FALSE(isSet);
-
 
     EXPECT_EQ(STATUS_SUCCESS, bitFieldGet(pBitField, 7, &isSet));
     EXPECT_FALSE(isSet);

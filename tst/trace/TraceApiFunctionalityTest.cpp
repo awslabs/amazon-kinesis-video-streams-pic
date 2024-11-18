@@ -1,7 +1,6 @@
 #include "TraceTestFixture.h"
 
-class TraceApiFunctionalityTest : public TraceTestBase {
-};
+class TraceApiFunctionalityTest : public TraceTestBase {};
 
 TEST_F(TraceApiFunctionalityTest, OverflowTest_StartStop)
 {
@@ -10,7 +9,8 @@ TEST_F(TraceApiFunctionalityTest, OverflowTest_StartStop)
     UINT32 traceCount = 200;
     UINT32 index;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(profilerInitialize(SIZEOF(TraceProfiler) + traceCount * SIZEOF(Trace), TRACE_LEVEL_REPORT_ALWAYS, FLAGS_USE_AIV_TRACE_PROFILER_FORMAT, &handle)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(profilerInitialize(SIZEOF(TraceProfiler) + traceCount * SIZEOF(Trace), TRACE_LEVEL_REPORT_ALWAYS,
+                                                    FLAGS_USE_AIV_TRACE_PROFILER_FORMAT, &handle)));
 
     //
     // Set the trace levels to INFO
@@ -51,7 +51,8 @@ TEST_F(TraceApiFunctionalityTest, OverflowTest_StartOnly)
     UINT32 traceCount = 200;
     UINT32 index;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(profilerInitialize(SIZEOF(TraceProfiler) + traceCount * SIZEOF(Trace), TRACE_LEVEL_REPORT_ALWAYS, FLAGS_USE_AIV_TRACE_PROFILER_FORMAT, &handle)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(profilerInitialize(SIZEOF(TraceProfiler) + traceCount * SIZEOF(Trace), TRACE_LEVEL_REPORT_ALWAYS,
+                                                    FLAGS_USE_AIV_TRACE_PROFILER_FORMAT, &handle)));
 
     //
     // Set the trace levels to INFO
@@ -91,7 +92,8 @@ TEST_F(TraceApiFunctionalityTest, OverflowTest_StartStopNoop)
     UINT32 traceCount = 200;
     UINT32 index;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(profilerInitialize(SIZEOF(TraceProfiler) + traceCount * SIZEOF(Trace), TRACE_LEVEL_REPORT_ALWAYS, FLAGS_USE_AIV_TRACE_PROFILER_FORMAT, &handle)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(profilerInitialize(SIZEOF(TraceProfiler) + traceCount * SIZEOF(Trace), TRACE_LEVEL_REPORT_ALWAYS,
+                                                    FLAGS_USE_AIV_TRACE_PROFILER_FORMAT, &handle)));
 
     //
     // Set the trace levels to INFO
@@ -152,7 +154,8 @@ TEST_F(TraceApiFunctionalityTest, GetFormattedBuffer)
     UINT64 currentTime = 10000000000L;
     PCHAR pBuffer = NULL;
 
-    EXPECT_TRUE(STATUS_SUCCEEDED(profilerInitialize(SIZEOF(TraceProfiler) + traceCount * SIZEOF(Trace), TRACE_LEVEL_REPORT_ALWAYS, FLAGS_USE_AIV_TRACE_PROFILER_FORMAT, &handle)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(profilerInitialize(SIZEOF(TraceProfiler) + traceCount * SIZEOF(Trace), TRACE_LEVEL_REPORT_ALWAYS,
+                                                    FLAGS_USE_AIV_TRACE_PROFILER_FORMAT, &handle)));
 
     //
     // Set the trace levels to INFO
@@ -160,7 +163,8 @@ TEST_F(TraceApiFunctionalityTest, GetFormattedBuffer)
     EXPECT_TRUE(STATUS_SUCCEEDED(setProfilerLevel(handle, TRACE_LEVEL_INFO)));
 
     for (index = 0; index < traceCount + overflowCount; index++) {
-        EXPECT_TRUE(STATUS_SUCCEEDED(traceStartInternalWorker(handle, TEST_TRACE_NAME, TRACE_LEVEL_CRITICAL, &traceHandle, 100 + index, (PCHAR) "ThreadName", currentTime)));
+        EXPECT_TRUE(STATUS_SUCCEEDED(
+            traceStartInternalWorker(handle, TEST_TRACE_NAME, TRACE_LEVEL_CRITICAL, &traceHandle, 100 + index, (PCHAR) "ThreadName", currentTime)));
         EXPECT_TRUE(traceHandle != INVALID_TRACE_HANDLE_VALUE);
         currentTime += 200000;
         EXPECT_TRUE(STATUS_SUCCEEDED(traceStopInternalWorker(handle, traceHandle, currentTime)));
@@ -189,7 +193,8 @@ TEST_F(TraceApiFunctionalityTest, GetFormattedBuffer)
     EXPECT_TRUE(STATUS_SUCCEEDED(profilerRelease(handle)));
 
     // Create again for the noop operations
-    EXPECT_TRUE(STATUS_SUCCEEDED(profilerInitialize(SIZEOF(TraceProfiler) + traceCount * SIZEOF(Trace), TRACE_LEVEL_INFO, FLAGS_USE_AIV_TRACE_PROFILER_FORMAT, &handle)));
+    EXPECT_TRUE(STATUS_SUCCEEDED(
+        profilerInitialize(SIZEOF(TraceProfiler) + traceCount * SIZEOF(Trace), TRACE_LEVEL_INFO, FLAGS_USE_AIV_TRACE_PROFILER_FORMAT, &handle)));
     pTraceProfiler = TRACE_PROFILER_HANDLE_TO_POINTER(handle);
     EXPECT_TRUE(pTraceProfiler->traceLevel == TRACE_LEVEL_INFO);
 
@@ -197,7 +202,8 @@ TEST_F(TraceApiFunctionalityTest, GetFormattedBuffer)
     // Lower priority trace
     //
     for (index = 0; index < traceCount + overflowCount; index++) {
-        EXPECT_TRUE(STATUS_SUCCEEDED(traceStartInternalWorker(handle, TEST_TRACE_NAME, TRACE_LEVEL_VERBOSE, &traceHandle, 100 + index, (PCHAR) "ThreadName", currentTime)));
+        EXPECT_TRUE(STATUS_SUCCEEDED(
+            traceStartInternalWorker(handle, TEST_TRACE_NAME, TRACE_LEVEL_VERBOSE, &traceHandle, 100 + index, (PCHAR) "ThreadName", currentTime)));
         EXPECT_TRUE(traceHandle == INVALID_TRACE_HANDLE_VALUE);
         currentTime += 200000;
         EXPECT_TRUE(STATUS_SUCCEEDED(traceStopInternalWorker(handle, traceHandle, currentTime)));
