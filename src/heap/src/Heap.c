@@ -27,19 +27,16 @@ CleanUp:
 }
 
 /**
- * Initialize and returns the heap object
- *
- * Param:
- *      @heapLimit - The overall size of the heap
- *      @spillRatio - Spill ratio in percentage of direct allocation RAM vs. vRAM in the hybrid heap scenario
- *      @behaviorFlags - Flags controlling the behavior/type of the heap
- *      @pRootDirectoru - Optional path to the root directory in case of the file-based heap
- *      @fileHeapStartingFileIndex - Starting file index for file-based heaps
- *      @ppHeap - The returned pointer to the Heap object
+ * Helper function to initialize a heap object
  */
-STATUS heapInitialize(UINT64 heapLimit, UINT32 spillRatio, UINT32 behaviorFlags, PCHAR pRootDirectory, UINT32 fileHeapStartingFileIndex, PHeap* ppHeap)
+static STATUS initializeHeapInternal(
+    UINT64 heapLimit,
+    UINT32 spillRatio,
+    UINT32 behaviorFlags,
+    PCHAR pRootDirectory,
+    UINT32 fileHeapStartingFileIndex,
+    PHeap* ppHeap)
 {
-    ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PHeap pHeap = NULL;
     PHybridHeap pHybridHeap = NULL;
@@ -77,9 +74,15 @@ STATUS heapInitialize(UINT64 heapLimit, UINT32 spillRatio, UINT32 behaviorFlags,
         pHeap = (PHeap) pHybridHeap;
     } else if ((behaviorFlags & FLAGS_USE_HYBRID_FILE_HEAP) != HEAP_FLAGS_NONE) {
         DLOGI("Creating hybrid file heap with flags: 0x%08x", behaviorFlags);
-        CHK_STATUS(hybridFileCreateHeap(pHeap, spillRatio, pRootDirectory, fileHeapStartingFileIndex, &pFileHeap));
 
-        // Store the file hybrid heap as the returned heap object
+        // Use the appropriate hybrid file heap initialization
+        if (fileHeapStartingFileIndex == 0) {
+            CHK_STATUS(hybridFileCreateHeap(pHeap, spillRatio, pRootDirectory, &pFileHeap));
+        } else {
+            CHK_STATUS(hybridFileCreateHeapFileIndex(pHeap, spillRatio, pRootDirectory, fileHeapStartingFileIndex, &pFileHeap));
+        }
+
+        // Store the hybrid heap as the returned heap object
         pHeap = (PHeap) pFileHeap;
     }
 
@@ -103,6 +106,42 @@ CleanUp:
         heapRelease(pHeap);
     }
 
+    return retStatus;
+}
+
+/**
+ * Initialize and returns the heap object
+ *
+ * Param:
+ *      @heapLimit - The overall size of the heap
+ *      @spillRatio - Spill ratio in percentage of direct allocation RAM vs. vRAM in the hybrid heap scenario
+ *      @behaviorFlags - Flags controlling the behavior/type of the heap
+ *      @pRootDirectoru - Optional path to the root directory in case of the file-based heap
+ *      @ppHeap - The returned pointer to the Heap object
+ */
+STATUS heapInitialize(UINT64 heapLimit, UINT32 spillRatio, UINT32 behaviorFlags, PCHAR pRootDirectory, PHeap* ppHeap)
+{
+    ENTERS();
+    STATUS retStatus = initializeHeapInternal(heapLimit, spillRatio, behaviorFlags, pRootDirectory, 0, ppHeap);
+    LEAVES();
+    return retStatus;
+}
+
+/**
+ * Initialize and returns the heap object with starting file index for file-based heaps
+ *
+ * Param:
+ *      @heapLimit - The overall size of the heap
+ *      @spillRatio - Spill ratio in percentage of direct allocation RAM vs. vRAM in the hybrid heap scenario
+ *      @behaviorFlags - Flags controlling the behavior/type of the heap
+ *      @pRootDirectoru - Optional path to the root directory in case of the file-based heap
+ *      @fileHeapStartingFileIndex - Starting file index for file-based heaps
+ *      @ppHeap - The returned pointer to the Heap object
+ */
+STATUS heapInitializeFileIndex(UINT64 heapLimit, UINT32 spillRatio, UINT32 behaviorFlags, PCHAR pRootDirectory, UINT32 fileHeapStartingFileIndex, PHeap* ppHeap)
+{
+    ENTERS();
+    STATUS retStatus = initializeHeapInternal(heapLimit, spillRatio, behaviorFlags, pRootDirectory, fileHeapStartingFileIndex, ppHeap);
     LEAVES();
     return retStatus;
 }

@@ -17,9 +17,17 @@ ALLOCATION_FOOTER gFileFooter = {0};
 
 #define FILE_ALLOCATION_HEADER_SIZE SIZEOF(gFileHeader)
 
-STATUS hybridFileCreateHeap(PHeap pHeap, UINT32 spillRatio, PCHAR pRootDirectory, UINT32 fileHeapStartingFileIndex, PHybridFileHeap* ppHybridHeap)
+
+/**
+ * Helper function to initialize a hybrid file heap
+ */
+static STATUS initializeHybridFileHeap(
+    PHeap pHeap,
+    UINT32 spillRatio,
+    PCHAR pRootDirectory,
+    UINT32 fileHeapStartingFileIndex,
+    PHybridFileHeap* ppHybridHeap)
 {
-    ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     PHybridFileHeap pHybridHeap = NULL;
     PBaseHeap pBaseHeap = NULL;
@@ -82,6 +90,38 @@ CleanUp:
         hybridFileHeapRelease((PHeap) pHybridHeap);
     }
 
+    return retStatus;
+}
+
+/**
+ * Creates and initializes the hybrid file heap
+ * Param:
+ *       @pHeap - Pointer to the base heap
+ *       @spillRatio - Spill ratio in percentage of RAM vs. file-based allocations
+ *       @pRootDirectory - Optional root directory for file-based heaps
+ *       @ppHybridHeap - Pointer to the created HybridFileHeap object
+ */
+STATUS hybridFileCreateHeap(PHeap pHeap, UINT32 spillRatio, PCHAR pRootDirectory, PHybridFileHeap* ppHybridHeap)
+{
+    ENTERS();
+    STATUS retStatus = initializeHybridFileHeap(pHeap, spillRatio, pRootDirectory, FILE_HEAP_STARTING_FILE_INDEX, ppHybridHeap);
+    LEAVES();
+    return retStatus;
+}
+
+/**
+ * Creates and initializes the hybrid file heap with a starting file index
+ * Param:
+ *      @pHeap - Pointer to the base heap
+ *      @spillRatio - Spill ratio in percentage of RAM vs. file-based allocations
+ *      @pRootDirectory - Optional root directory for file-based heaps
+ *      @fileHeapStartingFileIndex - Starting file index for file-based heaps
+ *      @ppHybridHeap - Pointer to the created HybridFileHeap object
+ */
+STATUS hybridFileCreateHeapFileIndex(PHeap pHeap, UINT32 spillRatio, PCHAR pRootDirectory, UINT32 fileHeapStartingFileIndex, PHybridFileHeap* ppHybridHeap)
+{
+    ENTERS();
+    STATUS retStatus = initializeHybridFileHeap(pHeap, spillRatio, pRootDirectory, fileHeapStartingFileIndex, ppHybridHeap);
     LEAVES();
     return retStatus;
 }

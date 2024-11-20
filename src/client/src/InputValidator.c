@@ -127,12 +127,10 @@ STATUS validateDeviceInfo(PDeviceInfo pDeviceInfo)
     CHK(pDeviceInfo->version <= DEVICE_INFO_CURRENT_VERSION, STATUS_INVALID_DEVICE_INFO_VERSION);
     CHK(pDeviceInfo->streamCount <= MAX_STREAM_COUNT, STATUS_MAX_STREAM_COUNT);
     CHK(pDeviceInfo->streamCount > 0, STATUS_MIN_STREAM_COUNT);
-    CHK(pDeviceInfo->storageInfo.version <= STORAGE_INFO_CURRENT_VERSION, STATUS_INVALID_STORAGE_INFO_VERSION);
-    CHK(pDeviceInfo->storageInfo.storageSize >= MIN_STORAGE_ALLOCATION_SIZE && pDeviceInfo->storageInfo.storageSize <= MAX_STORAGE_ALLOCATION_SIZE,
-        STATUS_INVALID_STORAGE_SIZE);
-    CHK(pDeviceInfo->storageInfo.spillRatio <= 100, STATUS_INVALID_SPILL_RATIO);
-    CHK(STRNLEN(pDeviceInfo->storageInfo.rootDirectory, MAX_PATH_LEN + 1) <= MAX_PATH_LEN, STATUS_INVALID_ROOT_DIRECTORY_LENGTH);
     CHK(STRNLEN(pDeviceInfo->name, MAX_DEVICE_NAME_LEN + 1) <= MAX_DEVICE_NAME_LEN, STATUS_INVALID_DEVICE_NAME_LENGTH);
+
+     //validate storage info
+    CHK_STATUS(validateStorageInfo(&pDeviceInfo->storageInfo));
 
     // Validate the tags
     CHK_STATUS(validateClientTags(pDeviceInfo->tagCount, pDeviceInfo->tags));
@@ -290,6 +288,7 @@ VOID fixupDeviceInfo(PDeviceInfo pClientDeviceInfo, PDeviceInfo pDeviceInfo)
     }
 
     fixupClientInfo(&pClientDeviceInfo->clientInfo, pOrigClientInfo);
+    fixupStorageInfo(&pClientDeviceInfo->storageInfo, &pDeviceInfo->storageInfo);
 }
 
 /**
@@ -490,4 +489,66 @@ SIZE_T sizeOfStreamDescription(PStreamDescription pStreamDescription)
     }
 
     return size;
+}
+
+
+/**
+ * Validates the storage info structure
+ *
+ * @param 1 PStorageInfo - Storage info struct.
+ *
+ * @return Status of the function call.
+ */
+STATUS validateStorageInfo(PStorageInfo pStorageInfo)
+{
+    STATUS retStatus = STATUS_SUCCESS;
+
+    CHK(pStorageInfo != NULL, STATUS_NULL_ARG);
+    CHK(pStorageInfo->version <= STORAGE_INFO_CURRENT_VERSION, STATUS_INVALID_STORAGE_INFO_VERSION);
+    CHK(pStorageInfo->storageSize >= MIN_STORAGE_ALLOCATION_SIZE && pStorageInfo->storageSize <= MAX_STORAGE_ALLOCATION_SIZE,
+        STATUS_INVALID_STORAGE_SIZE);
+    CHK(pStorageInfo->spillRatio <= 100, STATUS_INVALID_SPILL_RATIO);
+    CHK(STRNLEN(pStorageInfo->rootDirectory, MAX_PATH_LEN + 1) <= MAX_PATH_LEN, STATUS_INVALID_ROOT_DIRECTORY_LENGTH);
+
+    // If version 1 or above, validate fileHeapStartingFileIndex
+    if (pStorageInfo->version >= 1) {
+        CHK(pStorageInfo->fileHeapStartingFileIndex >= 1, STATUS_INVALID_FILE_HEAP_STARTING_INDEX);
+    }
+
+CleanUp:
+    return retStatus;
+}
+
+/**
+ * Fixes up the storage info structure for backward compatibility
+ *
+ * @param 1 PStorageInfo - Destination storage info struct.
+ * @param 2 PStorageInfo - Original storage info struct.
+ */
+VOID fixupStorageInfo(PStorageInfo pDestStorageInfo, PStorageInfo pSrcStorageInfo)
+{
+    switch (pSrcStorageInfo->version) {
+        case 1:
+            // For version 1, copy the fileHeapStartingFileIndex field
+            pDestStorageInfo->fileHeapStartingFileIndex = pSrcStorageInfo->fileHeapStartingFileIndex;
+
+            // Explicit fall-through to version 0
+        case 0:
+            // Copy common fields
+            pDestStorageInfo->version = STORAGE_INFO_CURRENT_VERSION; 
+            pDestStorageInfo->storageType = pSrcStorageInfo->storageType;
+            pDestStorageInfo->storageSize = pSrcStorageInfo->storageSize;
+            pDestStorageInfo->spillRatio = pSrcStorageInfo->spillRatio;
+            MEMCPY(pDestStorageInfo->rootDirectory, pSrcStorageInfo->rootDirectory, SIZEOF(pSrcStorageInfo->rootDirectory));
+
+            // Default fileHeapStartingFileIndex field for older versions
+            if(pSrcStorageInfo->version == 0){
+                pDestStorageInfo->fileHeapStartingFileIndex = 0;
+            }
+            
+            break;
+
+        default:
+            DLOGW("Invalid StorageInfo version");
+    }
 }
