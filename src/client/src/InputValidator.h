@@ -128,6 +128,23 @@ VOID fixupFrame(PFrame pFrame);
  */
 SIZE_T sizeOfStreamDescription(PStreamDescription);
 
+/**
+ * Validates the storage info structure.
+ *
+ * @param 1 PStorageInfo Storage info struct.
+ *
+ * @return STATUS of the function call.
+ */
+STATUS validateStorageInfo(PStorageInfo);
+
+/**
+ * Fixes up the storage info structure for backward compatibility.
+ *
+ * @param 1 PStorageInfo Destination storage info struct.
+ * @param 2 PStorageInfo Original storage info struct.
+ */
+VOID fixupStorageInfo(PStorageInfo, PStorageInfo);
+
 #ifdef __cplusplus
 }
 #endif

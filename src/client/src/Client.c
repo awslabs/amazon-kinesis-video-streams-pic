@@ -253,9 +253,27 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
             pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC
         ? MEMORY_BASED_HEAP_FLAGS
         : FILE_BASED_HEAP_FLAGS;
-    CHK_STATUS(heapInitialize(pKinesisVideoClient->deviceInfo.storageInfo.storageSize, pKinesisVideoClient->deviceInfo.storageInfo.spillRatio,
-                              heapFlags, pKinesisVideoClient->deviceInfo.storageInfo.rootDirectory, &pKinesisVideoClient->pHeap));
 
+    // Select the appropriate heap initialization function based on the StorageInfo version.
+    // Use heapInitializeFileIndex for newer versions (v1 and above) that support fileHeapStartingFileIndex.
+    // Fall back to the legacy heapInitialize method for older versions to maintain backward compatibility.
+    if (pKinesisVideoClient->deviceInfo.storageInfo.version >= 1) {
+        CHK_STATUS(heapInitializeFileIndex(
+            pKinesisVideoClient->deviceInfo.storageInfo.storageSize,
+            pKinesisVideoClient->deviceInfo.storageInfo.spillRatio,
+            heapFlags,
+            pKinesisVideoClient->deviceInfo.storageInfo.rootDirectory,
+            pKinesisVideoClient->deviceInfo.storageInfo.fileHeapStartingFileIndex,
+            &pKinesisVideoClient->pHeap));
+    } else {
+        CHK_STATUS(heapInitialize(
+            pKinesisVideoClient->deviceInfo.storageInfo.storageSize,
+            pKinesisVideoClient->deviceInfo.storageInfo.spillRatio,
+            heapFlags,
+            pKinesisVideoClient->deviceInfo.storageInfo.rootDirectory,
+            &pKinesisVideoClient->pHeap));
+    }
+    
     // Using content store allocator if needed
     // IMPORTANT! This will not be multi-client-safe
     if (pKinesisVideoClient->deviceInfo.storageInfo.storageType == DEVICE_STORAGE_TYPE_IN_MEM_CONTENT_STORE_ALLOC) {
