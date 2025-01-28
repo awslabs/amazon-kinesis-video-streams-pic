@@ -106,7 +106,7 @@ jobs:
             cmake_flags: "-DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE"
       fail-fast: false
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     env:
       CC: clang
@@ -119,7 +119,12 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get -y install clang
+          sudo apt-get -y install cmake build-essential automake git clang
+
+      - name: Check installed clang versions
+        run: |
+          ls /usr/bin/clang*
+
       - name: Build repository - ${{ matrix.config.name }}
         run: |
           mkdir -p build
