@@ -1528,13 +1528,15 @@ CleanUp:
         }
     }
 
-    // when pUploadHandleInfo is in UPLOAD_HANDLE_STATE_TERMINATED or UPLOAD_HANDLE_STATE_AWAITING_ACK, it means current handle
-    // has sent all the data. So it's safe to unblock the next one if any. If WAIT_FOR_PERSISTED_ACK is enabled, no need
-    // to execute data available again when UPLOAD_HANDLE_STATE_TERMINATED because we did it already when upload handle
-    // was in UPLOAD_HANDLE_STATE_AWAITING_ACK state.
+     // when pUploadHandleInfo is in UPLOAD_HANDLE_STATE_TERMINATED or UPLOAD_HANDLE_STATE_AWAITING_ACK it means current handle
+     // has sent all the data, so it's safe to unblock the next one if any.
+     // If WAIT_FOR_PERSISTED_ACK is not enabled, we will not enter UPLOAD_HANDLE_STATE_AWAITING_ACK and instead will immediately poke
+     // the next handle.
+     // If pUploadHandleInfo is in UPLOAD_HANDLE_STATE_TERMINATED but pUploadHandleInfo->nextHandlePoked is false, we likely skipped
+     // UPLOAD_HANDLE_STATE_AWAITING_ACK states as all fragment ACKs were received prior to handle transition.
     if (NULL != pUploadHandleInfo &&
         (pUploadHandleInfo->state == UPLOAD_HANDLE_STATE_AWAITING_ACK ||
-         (!WAIT_FOR_PERSISTED_ACK(pKinesisVideoStream) && pUploadHandleInfo->state == UPLOAD_HANDLE_STATE_TERMINATED))) {
+        (pUploadHandleInfo->state == UPLOAD_HANDLE_STATE_TERMINATED && (!WAIT_FOR_PERSISTED_ACK(pKinesisVideoStream) || !pUploadHandleInfo->nextHandlePoked)))) {
         // Special handling for the case:
         // When the stream has been stopped so no more putFrame calls that drive the data availability
         // When the current upload handle is in EoS
@@ -1563,6 +1565,7 @@ CleanUp:
             CHK_STATUS(pKinesisVideoClient->clientCallbacks.streamDataAvailableFn(
                 pKinesisVideoClient->clientCallbacks.customData, TO_STREAM_HANDLE(pKinesisVideoStream), pKinesisVideoStream->streamInfo.name,
                 pNextUploadHandleInfo->handle, duration, viewByteSize));
+            pUploadHandleInfo->nextHandlePoked = TRUE;
         }
     }
 
