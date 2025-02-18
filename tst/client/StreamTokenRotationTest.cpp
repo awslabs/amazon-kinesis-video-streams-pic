@@ -358,7 +358,7 @@ TEST_F(StreamTokenRotationTest, rotationWithAwaitingCheck)
 }
 
 // Test rotation case in which active uploadHandle has received all fragment ACKs prior to rotation initiation.
-TEST_F(StreamTokenRotationTest, grantar_test_two)
+TEST_F(StreamTokenRotationTest, rotationWithAllFragmentsAlreadyAcked)
 {
     UINT32 i, filledSize, rotation, lastRotation;
     BYTE tempBuffer[1000];
