@@ -37,7 +37,7 @@ STATUS resetExponentialBackoffRetryState(PExponentialBackoffRetryStrategyState p
 
     CHK(pExponentialBackoffRetryStrategyState != NULL, STATUS_NULL_ARG);
 
-    DLOGV("Thread Id [%" PRIu64 "]. Resetting Exponential Backoff State. Last retry system time [%" PRIu64 "], "
+    DLOGD("Thread Id [%" PRIu64 "]. Resetting Exponential Backoff State. Last retry system time [%" PRIu64 "], "
           "retry count so far [%u], Current system time [%" PRIu64 "]",
           GETTID(), pExponentialBackoffRetryStrategyState->lastRetrySystemTime, pExponentialBackoffRetryStrategyState->currentRetryCount, GETTIME());
 
@@ -47,6 +47,8 @@ STATUS resetExponentialBackoffRetryState(PExponentialBackoffRetryStrategyState p
     pExponentialBackoffRetryStrategyState->status = BACKOFF_NOT_STARTED;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
+
     LEAVES();
     return retStatus;
 }
@@ -87,15 +89,19 @@ STATUS validateExponentialBackoffConfig(PExponentialBackoffRetryStrategyConfig p
 
     CHK(pExponentialBackoffRetryStrategyConfig != NULL, STATUS_NULL_ARG);
 
+    DLOGD("Validating maxRetryWaitTime");
     CHK(CHECK_IN_RANGE(pExponentialBackoffRetryStrategyConfig->maxRetryWaitTime, MIN_KVS_MAX_WAIT_TIME_MILLISECONDS,
                        LIMIT_KVS_MAX_WAIT_TIME_MILLISECONDS),
         STATUS_INVALID_ARG);
+    DLOGD("Validating retryFactorTime");
     CHK(CHECK_IN_RANGE(pExponentialBackoffRetryStrategyConfig->retryFactorTime, MIN_KVS_RETRY_TIME_FACTOR_MILLISECONDS,
                        LIMIT_KVS_RETRY_TIME_FACTOR_MILLISECONDS),
         STATUS_INVALID_ARG);
+    DLOGD("Validating minTimeToResetRetryState");
     CHK(CHECK_IN_RANGE(pExponentialBackoffRetryStrategyConfig->minTimeToResetRetryState, MIN_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS,
                        LIMIT_KVS_MIN_TIME_TO_RESET_RETRY_STATE_MILLISECONDS),
         STATUS_INVALID_ARG);
+    DLOGD("Validating jitterType");
     CHK(pExponentialBackoffRetryStrategyConfig->jitterType == FULL_JITTER || pExponentialBackoffRetryStrategyConfig->jitterType == FIXED_JITTER ||
             pExponentialBackoffRetryStrategyConfig->jitterType == NO_JITTER,
         STATUS_INVALID_ARG);
@@ -108,6 +114,8 @@ STATUS validateExponentialBackoffConfig(PExponentialBackoffRetryStrategyConfig p
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
+
     LEAVES();
     return retStatus;
 }
@@ -123,6 +131,7 @@ STATUS exponentialBackoffRetryStrategyCreate(PKvsRetryStrategy pKvsRetryStrategy
 
     // If no config provided, create retry strategy with default config
     if (pKvsRetryStrategy->pRetryStrategyConfig == NULL) {
+        DLOGD("RetryStrategyConfig is NULL, using the default");
         return exponentialBackoffRetryStrategyWithDefaultConfigCreate(pKvsRetryStrategy);
     }
 
@@ -139,9 +148,11 @@ STATUS exponentialBackoffRetryStrategyCreate(PKvsRetryStrategy pKvsRetryStrategy
     CHK_STATUS(resetExponentialBackoffRetryState(pExponentialBackoffRetryStrategyState));
 
     pKvsRetryStrategy->retryStrategyType = KVS_RETRY_STRATEGY_EXPONENTIAL_BACKOFF_WAIT;
-    DLOGV("Created exponential backoff retry strategy state with provided retry configuration.");
+    DLOGD("Created exponential backoff retry strategy state with provided retry configuration.");
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
+
     if (STATUS_SUCCEEDED(retStatus)) {
         pKvsRetryStrategy->pRetryStrategy = (PRetryStrategy) pExponentialBackoffRetryStrategyState;
     }
@@ -275,7 +286,7 @@ STATUS getExponentialBackoffRetryStrategyWaitTime(PKvsRetryStrategy pKvsRetryStr
 
     *retryWaitTime = currentRetryWaitTime;
 
-    DLOGV("\n Thread Id [%" PRIu64 "] "
+    DLOGD("\n Thread Id [%" PRIu64 "] "
           "Number of retries [%" PRIu64 "], "
           "Retry wait time [%" PRIu64 "] ms, "
           "Retry system time [%" PRIu64 "]",
@@ -283,8 +294,10 @@ STATUS getExponentialBackoffRetryStrategyWaitTime(PKvsRetryStrategy pKvsRetryStr
           pRetryState->lastRetrySystemTime);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
+
     if (retStatus == STATUS_EXPONENTIAL_BACKOFF_RETRIES_EXHAUSTED) {
-        DLOGV("Exhausted exponential retries");
+        DLOGW("Exhausted exponential retries");
         resetExponentialBackoffRetryState(pRetryState);
     }
 

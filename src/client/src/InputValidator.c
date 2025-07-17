@@ -326,6 +326,8 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
                 // Copy individual fields and skip to V1
                 pClientInfo->automaticStreamingFlags = pOrigClientInfo->automaticStreamingFlags;
                 pClientInfo->reservedCallbackPeriod = pOrigClientInfo->reservedCallbackPeriod;
+                MEMCPY(&pClientInfo->kvsRetryStrategy, &pOrigClientInfo->kvsRetryStrategy, SIZEOF(KvsRetryStrategy));
+                MEMCPY(&pClientInfo->kvsRetryStrategyCallbacks, &pOrigClientInfo->kvsRetryStrategyCallbacks, SIZEOF(KvsRetryStrategyCallbacks));
 
                 // explicit fall-through
             case 1:
