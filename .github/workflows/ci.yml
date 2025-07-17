@@ -23,7 +23,9 @@ jobs:
             runner: macos-13
           - name: Mac Apple Silicon
             runner: macos-15
-        compiler: [ gcc, clang ]
+        compiler:
+          # - gcc # Fragile builds due to homebrew GCC being compiled using different MacOSX SDK version
+          - clang
         config:
           - name: Default Build
             cmake_flags: "-DBUILD_TEST=TRUE"
