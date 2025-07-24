@@ -171,10 +171,18 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     PKinesisVideoClient pKinesisVideoClient = NULL;
     PStateMachine pStateMachine = NULL;
     BOOL tearDownOnError = TRUE;
-    UINT32 allocationSize, heapFlags, tagsSize;
+    UINT32 allocationSize, heapFlags, tagsSize, logLevel;
 
     // Check the input params
     CHK(pDeviceInfo != NULL && pClientHandle != NULL, STATUS_NULL_ARG);
+
+    // Set the log level immediately so that initialization logs are shown
+    logLevel = pDeviceInfo->clientInfo.loggerLogLevel;
+    if (logLevel == 0 || logLevel > LOG_LEVEL_PROFILE) {
+        logLevel = LOG_LEVEL_WARN;
+    }
+    SET_LOGGER_LOG_LEVEL(pDeviceInfo->clientInfo.loggerLogLevel);
+    DLOGI("Creating Kinesis Video Client");
 
     // Set the return client handle first
     *pClientHandle = INVALID_CLIENT_HANDLE_VALUE;
@@ -184,9 +192,6 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
 
     // Validate the callbacks. Set default callbacks.
     CHK_STATUS(validateClientCallbacks(pDeviceInfo, pClientCallbacks));
-
-    // Report the creation after the validation as we might have the overwritten logger.
-    DLOGI("Creating Kinesis Video Client");
 
     // Get the max tags structure size
     CHK_STATUS(packageTags(pDeviceInfo->tagCount, pDeviceInfo->tags, 0, NULL, &tagsSize));
@@ -238,9 +243,6 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
         createRandomName(pKinesisVideoClient->deviceInfo.name, DEFAULT_DEVICE_NAME_LEN, pKinesisVideoClient->clientCallbacks.getRandomNumberFn,
                          pKinesisVideoClient->clientCallbacks.customData);
     }
-
-    // Set logger log level
-    SET_LOGGER_LOG_LEVEL(pKinesisVideoClient->deviceInfo.clientInfo.loggerLogLevel);
 
 #ifndef ALIGNED_MEMORY_MODEL
     // In case of in-content-store memory allocation, we need to ensure the heap is aligned
