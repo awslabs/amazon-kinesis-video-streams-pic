@@ -171,17 +171,15 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     PKinesisVideoClient pKinesisVideoClient = NULL;
     PStateMachine pStateMachine = NULL;
     BOOL tearDownOnError = TRUE;
-    UINT32 allocationSize, heapFlags, tagsSize, logLevel;
+    UINT32 allocationSize, heapFlags, tagsSize, logLevel = DEFAULT_LOGGER_LOG_LEVEL;
 
     // Check the input params
     CHK(pDeviceInfo != NULL && pClientHandle != NULL, STATUS_NULL_ARG);
 
     // Set the log level immediately so that initialization logs are shown
-    logLevel = pDeviceInfo->clientInfo.loggerLogLevel;
-    if (logLevel == 0 || logLevel > LOG_LEVEL_PROFILE) {
-        logLevel = LOG_LEVEL_WARN;
+    if (pDeviceInfo->version >= 1 && 0 < pDeviceInfo->clientInfo.loggerLogLevel && pDeviceInfo->clientInfo.loggerLogLevel <= LOG_LEVEL_PROFILE) {
+        logLevel = pDeviceInfo->clientInfo.loggerLogLevel;
     }
-    SET_LOGGER_LOG_LEVEL(pDeviceInfo->clientInfo.loggerLogLevel);
     DLOGI("Creating Kinesis Video Client");
 
     // Set the return client handle first
