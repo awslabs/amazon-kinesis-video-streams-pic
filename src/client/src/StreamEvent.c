@@ -247,37 +247,23 @@ STATUS describeStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CAL
 
         if ((pKinesisVideoStream->streamInfo.kmsKeyId[0] != '\0') &&
             (0 != STRNCMP(pKinesisVideoStream->streamInfo.kmsKeyId, streamDescription.kmsKeyId, MAX_ARN_LEN))) {
-            DLOGW("KMS key ID returned from the DescribeStream call doesn't match the one specified in the StreamInfo");
+            DLOGW("[%s] KMS key ID (%s) returned from the DescribeStream call doesn't match the one specified in the StreamInfo: (%s)",
+                  pKinesisVideoStream->streamInfo.name, streamDescription.kmsKeyId, pKinesisVideoStream->streamInfo.kmsKeyId);
         }
 
         if (pKinesisVideoStream->streamInfo.retention != streamDescription.retention) {
-            DLOGW("Retention period returned from the DescribeStream call doesn't match the one specified in the StreamInfo");
+            DLOGW("[%s] Retention period (%d) returned from the DescribeStream call doesn't match the one specified in the StreamInfo: (%d)",
+                  pKinesisVideoStream->streamInfo.name, streamDescription.retention, pKinesisVideoStream->streamInfo.retention);
         }
 
         if (0 != STRNCMP(pKinesisVideoStream->streamInfo.streamCaps.contentType, streamDescription.contentType, MAX_CONTENT_TYPE_LEN)) {
-            DLOGW("Content type returned from the DescribeStream(%s) call doesn't match the one specified in the StreamInfo(%s)",
-                  streamDescription.contentType, pKinesisVideoStream->streamInfo.streamCaps.contentType);
+            DLOGW("[%s] Content type (%d) returned from the DescribeStream call doesn't match the one specified in the StreamInfo: (%d)",
+                  pKinesisVideoStream->streamInfo.name, streamDescription.contentType, pKinesisVideoStream->streamInfo.streamCaps.contentType);
         }
 
         if (0 != STRNCMP(pKinesisVideoStream->streamInfo.name, streamDescription.streamName, MAX_STREAM_NAME_LEN)) {
-            DLOGW("Stream name returned from the DescribeStream(%s) call doesn't match the one specified in the StreamInfo(%s)",
-                  streamDescription.streamName, pKinesisVideoStream->streamInfo.name);
-        }
-
-        if ((pKinesisVideoStream->streamInfo.kmsKeyId[0] != '\0') &&
-            (0 != STRNCMP(pKinesisVideoStream->streamInfo.kmsKeyId, streamDescription.kmsKeyId, MAX_ARN_LEN))) {
-            DLOGW("[%s] KMS key ID returned from the DescribeStream call doesn't match the one specified in the StreamInfo",
-                  pKinesisVideoStream->streamInfo.name);
-        }
-
-        if (pKinesisVideoStream->streamInfo.retention != streamDescription.retention) {
-            DLOGW("[%s] Retention period returned from the DescribeStream call doesn't match the one specified in the StreamInfo",
-                  pKinesisVideoStream->streamInfo.name);
-        }
-
-        if (0 != STRNCMP(pKinesisVideoStream->streamInfo.streamCaps.contentType, streamDescription.contentType, MAX_CONTENT_TYPE_LEN)) {
-            DLOGW("[%s] Content type returned from the DescribeStream call doesn't match the one specified in the StreamInfo",
-                  pKinesisVideoStream->streamInfo.name);
+            DLOGW("[%s] Stream name returned from the DescribeStream (%s) call doesn't match the one specified in the StreamInfo: (%s)",
+                  pKinesisVideoStream->streamInfo.name, streamDescription.streamName, pKinesisVideoStream->streamInfo.name);
         }
 
         // Store the values we need
