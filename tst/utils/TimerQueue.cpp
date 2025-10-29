@@ -790,3 +790,104 @@ TEST_F(TimerQueueFunctionalityTest, kickTimerQueueTest)
 
     EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
 }
+
+TEST_F(TimerQueueFunctionalityTest, recurringTimerBackpressureTest)
+{
+    TIMER_QUEUE_HANDLE handle = INVALID_TIMER_QUEUE_HANDLE_VALUE;
+    UINT32 timerId;
+    UINT64 startTime, endTime;
+    SIZE_T finalCount;
+
+    // Timer every 50ms but callback takes 200ms
+    UINT64 period = 50 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    UINT64 callbackSleep = 200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    
+    // Make callback sleep for specified duration
+    ATOMIC_STORE(&sleepFor, callbackSleep);
+    
+    // Don't check timer ID and let it run for 3 successful iterations before stopping
+    // (cancelAfterCount=3 means it stops after the 4th invocation)
+    checkTimerId = FALSE;
+    cancelAfterCount = 3;
+
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
+    
+    startTime = GETTIME();
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, 0, period, testTimerCallback, (UINT64) this, &timerId));
+    
+    // Wait for timer to complete its iterations
+    // With backpressure: 4 callbacks * 200ms each = 800ms minimum
+    THREAD_SLEEP(1000 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    endTime = GETTIME();
+    
+    finalCount = ATOMIC_LOAD(&invokeCount);
+    
+    // Should have exactly 4 invocations (3 successful + 1 that triggers stop)
+    EXPECT_EQ(4, finalCount);
+    
+    // Total time should be at least 800ms (4 * 200ms) due to backpressure
+    // Each callback blocks for 200ms, so they execute sequentially
+    EXPECT_GE(endTime - startTime, 800 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    
+    // Even though the timer period is 50ms, the actual
+    // execution time is dominated by the callback duration (200ms each)
+    // This demonstrates that slow callbacks create backpressure - the timer
+    // cannot fire at its intended 50ms interval because each callback takes 200ms
+    
+    // Verify timer was cancelled after the stop condition
+    UINT32 timerCount;
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueGetTimerCount(handle, &timerCount));
+    EXPECT_EQ(0, timerCount);
+
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueShutdown(handle));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
+}
+
+
+TEST_F(TimerQueueFunctionalityTest, timerCatchUpBehaviorTest)
+{
+    TIMER_QUEUE_HANDLE handle = INVALID_TIMER_QUEUE_HANDLE_VALUE;
+    UINT32 timerId;
+    UINT64 startTime, midTime, endTime;
+    SIZE_T midCount, finalCount;
+
+    // Timer every 50ms
+    UINT64 period = 50 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND;
+    
+    // Start with 200ms sleep, then change to 0ms
+    ATOMIC_STORE(&sleepFor, 200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    
+    checkTimerId = FALSE;
+    cancelAfterCount = 10; // Let it run longer
+
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueCreate(&handle));
+    
+    startTime = GETTIME();
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueAddTimer(handle, 0, period, testTimerCallback, (UINT64) this, &timerId));
+    
+    // Wait for 2 slow callbacks (400ms)
+    THREAD_SLEEP(450 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    midCount = ATOMIC_LOAD(&invokeCount);
+    midTime = GETTIME();
+    
+    // Should have ~2 invocations due to 200ms sleep each
+    EXPECT_LE(midCount, 3);
+    
+    // Remove sleep - callbacks now execute instantly
+    ATOMIC_STORE(&sleepFor, 0);
+    
+    // Wait another 300ms
+    THREAD_SLEEP(300 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    endTime = GETTIME();
+    finalCount = ATOMIC_LOAD(&invokeCount);
+    
+    // Expected behavior: Timer doesn't "catch up" for missed periods
+    // It just continues from where it left off at the normal 50ms interval
+    // So we should see roughly (300ms / 50ms) = 6 more invocations.
+    // No timer storm should occur, which could overwhelm the system once
+    // backpressure is relieved.
+    EXPECT_LE(finalCount - midCount, 8); // Allow some variance for timing
+
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueShutdown(handle));
+    EXPECT_EQ(STATUS_SUCCESS, timerQueueFree(&handle));
+}
