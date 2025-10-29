@@ -182,6 +182,8 @@ STATUS createKinesisVideoClient(PDeviceInfo pDeviceInfo, PClientCallbacks pClien
     if (pDeviceInfo->version >= 1 && 0 < pDeviceInfo->clientInfo.loggerLogLevel && pDeviceInfo->clientInfo.loggerLogLevel <= LOG_LEVEL_PROFILE) {
         logLevel = pDeviceInfo->clientInfo.loggerLogLevel;
     }
+    SET_LOGGER_LOG_LEVEL(logLevel);
+
     DLOGI("Creating Kinesis Video Client");
 
     // Set the return client handle first
