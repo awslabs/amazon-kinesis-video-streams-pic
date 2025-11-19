@@ -140,6 +140,7 @@ STATUS configureClientWithRetryStrategy(PKinesisVideoClient pKinesisVideoClient)
     CHK_STATUS(pKvsRetryStrategyCallbacks->createRetryStrategyFn(&(pKinesisVideoClient->deviceInfo.clientInfo.kvsRetryStrategy)));
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
