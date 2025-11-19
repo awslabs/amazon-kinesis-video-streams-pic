@@ -300,6 +300,7 @@ STATUS createStream(PKinesisVideoClient pKinesisVideoClient, PStreamInfo pStream
     CHK_STATUS(iterateStreamStateMachine(pKinesisVideoStream));
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (clientLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
@@ -416,6 +417,7 @@ STATUS freeStream(PKinesisVideoStream pKinesisVideoStream)
     MEMFREE(pKinesisVideoStream);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -447,6 +449,7 @@ STATUS freeStackQueue(PStackQueue pStackQueue, BOOL freeItself)
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -549,6 +552,7 @@ STATUS stopStream(PKinesisVideoStream pKinesisVideoStream)
     streamLocked = FALSE;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (clientLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
@@ -606,6 +610,7 @@ STATUS stopStreamSync(PKinesisVideoStream pKinesisVideoStream)
     } while (TRUE);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (retStatus == STATUS_OPERATION_TIMED_OUT) {
         DLOGE("[%s] Failed to stop Kinesis Video Stream - timed out.", pKinesisVideoStream->streamInfo.name);
@@ -667,6 +672,7 @@ STATUS shutdownStream(PKinesisVideoStream pKinesisVideoStream, BOOL resetStream)
     semaphoreWaitUntilClear(pKinesisVideoStream->base.shutdownSemaphore, STREAM_SHUTDOWN_SEMAPHORE_TIMEOUT);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -736,6 +742,7 @@ STATUS logStreamMetric(PKinesisVideoStream pKinesisVideoStream)
     // V2 client information
     DLOGD("\tAverage API call retry count for client: %lf", clientMetrics.clientAvgApiCallRetryCount);
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     return retStatus;
 }
@@ -1132,6 +1139,7 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
     streamLocked = FALSE;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     // We need to see whether we need to remove the allocation on error. Otherwise, we will leak
     if (STATUS_FAILED(retStatus) && IS_VALID_ALLOCATION_HANDLE(allocHandle) && freeOnError) {
@@ -1464,6 +1472,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
     } while (remainingSize != 0);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     // Run staleness detection if we have ACKs enabled and if we have retrieved any data
     if (pFillSize != NULL && *pFillSize != 0) {
@@ -1668,6 +1677,7 @@ STATUS getStreamMetrics(PKinesisVideoStream pKinesisVideoStream, PStreamMetrics 
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (streamLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
@@ -1726,6 +1736,7 @@ STATUS handleAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 alloca
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -1788,6 +1799,7 @@ STATUS checkForAvailability(PKinesisVideoStream pKinesisVideoStream, UINT32 allo
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoClient->base.lock);
     clientLocked = FALSE;
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     // Unlock the client if locked.
     if (clientLocked) {
@@ -1827,6 +1839,7 @@ STATUS streamFormatChanged(PKinesisVideoStream pKinesisVideoStream, UINT32 codec
     streamLocked = FALSE;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (streamLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
@@ -1870,6 +1883,7 @@ STATUS setNalAdaptationFlags(PKinesisVideoStream pKinesisVideoStream, UINT32 nal
     streamLocked = FALSE;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (streamLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
@@ -2004,6 +2018,7 @@ STATUS putEventMetadata(PKinesisVideoStream pKinesisVideoStream, UINT32 event, P
     streamLocked = FALSE;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     // in the event we failed when creating the nodes, free the rest.
     if (creatingNodes) {
@@ -2101,6 +2116,7 @@ STATUS putFragmentMetadata(PKinesisVideoStream pKinesisVideoStream, PCHAR name, 
     streamLocked = FALSE;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (streamLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
@@ -2205,6 +2221,7 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
     pAlloc = NULL;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     // Unmap the old mapping
     if (pFrame != NULL) {
@@ -2307,6 +2324,7 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
     clientLocked = FALSE;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     /* fix up retStatus if contentViewGetItemAt could not find curViewItem */
     if (retStatus == STATUS_CONTENT_VIEW_INVALID_INDEX) {
@@ -2367,6 +2385,7 @@ STATUS getNextBoundaryViewItem(PKinesisVideoStream pKinesisVideoStream, PViewIte
     *ppViewItem = pViewItem;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -2399,6 +2418,7 @@ STATUS getNextViewItem(PKinesisVideoStream pKinesisVideoStream, PViewItem* ppVie
     *ppViewItem = pViewItem;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -2409,6 +2429,7 @@ CleanUp:
  */
 PUploadHandleInfo getStreamUploadInfo(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uploadHandle)
 {
+    ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     StackQueueIterator iterator;
     PUploadHandleInfo pUploadHandleInfo = NULL, pCurHandleInfo;
@@ -2432,6 +2453,9 @@ PUploadHandleInfo getStreamUploadInfo(PKinesisVideoStream pKinesisVideoStream, U
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
+
+    LEAVES();
     return pUploadHandleInfo;
 }
 
@@ -2440,6 +2464,7 @@ CleanUp:
  */
 PUploadHandleInfo getStreamUploadInfoWithState(PKinesisVideoStream pKinesisVideoStream, UINT32 handleState)
 {
+    ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     StackQueueIterator iterator;
     PUploadHandleInfo pUploadHandleInfo = NULL, pCurHandleInfo;
@@ -2463,7 +2488,9 @@ PUploadHandleInfo getStreamUploadInfoWithState(PKinesisVideoStream pKinesisVideo
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
+    LEAVES();
     return pUploadHandleInfo;
 }
 
@@ -2490,6 +2517,7 @@ PUploadHandleInfo getAckReceivedStreamUploadInfo(PKinesisVideoStream pKinesisVid
  */
 VOID deleteStreamUploadInfo(PKinesisVideoStream pKinesisVideoStream, PUploadHandleInfo pUploadHandleInfo)
 {
+    ENTERS();
     if (NULL != pUploadHandleInfo) {
         stackQueueRemoveItem(pKinesisVideoStream->pUploadInfoQueue, (UINT64) pUploadHandleInfo);
 
@@ -2505,6 +2533,7 @@ VOID deleteStreamUploadInfo(PKinesisVideoStream pKinesisVideoStream, PUploadHand
 
         MEMFREE(pUploadHandleInfo);
     }
+    LEAVES();
 }
 
 /**
@@ -2550,6 +2579,7 @@ VOID freeMetadataTracker(PMetadataTracker pMetadataTracker)
 
 STATUS createPackager(PKinesisVideoStream pKinesisVideoStream, PMkvGenerator* ppGenerator)
 {
+    ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
     UINT32 mkvGenFlags = MKV_GEN_FLAG_NONE |
         (pKinesisVideoStream->streamInfo.streamCaps.keyFrameFragmentation ? MKV_GEN_KEY_FRAME_PROCESSING : MKV_GEN_FLAG_NONE) |
@@ -2571,6 +2601,7 @@ STATUS createPackager(PKinesisVideoStream pKinesisVideoStream, PMkvGenerator* pp
                                   pKinesisVideoClient->clientCallbacks.customData, ppGenerator));
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -2596,6 +2627,7 @@ STATUS streamFragmentBufferingAck(PKinesisVideoStream pKinesisVideoStream, UINT6
     pKinesisVideoStream->diagnostics.bufferedAcks++;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -2621,6 +2653,7 @@ STATUS streamFragmentReceivedAck(PKinesisVideoStream pKinesisVideoStream, UINT64
     pKinesisVideoStream->diagnostics.receivedAcks++;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -2732,6 +2765,7 @@ STATUS streamFragmentPersistedAck(PKinesisVideoStream pKinesisVideoStream, UINT6
                                                                           pKinesisVideoStream->bufferAvailabilityCondition);
     }
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     // Set the current back if we had modified it
     if (setCurrentBack && STATUS_FAILED((setViewStatus = contentViewSetCurrentIndex(pKinesisVideoStream->pView, curItemIndex)))) {
@@ -2848,6 +2882,7 @@ STATUS streamFragmentErrorAck(PKinesisVideoStream pKinesisVideoStream, UINT64 st
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -2897,6 +2932,8 @@ CleanUp:
         // Fix-up the error code.
         retStatus = STATUS_SUCCESS;
     }
+
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -2948,6 +2985,7 @@ STATUS checkStreamingTokenExpiration(PKinesisVideoStream pKinesisVideoStream)
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -3072,6 +3110,7 @@ STATUS packageStreamMetadata(PKinesisVideoStream pKinesisVideoStream, MKV_STREAM
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (STATUS_SUCCEEDED(retStatus)) {
         // Set the size and the state before return
@@ -3166,6 +3205,7 @@ STATUS checkForNotSentMetadata(PKinesisVideoStream pKinesisVideoStream, PBOOL pN
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -3258,6 +3298,7 @@ STATUS packageNotSentMetadata(PKinesisVideoStream pKinesisVideoStream)
     pKinesisVideoStream->metadataTracker.data = pBuffer;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (STATUS_FAILED(retStatus) && pBuffer != NULL) {
         MEMFREE(pBuffer);
@@ -3322,6 +3363,7 @@ STATUS createSerializedMetadata(PCHAR name, PCHAR value, BOOL persistent, UINT32
     pSerializedMetadata->persistent = persistent;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     // Free the allocation on error.
     if (STATUS_FAILED(retStatus)) {
@@ -3347,6 +3389,7 @@ STATUS appendValidatedMetadata(PKinesisVideoStream pKinesisVideoStream, PSeriali
     CHK_STATUS(stackQueueEnqueue(pKinesisVideoStream->pMetadataQueue, (UINT64) pSerializedMetadata));
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     // Free the allocation on error.
     if (STATUS_FAILED(retStatus) && pSerializedMetadata != NULL) {
@@ -3384,6 +3427,7 @@ STATUS getAvailableViewSize(PKinesisVideoStream pKinesisVideoStream, PUINT64 pDu
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     *pViewSize = viewByteSize;
     *pDuration = duration;
@@ -3418,6 +3462,7 @@ STATUS notifyStreamClosed(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE
     CHK(STATUS_SUCCEEDED(savedStatus), savedStatus);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -3558,6 +3603,7 @@ STATUS resetStream(PKinesisVideoStream pKinesisVideoStream)
     streamLocked = FALSE;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (streamLocked) {
         pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);

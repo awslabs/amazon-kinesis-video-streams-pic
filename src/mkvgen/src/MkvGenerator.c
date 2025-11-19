@@ -141,6 +141,7 @@ STATUS createMkvGenerator(PCHAR contentType, UINT32 behaviorFlags, UINT64 timeco
     *ppMkvGenerator = (PMkvGenerator) pMkvGenerator;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (STATUS_FAILED(retStatus)) {
         freeMkvGenerator((PMkvGenerator) pMkvGenerator);
@@ -175,6 +176,7 @@ STATUS freeMkvGenerator(PMkvGenerator pMkvGenerator)
     MEMFREE(pMkvGenerator);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -203,6 +205,7 @@ STATUS mkvgenResetGenerator(PMkvGenerator pMkvGenerator)
     pStreamMkvGenerator->streamStartTimestampStored = FALSE;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -368,6 +371,7 @@ STATUS mkvgenPackageFrame(PMkvGenerator pMkvGenerator, PFrame pFrame, PTrackInfo
     CHK(packagedSize == (UINT32) (pCurrentPnt - pBuffer), STATUS_INTERNAL_ERROR);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (STATUS_SUCCEEDED(retStatus)) {
         // Set the size and the state before return
@@ -423,6 +427,7 @@ STATUS mkvgenSetCodecPrivateData(PMkvGenerator pMkvGenerator, UINT64 trackId, UI
                                            &pTrackInfo->codecPrivateDataSize, &pTrackInfo->codecPrivateData, &pTrackInfo->trackCustomData));
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -479,6 +484,7 @@ STATUS mkvgenGenerateHeader(PMkvGenerator pMkvGenerator, PBYTE pBuffer, PUINT32 
     CHK(packagedSize == (UINT32) (pCurrentPnt - pBuffer), STATUS_INTERNAL_ERROR);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (STATUS_SUCCEEDED(retStatus)) {
         // Set the size and the state before return
@@ -510,6 +516,7 @@ STATUS mkvgenGetCurrentTimestamps(PMkvGenerator pMkvGenerator, PUINT64 pStreamSt
     *pClusterStartDts = MKV_TIMECODE_TO_TIMESTAMP(pStreamMkvGenerator->lastClusterDts, pStreamMkvGenerator->timecodeScale);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -610,6 +617,7 @@ STATUS mkvgenGenerateTag(PMkvGenerator pMkvGenerator, PBYTE pBuffer, PCHAR tagNa
     CHK(packagedSize == (UINT32) (pCurrentPnt - pBuffer), STATUS_INTERNAL_ERROR);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (STATUS_SUCCEEDED(retStatus)) {
         // Set the size and the state before return
@@ -777,6 +785,7 @@ STATUS mkvgenGenerateTagsChain(PBYTE pBuffer, PCHAR tagName, PCHAR tagValue, PUI
     CHK(packagedSize == (UINT32) (pCurrentPnt - pBuffer), STATUS_INTERNAL_ERROR);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (STATUS_SUCCEEDED(retStatus)) {
         // Set the size and the state before return
@@ -804,6 +813,7 @@ STATUS mkvgenIncreaseTagsTagSize(PBYTE pBuffer, UINT32 sizeIncrease)
     PUT_UNALIGNED_BIG_ENDIAN((PINT64) (pBuffer + MKV_TAG_ELEMENT_SIZE_OFFSET), encodedElementLength);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -826,6 +836,7 @@ STATUS mkvgenGetMkvOverheadSize(PMkvGenerator pMkvGenerator, MKV_STREAM_STATE mk
     *pOverhead = mkvgenGetFrameOverhead(pStreamMkvGenerator, mkvStreamState);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -848,6 +859,7 @@ STATUS mkvgenTimecodeToTimestamp(PMkvGenerator pMkvGenerator, UINT64 timecode, P
     *pTimestamp = MKV_TIMECODE_TO_TIMESTAMP(timecode, pStreamMkvGenerator->timecodeScale);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -903,6 +915,8 @@ STATUS mkvgenValidateFrame(PStreamMkvGenerator pStreamMkvGenerator, PFrame pFram
     *pDuration = duration;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
+
     return retStatus;
 }
 
@@ -921,6 +935,7 @@ STATUS mkvgenHasStreamStarted(PMkvGenerator pMkvGenerator, PBOOL pBool)
         *pBool = TRUE;
     }
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     return retStatus;
 }
@@ -1115,6 +1130,7 @@ STATUS mkvgenEbmlEncodeNumber(UINT64 number, PBYTE pBuffer, UINT32 bufferSize, P
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     return retStatus;
 }
@@ -1160,6 +1176,7 @@ STATUS mkvgenBigEndianNumber(UINT64 number, PBYTE pBuffer, UINT32 bufferSize, PU
     MEMCPY(pBuffer, storage, byteLen);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     return retStatus;
 }
@@ -1184,6 +1201,7 @@ STATUS mkvgenEbmlEncodeHeader(PBYTE pBuffer, UINT32 bufferSize, PUINT32 pEncoded
     MEMCPY(pBuffer, MKV_HEADER_BITS, MKV_HEADER_BITS_SIZE);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     return retStatus;
 }
@@ -1208,6 +1226,7 @@ STATUS mkvgenEbmlEncodeSegmentHeader(PBYTE pBuffer, UINT32 bufferSize, PUINT32 p
     MEMCPY(pBuffer, MKV_SEGMENT_HEADER_BITS, MKV_SEGMENT_HEADER_BITS_SIZE);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     return retStatus;
 }
@@ -1298,6 +1317,7 @@ STATUS mkvgenEbmlEncodeSegmentInfo(PStreamMkvGenerator pStreamMkvGenerator, PBYT
     PUT_UNALIGNED_BIG_ENDIAN((PINT16) (pBuffer + MKV_SEGMENT_INFO_SIZE_OFFSET), (UINT16) encodedLen);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (pEncodedLen != NULL) {
         *pEncodedLen = size;
@@ -1469,6 +1489,7 @@ STATUS mkvgenEbmlEncodeTrackInfo(PBYTE pBuffer, UINT32 bufferSize, PStreamMkvGen
     PUT_UNALIGNED_BIG_ENDIAN((PINT32) (pBuffer + MKV_TRACK_HEADER_SIZE_OFFSET), encodedLen);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     return retStatus;
 }
@@ -1496,6 +1517,7 @@ STATUS mkvgenEbmlEncodeClusterInfo(PBYTE pBuffer, UINT32 bufferSize, UINT64 time
     PUT_UNALIGNED_BIG_ENDIAN((PINT64) (pBuffer + MKV_CLUSTER_TIMECODE_OFFSET), timestamp);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     return retStatus;
 }
@@ -1575,6 +1597,7 @@ STATUS mkvgenEbmlEncodeSimpleBlock(PBYTE pBuffer, UINT32 bufferSize, INT16 times
     *(pBuffer + MKV_SIMPLE_BLOCK_FLAGS_OFFSET) = flags;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     return retStatus;
 }
@@ -1604,6 +1627,7 @@ STATUS getAdaptedFrameSize(PFrame pFrame, MKV_NALS_ADAPTATION nalsAdaptation, PU
     *pAdaptedFrameSize = adaptedFrameSize;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     return retStatus;
 }
@@ -1731,6 +1755,8 @@ STATUS getSamplingFreqAndChannelFromAacCpd(PBYTE pCpd, UINT32 cpdSize, PDOUBLE p
     *pSamplingFrequency = gMkvAACSamplingFrequencies[samplingRateIdx];
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
+
     return retStatus;
 }
 
@@ -1820,6 +1846,8 @@ STATUS getAudioConfigFromAmsAcmCpd(PBYTE pCpd, UINT32 cpdSize, PDOUBLE pSampling
     *pBitDepth = bitDepth;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
+
     return retStatus;
 }
 
@@ -1859,8 +1887,8 @@ STATUS mkvgenGeneratePcmCpd(KVS_PCM_FORMAT_CODE format, UINT32 samplingRate, UIN
     // leave remaining bits as 0
 
 CleanUp:
-
     CHK_LOG_ERR(retStatus);
+
     return retStatus;
 }
 
@@ -1966,6 +1994,7 @@ STATUS mkvgenAdaptCodecPrivateData(PStreamMkvGenerator pMkvGenerator, MKV_TRACK_
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     *ppCpd = pCpd;
     *pCpdSize = adaptedCodecPrivateDataSize;
@@ -1993,6 +2022,7 @@ STATUS mkvgenGetTrackInfo(PTrackInfo pTrackInfos, UINT32 trackInfoCount, UINT64 
     CHK(pTrackInfo != NULL, STATUS_MKV_TRACK_INFO_NOT_FOUND);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (ppTrackInfo != NULL) {
         *ppTrackInfo = pTrackInfo;
@@ -2056,6 +2086,7 @@ STATUS mkvgenExtractCpdFromAnnexBFrame(PStreamMkvGenerator pStreamMkvGenerator, 
     CHK_STATUS(mkvgenSetCodecPrivateData((PMkvGenerator) pStreamMkvGenerator, pFrame->trackId, parsedSize, pCpd));
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (pCpd != NULL) {
         MEMFREE(pCpd);

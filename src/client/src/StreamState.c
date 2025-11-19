@@ -59,6 +59,7 @@ STATUS iterateStreamStateMachine(PKinesisVideoStream pKinesisVideoStream)
     } while (pKinesisVideoStream->keepIteratingStateMachine);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -112,6 +113,7 @@ STATUS defaultStreamStateTransitionHook(UINT64 customData /* customData should b
     *stateTransitionWaitTime = retryWaitTime;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -136,6 +138,7 @@ STATUS fromNewStreamState(UINT64 customData, PUINT64 pState)
     *pState = state;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -154,6 +157,7 @@ STATUS executeNewStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->keepIteratingStateMachine = TRUE;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -189,6 +193,7 @@ STATUS executeDescribeStreamState(UINT64 customData, UINT64 time)
         pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->streamInfo.name, &pKinesisVideoStream->base.serviceCallContext));
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -243,6 +248,7 @@ STATUS fromDescribeStreamState(UINT64 customData, PUINT64 pState)
     *pState = state;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -271,6 +277,7 @@ STATUS fromCreateStreamState(UINT64 customData, PUINT64 pState)
     *pState = state;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -295,6 +302,7 @@ STATUS fromTagStreamState(UINT64 customData, PUINT64 pState)
     *pState = state;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -319,6 +327,7 @@ STATUS fromGetEndpointStreamState(UINT64 customData, PUINT64 pState)
     *pState = state;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -343,6 +352,7 @@ STATUS fromGetTokenStreamState(UINT64 customData, PUINT64 pState)
     *pState = state;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -424,6 +434,7 @@ STATUS fromPutStreamState(UINT64 customData, PUINT64 pState)
     *pState = state;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -447,6 +458,7 @@ STATUS fromStreamingStreamState(UINT64 customData, PUINT64 pState)
     *pState = state;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -521,6 +533,7 @@ STATUS fromStoppedStreamState(UINT64 customData, PUINT64 pState)
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (pState != NULL) {
         *pState = state;
@@ -549,6 +562,7 @@ STATUS fromReadyStreamState(UINT64 customData, PUINT64 pState)
     *pState = state;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -601,6 +615,7 @@ STATUS executeGetEndpointStreamState(UINT64 customData, UINT64 time)
         &pKinesisVideoStream->base.serviceCallContext));
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -637,6 +652,7 @@ STATUS executeGetTokenStreamState(UINT64 customData, UINT64 time)
                                                                         &pKinesisVideoStream->base.serviceCallContext));
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -674,6 +690,7 @@ STATUS executeCreateStreamState(UINT64 customData, UINT64 time)
         &pKinesisVideoStream->base.serviceCallContext));
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -711,6 +728,7 @@ STATUS executeTagStreamState(UINT64 customData, UINT64 time)
                                                                   &pKinesisVideoStream->base.serviceCallContext));
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -749,6 +767,7 @@ STATUS executeReadyStreamState(UINT64 customData, UINT64 time)
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -793,6 +812,7 @@ STATUS executePutStreamState(UINT64 customData, UINT64 time)
     }
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -813,6 +833,7 @@ STATUS executeStreamingStreamState(UINT64 customData, UINT64 time)
     // Nothing to do
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -853,6 +874,7 @@ STATUS executeStoppedStreamState(UINT64 customData, UINT64 time)
     pKinesisVideoStream->keepIteratingStateMachine = TRUE;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;

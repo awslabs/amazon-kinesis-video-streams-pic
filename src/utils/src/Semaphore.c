@@ -16,6 +16,7 @@ STATUS semaphoreCreate(UINT32 maxPermits, PSEMAPHORE_HANDLE pHandle)
     *pHandle = TO_SEMAPHORE_HANDLE(pSemaphore);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (STATUS_FAILED(retStatus)) {
         semaphoreFreeInternal(&pSemaphore);
@@ -41,6 +42,7 @@ STATUS semaphoreEmptyCreate(UINT32 maxPermits, PSEMAPHORE_HANDLE pHandle)
     *pHandle = TO_SEMAPHORE_HANDLE(pSemaphore);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (STATUS_FAILED(retStatus)) {
         semaphoreFreeInternal(&pSemaphore);
@@ -70,6 +72,7 @@ STATUS semaphoreFree(PSEMAPHORE_HANDLE pHandle)
     *pHandle = INVALID_SEMAPHORE_HANDLE_VALUE;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     LEAVES();
     return retStatus;
@@ -266,6 +269,7 @@ STATUS semaphoreAcquireInternal(PSemaphore pSemaphore, UINT64 timeout)
     locked = FALSE;
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
 
     if (acquireFailed) {
         ATOMIC_INCREMENT(&pSemaphore->permitCount);
@@ -385,6 +389,8 @@ STATUS semaphoreGetCountInternal(PSemaphore pSemaphore, PINT32 pCount)
     *pCount = (INT32) ATOMIC_LOAD(&pSemaphore->permitCount);
 
 CleanUp:
+    CHK_LOG_ERR(retStatus);
+
     LEAVES();
     return retStatus;
 }
