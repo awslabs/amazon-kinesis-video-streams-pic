@@ -540,6 +540,7 @@ STATUS putStreamResult(PKinesisVideoStream pKinesisVideoStream, SERVICE_CALL_RES
         pUploadHandleInfo->timestamp = INVALID_TIMESTAMP_VALUE;
         pUploadHandleInfo->lastPersistedAckTs = INVALID_TIMESTAMP_VALUE;
         pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_NEW;
+        pUploadHandleInfo->nextHandlePoked = FALSE;
 
         pUploadHandleInfo->createTime = pKinesisVideoClient->clientCallbacks.getCurrentTimeFn(pKinesisVideoClient->clientCallbacks.customData);
 

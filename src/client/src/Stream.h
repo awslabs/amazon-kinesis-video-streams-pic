@@ -325,6 +325,9 @@ struct __UploadHandleInfo {
 
     // Handle state
     UPLOAD_HANDLE_STATE state;
+
+    // Whether or not the next upload handle has been poked to start
+    BOOL nextHandlePoked;
 };
 typedef struct __UploadHandleInfo* PUploadHandleInfo;
 
