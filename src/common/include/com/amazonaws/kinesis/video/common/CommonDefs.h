@@ -139,14 +139,23 @@ typedef float FLOAT;
 
 #else
 
+#include <limits.h>
+
 typedef char CHAR;
 typedef short WCHAR;
 typedef unsigned char UINT8;
 typedef char INT8;
 typedef unsigned short UINT16;
 typedef short INT16;
+
+#if UINT_MAX == 0xffffffffU
+typedef unsigned int UINT32;
+typedef int INT32;
+#else
 typedef unsigned long UINT32;
 typedef long INT32;
+#endif
+
 typedef unsigned long long UINT64;
 typedef long long INT64;
 typedef double DOUBLE;
@@ -327,15 +336,29 @@ typedef UINT64 ULONG_PTR, *PULONG_PTR;
 // Define pointer width size types
 //
 #ifndef _SIZE_T_DEFINED_IN_COMMON
+
+#if defined(size_t)
+typedef size_t SIZE_T, *PSIZE_T;
+#else // defined(size_t)
 #if defined(__MINGW32__)
 typedef ULONG_PTR SIZE_T, *PSIZE_T;
-typedef LONG_PTR SSIZE_T, *PSSIZE_T;
-#elif !(defined _WIN32 || defined _WIN64)
+#elif !(defined _WIN32 || defined _WIN64) // defined(__MINGW32__)
 typedef UINT_PTR SIZE_T, *PSIZE_T;
+#endif                                    // defined(__MINGW32__)
+#endif                                    // defined(size_t)
+
+#if defined(ssize_t)
+typedef ssize_t SSIZE_T, *PSSIZE_T;
+#else // defined(ssize_t)
+#if defined(__MINGW32__)
+typedef LONG_PTR SSIZE_T, *PSSIZE_T;
+#elif !(defined _WIN32 || defined _WIN64) // defined(__MINGW32__)
 typedef INT_PTR SSIZE_T, *PSSIZE_T;
-#endif
+#endif                                    // defined(__MINGW32__)
+#endif                                    // defined(ssize_t)
+
 #define _SIZE_T_DEFINED_IN_COMMON
-#endif
+#endif // ifndef _SIZE_T_DEFINED_IN_COMMON
 
 //
 // Stringification macro
