@@ -20,10 +20,12 @@ jobs:
       matrix:
         os:
           - name: Mac Intel
-            runner: macos-13
+            runner: macos-15-intel
           - name: Mac Apple Silicon
             runner: macos-15
-        compiler: [ gcc, clang ]
+        compiler:
+          # - gcc # Fragile builds due to homebrew GCC being compiled using different MacOSX SDK version
+          - clang
         config:
           - name: Default Build
             cmake_flags: "-DBUILD_TEST=TRUE"
@@ -106,7 +108,7 @@ jobs:
             cmake_flags: "-DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE"
       fail-fast: false
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     env:
       CC: clang
@@ -119,7 +121,12 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get -y install clang
+          sudo apt-get -y install cmake build-essential automake git clang
+
+      - name: Check installed clang versions
+        run: |
+          ls /usr/bin/clang*
+
       - name: Build repository - ${{ matrix.config.name }}
         run: |
           mkdir -p build
@@ -140,7 +147,6 @@ jobs:
           timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="${{ env.TEST_FILTER }}"
 
   linux-gcc-4_4:
-    runs-on: ubuntu-20.04
     strategy:
       matrix:
         config:
@@ -149,30 +155,85 @@ jobs:
           - name: Aligned Memory Model Build
             cmake_flags: "-DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE"
       fail-fast: false
+
+    runs-on: ubuntu-latest
+    container: public.ecr.aws/ubuntu/ubuntu:20.04
+
     env:
+      DEBIAN_FRONTEND: noninteractive
       CC: gcc-4.4
+
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
+
       - name: Install deps
         run: |
-          sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
-          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-          sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ trusty main'
-          sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ trusty universe'
-          sudo apt-get -q update
-          sudo apt-get -y install gcc-4.4
-          sudo apt-get -y install gdb
+          apt-get -q update
+          apt-get install -y software-properties-common build-essential cmake git
+          add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ trusty main'
+          add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ trusty universe'
+          apt-get -q update
+          apt-get -y install gcc-4.4
+
       - name: Build repository
         run: |
           mkdir build && cd build
           cmake .. ${{ matrix.config.cmake_flags }}
-          make
+          make -j
+
       - name: Run tests
+        working-directory: ./build
         run: |
-          cd build
-          ulimit -c unlimited -S
           timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="${{ env.TEST_FILTER }}"
+
+  al2:
+    strategy:
+      matrix:
+        config:
+          - name: Default Build
+            cmake_flags: "-DBUILD_TEST=TRUE"
+          - name: Aligned Memory Model Build
+            cmake_flags: "-DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE"
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+    container: public.ecr.aws/sam/build-provided.al2:1.137.1-x86_64
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v1
+
+      - name: Install deps
+        run: |
+          yum update -y
+          yum install -y cmake3 which
+          ln -s /usr/bin/cmake3 /usr/local/bin/cmake
+
+      - name: Check GCC version
+        run: |
+          gcc --version
+          which gcc
+          gcc -v
+
+      - name: Check CMake version
+        run: |
+          cmake --version
+          which cmake
+
+      - name: Build repository
+        run: |
+          mkdir build
+          cd build
+          cmake .. ${{ matrix.config.cmake_flags }}
+          make -j
+
+      - name: Run tests
+        working-directory: ./build
+        run: |
+          # 2400s = 40m
+          timeout 2400 ./tst/kvspic_test --gtest_filter="${{ env.TEST_FILTER }}"
 
   arm-cross-compilation:
     runs-on: ubuntu-latest

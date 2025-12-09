@@ -111,10 +111,13 @@ STATUS createDirStruct()
     removeDirectory((PCHAR) TEMP_TEST_DIRECTORY_PATH);
 
 #if defined __WINDOWS_BUILD__
-    system((PCHAR) "del /q /s " TEMP_TEST_DIRECTORY_PATH);
+     const char* command = "del /q /s ";
 #else
-    system((PCHAR) "rm -rf " TEMP_TEST_DIRECTORY_PATH);
+     const char* command = "rm -rf ";
 #endif
+
+    const int result = system((PCHAR) (std::string(command) + TEMP_TEST_DIRECTORY_PATH).c_str());
+    EXPECT_EQ(result, 0) << "Failed to delete directory: " << TEMP_TEST_DIRECTORY_PATH;
 
     // Start creating
     FMKDIR(TEMP_TEST_DIRECTORY_PATH, 0777);

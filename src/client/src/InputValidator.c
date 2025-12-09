@@ -18,6 +18,7 @@ STATUS validateClientCallbacks(PDeviceInfo pDeviceInfo, PClientCallbacks pClient
     STATUS retStatus = STATUS_SUCCESS;
 
     CHK(pClientCallbacks != NULL && pDeviceInfo != NULL, STATUS_NULL_ARG);
+    DLOGD("ClientCallbacks version: %d", pClientCallbacks->version);
     CHK(pClientCallbacks->version <= CALLBACKS_CURRENT_VERSION, STATUS_INVALID_CALLBACKS_VERSION);
 
     // Most of the callbacks are optional
@@ -124,6 +125,7 @@ STATUS validateDeviceInfo(PDeviceInfo pDeviceInfo)
     STATUS retStatus = STATUS_SUCCESS;
 
     CHK(pDeviceInfo != NULL, STATUS_NULL_ARG);
+    DLOGD("DeviceInfo version: %d", pDeviceInfo->version);
     CHK(pDeviceInfo->version <= DEVICE_INFO_CURRENT_VERSION, STATUS_INVALID_DEVICE_INFO_VERSION);
     CHK(pDeviceInfo->streamCount <= MAX_STREAM_COUNT, STATUS_MAX_STREAM_COUNT);
     CHK(pDeviceInfo->streamCount > 0, STATUS_MIN_STREAM_COUNT);
@@ -159,6 +161,7 @@ STATUS validateClientInfo(PClientInfo pClientInfo)
     STATUS retStatus = STATUS_SUCCESS;
 
     CHK(pClientInfo != NULL, STATUS_NULL_ARG);
+    DLOGD("ClientInfo version: %d", pClientInfo->version);
     CHK(pClientInfo->version <= CLIENT_INFO_CURRENT_VERSION, STATUS_INVALID_CLIENT_INFO_VERSION);
 
 CleanUp:
@@ -218,6 +221,7 @@ STATUS validateStreamInfo(PStreamInfo pStreamInfo, PClientCallbacks pClientCallb
 
     // Validate the stream info struct
     CHK(pStreamInfo != NULL, STATUS_NULL_ARG);
+    DLOGD("StreamInfo version: %d", pStreamInfo->version);
     CHK(pStreamInfo->version <= STREAM_INFO_CURRENT_VERSION, STATUS_INVALID_STREAM_INFO_VERSION);
     CHK(STRNLEN(pStreamInfo->name, MAX_STREAM_NAME_LEN + 1) <= MAX_STREAM_NAME_LEN, STATUS_INVALID_STREAM_NAME_LENGTH);
 
@@ -322,6 +326,8 @@ VOID fixupClientInfo(PClientInfo pClientInfo, PClientInfo pOrigClientInfo)
                 // Copy individual fields and skip to V1
                 pClientInfo->automaticStreamingFlags = pOrigClientInfo->automaticStreamingFlags;
                 pClientInfo->reservedCallbackPeriod = pOrigClientInfo->reservedCallbackPeriod;
+                MEMCPY(&pClientInfo->kvsRetryStrategy, &pOrigClientInfo->kvsRetryStrategy, SIZEOF(KvsRetryStrategy));
+                MEMCPY(&pClientInfo->kvsRetryStrategyCallbacks, &pOrigClientInfo->kvsRetryStrategyCallbacks, SIZEOF(KvsRetryStrategyCallbacks));
 
                 // explicit fall-through
             case 1:
