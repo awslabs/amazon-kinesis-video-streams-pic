@@ -2005,6 +2005,15 @@ PUBLIC_API STATUS threadpoolTryAdd(PThreadpool, startRoutine, PVOID);
  */
 PUBLIC_API STATUS threadpoolPush(PThreadpool, startRoutine, PVOID);
 
+/**
+ * @brief Checks if an environment variable is enabled.
+ *
+ * @param - PCHAR - IN - The label of the environment variable to check for.
+ *
+ * @return - BOOL - TRUE if the environment variable is enabled, FALSE otherwise.
+ */
+PUBLIC_API BOOL isEnvVarEnabled(PCHAR);
+
 #ifdef __cplusplus
 }
 #endif
