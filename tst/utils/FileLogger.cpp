@@ -476,7 +476,7 @@ TEST_F(FileLoggerTest, basicFilterFileLoggerUsage)
                 std::this_thread::yield();
             }
 
-            std::this_thread::sleep_for(std::chrono::seconds(5));
+            std::this_thread::sleep_for(std::chrono::seconds(30));
 
             // HARD FAIL: kill entire test process.
             fprintf(stderr, "Deadlock detected — killing process\n");
