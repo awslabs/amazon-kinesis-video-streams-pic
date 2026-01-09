@@ -60,6 +60,8 @@ PUBLIC_API VOID customAssert(INT64 condition, const CHAR* fileName, INT64 lineNu
 #define LOG_LEVEL_FATAL   6
 #define LOG_LEVEL_SILENT  7
 
+#define DEFAULT_LOG_LEVEL LOG_LEVEL_WARN
+
 // Adding this after LOG_LEVEL_SILENT to ensure we do not break backward compat
 #define LOG_LEVEL_PROFILE 8
 

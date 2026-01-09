@@ -1,3 +1,6 @@
+#include <thread>
+#include <chrono>
+
 #include "UtilTestFixture.h"
 
 // length of time and log level string in log: "2019-11-09 19:11:16.xxx VERBOSE "
@@ -439,6 +442,87 @@ TEST_F(FileLoggerTest, basicFilterFileLoggerUsage)
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLog.0");
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogFilter.0");
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex");
+
+    UINT32 logLevels[] = {
+        LOG_LEVEL_VERBOSE,
+        LOG_LEVEL_DEBUG,
+        LOG_LEVEL_INFO,
+        LOG_LEVEL_WARN,
+        LOG_LEVEL_ERROR,
+    };
+
+    for (UINT32 i = 0; i < ARRAY_SIZE(logLevels); i++) {
+        DLOGE("[NOT AN ERROR] Testing log level filtering for log level %u", logLevels[i]);
+        loggerSetLogLevel(logLevels[i]);
+
+        std::atomic<bool> workerStarted{false};
+
+        std::thread worker([&] {
+            workerStarted = true;
+            createFileLoggerWithLevelFiltering(
+                MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
+                5,
+                (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
+                FALSE,
+                TRUE,
+                FALSE,
+                logLevels[i],
+                &logFunc);
+        });
+
+        std::thread earlyExitListener([&] {
+            // Wait until worker actually starts.
+            while (!workerStarted) {
+                std::this_thread::yield();
+            }
+
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+
+            // HARD FAIL: kill entire test process.
+            fprintf(stderr, "Deadlock detected — killing process\n");
+            kill(getpid(), SIGKILL);
+        });
+
+        worker.join();
+        earlyExitListener.detach();
+
+        logFunc(logLevels[i], NULL, (PCHAR) "%s", logMessage);
+
+        // Since filter is set to 1, we should see VERBOSE log and enableAllLevels is FALSE, no kvsFileLog.x log file should have been created
+        EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLog.0"), &fileFound));
+        EXPECT_EQ(FALSE, fileFound);
+
+        EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogIndex"), &fileFound));
+        EXPECT_EQ(FALSE, fileFound);
+
+        RELEASE_FILE_LOGGER(); // This ensures the file is closed before running other checks
+
+        EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.0"), &fileFound));
+        EXPECT_EQ(TRUE, fileFound);
+
+        EXPECT_EQ(STATUS_SUCCESS, fileExists((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex"), &fileFound));
+        EXPECT_EQ(TRUE, fileFound);
+
+        // skip over the timestamp string
+        // use STRNCMP to not catch the newline at the end of fileBuffer
+        EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.0"), TRUE, NULL, &fileBufferLen));
+        EXPECT_EQ(STATUS_SUCCESS, readFile((PCHAR) (TEST_TEMP_DIR_PATH "kvsFileLogFilter.0"), TRUE, (PBYTE) fileBuffer, &fileBufferLen));
+        fileBuffer[fileBufferLen] = '\0';
+
+        EXPECT_EQ(0, STRNCMP(logMessage, fileBuffer + TIMESTRING_OFFSET, STRLEN(logMessage)));
+
+        FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogFilter.0");
+        FREMOVE(TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex");
+    }
+    
+    // Reset to default log level.
+    loggerSetLogLevel(DEFAULT_LOG_LEVEL);
+
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogIndex");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLog.0");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogFilter.0");
+    FREMOVE(TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex");
+    
     MEMFREE(logMessage);
     MEMFREE(fileBuffer);
 }

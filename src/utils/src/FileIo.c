@@ -131,7 +131,7 @@ CleanUp:
 
 /**
  * Write contents pointed to by pBuffer to the given filePath. Logs will be printed within this function.
- * WARNING: This must not be called by the file logger to avoid an endless recursion.
+ * WARNING: This must NOT be called by the file logger.
  *
  * Parameters:
  *     filePath - file path to write to
@@ -170,7 +170,7 @@ CleanUp:
 
 /**
  * Write contents pointed to by pBuffer to the given filePath.
- * WARNING: Logs must NOT be printed within this function to avoid a potential endless recursion by the file logger.
+ * WARNING: Logs must NOT be printed within this function.
  * Parameters:
  *     filePath - file path to write to
  *     binMode  - TRUE to read file stream as binary; FALSE to read as a normal text file
