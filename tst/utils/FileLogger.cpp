@@ -455,37 +455,8 @@ TEST_F(FileLoggerTest, basicFilterFileLoggerUsage)
         DLOGE("[NOT AN ERROR] Testing log level filtering for log level %u", logLevels[i]);
         loggerSetLogLevel(logLevels[i]);
 
-        std::atomic<bool> workerStarted{false};
-
-        std::thread worker([&] {
-            workerStarted = true;
-            createFileLoggerWithLevelFiltering(
-                MIN_FILE_LOGGER_STRING_BUFFER_SIZE,
-                5,
-                (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR,
-                FALSE,
-                TRUE,
-                FALSE,
-                logLevels[i],
-                &logFunc);
-        });
-
-        std::thread earlyExitListener([&] {
-            // Wait until worker actually starts.
-            while (!workerStarted) {
-                std::this_thread::yield();
-            }
-
-            std::this_thread::sleep_for(std::chrono::seconds(30));
-
-            // HARD FAIL: kill entire test process.
-            fprintf(stderr, "Deadlock detected — killing process\n");
-            kill(getpid(), SIGKILL);
-        });
-
-        worker.join();
-        earlyExitListener.detach();
-
+        createFileLoggerWithLevelFiltering(MIN_FILE_LOGGER_STRING_BUFFER_SIZE, 5, (PCHAR) TEST_TEMP_DIR_PATH_NO_ENDING_SEPARTOR, FALSE, TRUE, FALSE,
+                                           logLevels[i], &logFunc);
         logFunc(logLevels[i], NULL, (PCHAR) "%s", logMessage);
 
         // Since filter is set to 1, we should see VERBOSE log and enableAllLevels is FALSE, no kvsFileLog.x log file should have been created
