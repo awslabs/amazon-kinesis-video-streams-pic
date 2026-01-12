@@ -341,6 +341,7 @@ TEST_F(FileLoggerTest, basicFilterFileLoggerUsage)
     UINT64 currentFileIndex = 0;
     PCHAR fileBuffer = (PCHAR) MEMALLOC(MIN_FILE_LOGGER_STRING_BUFFER_SIZE);
     UINT64 fileBufferLen = MIN_FILE_LOGGER_STRING_BUFFER_SIZE;
+    UINT32 originalLogLevel = loggerGetLogLevel();
 
     MEMSET(logMessage, 'a', logMessageSize);
     logMessage[logMessageSize] = '\0';
@@ -486,8 +487,8 @@ TEST_F(FileLoggerTest, basicFilterFileLoggerUsage)
         FREMOVE(TEST_TEMP_DIR_PATH "kvsFileFilterLogIndex");
     }
     
-    // Reset to default log level.
-    loggerSetLogLevel(DEFAULT_LOG_LEVEL);
+    // Reset to original log level.
+    loggerSetLogLevel(originalLogLevel);
 
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLogIndex");
     FREMOVE(TEST_TEMP_DIR_PATH "kvsFileLog.0");
