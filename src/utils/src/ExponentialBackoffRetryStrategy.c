@@ -132,6 +132,7 @@ STATUS exponentialBackoffRetryStrategyCreate(PKvsRetryStrategy pKvsRetryStrategy
     // If no config provided, create retry strategy with default config
     if (pKvsRetryStrategy->pRetryStrategyConfig == NULL) {
         DLOGD("RetryStrategyConfig is NULL, using the default");
+        LEAVES();
         return exponentialBackoffRetryStrategyWithDefaultConfigCreate(pKvsRetryStrategy);
     }
 

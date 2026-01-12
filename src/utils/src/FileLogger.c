@@ -36,10 +36,12 @@ STATUS flushLogToFile(PFileLoggerParameters loggerParameters)
     // just in case currentOffset is greater than stringBufferLen, then use stringBufferLen.
     charLenToWrite = MIN(loggerParameters->currentOffset, loggerParameters->stringBufferLen - 1);
     loggerParameters->stringBuffer[charLenToWrite] = '\0';
+    // WARNING: Logs must NOT be printed within the writeFile function called here to avoid hanging on gFileLogger->lock.
     CHK_STATUS(writeFile(filePath, TRUE, FALSE, (PBYTE) loggerParameters->stringBuffer, charLenToWrite * SIZEOF(CHAR)));
     loggerParameters->currentFileIndex++;
 
     ULLTOSTR(loggerParameters->currentFileIndex, fileIndexBuffer, ARRAY_SIZE(fileIndexBuffer), 10, &fileIndexStrSize);
+    // WARNING: Logs must NOT be printed within the writeFile function called here to avoid hanging on gFileLogger->lock.
     retStatus = writeFile(loggerParameters->indexFilePath, TRUE, FALSE, (PBYTE) fileIndexBuffer, (STRLEN(fileIndexBuffer)) * SIZEOF(CHAR));
     if (STATUS_FAILED(retStatus)) {
         PRINTF("Failed to write to index file due to error 0x%08x\n", retStatus);

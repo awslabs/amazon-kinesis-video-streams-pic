@@ -130,7 +130,8 @@ CleanUp:
 }
 
 /**
- * Write contents pointed to by pBuffer to the given filePath.
+ * Write contents pointed to by pBuffer to the given filePath. Logs will be printed within this function.
+ * WARNING: This must NOT be called by the file logger.
  *
  * Parameters:
  *     filePath - file path to write to
@@ -139,7 +140,7 @@ CleanUp:
  *     pBuffer  - memory location whose contents should be written to the file
  *     size     - number of bytes that should be written to the file
  */
-STATUS writeFile(PCHAR filePath, BOOL binMode, BOOL append, PBYTE pBuffer, UINT64 size)
+STATUS writeFileWithLogging(PCHAR filePath, BOOL binMode, BOOL append, PBYTE pBuffer, UINT64 size)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -164,6 +165,40 @@ CleanUp:
     }
 
     LEAVES();
+    return retStatus;
+}
+
+/**
+ * Write contents pointed to by pBuffer to the given filePath.
+ * WARNING: Logs must NOT be printed within this function.
+ * Parameters:
+ *     filePath - file path to write to
+ *     binMode  - TRUE to read file stream as binary; FALSE to read as a normal text file
+ *     append   - TRUE to append; FALSE to overwrite
+ *     pBuffer  - memory location whose contents should be written to the file
+ *     size     - number of bytes that should be written to the file
+ */
+STATUS writeFile(PCHAR filePath, BOOL binMode, BOOL append, PBYTE pBuffer, UINT64 size)
+{
+    STATUS retStatus = STATUS_SUCCESS;
+    FILE* fp = NULL;
+
+    CHK(filePath != NULL && pBuffer != NULL, STATUS_NULL_ARG);
+
+    fp = FOPEN(filePath, binMode ? (append ? "ab" : "wb") : (append ? "a" : "w"));
+
+    CHK(fp != NULL, STATUS_OPEN_FILE_FAILED);
+
+    // Write the buffer to the file
+    CHK(FWRITE(pBuffer, (SIZE_T) size, 1, fp) == 1, STATUS_WRITE_TO_FILE_FAILED);
+
+CleanUp:
+
+    if (fp != NULL) {
+        FCLOSE(fp);
+        fp = NULL;
+    }
+
     return retStatus;
 }
 
