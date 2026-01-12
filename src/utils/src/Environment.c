@@ -15,7 +15,7 @@ BOOL isEnvVarEnabled(PCHAR envVarName)
     retBool = envVarVal != NULL && (STRCMPI(envVarVal, "1") == 0 || STRCMPI(envVarVal, "true") == 0 || STRCMPI(envVarVal, "on") == 0);
 
 CleanUp:
-    UNUSED_PARAM(retStatus);
+    CHK_LOG_ERR(retStatus);
     LEAVES();
     return retBool;
 }
