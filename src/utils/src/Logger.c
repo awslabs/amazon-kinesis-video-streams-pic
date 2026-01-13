@@ -1,6 +1,6 @@
 #include "Include_i.h"
 
-static volatile SIZE_T gLoggerLogLevel = LOG_LEVEL_WARN;
+static volatile SIZE_T gLoggerLogLevel = DEFAULT_LOG_LEVEL;
 
 const PCHAR getLogLevelStr(UINT32 loglevel)
 {
