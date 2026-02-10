@@ -3,7 +3,7 @@
   <br>
 </h1>
 
-<h4 align="center">Platform Indendent Code for Amazon Kinesis Video Streams </h4>
+<h4 align="center">Platform Independent Code for Amazon Kinesis Video Streams </h4>
 
 <p align="center">
   <a href="https://github.com/awslabs/amazon-kinesis-video-streams-pic/actions/workflows/ci.yml"> <img src=https://github.com/awslabs/amazon-kinesis-video-streams-pic/actions/workflows/ci.yml/badge.svg </a>
@@ -34,7 +34,7 @@ Create a build directory in the newly checked out repository, and execute CMake 
 
 `mkdir -p amazon-kinesis-video-streams-pic/build; cd amazon-kinesis-video-streams-pic/build; cmake .. `
 
-By default we download all the libraries from GitHub and build them locally, so should require nothing to be installed ahead of time.
+By default, we download all the libraries from GitHub and build them locally. There are no requirements that need to be installed ahead of time.
 If you do wish to link to existing libraries you can use the following flags to customize your build.
 
 #### Cross-Compilation
