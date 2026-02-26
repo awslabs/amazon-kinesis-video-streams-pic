@@ -15,6 +15,21 @@ env:
   TEST_FILTER: "-TimerQueueFunctionalityTest.*:HeapPerfTest.*"
 
 jobs:
+
+  trigger-producer-c-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger KVS Producer C SDK CI jobs via GitHub API.
+        run: |
+          curl -L \
+            -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+             -d '{"ref":"cross-repo-ci",
+                  "inputs":
+                    {"pic_tag":"${{ github.event.pull_request.head.ref }}"}
+                }' \
+            "https://api.github.com/repos/awslabs/amazon-kinesis-video-streams-producer-c/actions/workflows/ci.yml/dispatches" \
+  
   mac-tests:
     strategy:
       matrix:
@@ -62,6 +77,7 @@ jobs:
           cd build
           ./tst/kvspic_test --gtest_filter="${{ env.TEST_FILTER }}"
         shell: bash
+        
   linux-gcc-code-coverage:
     runs-on: ubuntu-latest
     steps:
