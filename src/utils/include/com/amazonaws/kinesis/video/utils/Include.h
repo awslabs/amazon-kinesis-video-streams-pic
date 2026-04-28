@@ -2006,9 +2006,23 @@ PUBLIC_API STATUS threadpoolTryAdd(PThreadpool, startRoutine, PVOID);
 PUBLIC_API STATUS threadpoolPush(PThreadpool, startRoutine, PVOID);
 
 /**
- * @brief Checks if an environment variable is enabled.
+ * @brief Checks if an environment variable is set to an enabled or disabled value, with a default if unset.
  *
- * @param - PCHAR - IN - The label of the environment variable to check for.
+ * Recognized enabled values: "1", "true", "on" (case-insensitive).
+ * Recognized disabled values: "0", "false", "off" (case-insensitive).
+ * Unset or unrecognized values return the provided default.
+ *
+ * @param - PCHAR - IN - The name of the environment variable to check for.
+ * @param - BOOL - IN - The default value to return if the variable is unset.
+ *
+ * @return - BOOL - TRUE/FALSE based on the variable value, or defaultVal if unset.
+ */
+PUBLIC_API BOOL isEnvVarEnabledWithDefault(PCHAR, BOOL);
+
+/**
+ * @brief Checks if an environment variable is enabled (default=OFF). Equivalent to isEnvVarEnabledWithDefault(envVarName, FALSE).
+ *
+ * @param - PCHAR - IN - The name of the environment variable to check for.
  *
  * @return - BOOL - TRUE if the environment variable is enabled, FALSE otherwise.
  */
