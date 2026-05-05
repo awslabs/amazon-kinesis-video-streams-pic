@@ -150,6 +150,11 @@ typedef struct {
 PUBLIC_API STATUS heapInitialize(UINT64, UINT32, UINT32, PCHAR, PHeap*);
 
 /**
+ * Creates and initializes the heap with starting file index for file-based heaps
+ */
+PUBLIC_API STATUS heapInitializeFileIndex(UINT64, UINT32, UINT32, PCHAR, UINT32, PHeap*);
+
+/**
  * Releases the entire heap.
  * IMPORTANT: Some heaps will leak memory if the allocations are not freed previously
  */

@@ -190,6 +190,7 @@ extern "C" {
 #define STATUS_INVALID_IMAGE_PREFIX_LENGTH                       STATUS_CLIENT_BASE + 0x0000008d
 #define STATUS_INVALID_IMAGE_METADATA_KEY_LENGTH                 STATUS_CLIENT_BASE + 0x0000008e
 #define STATUS_INVALID_IMAGE_METADATA_VALUE_LENGTH               STATUS_CLIENT_BASE + 0x0000008f
+#define STATUS_INVALID_FILE_HEAP_STARTING_INDEX                  STATUS_CLIENT_BASE + 0x00000090
 
 #define IS_RECOVERABLE_ERROR(error)                                                                                                                  \
     ((error) == STATUS_SERVICE_CALL_RESOURCE_NOT_FOUND_ERROR || (error) == STATUS_SERVICE_CALL_RESOURCE_IN_USE_ERROR ||                              \
@@ -466,7 +467,7 @@ extern "C" {
 #define CALLBACKS_CURRENT_VERSION             0
 #define STREAM_INFO_CURRENT_VERSION           3
 #define SEGMENT_INFO_CURRENT_VERSION          0
-#define STORAGE_INFO_CURRENT_VERSION          0
+#define STORAGE_INFO_CURRENT_VERSION          1
 #define AUTH_INFO_CURRENT_VERSION             0
 #define SERVICE_CALL_CONTEXT_CURRENT_VERSION  1
 #define STREAM_DESCRIPTION_CURRENT_VERSION    1
@@ -1136,6 +1137,9 @@ struct __StorageInfo {
 
     // File location in case of the file based storage
     CHAR rootDirectory[MAX_PATH_LEN + 1];
+
+    // Starting file index for file-based heaps (valid in version 1+)
+    UINT32 fileHeapStartingFileIndex;
 };
 
 typedef struct __StorageInfo* PStorageInfo;

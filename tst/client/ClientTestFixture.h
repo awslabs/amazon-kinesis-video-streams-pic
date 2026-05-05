@@ -408,6 +408,7 @@ class ClientTestBase : public ::testing::Test {
         mDeviceInfo.storageInfo.spillRatio = 0;
         mDeviceInfo.storageInfo.storageType = DEVICE_STORAGE_TYPE_IN_MEM;
         mDeviceInfo.storageInfo.storageSize = TEST_DEVICE_STORAGE_SIZE;
+        mDeviceInfo.storageInfo.fileHeapStartingFileIndex = 1;
         mDeviceInfo.clientInfo.version = CLIENT_INFO_CURRENT_VERSION;
         mDeviceInfo.clientInfo.createClientTimeout = TEST_DEFAULT_CREATE_CLIENT_TIMEOUT;
         mDeviceInfo.clientInfo.createStreamTimeout = TEST_DEFAULT_CREATE_STREAM_TIMEOUT;
