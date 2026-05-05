@@ -92,6 +92,54 @@ extern "C" {
 #define KVSEVENT_IMAGE_PREFIX_STRING     "AWS_KINESISVIDEO_IMAGE_PREFIX"
 #define KVSEVENT_NOTIFICATION_STRING     "AWS_KINESISVIDEO_NOTIFICATION"
 
+
+#define RECOVERY_STATE_FILE_PATH "stream_recovery_state.bin"
+
+
+////////////////////////////////////////////////////
+// Stream Recovery Status Codes
+////////////////////////////////////////////////////
+#define STATUS_PERSISTENCE_ERROR 0x15000001         // Error status for persistence issues
+#define STATUS_RECOVERY_STATE_NOT_FOUND 0x15000002  // Recovery state not found in persistence storage
+#define STATUS_INVALID_RECOVERY_STATE 0x15000003    // Invalid recovery state
+
+////////////////////////////////////////////////////
+// StreamRecoveryState Structure Definition
+////////////////////////////////////////////////////
+typedef struct __StreamRecoveryState {
+    UINT64 viewItemIndex;           // Index of the current view item (key frame/fragment start).
+    UINT64 viewItemTimestamp;       // Timestamp of the current view item (PTS).
+    UINT64 viewItemAckTimestamp;    // Acknowledgment timestamp (for ACK tracking).
+    UINT64 viewItemDuration;        // Duration of the current view item.
+    UINT32 viewItemLength;          // Length of the data in bytes.
+    UINT64 sessionStartTimestamp;   // Timestamp of when the session started.
+    UINT64 bytesTransferred;        // Total bytes transferred so far in the session.
+    BOOL eosMetadataSendFlag;       // End-of-Stream (EOS) metadata send flag
+    BOOL lastReceivedAck;           // Whether the last received ACK was successfully processed.
+    BOOL streamStopped;             // Whether the stream was stopped or interrupted.
+} StreamRecoveryState, *PStreamRecoveryState;
+
+////////////////////////////////////////////////////
+// Function Definitions for Saving/Loading Stream Recovery State
+////////////////////////////////////////////////////
+/**
+ * Saves the StreamRecoveryState to persistent storage.
+ * 
+ * @param pState Pointer to the StreamRecoveryState to save.
+ * @return STATUS_SUCCESS if successful, STATUS_PERSISTENCE_ERROR if there's an error.
+ */
+STATUS saveStreamRecoveryStateToPersistence(PStreamRecoveryState pState);
+
+/**
+ * Loads the StreamRecoveryState from persistent storage.
+ * 
+ * @param pState Pointer to the StreamRecoveryState to load the data into.
+ * @return STATUS_SUCCESS if successful, STATUS_RECOVERY_STATE_NOT_FOUND if no state exists, 
+ *         STATUS_INVALID_RECOVERY_STATE if the state is invalid.
+ */
+STATUS loadStreamRecoveryStateFromPersistence(PStreamRecoveryState pState);
+
+
 /**
  * Kinesis Video stream diagnostics information accumulator
  */
