@@ -1175,6 +1175,146 @@ TEST_F(StreamApiFunctionalityTest, putFrame_PutGetRestartUnauthorizedResult)
     EXPECT_EQ(2, ATOMIC_LOAD(&mGetStreamingTokenFuncCount));
 }
 
+TEST_F(StreamApiFunctionalityTest, streamTerminated_ForbiddenReportsErrorToApplication)
+{
+    UINT32 i, filledSize;
+    BYTE tempBuffer[10000];
+    BYTE getDataBuffer[20000];
+    UINT64 timestamp;
+    Frame frame;
+
+    mStreamInfo.streamCaps.recoverOnError = TRUE;
+
+    // Create and ready a stream
+    ReadyStream();
+
+    frame.duration = TEST_LONG_FRAME_DURATION;
+    frame.size = SIZEOF(tempBuffer);
+    frame.frameData = tempBuffer;
+    frame.trackId = TEST_TRACKID;
+    for (i = 0, timestamp = 0; timestamp < TEST_BUFFER_DURATION; timestamp += TEST_LONG_FRAME_DURATION, i++) {
+        frame.index = i;
+        frame.decodingTs = timestamp;
+        frame.presentationTs = timestamp;
+
+        frame.flags = i % 10 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
+        EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
+
+        EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
+
+        if (i == 50) {
+            EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
+        }
+    }
+
+    for (timestamp = 0; timestamp < TEST_BUFFER_DURATION / 2; timestamp += TEST_LONG_FRAME_DURATION) {
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize));
+        EXPECT_EQ(SIZEOF(getDataBuffer), filledSize);
+    }
+
+    // Verify streamErrorReportFn not called yet
+    EXPECT_EQ(0, ATOMIC_LOAD(&mStreamErrorReportFuncCount));
+
+    // Simulate PutMedia returning 403 Forbidden
+    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_FORBIDDEN));
+
+    // Verify streamErrorReportFn was called with the correct status
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamErrorReportFuncCount));
+    EXPECT_EQ(STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, mStatus);
+}
+
+TEST_F(StreamApiFunctionalityTest, streamTerminated_NotAuthorizedReportsErrorToApplication)
+{
+    UINT32 i, filledSize;
+    BYTE tempBuffer[10000];
+    BYTE getDataBuffer[20000];
+    UINT64 timestamp;
+    Frame frame;
+
+    mStreamInfo.streamCaps.recoverOnError = TRUE;
+
+    // Create and ready a stream
+    ReadyStream();
+
+    frame.duration = TEST_LONG_FRAME_DURATION;
+    frame.size = SIZEOF(tempBuffer);
+    frame.frameData = tempBuffer;
+    frame.trackId = TEST_TRACKID;
+    for (i = 0, timestamp = 0; timestamp < TEST_BUFFER_DURATION; timestamp += TEST_LONG_FRAME_DURATION, i++) {
+        frame.index = i;
+        frame.decodingTs = timestamp;
+        frame.presentationTs = timestamp;
+
+        frame.flags = i % 10 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
+        EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
+
+        EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
+
+        if (i == 50) {
+            EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
+        }
+    }
+
+    for (timestamp = 0; timestamp < TEST_BUFFER_DURATION / 2; timestamp += TEST_LONG_FRAME_DURATION) {
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize));
+        EXPECT_EQ(SIZEOF(getDataBuffer), filledSize);
+    }
+
+    // Verify streamErrorReportFn not called yet
+    EXPECT_EQ(0, ATOMIC_LOAD(&mStreamErrorReportFuncCount));
+
+    // Simulate PutMedia returning 401 Not Authorized
+    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_NOT_AUTHORIZED));
+
+    // Verify streamErrorReportFn was called with the correct status
+    EXPECT_EQ(1, ATOMIC_LOAD(&mStreamErrorReportFuncCount));
+    EXPECT_EQ(STATUS_SERVICE_CALL_NOT_AUTHORIZED_ERROR, mStatus);
+}
+
+TEST_F(StreamApiFunctionalityTest, streamTerminated_OtherErrorDoesNotReportToApplication)
+{
+    UINT32 i, filledSize;
+    BYTE tempBuffer[10000];
+    BYTE getDataBuffer[20000];
+    UINT64 timestamp;
+    Frame frame;
+
+    mStreamInfo.streamCaps.recoverOnError = TRUE;
+
+    // Create and ready a stream
+    ReadyStream();
+
+    frame.duration = TEST_LONG_FRAME_DURATION;
+    frame.size = SIZEOF(tempBuffer);
+    frame.frameData = tempBuffer;
+    frame.trackId = TEST_TRACKID;
+    for (i = 0, timestamp = 0; timestamp < TEST_BUFFER_DURATION; timestamp += TEST_LONG_FRAME_DURATION, i++) {
+        frame.index = i;
+        frame.decodingTs = timestamp;
+        frame.presentationTs = timestamp;
+
+        frame.flags = i % 10 == 0 ? FRAME_FLAG_KEY_FRAME : FRAME_FLAG_NONE;
+        EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(mStreamHandle, &frame));
+
+        EXPECT_EQ(1, ATOMIC_LOAD(&mPutStreamFuncCount));
+
+        if (i == 50) {
+            EXPECT_EQ(STATUS_SUCCESS, putStreamResultEvent(mCallContext.customData, SERVICE_CALL_RESULT_OK, TEST_UPLOAD_HANDLE));
+        }
+    }
+
+    for (timestamp = 0; timestamp < TEST_BUFFER_DURATION / 2; timestamp += TEST_LONG_FRAME_DURATION) {
+        EXPECT_EQ(STATUS_SUCCESS, getKinesisVideoStreamData(mStreamHandle, TEST_UPLOAD_HANDLE, getDataBuffer, SIZEOF(getDataBuffer), &filledSize));
+        EXPECT_EQ(SIZEOF(getDataBuffer), filledSize);
+    }
+
+    // Simulate a different error (e.g., 500 Internal Server Error) — should NOT call streamErrorReportFn
+    EXPECT_EQ(STATUS_SUCCESS, kinesisVideoStreamTerminated(mCallContext.customData, TEST_UPLOAD_HANDLE, SERVICE_CALL_INTERNAL_ERROR));
+
+    // Verify streamErrorReportFn was NOT called for non-auth errors
+    EXPECT_EQ(0, ATOMIC_LOAD(&mStreamErrorReportFuncCount));
+}
+
 TEST_F(StreamApiFunctionalityTest, putFrame_PutGetRestartOtherResult)
 {
     UINT32 i, filledSize;

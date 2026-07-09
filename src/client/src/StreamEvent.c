@@ -658,7 +658,8 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
     // Report permission errors to the registered stream error handlers
     // PIC state machine will still retry but application must be informed to handle the error appropriately.
     if (callResult == SERVICE_CALL_FORBIDDEN || callResult == SERVICE_CALL_NOT_AUTHORIZED) {
-        DLOGE("[%s] Stream terminated with authorization error (result=%u). Notifying application.", pKinesisVideoStream->streamInfo.name, callResult);
+        DLOGE("[%s] Stream terminated with authorization error (result=%u). Notifying application.", pKinesisVideoStream->streamInfo.name,
+              callResult);
         if (pKinesisVideoClient->clientCallbacks.streamErrorReportFn != NULL) {
             pKinesisVideoClient->clientCallbacks.streamErrorReportFn(pKinesisVideoClient->clientCallbacks.customData,
                                                                      TO_STREAM_HANDLE(pKinesisVideoStream), uploadHandle, 0,
