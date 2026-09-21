@@ -63,6 +63,11 @@ extern "C" {
 #define ITEM_FLAG_FRAGMENT_END       (0x1 << 4)
 #define ITEM_FLAG_PERSISTED_ACK      (0x1 << 5)
 #define ITEM_FLAG_SKIP_ITEM          (0x1 << 6)
+// Marks a genuine timecode base boundary produced by a generator reset (rebase), as opposed to an
+// EBML header added by the reconnect fix-up. Unlike ITEM_FLAG_STREAM_START, this marker MUST survive
+// being sent: it is what keeps two timecode bases from landing in a single PutMedia segment after a
+// rollback replays across the boundary (FRAGMENT_TIMECODE_LESSER_THAN_PREVIOUS / 4004).
+#define ITEM_FLAG_STREAM_START_BOUNDARY (0x1 << 7)
 #define ITEM_FLAG_STREAM_START_DEBUG (0x1 << 15)
 
 /**
@@ -76,6 +81,7 @@ extern "C" {
 #define CHECK_ITEM_PERSISTED_ACK(f)      (((f) &ITEM_FLAG_PERSISTED_ACK) != ITEM_FLAG_NONE)
 #define CHECK_ITEM_SKIP_ITEM(f)          (((f) &ITEM_FLAG_SKIP_ITEM) != ITEM_FLAG_NONE)
 #define CHECK_ITEM_STREAM_START_DEBUG(f) (((f) &ITEM_FLAG_STREAM_START_DEBUG) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_STREAM_START_BOUNDARY(f) (((f) &ITEM_FLAG_STREAM_START_BOUNDARY) != ITEM_FLAG_NONE)
 
 #define SET_ITEM_FRAGMENT_START(f)     ((f) |= ITEM_FLAG_FRAGMENT_START)
 #define SET_ITEM_BUFFERING_ACK(f)      ((f) |= ITEM_FLAG_BUFFERING_ACK)
@@ -85,6 +91,7 @@ extern "C" {
 #define SET_ITEM_PERSISTED_ACK(f)      ((f) |= ITEM_FLAG_PERSISTED_ACK)
 #define SET_ITEM_SKIP_ITEM(f)          ((f) |= ITEM_FLAG_SKIP_ITEM)
 #define SET_ITEM_STREAM_START_DEBUG(f) ((f) |= ITEM_FLAG_STREAM_START_DEBUG)
+#define SET_ITEM_STREAM_START_BOUNDARY(f) ((f) |= ITEM_FLAG_STREAM_START_BOUNDARY)
 
 #define CLEAR_ITEM_FRAGMENT_START(f)     ((f) &= ~ITEM_FLAG_FRAGMENT_START)
 #define CLEAR_ITEM_BUFFERING_ACK(f)      ((f) &= ~ITEM_FLAG_BUFFERING_ACK)
@@ -94,6 +101,7 @@ extern "C" {
 #define CLEAR_ITEM_PERSISTED_ACK(f)      ((f) &= ~ITEM_FLAG_PERSISTED_ACK)
 #define CLEAR_ITEM_SKIP_ITEM(f)          ((f) &= ~ITEM_FLAG_SKIP_ITEM)
 #define CLEAR_ITEM_STREAM_START_DEBUG(f) ((f) &= ~ITEM_FLAG_STREAM_START_DEBUG)
+#define CLEAR_ITEM_STREAM_START_BOUNDARY(f) ((f) &= ~ITEM_FLAG_STREAM_START_BOUNDARY)
 
 #define GET_ITEM_DATA_OFFSET(f)    ((UINT16) ((f) >> 16))
 #define SET_ITEM_DATA_OFFSET(f, o) ((f) = ((f) &0x0000ffff) | (((UINT16) (o)) << 16))

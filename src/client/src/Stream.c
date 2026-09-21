@@ -979,6 +979,25 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         case MKV_STATE_START_STREAM:
             SET_ITEM_STREAM_START(itemFlags);
             SET_ITEM_STREAM_START_DEBUG(itemFlags);
+            // A generator stream start (initial header or a rebase via mkvgenResetGenerator) restarts the
+            // cluster timecode base. It is a genuine base boundary that must not be stripped ONLY when the
+            // view still holds earlier content on the previous base: a later rollback could then replay
+            // across it and land two timecode bases in one segment (FRAGMENT_TIMECODE_LESSER_THAN_PREVIOUS
+            // / 4004). Mark it so resetCurrentViewItemStreamStart leaves it intact once sent.
+            //
+            // When the view is empty at this point - the very first header, or a self-prime rebase after
+            // an empty-view timeout - there is no earlier base for a rollback to collide with, so the
+            // header stays strippable. Marking it there would needlessly force a session split when a
+            // graceful-stop drain rolls back across it, stalling shutdown. Only headers added by the
+            // reconnect fix-up (which do not restart timecodes) are always strippable; they never reach
+            // this path.
+            {
+                UINT64 curItemCount = 0, windowItemCount = 0;
+                if (STATUS_SUCCEEDED(contentViewGetWindowItemCount(pKinesisVideoStream->pView, &curItemCount, &windowItemCount)) &&
+                    windowItemCount > 0) {
+                    SET_ITEM_STREAM_START_BOUNDARY(itemFlags);
+                }
+            }
             // fall-through
         case MKV_STATE_START_CLUSTER:
             SET_ITEM_FRAGMENT_START(itemFlags);
@@ -2250,8 +2269,18 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
 
     // Quick check if we need to do anything by checking the current view items allocation handle
     // and whether it has a stream start indicator. Early exit if it's not a stream start.
+    //
+    // NOTE: A genuine generator-reset base boundary (ITEM_FLAG_STREAM_START_BOUNDARY) must NOT be
+    // stripped. This routine exists only to remove an EBML header that the reconnect fix-up itself
+    // added, so a later replay does not emit two headers. Stripping a real base boundary destroys the
+    // marker that keeps two timecode bases from landing in one PutMedia segment; a later rollback that
+    // replays across the now-unmarked boundary then produces a backwards cluster timecode inside a
+    // single segment (FRAGMENT_TIMECODE_LESSER_THAN_PREVIOUS / 4004). Leave such boundaries intact:
+    // Stream.c terminates any session that advances onto them, so the base change always begins a new
+    // segment, and the fix-up already skips items that are stream starts (so no duplicate header).
     CHK(IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->curViewItem.viewItem.handle) &&
-            CHECK_ITEM_STREAM_START(pKinesisVideoStream->curViewItem.viewItem.flags),
+            CHECK_ITEM_STREAM_START(pKinesisVideoStream->curViewItem.viewItem.flags) &&
+            !CHECK_ITEM_STREAM_START_BOUNDARY(pKinesisVideoStream->curViewItem.viewItem.flags),
         retStatus);
 
     // Get the view item corresponding to the current item
