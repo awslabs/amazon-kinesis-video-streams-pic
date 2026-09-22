@@ -4,7 +4,7 @@
 // Regression coverage for FRAGMENT_TIMECODE_LESSER_THAN_PREVIOUS (4004).
 //
 // A genuine timecode base boundary produced by a generator reset (rebase) is written into the content
-// view as a view item flagged ITEM_FLAG_STREAM_START together with ITEM_FLAG_STREAM_START_BOUNDARY, and
+// view as a view item flagged ITEM_FLAG_STREAM_START together with ITEM_FLAG_TIMECODE_BASE_START, and
 // carrying a fresh EBML header. Two SDK guards normally keep exactly one timecode base per PutMedia
 // segment (one upload handle): a session that advances onto such an item is terminated at it, and in
 // RELATIVE mode a new session cannot start without a stream-start timestamp.
@@ -15,7 +15,7 @@
 // marker was gone, a later rollback landing before the (now unmarked) boundary would replay two timecode
 // bases inside a single segment -> a cluster timecode lower than the previous one -> 4004.
 //
-// The fix marks genuine boundaries with ITEM_FLAG_STREAM_START_BOUNDARY at generation time and makes
+// The fix marks genuine boundaries with ITEM_FLAG_TIMECODE_BASE_START at generation time and makes
 // resetCurrentViewItemStreamStart() refuse to strip them, while still stripping fix-up-added headers
 // (which are not timecode boundaries) so no duplicate header is ever emitted on replay.
 //
@@ -38,19 +38,18 @@ class StreamStartBoundaryFunctionalityTest : public ClientTestBase {
 };
 
 // Helpers to lock/unlock the stream while inspecting the content view.
-#define BOUNDARY_TEST_LOCK(s, c)                                                                                                                      \
-    (c)->clientCallbacks.lockMutexFn((c)->clientCallbacks.customData, (s)->base.lock)
-#define BOUNDARY_TEST_UNLOCK(s, c)                                                                                                                    \
-    (c)->clientCallbacks.unlockMutexFn((c)->clientCallbacks.customData, (s)->base.lock)
+#define BOUNDARY_TEST_LOCK(s, c)   (c)->clientCallbacks.lockMutexFn((c)->clientCallbacks.customData, (s)->base.lock)
+#define BOUNDARY_TEST_UNLOCK(s, c) (c)->clientCallbacks.unlockMutexFn((c)->clientCallbacks.customData, (s)->base.lock)
 
 //
 // A genuine mid-backlog generator rebase (as produced by token rotation / error-ACK) must be marked with
-// ITEM_FLAG_STREAM_START_BOUNDARY, and that marker (plus its EBML header) MUST survive being advanced
+// ITEM_FLAG_TIMECODE_BASE_START, and that marker (plus its EBML header) MUST survive being advanced
 // past. Before the fix, resetCurrentViewItemStreamStart() cleared ITEM_FLAG_STREAM_START and shrank the
 // item here, which is exactly what armed the 4004.
 //
-// This also asserts the scoping: the very first stream start, created on an empty view, is NOT marked (it
-// has no earlier base a rollback could collide with, so it stays strippable and does not disturb drain).
+// Every generator stream start is marked, including the initial header, because every one of them restarts
+// the cluster timecode base. Marking the initial header costs nothing: getStreamData only terminates a
+// session that *advances onto* a marked item, and nothing can advance onto the oldest item in the view.
 //
 TEST_F(StreamStartBoundaryFunctionalityTest, GenuineRebaseBoundaryIsMarkedAndSurvivesReset)
 {
@@ -67,17 +66,17 @@ TEST_F(StreamStartBoundaryFunctionalityTest, GenuineRebaseBoundaryIsMarkedAndSur
     pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
-    // Put a full fragment. The very first frame is the initial stream start, created on an empty view.
+    // Put a full fragment. The very first frame carries the initial stream start.
     for (UINT32 i = 0; i < mMockProducerConfig.mKeyFrameInterval; i++) {
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
     }
 
-    // The initial stream start (empty view when created) must be a stream start but NOT a base boundary.
+    // The initial stream start also begins a timecode base, so it carries both markers.
     BOUNDARY_TEST_LOCK(pKinesisVideoStream, pKinesisVideoClient);
     EXPECT_EQ(STATUS_SUCCESS, contentViewGetTail(pKinesisVideoStream->pView, &pViewItem));
     tailIndex = pViewItem->index;
     EXPECT_TRUE(CHECK_ITEM_STREAM_START(pViewItem->flags));
-    EXPECT_FALSE(CHECK_ITEM_STREAM_START_BOUNDARY(pViewItem->flags)) << "initial (empty-view) stream start must not be a boundary";
+    EXPECT_TRUE(CHECK_ITEM_TIMECODE_BASE_START(pViewItem->flags)) << "initial stream start begins a timecode base and must be marked";
     BOUNDARY_TEST_UNLOCK(pKinesisVideoStream, pKinesisVideoClient);
 
     // Force a rebase on the next key frame - this is exactly what a token rotation / error-ACK does. The
@@ -101,10 +100,10 @@ TEST_F(StreamStartBoundaryFunctionalityTest, GenuineRebaseBoundaryIsMarkedAndSur
     origLength = pViewItem->length;
     origDataOffset = GET_ITEM_DATA_OFFSET(pViewItem->flags);
 
-    // A rebase-produced stream start with earlier content still in the view must carry the boundary marker
-    // and a real EBML header (non-zero data offset).
+    // A rebase-produced stream start must carry the base-start marker and a real EBML header (non-zero
+    // data offset). Earlier content is still in the view here, so a rollback could replay across it.
     EXPECT_TRUE(CHECK_ITEM_STREAM_START(pViewItem->flags));
-    EXPECT_TRUE(CHECK_ITEM_STREAM_START_BOUNDARY(pViewItem->flags)) << "mid-backlog rebase boundary was not marked";
+    EXPECT_TRUE(CHECK_ITEM_TIMECODE_BASE_START(pViewItem->flags)) << "mid-backlog rebase boundary was not marked";
     EXPECT_GT(origDataOffset, 0u);
 
     // Simulate a session having consumed the boundary and advanced onto it (offset == length).
@@ -119,7 +118,7 @@ TEST_F(StreamStartBoundaryFunctionalityTest, GenuineRebaseBoundaryIsMarkedAndSur
     BOUNDARY_TEST_LOCK(pKinesisVideoStream, pKinesisVideoClient);
     EXPECT_EQ(STATUS_SUCCESS, contentViewGetItemAt(pKinesisVideoStream->pView, boundaryIndex, &pViewItem));
     EXPECT_TRUE(CHECK_ITEM_STREAM_START(pViewItem->flags)) << "genuine boundary stream-start marker was stripped";
-    EXPECT_TRUE(CHECK_ITEM_STREAM_START_BOUNDARY(pViewItem->flags)) << "boundary marker was cleared";
+    EXPECT_TRUE(CHECK_ITEM_TIMECODE_BASE_START(pViewItem->flags)) << "boundary marker was cleared";
     EXPECT_EQ(origLength, pViewItem->length) << "boundary header was stripped (item shrank)";
     EXPECT_EQ(origDataOffset, GET_ITEM_DATA_OFFSET(pViewItem->flags)) << "boundary header offset changed";
     BOUNDARY_TEST_UNLOCK(pKinesisVideoStream, pKinesisVideoClient);
@@ -170,7 +169,7 @@ TEST_F(StreamStartBoundaryFunctionalityTest, FixupHeaderHasNoBoundaryMarkerAndIs
     EXPECT_EQ(STATUS_SUCCESS, contentViewGetItemAt(pKinesisVideoStream->pView, fixupIndex, &pViewItem));
     origLength = pViewItem->length;
     EXPECT_FALSE(CHECK_ITEM_STREAM_START(pViewItem->flags));
-    EXPECT_FALSE(CHECK_ITEM_STREAM_START_BOUNDARY(pViewItem->flags));
+    EXPECT_FALSE(CHECK_ITEM_TIMECODE_BASE_START(pViewItem->flags));
 
     // Point the content view at that item so the fix-up operates on it. Clear curViewItem so the fix-up's
     // internal reset is a no-op on entry.
@@ -185,7 +184,7 @@ TEST_F(StreamStartBoundaryFunctionalityTest, FixupHeaderHasNoBoundaryMarkerAndIs
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     EXPECT_EQ(STATUS_SUCCESS, contentViewGetItemAt(pKinesisVideoStream->pView, fixupIndex, &pViewItem));
     EXPECT_TRUE(CHECK_ITEM_STREAM_START(pViewItem->flags)) << "fix-up did not add a stream-start header";
-    EXPECT_FALSE(CHECK_ITEM_STREAM_START_BOUNDARY(pViewItem->flags)) << "fix-up header must not be a boundary";
+    EXPECT_FALSE(CHECK_ITEM_TIMECODE_BASE_START(pViewItem->flags)) << "fix-up header must not be a boundary";
     EXPECT_GT(pViewItem->length, origLength) << "fix-up did not grow the item by a header";
     EXPECT_GT(GET_ITEM_DATA_OFFSET(pViewItem->flags), 0u);
 

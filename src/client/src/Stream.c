@@ -979,25 +979,12 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         case MKV_STATE_START_STREAM:
             SET_ITEM_STREAM_START(itemFlags);
             SET_ITEM_STREAM_START_DEBUG(itemFlags);
-            // A generator stream start (initial header or a rebase via mkvgenResetGenerator) restarts the
-            // cluster timecode base. It is a genuine base boundary that must not be stripped ONLY when the
-            // view still holds earlier content on the previous base: a later rollback could then replay
-            // across it and land two timecode bases in one segment (FRAGMENT_TIMECODE_LESSER_THAN_PREVIOUS
-            // / 4004). Mark it so resetCurrentViewItemStreamStart leaves it intact once sent.
-            //
-            // When the view is empty at this point - the very first header, or a self-prime rebase after
-            // an empty-view timeout - there is no earlier base for a rollback to collide with, so the
-            // header stays strippable. Marking it there would needlessly force a session split when a
-            // graceful-stop drain rolls back across it, stalling shutdown. Only headers added by the
-            // reconnect fix-up (which do not restart timecodes) are always strippable; they never reach
-            // this path.
-            {
-                UINT64 curItemCount = 0, windowItemCount = 0;
-                if (STATUS_SUCCEEDED(contentViewGetWindowItemCount(pKinesisVideoStream->pView, &curItemCount, &windowItemCount)) &&
-                    windowItemCount > 0) {
-                    SET_ITEM_STREAM_START_BOUNDARY(itemFlags);
-                }
-            }
+            // MKV_STATE_START_STREAM is reached only from MKV_GENERATOR_STATE_START, i.e. the initial header
+            // or after mkvgenResetGenerator. Either way the generator re-captures streamStartTimestamp on
+            // this frame and cluster timecodes restart from it, so a new timecode base begins at this item.
+            // Record that separately from ITEM_FLAG_STREAM_START so resetCurrentViewItemStreamStart can tell
+            // a real base change from a header that streamStartFixupOnReconnect added.
+            SET_ITEM_TIMECODE_BASE_START(itemFlags);
             // fall-through
         case MKV_STATE_START_CLUSTER:
             SET_ITEM_FRAGMENT_START(itemFlags);
@@ -2280,7 +2267,7 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
     // segment, and the fix-up already skips items that are stream starts (so no duplicate header).
     CHK(IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->curViewItem.viewItem.handle) &&
             CHECK_ITEM_STREAM_START(pKinesisVideoStream->curViewItem.viewItem.flags) &&
-            !CHECK_ITEM_STREAM_START_BOUNDARY(pKinesisVideoStream->curViewItem.viewItem.flags),
+            !CHECK_ITEM_TIMECODE_BASE_START(pKinesisVideoStream->curViewItem.viewItem.flags),
         retStatus);
 
     // Get the view item corresponding to the current item
