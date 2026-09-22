@@ -19,8 +19,9 @@
 // resetCurrentViewItemStreamStart() refuse to strip them, while still stripping fix-up-added headers
 // (which are not timecode boundaries) so no duplicate header is ever emitted on replay.
 //
-// These tests use RELATIVE timecodes (absoluteFragmentTimes = FALSE), which is the mode required to
-// reach the bad on-wire state.
+// The marker and the strip are timecode-mode independent, so these tests do not pin absoluteFragmentTimes.
+// CreateScenarioTestClient sets it to TRUE via initScenarioTestMembers regardless. RELATIVE mode is what
+// turns the stripped boundary into a stalled stream on the wire, which the reproduction harness covers.
 //
 class StreamStartBoundaryFunctionalityTest : public ClientTestBase {
   protected:
@@ -28,9 +29,8 @@ class StreamStartBoundaryFunctionalityTest : public ClientTestBase {
     {
         ClientTestBase::SetUp();
 
-        // RELATIVE timecode REALTIME stream with ACKs, large-enough retention so nothing is trimmed.
+        // REALTIME stream with ACKs and large-enough retention that nothing is trimmed out of the view.
         mStreamInfo.streamCaps.streamingType = STREAMING_TYPE_REALTIME;
-        mStreamInfo.streamCaps.absoluteFragmentTimes = FALSE;
         mStreamInfo.streamCaps.fragmentAcks = TRUE;
         mStreamInfo.retention = 10 * HUNDREDS_OF_NANOS_IN_AN_HOUR;
         mStreamInfo.streamCaps.replayDuration = TEST_REPLAY_DURATION;
