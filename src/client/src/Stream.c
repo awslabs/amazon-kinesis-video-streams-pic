@@ -984,7 +984,21 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             // this frame and cluster timecodes restart from it, so a new timecode base begins at this item.
             // Record that separately from ITEM_FLAG_STREAM_START so resetCurrentViewItemStreamStart can tell
             // a real base change from a header that streamStartFixupOnReconnect added.
-            SET_ITEM_TIMECODE_BASE_START(itemFlags);
+            //
+            // Only mark it when the view still holds earlier content on the previous base: a later rollback
+            // could then replay across this item and land two timecode bases in one segment
+            // (FRAGMENT_TIMECODE_LESSER_THAN_PREVIOUS / 4004). When the view is empty at this point there is
+            // no earlier base for a rollback to collide with, so the header stays strippable. Marking it there
+            // would needlessly force a session split when a graceful-stop drain rolls back across it, which
+            // stalls shutdown until the stop timeout expires.
+            {
+                UINT64 curItemCount = 0, windowItemCount = 0;
+
+                if (STATUS_SUCCEEDED(contentViewGetWindowItemCount(pKinesisVideoStream->pView, &curItemCount, &windowItemCount)) &&
+                    windowItemCount > 0) {
+                    SET_ITEM_TIMECODE_BASE_START(itemFlags);
+                }
+            }
             // fall-through
         case MKV_STATE_START_CLUSTER:
             SET_ITEM_FRAGMENT_START(itemFlags);
@@ -2257,14 +2271,15 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
     // Quick check if we need to do anything by checking the current view items allocation handle
     // and whether it has a stream start indicator. Early exit if it's not a stream start.
     //
-    // NOTE: A genuine generator-reset base boundary (ITEM_FLAG_TIMECODE_BASE_START) must NOT be
-    // stripped. This routine exists only to remove an EBML header that the reconnect fix-up itself
-    // added, so a later replay does not emit two headers. Stripping a real base boundary destroys the
-    // marker that keeps two timecode bases from landing in one PutMedia segment; a later rollback that
-    // replays across the now-unmarked boundary then produces a backwards cluster timecode inside a
-    // single segment (FRAGMENT_TIMECODE_LESSER_THAN_PREVIOUS / 4004). Leave such boundaries intact:
-    // getStreamData terminates any session that advances onto them, so the base change always begins a new
-    // segment, and the fix-up already skips items that are stream starts (so no duplicate header).
+    // An item carrying ITEM_FLAG_TIMECODE_BASE_START must NOT be stripped. This routine exists to remove an EBML
+    // header that streamStartFixupOnReconnect itself added, so a later replay does not emit two headers; such a
+    // header does not restart cluster timecodes, so removing it is safe. A generator reset does restart them, and
+    // its ITEM_FLAG_STREAM_START is the only thing that stops a session streaming across the base change:
+    // getStreamData terminates any session that advances onto such an item, which is what keeps one timecode base
+    // per PutMedia segment. Strip it and a later rollback replays across the now-unmarked item, so the segment
+    // carries a cluster timecode below one the service already accepted and is rejected with
+    // FRAGMENT_TIMECODE_LESSER_THAN_PREVIOUS (4004). Leaving it intact costs nothing: the fix-up early-exits on
+    // items that already carry ITEM_FLAG_STREAM_START and reuses the embedded header.
     CHK(IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->curViewItem.viewItem.handle) &&
             CHECK_ITEM_STREAM_START(pKinesisVideoStream->curViewItem.viewItem.flags) &&
             !CHECK_ITEM_TIMECODE_BASE_START(pKinesisVideoStream->curViewItem.viewItem.flags),

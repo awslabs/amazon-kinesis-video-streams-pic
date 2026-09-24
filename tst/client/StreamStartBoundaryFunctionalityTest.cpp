@@ -42,14 +42,15 @@ class StreamStartBoundaryFunctionalityTest : public ClientTestBase {
 #define BOUNDARY_TEST_UNLOCK(s, c) (c)->clientCallbacks.unlockMutexFn((c)->clientCallbacks.customData, (s)->base.lock)
 
 //
-// A genuine mid-backlog generator rebase (as produced by token rotation / error-ACK) must be marked with
-// ITEM_FLAG_TIMECODE_BASE_START, and that marker (plus its EBML header) MUST survive being advanced
-// past. Before the fix, resetCurrentViewItemStreamStart() cleared ITEM_FLAG_STREAM_START and shrank the
-// item here, which is exactly what armed the 4004.
+// A generator rebase produced while the view still holds earlier content on the previous base is a genuine
+// timecode base boundary. It carries ITEM_FLAG_TIMECODE_BASE_START, and that marker plus its EBML header must
+// survive being advanced past, because a later rollback could otherwise replay across the boundary and land two
+// bases in one segment. Before the fix, resetCurrentViewItemStreamStart cleared ITEM_FLAG_STREAM_START and
+// shrank the item here, which is exactly what armed the 4004.
 //
-// Every generator stream start is marked, including the initial header, because every one of them restarts
-// the cluster timecode base. Marking the initial header costs nothing: getStreamData only terminates a
-// session that *advances onto* a marked item, and nothing can advance onto the oldest item in the view.
+// The initial stream start is deliberately NOT marked. It is created on an empty view, so there is no earlier
+// base for a rollback to collide with, and marking it would force a session split when a graceful-stop drain
+// rolls back across it, stalling shutdown until the stop timeout expires.
 //
 TEST_F(StreamStartBoundaryFunctionalityTest, GenuineRebaseBoundaryIsMarkedAndSurvivesReset)
 {
@@ -71,12 +72,12 @@ TEST_F(StreamStartBoundaryFunctionalityTest, GenuineRebaseBoundaryIsMarkedAndSur
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
     }
 
-    // The initial stream start also begins a timecode base, so it carries both markers.
+    // The initial stream start carries a header but, being created on an empty view, is not a base boundary.
     BOUNDARY_TEST_LOCK(pKinesisVideoStream, pKinesisVideoClient);
     EXPECT_EQ(STATUS_SUCCESS, contentViewGetTail(pKinesisVideoStream->pView, &pViewItem));
     tailIndex = pViewItem->index;
     EXPECT_TRUE(CHECK_ITEM_STREAM_START(pViewItem->flags));
-    EXPECT_TRUE(CHECK_ITEM_TIMECODE_BASE_START(pViewItem->flags)) << "initial stream start begins a timecode base and must be marked";
+    EXPECT_FALSE(CHECK_ITEM_TIMECODE_BASE_START(pViewItem->flags)) << "initial (empty-view) stream start must not be a boundary";
     BOUNDARY_TEST_UNLOCK(pKinesisVideoStream, pKinesisVideoClient);
 
     // Force a rebase on the next key frame - this is exactly what a token rotation / error-ACK does. The
@@ -111,10 +112,10 @@ TEST_F(StreamStartBoundaryFunctionalityTest, GenuineRebaseBoundaryIsMarkedAndSur
     pKinesisVideoStream->curViewItem.offset = pViewItem->length;
     BOUNDARY_TEST_UNLOCK(pKinesisVideoStream, pKinesisVideoClient);
 
-    // This is the call that used to arm the 4004. It must now be a no-op for a genuine boundary.
     EXPECT_EQ(STATUS_SUCCESS, resetCurrentViewItemStreamStart(pKinesisVideoStream));
 
-    // The boundary must be intact: markers still set, header still present, length unchanged.
+    // The boundary must be intact: both markers still set, header still present, length unchanged. This is the
+    // call that used to arm the 4004, and it must be a no-op for a genuine base boundary.
     BOUNDARY_TEST_LOCK(pKinesisVideoStream, pKinesisVideoClient);
     EXPECT_EQ(STATUS_SUCCESS, contentViewGetItemAt(pKinesisVideoStream->pView, boundaryIndex, &pViewItem));
     EXPECT_TRUE(CHECK_ITEM_STREAM_START(pViewItem->flags)) << "genuine boundary stream-start marker was stripped";
