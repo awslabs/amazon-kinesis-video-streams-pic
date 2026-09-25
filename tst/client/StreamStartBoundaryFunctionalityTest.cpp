@@ -37,6 +37,12 @@ class StreamStartBoundaryFunctionalityTest : public ClientTestBase {
     }
 };
 
+// These tests drive frames through putFrame, so they build only under the aligned memory model, as every
+// other frame-driving functionality tests. Without it the AIV heap does not round
+// allocations up to 8 bytes and lays allocation headers on unaligned addresses, which the undefined
+// behaviour sanitizer reports from inside the heap itself.
+#ifdef ALIGNED_MEMORY_MODEL
+
 // Helpers to lock/unlock the stream while inspecting the content view.
 #define BOUNDARY_TEST_LOCK(s, c)   (c)->clientCallbacks.lockMutexFn((c)->clientCallbacks.customData, (s)->base.lock)
 #define BOUNDARY_TEST_UNLOCK(s, c) (c)->clientCallbacks.unlockMutexFn((c)->clientCallbacks.customData, (s)->base.lock)
@@ -206,3 +212,5 @@ TEST_F(StreamStartBoundaryFunctionalityTest, FixupHeaderHasNoBoundaryMarkerAndIs
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 }
+
+#endif
