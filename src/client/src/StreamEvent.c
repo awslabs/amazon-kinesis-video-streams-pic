@@ -769,6 +769,17 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
             }
         }
 
+        // A session that was stopped at a timecode base change ended cleanly: getStreamData took that item as the
+        // current one, sent nothing from it, and queued EOS. The send pointer is therefore still parked on the
+        // boundary, which is exactly where the successor has to start, so no rollback is owed. Rolling back would
+        // put the successor behind the boundary, where it is stopped at the same item again, and on a stopped
+        // stream that repeats indefinitely because nothing advances the rollback target. This has to override
+        // whichever branch above ran, so it is applied last.
+        if (IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->curViewItem.viewItem.handle) &&
+            CHECK_ITEM_TIMECODE_BASE_START(pKinesisVideoStream->curViewItem.viewItem.flags) && pKinesisVideoStream->curViewItem.offset == 0) {
+            pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_NOT_IN_USE;
+        }
+
         DLOGD("[%s] Upload handle %" PRIu64 " terminated (result %u). Stream connectionState %s -> %s", pKinesisVideoStream->streamInfo.name,
               uploadHandle, (UINT32) callResult, uploadConnectionStateName(entryConnectionState),
               uploadConnectionStateName(pKinesisVideoStream->connectionState));
