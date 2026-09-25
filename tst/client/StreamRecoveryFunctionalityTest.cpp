@@ -20,6 +20,52 @@ class StreamRecoveryFunctionalityTest : public ClientTestBase, public WithParamI
         mStreamInfo.streamCaps.fragmentAcks = enableAck;
         mStreamInfo.streamCaps.replayDuration = (UINT64) replayDuration;
     }
+
+    // Drives the stream until a handle has transmitted, then drops that handle so a rollback and MKV
+    // stream-start fix-up are owed to whichever session transmits next.
+    void transmitThenDropFirstHandle(MockProducer& mockProducer)
+    {
+        std::vector<UPLOAD_HANDLE> uploadHandles;
+        MockConsumer* pMockConsumer = NULL;
+        BOOL gotStreamData = FALSE;
+        UINT64 currentTime;
+
+        for (UINT32 i = 0; i < 2 * mMockProducerConfig.mKeyFrameInterval; i++) {
+            EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
+        }
+
+        mStreamingSession.getActiveUploadHandles(uploadHandles);
+        ASSERT_FALSE(uploadHandles.empty());
+        pMockConsumer = mStreamingSession.getConsumer(uploadHandles[0]);
+        ASSERT_TRUE(pMockConsumer != NULL);
+
+        currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
+        EXPECT_EQ(STATUS_SUCCESS, pMockConsumer->timedGetStreamData(currentTime, &gotStreamData));
+        ASSERT_TRUE(gotStreamData) << "first handle did not transmit, so no rollback would be owed";
+
+        EXPECT_EQ(STATUS_SUCCESS, pMockConsumer->submitConnectionError(SERVICE_CALL_RESULT_OK));
+    }
+
+    // Terminates count successive handles, none of which ever calls getStreamData.
+    void dropHandlesWithoutTransmitting(UINT32 count, PKinesisVideoStream pKinesisVideoStream, BOOL assertPreserved)
+    {
+        std::vector<UPLOAD_HANDLE> uploadHandles;
+        MockConsumer* pMockConsumer = NULL;
+
+        for (UINT32 i = 0; i < count; i++) {
+            mStreamingSession.getActiveUploadHandles(uploadHandles);
+            ASSERT_FALSE(uploadHandles.empty()) << "no successor handle was spawned after termination " << i;
+            pMockConsumer = mStreamingSession.getConsumer(uploadHandles.back());
+            ASSERT_TRUE(pMockConsumer != NULL);
+
+            EXPECT_EQ(STATUS_SUCCESS, pMockConsumer->submitConnectionError(SERVICE_CALL_RESULT_OK));
+
+            if (assertPreserved) {
+                EXPECT_EQ(UPLOAD_CONNECTION_STATE_IN_USE, pKinesisVideoStream->connectionState)
+                    << "handle " << i << " never transmitted but cleared the pending rollback";
+            }
+        }
+    }
 };
 #ifdef ALIGNED_MEMORY_MODEL
 TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionEnsureRecovery)
@@ -1339,6 +1385,85 @@ TEST_P(StreamRecoveryFunctionalityTest, EventMetadataStartStreamFailRecovery)
     EXPECT_EQ(storedRetrievedSize, retrievedSize);
 
     EXPECT_EQ(0, MEMCMP(dataBuf, storedDataBuf, storedRetrievedSize));
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
+}
+
+TEST_P(StreamRecoveryFunctionalityTest, ConnectionResetThenIdleHandlesPreservePendingHeaderFixup)
+{
+    PKinesisVideoStream pKinesisVideoStream;
+
+    CreateScenarioTestClient();
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+
+    CreateStreamSync();
+    MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
+    pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+
+    transmitThenDropFirstHandle(mockProducer);
+    EXPECT_EQ(UPLOAD_CONNECTION_STATE_IN_USE, pKinesisVideoStream->connectionState)
+        << "a handle that transmitted must leave a pending rollback behind";
+
+    // Handles created while the link is still down fail before sending anything. None of them may clear
+    // the rollback owed by the handle that transmitted before the outage.
+    dropHandlesWithoutTransmitting(5, pKinesisVideoStream, TRUE);
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
+}
+
+//
+// The consequence of the above: once the link returns, the first session to transmit must run
+// streamStartFixupOnReconnect, so its body must begin with an EBML header rather than mid-Cluster.
+//
+TEST_P(StreamRecoveryFunctionalityTest, SessionAfterConnectionResetBeginsWithMkvHeader)
+{
+    std::vector<UPLOAD_HANDLE> uploadHandles;
+    MockConsumer* pMockConsumer = NULL;
+    PKinesisVideoStream pKinesisVideoStream;
+    UINT32 retrievedSize = 0;
+    BOOL gotStreamData = FALSE;
+    UINT64 currentTime;
+
+    CreateScenarioTestClient();
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+
+    CreateStreamSync();
+
+    // Without a replay window the rollback cannot reach an earlier item, so no fix-up header is staged
+    // and the session legitimately resumes on a Cluster boundary. This test is about a header that ought
+    // to have been emitted, so that configuration is out of scope. The companion test above still covers
+    // the flag itself for every configuration.
+    if (mStreamInfo.streamCaps.replayDuration == 0) {
+        EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
+        return;
+    }
+
+    MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
+    pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+
+    transmitThenDropFirstHandle(mockProducer);
+    dropHandlesWithoutTransmitting(5, pKinesisVideoStream, FALSE);
+
+    // The link is back. Keep producing so the surviving session has something to send.
+    for (UINT32 i = 0; i < mMockProducerConfig.mKeyFrameInterval; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
+    }
+
+    mStreamingSession.getActiveUploadHandles(uploadHandles);
+    ASSERT_FALSE(uploadHandles.empty()) << "no session available after the reset";
+    pMockConsumer = mStreamingSession.getConsumer(uploadHandles.back());
+    ASSERT_TRUE(pMockConsumer != NULL);
+
+    currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
+    EXPECT_EQ(STATUS_SUCCESS, pMockConsumer->timedGetStreamData(currentTime, &gotStreamData, &retrievedSize));
+    ASSERT_TRUE(gotStreamData);
+    ASSERT_GE(retrievedSize, 4u) << "first session after the reset sent nothing";
+
+    // EBML header magic. Its absence is the headerless body the service rejects with INVALID_MKV_DATA.
+    EXPECT_EQ(0x1A, pMockConsumer->mDataBuffer[0]) << "body does not begin with an EBML header";
+    EXPECT_EQ(0x45, pMockConsumer->mDataBuffer[1]) << "body does not begin with an EBML header";
+    EXPECT_EQ(0xDF, pMockConsumer->mDataBuffer[2]) << "body does not begin with an EBML header";
+    EXPECT_EQ(0xA3, pMockConsumer->mDataBuffer[3]) << "body does not begin with an EBML header";
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 }
