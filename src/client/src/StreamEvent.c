@@ -638,6 +638,23 @@ CleanUp:
 }
 
 /**
+ * Printable name for the per-stream upload connection state. Used only for logging.
+ */
+static PCHAR uploadConnectionStateName(UPLOAD_CONNECTION_STATE connectionState)
+{
+    switch (connectionState) {
+        case UPLOAD_CONNECTION_STATE_OK:
+            return (PCHAR) "OK";
+        case UPLOAD_CONNECTION_STATE_NOT_IN_USE:
+            return (PCHAR) "NOT_IN_USE";
+        case UPLOAD_CONNECTION_STATE_IN_USE:
+            return (PCHAR) "IN_USE";
+        default:
+            return (PCHAR) "NONE";
+    }
+}
+
+/**
  * Stream terminated notification
  */
 STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uploadHandle, SERVICE_CALL_RESULT callResult,
@@ -651,6 +668,7 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
     UINT32 sessionCount = 0, i = 0;
     UINT64 item;
     BOOL locked = FALSE, spawnNewUploadSession = TRUE, uploadHandleNotUsed = FALSE;
+    UPLOAD_CONNECTION_STATE entryConnectionState = UPLOAD_CONNECTION_STATE_NONE;
 
     CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
@@ -661,12 +679,16 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
 
     // We should handle the in-grace termination differently by not setting the terminated state
     if (SERVICE_CALL_STREAM_AUTH_IN_GRACE_PERIOD != callResult) {
-        // Set default to UPLOAD_CONNECTION_STATE_IN_USE which will trigger rollback
-        pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_IN_USE;
+        // connectionState is a property of the STREAM, not of any one upload handle. It records whether the
+        // next session to transmit owes a rollback and a fresh MKV header. Capture it on entry so the log
+        // below shows what this termination did to a decision that may have been made by an earlier handle.
+        entryConnectionState = pKinesisVideoStream->connectionState;
 
         // If invalid upload handle is specified, terminated all uploading session, and let
         // state machine spawn new session.
         if (!IS_VALID_UPLOAD_HANDLE(uploadHandle)) {
+            pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_IN_USE;
+
             CHK_STATUS(stackQueueGetCount(pKinesisVideoStream->pUploadInfoQueue, &sessionCount));
 
             for (i = 0; i < sessionCount; i++) {
@@ -687,6 +709,7 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
             pUploadHandleInfo = getStreamUploadInfo(pKinesisVideoStream, uploadHandle);
 
             if (pUploadHandleInfo == NULL) {
+                pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_IN_USE;
                 DLOGW("[%s] streamTerminatedEvent called for unknown upload handle %" PRIu64, pKinesisVideoStream->streamInfo.name, uploadHandle);
             } else {
                 // If the upload handle has not streamed any data, we can safely ignore this event.
@@ -696,10 +719,9 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                 // Set the state to terminated
                 pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
 
-                if (uploadHandleNotUsed) {
-                    // Need to indicate to the getStreamData to not rollback.
-                    pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_NOT_IN_USE;
-                } else {
+                // A handle that never transmitted has no rollback of its own, and must not clear one left
+                // pending by an earlier handle that did transmit. Only decide the state when it transmitted.
+                if (!uploadHandleNotUsed) {
                     pActiveUploadHandleInfo = getStreamUploadInfoWithState(pKinesisVideoStream, UPLOAD_HANDLE_STATE_ACTIVE);
 
                     if (pActiveUploadHandleInfo != NULL) {
@@ -716,6 +738,8 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                                 pKinesisVideoClient->clientCallbacks.customData, TO_STREAM_HANDLE(pKinesisVideoStream), uploadHandle,
                                 pUploadHandleInfo->lastFragmentTs, STATUS_PUTMEDIA_LAST_PERSIST_ACK_NOT_RECEIVED);
                         }
+                    } else {
+                        pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_IN_USE;
                     }
                 }
 
@@ -744,6 +768,10 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                 }
             }
         }
+
+        DLOGD("[%s] Upload handle %" PRIu64 " terminated (result %u). Stream connectionState %s -> %s", pKinesisVideoStream->streamInfo.name,
+              uploadHandle, (UINT32) callResult, uploadConnectionStateName(entryConnectionState),
+              uploadConnectionStateName(pKinesisVideoStream->connectionState));
     }
 
     // if we had an auth failure then we will not exit early we need to retry auth
