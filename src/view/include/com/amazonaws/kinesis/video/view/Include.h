@@ -55,48 +55,60 @@ extern "C" {
  *
  * NOTE: The high order 16 bits will be used to store the data offset
  */
-#define ITEM_FLAG_NONE               0
-#define ITEM_FLAG_STREAM_START       (0x1 << 0)
-#define ITEM_FLAG_FRAGMENT_START     (0x1 << 1)
-#define ITEM_FLAG_BUFFERING_ACK      (0x1 << 2)
-#define ITEM_FLAG_RECEIVED_ACK       (0x1 << 3)
-#define ITEM_FLAG_FRAGMENT_END       (0x1 << 4)
-#define ITEM_FLAG_PERSISTED_ACK      (0x1 << 5)
-#define ITEM_FLAG_SKIP_ITEM          (0x1 << 6)
-#define ITEM_FLAG_STREAM_START_DEBUG (0x1 << 15)
+#define ITEM_FLAG_NONE                0
+#define ITEM_FLAG_STREAM_START        (0x1 << 0)
+#define ITEM_FLAG_FRAGMENT_START      (0x1 << 1)
+#define ITEM_FLAG_BUFFERING_ACK       (0x1 << 2)
+#define ITEM_FLAG_RECEIVED_ACK        (0x1 << 3)
+#define ITEM_FLAG_FRAGMENT_END        (0x1 << 4)
+#define ITEM_FLAG_PERSISTED_ACK       (0x1 << 5)
+#define ITEM_FLAG_SKIP_ITEM           (0x1 << 6)
+// A new timecode base begins at this item: the generator reset its timeline here (initial header, or
+// mkvgenResetGenerator), so cluster timecodes restart from zero relative to a new streamStartTimestamp.
+//
+// Deliberately separate from ITEM_FLAG_STREAM_START, which only means "this item's bytes begin with an EBML
+// header". Both a generator reset and streamStartFixupOnReconnect produce a header, but only the generator
+// reset restarts timecodes. Unlike ITEM_FLAG_STREAM_START this marker must survive being sent: it is the
+// only record that a base change happens at this item, and getStreamData relies on it to terminate any
+// session that advances onto it, which is what keeps one timecode base per PutMedia segment.
+#define ITEM_FLAG_TIMECODE_BASE_START (0x1 << 7)
+#define ITEM_FLAG_STREAM_START_DEBUG  (0x1 << 15)
 
 /**
  * Macros for checking/setting/clearing for various flags
  */
-#define CHECK_ITEM_FRAGMENT_START(f)     (((f) &ITEM_FLAG_FRAGMENT_START) != ITEM_FLAG_NONE)
-#define CHECK_ITEM_BUFFERING_ACK(f)      (((f) &ITEM_FLAG_BUFFERING_ACK) != ITEM_FLAG_NONE)
-#define CHECK_ITEM_RECEIVED_ACK(f)       (((f) &ITEM_FLAG_RECEIVED_ACK) != ITEM_FLAG_NONE)
-#define CHECK_ITEM_STREAM_START(f)       (((f) &ITEM_FLAG_STREAM_START) != ITEM_FLAG_NONE)
-#define CHECK_ITEM_FRAGMENT_END(f)       (((f) &ITEM_FLAG_FRAGMENT_END) != ITEM_FLAG_NONE)
-#define CHECK_ITEM_PERSISTED_ACK(f)      (((f) &ITEM_FLAG_PERSISTED_ACK) != ITEM_FLAG_NONE)
-#define CHECK_ITEM_SKIP_ITEM(f)          (((f) &ITEM_FLAG_SKIP_ITEM) != ITEM_FLAG_NONE)
-#define CHECK_ITEM_STREAM_START_DEBUG(f) (((f) &ITEM_FLAG_STREAM_START_DEBUG) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_FRAGMENT_START(f)      (((f) & ITEM_FLAG_FRAGMENT_START) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_BUFFERING_ACK(f)       (((f) & ITEM_FLAG_BUFFERING_ACK) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_RECEIVED_ACK(f)        (((f) & ITEM_FLAG_RECEIVED_ACK) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_STREAM_START(f)        (((f) & ITEM_FLAG_STREAM_START) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_FRAGMENT_END(f)        (((f) & ITEM_FLAG_FRAGMENT_END) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_PERSISTED_ACK(f)       (((f) & ITEM_FLAG_PERSISTED_ACK) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_SKIP_ITEM(f)           (((f) & ITEM_FLAG_SKIP_ITEM) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_STREAM_START_DEBUG(f)  (((f) & ITEM_FLAG_STREAM_START_DEBUG) != ITEM_FLAG_NONE)
+#define CHECK_ITEM_TIMECODE_BASE_START(f) (((f) & ITEM_FLAG_TIMECODE_BASE_START) != ITEM_FLAG_NONE)
 
-#define SET_ITEM_FRAGMENT_START(f)     ((f) |= ITEM_FLAG_FRAGMENT_START)
-#define SET_ITEM_BUFFERING_ACK(f)      ((f) |= ITEM_FLAG_BUFFERING_ACK)
-#define SET_ITEM_RECEIVED_ACK(f)       ((f) |= ITEM_FLAG_RECEIVED_ACK)
-#define SET_ITEM_STREAM_START(f)       ((f) |= ITEM_FLAG_STREAM_START)
-#define SET_ITEM_FRAGMENT_END(f)       ((f) |= ITEM_FLAG_FRAGMENT_END)
-#define SET_ITEM_PERSISTED_ACK(f)      ((f) |= ITEM_FLAG_PERSISTED_ACK)
-#define SET_ITEM_SKIP_ITEM(f)          ((f) |= ITEM_FLAG_SKIP_ITEM)
-#define SET_ITEM_STREAM_START_DEBUG(f) ((f) |= ITEM_FLAG_STREAM_START_DEBUG)
+#define SET_ITEM_FRAGMENT_START(f)      ((f) |= ITEM_FLAG_FRAGMENT_START)
+#define SET_ITEM_BUFFERING_ACK(f)       ((f) |= ITEM_FLAG_BUFFERING_ACK)
+#define SET_ITEM_RECEIVED_ACK(f)        ((f) |= ITEM_FLAG_RECEIVED_ACK)
+#define SET_ITEM_STREAM_START(f)        ((f) |= ITEM_FLAG_STREAM_START)
+#define SET_ITEM_FRAGMENT_END(f)        ((f) |= ITEM_FLAG_FRAGMENT_END)
+#define SET_ITEM_PERSISTED_ACK(f)       ((f) |= ITEM_FLAG_PERSISTED_ACK)
+#define SET_ITEM_SKIP_ITEM(f)           ((f) |= ITEM_FLAG_SKIP_ITEM)
+#define SET_ITEM_STREAM_START_DEBUG(f)  ((f) |= ITEM_FLAG_STREAM_START_DEBUG)
+#define SET_ITEM_TIMECODE_BASE_START(f) ((f) |= ITEM_FLAG_TIMECODE_BASE_START)
 
-#define CLEAR_ITEM_FRAGMENT_START(f)     ((f) &= ~ITEM_FLAG_FRAGMENT_START)
-#define CLEAR_ITEM_BUFFERING_ACK(f)      ((f) &= ~ITEM_FLAG_BUFFERING_ACK)
-#define CLEAR_ITEM_RECEIVED_ACK(f)       ((f) &= ~ITEM_FLAG_RECEIVED_ACK)
-#define CLEAR_ITEM_STREAM_START(f)       ((f) &= ~ITEM_FLAG_STREAM_START)
-#define CLEAR_ITEM_FRAGMENT_END(f)       ((f) &= ~ITEM_FLAG_FRAGMENT_END)
-#define CLEAR_ITEM_PERSISTED_ACK(f)      ((f) &= ~ITEM_FLAG_PERSISTED_ACK)
-#define CLEAR_ITEM_SKIP_ITEM(f)          ((f) &= ~ITEM_FLAG_SKIP_ITEM)
-#define CLEAR_ITEM_STREAM_START_DEBUG(f) ((f) &= ~ITEM_FLAG_STREAM_START_DEBUG)
+#define CLEAR_ITEM_FRAGMENT_START(f)      ((f) &= ~ITEM_FLAG_FRAGMENT_START)
+#define CLEAR_ITEM_BUFFERING_ACK(f)       ((f) &= ~ITEM_FLAG_BUFFERING_ACK)
+#define CLEAR_ITEM_RECEIVED_ACK(f)        ((f) &= ~ITEM_FLAG_RECEIVED_ACK)
+#define CLEAR_ITEM_STREAM_START(f)        ((f) &= ~ITEM_FLAG_STREAM_START)
+#define CLEAR_ITEM_FRAGMENT_END(f)        ((f) &= ~ITEM_FLAG_FRAGMENT_END)
+#define CLEAR_ITEM_PERSISTED_ACK(f)       ((f) &= ~ITEM_FLAG_PERSISTED_ACK)
+#define CLEAR_ITEM_SKIP_ITEM(f)           ((f) &= ~ITEM_FLAG_SKIP_ITEM)
+#define CLEAR_ITEM_STREAM_START_DEBUG(f)  ((f) &= ~ITEM_FLAG_STREAM_START_DEBUG)
+#define CLEAR_ITEM_TIMECODE_BASE_START(f) ((f) &= ~ITEM_FLAG_TIMECODE_BASE_START)
 
 #define GET_ITEM_DATA_OFFSET(f)    ((UINT16) ((f) >> 16))
-#define SET_ITEM_DATA_OFFSET(f, o) ((f) = ((f) &0x0000ffff) | (((UINT16) (o)) << 16))
+#define SET_ITEM_DATA_OFFSET(f, o) ((f) = ((f) & 0x0000ffff) | (((UINT16) (o)) << 16))
 
 /**
  * This is a sentinel indicating an invalid index value
