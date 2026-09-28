@@ -213,4 +213,135 @@ TEST_F(StreamStartBoundaryFunctionalityTest, FixupHeaderHasNoBoundaryMarkerAndIs
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 }
 
+//
+// Builds a genuine timecode base boundary mid-view, parks the send pointer on it at offset zero - the state
+// getStreamData leaves behind when the terminate guard stops a session there - and returns the terminating
+// handle, set up as one that transmitted earlier fragments and is awaiting their persisted ACKs.
+//
+static PUploadHandleInfo SetUpSessionStoppedAtBoundary(PKinesisVideoStream pKinesisVideoStream, PKinesisVideoClient pKinesisVideoClient,
+                                                       MockProducer& producer, UINT32 keyFrameInterval)
+{
+    PViewItem pViewItem = NULL;
+    PUploadHandleInfo pUploadHandleInfo = NULL;
+    UINT64 tailIndex, boundaryIndex = INVALID_VIEW_INDEX_VALUE, idx, item;
+    UINT32 sessionCount = 0;
+
+    for (UINT32 i = 0; i < keyFrameInterval; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(FALSE));
+    }
+
+    BOUNDARY_TEST_LOCK(pKinesisVideoStream, pKinesisVideoClient);
+    EXPECT_EQ(STATUS_SUCCESS, contentViewGetTail(pKinesisVideoStream->pView, &pViewItem));
+    tailIndex = pViewItem->index;
+    BOUNDARY_TEST_UNLOCK(pKinesisVideoStream, pKinesisVideoClient);
+
+    pKinesisVideoStream->resetGeneratorOnKeyFrame = TRUE;
+    for (UINT32 i = 0; i < keyFrameInterval; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, producer.putFrame(FALSE));
+    }
+
+    BOUNDARY_TEST_LOCK(pKinesisVideoStream, pKinesisVideoClient);
+    for (idx = tailIndex + 1; contentViewGetItemAt(pKinesisVideoStream->pView, idx, &pViewItem) == STATUS_SUCCESS; idx++) {
+        if (CHECK_ITEM_STREAM_START(pViewItem->flags)) {
+            boundaryIndex = idx;
+            break;
+        }
+    }
+    EXPECT_NE(INVALID_VIEW_INDEX_VALUE, boundaryIndex) << "rebase did not produce a stream-start boundary";
+
+    if (boundaryIndex != INVALID_VIEW_INDEX_VALUE) {
+        EXPECT_EQ(STATUS_SUCCESS, contentViewGetItemAt(pKinesisVideoStream->pView, boundaryIndex, &pViewItem));
+        EXPECT_TRUE(CHECK_ITEM_TIMECODE_BASE_START(pViewItem->flags));
+
+        pKinesisVideoStream->curViewItem.viewItem = *pViewItem;
+        pKinesisVideoStream->curViewItem.offset = 0;
+    }
+    BOUNDARY_TEST_UNLOCK(pKinesisVideoStream, pKinesisVideoClient);
+
+    EXPECT_EQ(STATUS_SUCCESS, stackQueueGetCount(pKinesisVideoStream->pUploadInfoQueue, &sessionCount));
+    EXPECT_GT(sessionCount, 0u) << "no upload handle to drive";
+    if (sessionCount == 0) {
+        return NULL;
+    }
+
+    EXPECT_EQ(STATUS_SUCCESS, stackQueueGetAt(pKinesisVideoStream->pUploadInfoQueue, 0, &item));
+    pUploadHandleInfo = (PUploadHandleInfo) item;
+    EXPECT_TRUE(pUploadHandleInfo != NULL);
+
+    if (pUploadHandleInfo != NULL) {
+        // WAIT_FOR_PERSISTED_ACK makes getStreamData park the handle here rather than finish it outright.
+        pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATING;
+        pUploadHandleInfo->lastFragmentTs = 5 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+        pUploadHandleInfo->lastPersistedAckTs = INVALID_TIMESTAMP_VALUE;
+    }
+
+    return pUploadHandleInfo;
+}
+
+//
+// A live session stopped at a base boundary sits waiting for the persisted ACKs of the fragments it already
+// sent. If the connection drops during that wait, those fragments are unacknowledged and the successor owes a
+// replay of them, so a rollback must be armed. The send pointer is parked on the boundary at offset zero here,
+// which is the same shape a stopped-stream drain presents, so this pins that the two are told apart and the
+// replay is not silently dropped.
+//
+TEST_F(StreamStartBoundaryFunctionalityTest, DropWhileAwaitingPersistedAckAtBoundaryStillArmsRollback)
+{
+    PKinesisVideoStream pKinesisVideoStream;
+    PKinesisVideoClient pKinesisVideoClient;
+    PUploadHandleInfo pUploadHandleInfo;
+
+    CreateScenarioTestClient();
+    CreateStreamSync();
+    MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
+
+    pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+    pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+    ASSERT_TRUE(WAIT_FOR_PERSISTED_ACK(pKinesisVideoStream)) << "this scenario needs the stream to wait for persisted ACKs";
+
+    pUploadHandleInfo = SetUpSessionStoppedAtBoundary(pKinesisVideoStream, pKinesisVideoClient, mockProducer, mMockProducerConfig.mKeyFrameInterval);
+    ASSERT_TRUE(pUploadHandleInfo != NULL);
+    ASSERT_FALSE(pKinesisVideoStream->streamStopped) << "the stream must still be live for this case";
+
+    pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_NONE;
+    EXPECT_EQ(STATUS_SUCCESS, streamTerminatedEvent(pKinesisVideoStream, pUploadHandleInfo->handle, SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT, FALSE));
+
+    EXPECT_TRUE(CHECK_UPLOAD_CONNECTION_STATE_IN_USE(pKinesisVideoStream->connectionState))
+        << "the fragments this handle sent were never persisted, so the successor owes a replay of them; suppressing "
+        << "the rollback here would drop that content";
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
+}
+
+//
+// The counterpart. On a stopped stream the same parked send pointer must NOT arm a rollback: the successor
+// would start behind the boundary, be stopped at the same item, and since no further ACK is coming the
+// rollback target never advances, so the drain repeats until the stop timeout expires.
+//
+TEST_F(StreamStartBoundaryFunctionalityTest, StoppedStreamAtBoundaryArmsNoRollback)
+{
+    PKinesisVideoStream pKinesisVideoStream;
+    PKinesisVideoClient pKinesisVideoClient;
+    PUploadHandleInfo pUploadHandleInfo;
+
+    CreateScenarioTestClient();
+    CreateStreamSync();
+    MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
+
+    pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+    pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+
+    pUploadHandleInfo = SetUpSessionStoppedAtBoundary(pKinesisVideoStream, pKinesisVideoClient, mockProducer, mMockProducerConfig.mKeyFrameInterval);
+    ASSERT_TRUE(pUploadHandleInfo != NULL);
+
+    pKinesisVideoStream->streamStopped = TRUE;
+    pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_NONE;
+    EXPECT_EQ(STATUS_SUCCESS, streamTerminatedEvent(pKinesisVideoStream, pUploadHandleInfo->handle, SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT, FALSE));
+
+    EXPECT_FALSE(CHECK_UPLOAD_CONNECTION_STATE_IN_USE(pKinesisVideoStream->connectionState))
+        << "a stopped stream parked on a base boundary must not arm a rollback, or the drain cannot complete";
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
+}
+
 #endif

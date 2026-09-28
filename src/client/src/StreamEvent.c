@@ -720,7 +720,8 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
                 pUploadHandleInfo->state = UPLOAD_HANDLE_STATE_TERMINATED;
 
                 // A handle that never transmitted has no rollback of its own, and must not clear one left
-                // pending by an earlier handle that did transmit. Only decide the state when it transmitted.
+                // pending by an earlier handle that did transmit.
+                // Only decide the state when it transmitted.
                 if (!uploadHandleNotUsed) {
                     pActiveUploadHandleInfo = getStreamUploadInfoWithState(pKinesisVideoStream, UPLOAD_HANDLE_STATE_ACTIVE);
 
@@ -769,13 +770,19 @@ STATUS streamTerminatedEvent(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HAN
             }
         }
 
-        // A session that was stopped at a timecode base change ended cleanly: getStreamData took that item as the
-        // current one, sent nothing from it, and queued EOS. The send pointer is therefore still parked on the
-        // boundary, which is exactly where the successor has to start, so no rollback is owed. Rolling back would
-        // put the successor behind the boundary, where it is stopped at the same item again, and on a stopped
-        // stream that repeats indefinitely because nothing advances the rollback target. This has to override
-        // whichever branch above ran, so it is applied last.
-        if (IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->curViewItem.viewItem.handle) &&
+        // A session stopped at a timecode base change leaves the send pointer parked on the boundary item with
+        // nothing sent from it, which is where its successor has to start. On a STOPPED stream a rollback from
+        // here cannot make progress: the successor starts behind the boundary, is stopped at the same item, and
+        // the rollback target never advances because no further ACK is coming, so the drain repeats until the
+        // stop timeout expires. Suppress it for that case only.
+        //
+        // The stopped test matters. On a live stream the same parked pointer also occurs when the connection
+        // drops while the session waits for the persisted ACKs of fragments it already sent. Those fragments are
+        // unacknowledged, so the successor genuinely owes a replay of them, and suppressing it would drop that
+        // content. There ACKs keep arriving and the rollback resolves on its own.
+        //
+        // This has to override whichever branch above ran, so it is applied last.
+        if (pKinesisVideoStream->streamStopped && IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->curViewItem.viewItem.handle) &&
             CHECK_ITEM_TIMECODE_BASE_START(pKinesisVideoStream->curViewItem.viewItem.flags) && pKinesisVideoStream->curViewItem.offset == 0) {
             pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_NOT_IN_USE;
         }
