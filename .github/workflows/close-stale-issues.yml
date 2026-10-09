@@ -6,18 +6,8 @@ name: Close Stale Issues
 on:
   schedule:
     - cron: "0 0 * * *"
-  # Manual runs (gh workflow run close-stale-issues.yml --ref <branch>) default to dry-run.
+  # Manual runs are always a dry run (preview only).
   workflow_dispatch:
-    inputs:
-      dry-run:
-        description: Log what would be labeled or closed without changing any issue
-        type: boolean
-        default: true
-  # TEMPORARY: dry-runs on the PR that adds this file, which also registers it for
-  # gh workflow run --ref <branch>. Remove before merge.
-  pull_request:
-    paths:
-      - .github/workflows/close-stale-issues.yml
 
 permissions:
   issues: write
@@ -46,7 +36,5 @@ jobs:
 
 
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          loglevel: DEBUG
-          # Only the scheduled run makes changes. Any other trigger is a dry run
-          # unless it is a manual run with dry-run explicitly set to false.
-          dry-run: ${{ github.event_name != 'schedule' && (github.event_name != 'workflow_dispatch' || inputs.dry-run) }}
+          # Only the scheduled run makes changes. Any other trigger is a dry run.
+          dry-run: ${{ github.event_name != 'schedule' }}
