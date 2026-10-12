@@ -2170,9 +2170,15 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream, PBOO
     // reset the timestamp of the new stream
     pKinesisVideoStream->newSessionTimestamp = INVALID_TIMESTAMP_VALUE;
 
-    // return early if there is no available item to send
+    // Nothing to send yet. Keep the header owed and retry on a later call rather than returning with it
+    // unplaced: otherwise getStreamData would clear connectionState and the header would never be sent. A
+    // caller that retries a zero-byte read reaches this before the next frame arrives, so this path is hit
+    // on every deferral, not just an idle stream.
     CHK_STATUS(contentViewGetWindowItemCount(pKinesisVideoStream->pView, &currentItemCount, &windowItemCount));
-    CHK(currentItemCount != 0, retStatus);
+    if (currentItemCount == 0) {
+        *pHeaderDeferred = TRUE;
+        CHK(FALSE, retStatus);
+    }
 
     // Get the current item
     CHK_STATUS(contentViewGetCurrentIndex(pKinesisVideoStream->pView, &curIndex));
@@ -2188,11 +2194,13 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream, PBOO
     // keeps the position where the dropped session stopped, which is partway through a fragment
     // unless the drop happened to land on a key frame.
     //
-    // Advance to the boundary the send path will choose so both agree on which item starts the session..
+    // Advance to the boundary the send path will choose so both agree on which item starts the session.
+    // getNextBoundaryViewItem skips errored (SKIP_ITEM) items on the way, so skip them here too, or the
+    // header could land on a fragment the send path steps over.
     CHK_STATUS(contentViewGetHead(pKinesisVideoStream->pView, &pHeadViewItem));
     for (boundaryIndex = curIndex; boundaryIndex <= pHeadViewItem->index; boundaryIndex++) {
         CHK_STATUS(contentViewGetItemAt(pKinesisVideoStream->pView, boundaryIndex, &pViewItem));
-        if (CHECK_ITEM_FRAGMENT_START(pViewItem->flags) || CHECK_ITEM_FRAGMENT_END(pViewItem->flags)) {
+        if (!CHECK_ITEM_SKIP_ITEM(pViewItem->flags) && (CHECK_ITEM_FRAGMENT_START(pViewItem->flags) || CHECK_ITEM_FRAGMENT_END(pViewItem->flags))) {
             break;
         }
     }

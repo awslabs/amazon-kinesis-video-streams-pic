@@ -651,7 +651,10 @@ STATUS checkForConnectionStaleness(PKinesisVideoStream, PViewItem);
 STATUS checkStreamingTokenExpiration(PKinesisVideoStream);
 
 /**
- * Fixes up the current view item to be a stream start.
+ * Stages the recovery MKV header on the view item the next session will start from, which is the next
+ * fragment boundary. Sets the out BOOL to TRUE when no boundary is available yet (the view holds only the
+ * tail of a fragment, or nothing at all); the header is then left owed for a later call rather than placed
+ * where the send path would skip it.
  */
 STATUS streamStartFixupOnReconnect(PKinesisVideoStream, PBOOL);
 

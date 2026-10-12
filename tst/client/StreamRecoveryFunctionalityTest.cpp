@@ -1901,6 +1901,12 @@ TEST_P(StreamRecoveryFunctionalityTest, RecoveryWithNoFragmentBoundaryYetDefersT
         << "the fix-up has not been applied yet, so it must still be owed";
     EXPECT_EQ(INVALID_VIEW_INDEX_VALUE, findUndeliverableHeaderItem()) << "a header was staged on an item that can never be sent";
 
+    // Read again before anything new arrives, as a caller retrying a zero-byte read does. The header stays owed.
+    retrievedSize = 0;
+    retStatus = getKinesisVideoStreamData(mStreamHandle, uploadHandle, pMockConsumer->mDataBuffer, pMockConsumer->mDataBufferSize, &retrievedSize);
+    EXPECT_EQ(STATUS_NO_MORE_DATA_AVAILABLE, retStatus);
+    EXPECT_EQ(UPLOAD_CONNECTION_STATE_IN_USE, pKinesisVideoStream->connectionState) << "a read that found nothing new discarded the owed header";
+
     // A key frame arrives, so now there is a boundary and the deferred header has somewhere to go.
     for (UINT32 i = 0; i < mMockProducerConfig.mKeyFrameInterval; i++) {
         EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
