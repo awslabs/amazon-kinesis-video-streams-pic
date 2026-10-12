@@ -178,6 +178,8 @@ TEST_F(StreamStartBoundaryFunctionalityTest, FixupHeaderHasNoBoundaryMarkerAndIs
     EXPECT_FALSE(CHECK_ITEM_STREAM_START(pViewItem->flags));
     EXPECT_FALSE(CHECK_ITEM_TIMECODE_BASE_START(pViewItem->flags));
 
+    BOOL headerDeferred = FALSE;
+
     // Point the content view at that item so the fix-up operates on it. Clear curViewItem so the fix-up's
     // internal reset is a no-op on entry.
     EXPECT_EQ(STATUS_SUCCESS, contentViewSetCurrentIndex(pKinesisVideoStream->pView, fixupIndex));
@@ -186,7 +188,7 @@ TEST_F(StreamStartBoundaryFunctionalityTest, FixupHeaderHasNoBoundaryMarkerAndIs
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
 
     // Reconnect fix-up prepends an EBML header + ITEM_FLAG_STREAM_START, but NOT the boundary marker.
-    EXPECT_EQ(STATUS_SUCCESS, streamStartFixupOnReconnect(pKinesisVideoStream));
+    EXPECT_EQ(STATUS_SUCCESS, streamStartFixupOnReconnect(pKinesisVideoStream, &headerDeferred));
 
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
     EXPECT_EQ(STATUS_SUCCESS, contentViewGetItemAt(pKinesisVideoStream->pView, fixupIndex, &pViewItem));

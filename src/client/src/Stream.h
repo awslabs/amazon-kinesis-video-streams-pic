@@ -653,7 +653,7 @@ STATUS checkStreamingTokenExpiration(PKinesisVideoStream);
 /**
  * Fixes up the current view item to be a stream start.
  */
-STATUS streamStartFixupOnReconnect(PKinesisVideoStream);
+STATUS streamStartFixupOnReconnect(PKinesisVideoStream, PBOOL);
 
 /**
  * Fixes up the current view item to remove stream start.

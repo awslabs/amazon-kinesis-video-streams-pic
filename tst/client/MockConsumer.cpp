@@ -48,24 +48,33 @@ void MockConsumer::initOldCurrent()
 {
     STATUS retStatus = STATUS_SUCCESS;
     PKinesisVideoClient pKinesisVideoClient = NULL;
-    PViewItem pViewItem;
+    PViewItem pViewItem, pTailItem = NULL;
+    UINT64 tailIndex;
 
     PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
 
     pKinesisVideoClient->clientCallbacks.lockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
 
-    // Traverse back from current to look for the view item that has the STREAM_START_DEBUG flag.
+    // Nothing older than the tail is still in the view, so the walk back must not go past it.
+    retStatus = contentViewGetTail(pKinesisVideoStream->pView, &pTailItem);
+    EXPECT_EQ(STATUS_SUCCESS, retStatus);
+    tailIndex = (pTailItem != NULL) ? pTailItem->index : 0;
+
+    // Traverse back from current to the view item that has the STREAM_START_DEBUG flag, which marks the start
+    // of this session's segment, and anchor ACK generation there. The marker is normally still in the view, but
+    // after a reconnect whose header fix-up was deferred until a later key frame the consumer's first read can
+    // land only once the original start has been trimmed; in that case stop at the tail and ack from there,
+    // which createAckEvent already handles by skipping items no longer in the view.
     mOldCurrent = pKinesisVideoStream->curViewItem.viewItem.index;
     pViewItem = &pKinesisVideoStream->curViewItem.viewItem;
 
-    while (!CHECK_ITEM_STREAM_START_DEBUG(pViewItem->flags) && STATUS_SUCCEEDED(retStatus)) {
+    while (!CHECK_ITEM_STREAM_START_DEBUG(pViewItem->flags) && mOldCurrent > tailIndex && STATUS_SUCCEEDED(retStatus)) {
         mOldCurrent--;
         retStatus = contentViewGetItemAt(pKinesisVideoStream->pView, mOldCurrent, &pViewItem);
     }
 
     EXPECT_EQ(STATUS_SUCCESS, retStatus);
-    EXPECT_TRUE(CHECK_ITEM_STREAM_START_DEBUG(pViewItem->flags));
 
     pKinesisVideoClient->clientCallbacks.unlockMutexFn(pKinesisVideoClient->clientCallbacks.customData, pKinesisVideoStream->base.lock);
 
