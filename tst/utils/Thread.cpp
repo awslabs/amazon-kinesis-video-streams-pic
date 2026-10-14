@@ -327,7 +327,7 @@ PVOID tidProbeRoutine(PVOID arg)
 
 TEST_F(ThreadFunctionalityTest, GetThreadIdIsUniquePerLiveThread)
 {
-    UINT64 i, j, recorded;
+    UINT64 i, j, recorded, created = 0, deadline;
     TID threads[GETTID_PROBE_THREAD_COUNT];
     TID mainTid = GETTID();
 
@@ -335,29 +335,45 @@ TEST_F(ThreadFunctionalityTest, GetThreadIdIsUniquePerLiveThread)
     gTidProbeRecorded = 0;
     ATOMIC_STORE_BOOL(&gTidProbeRelease, FALSE);
 
+    // Slot i is only used by thread i, so the ones that were created are threads[0 .. created-1].
+    // A failed create is a test failure in its own right; the rest of the test must not wait on, or
+    // join, a thread that does not exist.
     for (i = 0; i < GETTID_PROBE_THREAD_COUNT; i++) {
-        EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threads[i], tidProbeRoutine, (PVOID) i));
+        STATUS createStatus = THREAD_CREATE(&threads[i], tidProbeRoutine, (PVOID) i);
+        EXPECT_EQ(STATUS_SUCCESS, createStatus) << "failed to create probe thread " << i;
+        if (createStatus != STATUS_SUCCESS) {
+            break;
+        }
+        created++;
     }
 
-    // Wait until every thread has recorded its id and parked, so all are live simultaneously.
+    // Wait until every created thread has recorded its id and parked, so all are live
+    // simultaneously. Bounded so a thread that never starts fails the test instead of hanging it:
+    // 16 thread starts take ~10 ms, the budget is 10 s.
+    deadline = GETTIME() + 10 * HUNDREDS_OF_NANOS_IN_A_SECOND;
     do {
         THREAD_SLEEP(5 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
         MUTEX_LOCK(gTidProbeMutex);
         recorded = gTidProbeRecorded;
         MUTEX_UNLOCK(gTidProbeMutex);
-    } while (recorded < GETTID_PROBE_THREAD_COUNT);
+    } while (recorded < created && GETTIME() < deadline);
+    EXPECT_EQ(created, recorded) << "only " << recorded << " of " << created << " probe threads started within 10 s";
 
     // Every live thread must report a distinct identity, and none may equal the main thread's.
-    for (i = 0; i < GETTID_PROBE_THREAD_COUNT; i++) {
-        EXPECT_NE(mainTid, gTidProbeIds[i]) << "spawned thread " << i << " shares the main thread's id";
-        for (j = i + 1; j < GETTID_PROBE_THREAD_COUNT; j++) {
-            EXPECT_NE(gTidProbeIds[i], gTidProbeIds[j]) << "threads " << i << " and " << j << " share a thread id";
+    // Judged only when every created thread recorded an id; otherwise the test has already failed
+    // above and an unwritten slot must not be compared.
+    if (recorded == created) {
+        for (i = 0; i < created; i++) {
+            EXPECT_NE(mainTid, gTidProbeIds[i]) << "spawned thread " << i << " shares the main thread's id";
+            for (j = i + 1; j < created; j++) {
+                EXPECT_NE(gTidProbeIds[i], gTidProbeIds[j]) << "threads " << i << " and " << j << " share a thread id";
+            }
         }
     }
 
-    // Release the threads and join them.
+    // Release the threads and join the ones that were created.
     ATOMIC_STORE_BOOL(&gTidProbeRelease, TRUE);
-    for (i = 0; i < GETTID_PROBE_THREAD_COUNT; i++) {
+    for (i = 0; i < created; i++) {
         EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(threads[i], NULL));
     }
 
