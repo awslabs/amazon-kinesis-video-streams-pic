@@ -293,3 +293,73 @@ TEST_F(ThreadFunctionalityTest, VerifyStackSize)
 }
 
 #endif
+
+//
+// GETTID() must return a thread IDENTITY that is unique among live threads. This regressed on
+// Windows when it was implemented as GetCurrentThread() (a constant pseudo-handle, the same value on
+// every thread). Verify that every concurrently-live thread, and the main thread, reports a distinct
+// id. On POSIX this has always held (pthread_self); the test guards the Windows path from here on.
+//
+#define GETTID_PROBE_THREAD_COUNT 16
+
+MUTEX gTidProbeMutex;
+UINT64 gTidProbeRecorded;
+volatile ATOMIC_BOOL gTidProbeRelease;
+TID gTidProbeIds[GETTID_PROBE_THREAD_COUNT];
+
+PVOID tidProbeRoutine(PVOID arg)
+{
+    UINT64 slot = (UINT64) arg;
+
+    gTidProbeIds[slot] = GETTID();
+
+    MUTEX_LOCK(gTidProbeMutex);
+    gTidProbeRecorded++;
+    MUTEX_UNLOCK(gTidProbeMutex);
+
+    // Stay alive until released, so every thread's id is live at the same instant and an exited
+    // thread's id cannot be recycled while the uniqueness check below runs.
+    while (!ATOMIC_LOAD_BOOL(&gTidProbeRelease)) {
+        THREAD_SLEEP(5 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+    }
+    return NULL;
+}
+
+TEST_F(ThreadFunctionalityTest, GetThreadIdIsUniquePerLiveThread)
+{
+    UINT64 i, j, recorded;
+    TID threads[GETTID_PROBE_THREAD_COUNT];
+    TID mainTid = GETTID();
+
+    gTidProbeMutex = MUTEX_CREATE(FALSE);
+    gTidProbeRecorded = 0;
+    ATOMIC_STORE_BOOL(&gTidProbeRelease, FALSE);
+
+    for (i = 0; i < GETTID_PROBE_THREAD_COUNT; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_CREATE(&threads[i], tidProbeRoutine, (PVOID) i));
+    }
+
+    // Wait until every thread has recorded its id and parked, so all are live simultaneously.
+    do {
+        THREAD_SLEEP(5 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND);
+        MUTEX_LOCK(gTidProbeMutex);
+        recorded = gTidProbeRecorded;
+        MUTEX_UNLOCK(gTidProbeMutex);
+    } while (recorded < GETTID_PROBE_THREAD_COUNT);
+
+    // Every live thread must report a distinct identity, and none may equal the main thread's.
+    for (i = 0; i < GETTID_PROBE_THREAD_COUNT; i++) {
+        EXPECT_NE(mainTid, gTidProbeIds[i]) << "spawned thread " << i << " shares the main thread's id";
+        for (j = i + 1; j < GETTID_PROBE_THREAD_COUNT; j++) {
+            EXPECT_NE(gTidProbeIds[i], gTidProbeIds[j]) << "threads " << i << " and " << j << " share a thread id";
+        }
+    }
+
+    // Release the threads and join them.
+    ATOMIC_STORE_BOOL(&gTidProbeRelease, TRUE);
+    for (i = 0; i < GETTID_PROBE_THREAD_COUNT; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, THREAD_JOIN(threads[i], NULL));
+    }
+
+    MUTEX_FREE(gTidProbeMutex);
+}
