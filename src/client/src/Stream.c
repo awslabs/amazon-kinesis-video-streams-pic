@@ -979,6 +979,26 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
         case MKV_STATE_START_STREAM:
             SET_ITEM_STREAM_START(itemFlags);
             SET_ITEM_STREAM_START_DEBUG(itemFlags);
+            // MKV_STATE_START_STREAM is reached only from MKV_GENERATOR_STATE_START, i.e. the initial header
+            // or after mkvgenResetGenerator. Either way the generator re-captures streamStartTimestamp on
+            // this frame and cluster timecodes restart from it, so a new timecode base begins at this item.
+            // Record that separately from ITEM_FLAG_STREAM_START so resetCurrentViewItemStreamStart can tell
+            // a real base change from a header that streamStartFixupOnReconnect added.
+            //
+            // Only mark it when the view still holds earlier content on the previous base: a later rollback
+            // could then replay across this item and land two timecode bases in one segment
+            // (FRAGMENT_TIMECODE_LESSER_THAN_PREVIOUS / 4004). When the view is empty at this point there is
+            // no earlier base for a rollback to collide with, so the header stays strippable. Marking it there
+            // would needlessly force a session split when a graceful-stop drain rolls back across it, which
+            // stalls shutdown until the stop timeout expires.
+            {
+                UINT64 curItemCount = 0, windowItemCount = 0;
+
+                if (STATUS_SUCCEEDED(contentViewGetWindowItemCount(pKinesisVideoStream->pView, &curItemCount, &windowItemCount)) &&
+                    windowItemCount > 0) {
+                    SET_ITEM_TIMECODE_BASE_START(itemFlags);
+                }
+            }
             // fall-through
         case MKV_STATE_START_CLUSTER:
             SET_ITEM_FRAGMENT_START(itemFlags);
@@ -1171,6 +1191,7 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
     UINT64 allocSize, currentTime, duration, viewByteSize;
     PBYTE pCurPnt = pBuffer;
     BOOL streamLocked = FALSE, clientLocked = FALSE, rollbackToLastAck, restarted = FALSE, eosSent = FALSE;
+    BOOL headerFixupDeferred = FALSE;
     DOUBLE transferRate, deltaInSeconds;
     PUploadHandleInfo pUploadHandleInfo = NULL, pNextUploadHandleInfo = NULL;
 
@@ -1207,13 +1228,16 @@ STATUS getStreamData(PKinesisVideoStream pKinesisVideoStream, UPLOAD_HANDLE uplo
         // and early exit without changing the state if we don't have any
 
         // Fix-up the current element
-        CHK_STATUS(streamStartFixupOnReconnect(pKinesisVideoStream));
+        CHK_STATUS(streamStartFixupOnReconnect(pKinesisVideoStream, &headerFixupDeferred));
 
         restarted = TRUE;
     }
 
-    // Reset the connection dropped indicator
-    pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_OK;
+    // Clear the connection dropped indicator unless the fix-up could not place its header yet, in which case
+    // leaving it IN_USE has the fix-up retry on a later call.
+    if (!headerFixupDeferred) {
+        pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_OK;
+    }
 
     // Set the size first
     *pFillSize = 0;
@@ -2110,13 +2134,13 @@ CleanUp:
     return retStatus;
 }
 
-STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
+STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream, PBOOL pHeaderDeferred)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
-    UINT64 curIndex;
+    UINT64 curIndex, boundaryIndex;
     UINT64 streamStartTs;
-    PViewItem pViewItem = NULL;
+    PViewItem pViewItem = NULL, pHeadViewItem = NULL;
     UINT32 headerSize, packagedSize, overallSize;
     UINT64 allocSize, currentItemCount, windowItemCount;
     PBYTE pAlloc = NULL, pFrame = NULL;
@@ -2124,9 +2148,10 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
     ALLOCATION_HANDLE allocationHandle = INVALID_ALLOCATION_HANDLE_VALUE;
     ALLOCATION_HANDLE oldAllocationHandle;
 
-    CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL, STATUS_NULL_ARG);
+    CHK(pKinesisVideoStream != NULL && pKinesisVideoStream->pKinesisVideoClient != NULL && pHeaderDeferred != NULL, STATUS_NULL_ARG);
 
     pKinesisVideoClient = pKinesisVideoStream->pKinesisVideoClient;
+    *pHeaderDeferred = FALSE;
 
     // Fix-up the current item as it might be a stream start
     CHK_STATUS(resetCurrentViewItemStreamStart(pKinesisVideoStream));
@@ -2145,12 +2170,49 @@ STATUS streamStartFixupOnReconnect(PKinesisVideoStream pKinesisVideoStream)
     // reset the timestamp of the new stream
     pKinesisVideoStream->newSessionTimestamp = INVALID_TIMESTAMP_VALUE;
 
-    // return early if there is no available item to send
+    // Nothing to send yet. Keep the header owed and retry on a later call rather than returning with it
+    // unplaced: otherwise getStreamData would clear connectionState and the header would never be sent. A
+    // caller that retries a zero-byte read reaches this before the next frame arrives, so this path is hit
+    // on every deferral, not just an idle stream.
     CHK_STATUS(contentViewGetWindowItemCount(pKinesisVideoStream->pView, &currentItemCount, &windowItemCount));
-    CHK(currentItemCount != 0, retStatus);
+    if (currentItemCount == 0) {
+        *pHeaderDeferred = TRUE;
+        CHK(FALSE, retStatus);
+    }
 
     // Get the current item
     CHK_STATUS(contentViewGetCurrentIndex(pKinesisVideoStream->pView, &curIndex));
+
+    // getStreamData begins the new session at the next fragment boundary, via getNextBoundaryViewItem, so the
+    // EBML header has to be placed on that item or it is never sent.
+    //
+    // The current item is not always on a boundary. contentViewRollbackCurrent moves it to a fragment start
+    // only when its backward search, from the current item down to the tail, finds one. Two cases leave it
+    // where it was: 1/ A zero replay duration returns before the search even starts 2/ and an outage
+    // long enough to evict content under CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM drags the tail
+    // up to the send pointer so no fragment start remains in between. Either way the current item
+    // keeps the position where the dropped session stopped, which is partway through a fragment
+    // unless the drop happened to land on a key frame.
+    //
+    // Advance to the boundary the send path will choose so both agree on which item starts the session.
+    // getNextBoundaryViewItem skips errored (SKIP_ITEM) items on the way, so skip them here too, or the
+    // header could land on a fragment the send path steps over.
+    CHK_STATUS(contentViewGetHead(pKinesisVideoStream->pView, &pHeadViewItem));
+    for (boundaryIndex = curIndex; boundaryIndex <= pHeadViewItem->index; boundaryIndex++) {
+        CHK_STATUS(contentViewGetItemAt(pKinesisVideoStream->pView, boundaryIndex, &pViewItem));
+        if (!CHECK_ITEM_SKIP_ITEM(pViewItem->flags) && (CHECK_ITEM_FRAGMENT_START(pViewItem->flags) || CHECK_ITEM_FRAGMENT_END(pViewItem->flags))) {
+            break;
+        }
+    }
+
+    // With no boundary the view holds just the tail of a fragment; defer and retry on a later call.
+    if (boundaryIndex > pHeadViewItem->index) {
+        *pHeaderDeferred = TRUE;
+        CHK(FALSE, retStatus);
+    }
+
+    curIndex = boundaryIndex;
+    CHK_STATUS(contentViewSetCurrentIndex(pKinesisVideoStream->pView, curIndex));
     CHK_STATUS(contentViewGetItemAt(pKinesisVideoStream->pView, curIndex, &pViewItem));
 
     // Get the required size for the header
@@ -2250,8 +2312,19 @@ STATUS resetCurrentViewItemStreamStart(PKinesisVideoStream pKinesisVideoStream)
 
     // Quick check if we need to do anything by checking the current view items allocation handle
     // and whether it has a stream start indicator. Early exit if it's not a stream start.
+    //
+    // An item carrying ITEM_FLAG_TIMECODE_BASE_START must NOT be stripped. This routine exists to remove an EBML
+    // header that streamStartFixupOnReconnect itself added, so a later replay does not emit two headers; such a
+    // header does not restart cluster timecodes, so removing it is safe. A generator reset does restart them, and
+    // its ITEM_FLAG_STREAM_START is the only thing that stops a session streaming across the base change:
+    // getStreamData terminates any session that advances onto such an item, which is what keeps one timecode base
+    // per PutMedia segment. Strip it and a later rollback replays across the now-unmarked item, so the segment
+    // carries a cluster timecode below one the service already accepted and is rejected with
+    // FRAGMENT_TIMECODE_LESSER_THAN_PREVIOUS (4004). Leaving it intact costs nothing: the fix-up early-exits on
+    // items that already carry ITEM_FLAG_STREAM_START and reuses the embedded header.
     CHK(IS_VALID_ALLOCATION_HANDLE(pKinesisVideoStream->curViewItem.viewItem.handle) &&
-            CHECK_ITEM_STREAM_START(pKinesisVideoStream->curViewItem.viewItem.flags),
+            CHECK_ITEM_STREAM_START(pKinesisVideoStream->curViewItem.viewItem.flags) &&
+            !CHECK_ITEM_TIMECODE_BASE_START(pKinesisVideoStream->curViewItem.viewItem.flags),
         retStatus);
 
     // Get the view item corresponding to the current item

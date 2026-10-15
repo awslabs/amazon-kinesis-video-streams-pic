@@ -7,7 +7,12 @@
 //
 PUBLIC_API TID defaultGetThreadId()
 {
-    return (TID) GetCurrentThread();
+    // GetCurrentThreadId() returns a numeric id that is unique among live threads, which is what a
+    // thread identity requires. GetCurrentThread() returns a pseudo-handle ((HANDLE) -2) that is the
+    // same constant on every thread, so it cannot distinguish one thread from another. The value
+    // returned here is an identity only; it is NOT the thread handle used by THREAD_JOIN /
+    // THREAD_CANCEL / THREAD_DETACH, which operate on the handle stored by defaultCreateThread().
+    return (TID) GetCurrentThreadId();
 }
 
 PUBLIC_API STATUS defaultGetThreadName(TID thread, PCHAR name, UINT32 len)

@@ -20,6 +20,259 @@ class StreamRecoveryFunctionalityTest : public ClientTestBase, public WithParamI
         mStreamInfo.streamCaps.fragmentAcks = enableAck;
         mStreamInfo.streamCaps.replayDuration = (UINT64) replayDuration;
     }
+
+    // Drives the stream until a handle has transmitted, then drops that handle so a rollback and MKV
+    // stream-start fix-up are owed to whichever session transmits next.
+    void transmitThenDropFirstHandle(MockProducer& mockProducer)
+    {
+        std::vector<UPLOAD_HANDLE> uploadHandles;
+        MockConsumer* pMockConsumer = NULL;
+        BOOL gotStreamData = FALSE;
+        UINT64 currentTime;
+
+        for (UINT32 i = 0; i < 2 * mMockProducerConfig.mKeyFrameInterval; i++) {
+            EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
+        }
+
+        mStreamingSession.getActiveUploadHandles(uploadHandles);
+        ASSERT_FALSE(uploadHandles.empty());
+        pMockConsumer = mStreamingSession.getConsumer(uploadHandles[0]);
+        ASSERT_TRUE(pMockConsumer != NULL);
+
+        currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
+        EXPECT_EQ(STATUS_SUCCESS, pMockConsumer->timedGetStreamData(currentTime, &gotStreamData));
+        ASSERT_TRUE(gotStreamData) << "first handle did not transmit, so no rollback would be owed";
+
+        EXPECT_EQ(STATUS_SUCCESS, pMockConsumer->submitConnectionError(SERVICE_CALL_RESULT_OK));
+    }
+
+    // Returns the upload handle PIC is currently serving, or INVALID_UPLOAD_HANDLE_VALUE if there is none. With two
+    // live handles, as after a token rotation, PIC serves the older one, so the highest-numbered handle is not
+    // necessarily the one receiving data.
+    UPLOAD_HANDLE activeUploadHandle()
+    {
+        PUploadHandleInfo pUploadHandleInfo = getStreamUploadInfoWithState(FROM_STREAM_HANDLE(mStreamHandle), UPLOAD_HANDLE_STATE_ACTIVE);
+
+        return pUploadHandleInfo == NULL ? INVALID_UPLOAD_HANDLE_VALUE : pUploadHandleInfo->handle;
+    }
+
+    //
+    // Returns the index of a view item that carries an MKV header it can never deliver, or INVALID_VIEW_INDEX_VALUE
+    // if there is none. getStreamData only ever begins a session on a fragment boundary, so a header staged on any
+    // other item is skipped and stays in the view unsent. Every header the generator writes itself lands on a key
+    // frame, so a flagged item that is not a boundary can only have come from a misplaced fix-up.
+    //
+    UINT64 findUndeliverableHeaderItem()
+    {
+        PKinesisVideoStream pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+        PViewItem pTailItem = NULL, pHeadItem = NULL, pViewItem = NULL;
+        UINT64 index;
+
+        if (STATUS_FAILED(contentViewGetTail(pKinesisVideoStream->pView, &pTailItem)) ||
+            STATUS_FAILED(contentViewGetHead(pKinesisVideoStream->pView, &pHeadItem))) {
+            return INVALID_VIEW_INDEX_VALUE;
+        }
+
+        for (index = pTailItem->index; index <= pHeadItem->index; index++) {
+            if (STATUS_FAILED(contentViewGetItemAt(pKinesisVideoStream->pView, index, &pViewItem))) {
+                continue;
+            }
+
+            if (CHECK_ITEM_STREAM_START(pViewItem->flags) && !CHECK_ITEM_FRAGMENT_START(pViewItem->flags) &&
+                !CHECK_ITEM_FRAGMENT_END(pViewItem->flags)) {
+                return index;
+            }
+        }
+
+        return INVALID_VIEW_INDEX_VALUE;
+    }
+
+    // TRUE if the buffer begins with the EBML header magic, which is what makes a PutMedia body parseable.
+    static BOOL beginsWithEbmlHeader(PBYTE pData, UINT32 size)
+    {
+        return (BOOL) (size >= 4 && pData[0] == 0x1A && pData[1] == 0x45 && pData[2] == 0xDF && pData[3] == 0xA3);
+    }
+
+    //
+    // Streams for the given number of seconds of mock time, putting one second of video and reading once per
+    // second, and reports through pFirstBodyHadHeader whether the first body began with an EBML header. With the
+    // small frames these tests use, one read drains what was put, so the session keeps up with the camera.
+    // Returns the handle that was transmitting when the period ended.
+    //
+    UPLOAD_HANDLE streamForSeconds(MockProducer& mockProducer, UINT64 seconds, PBOOL pFirstBodyHadHeader)
+    {
+        MockConsumer* pMockConsumer = NULL;
+        UPLOAD_HANDLE uploadHandle;
+        UINT64 currentTime;
+        UINT32 retrievedSize = 0;
+        BOOL gotStreamData = FALSE, submittedAck = FALSE, inspectedFirstBody = FALSE;
+
+        *pFirstBodyHadHeader = FALSE;
+
+        for (UINT64 second = 0; second < seconds; second++) {
+            for (UINT32 i = 0; i < mMockProducerConfig.mFps; i++) {
+                EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
+            }
+
+            uploadHandle = activeUploadHandle();
+            if (!IS_VALID_UPLOAD_HANDLE(uploadHandle)) {
+                break;
+            }
+
+            pMockConsumer = mStreamingSession.getConsumer(uploadHandle);
+            if (pMockConsumer == NULL) {
+                break;
+            }
+
+            currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
+            pMockConsumer->timedGetStreamData(currentTime, &gotStreamData, &retrievedSize);
+            EXPECT_EQ(STATUS_SUCCESS, pMockConsumer->timedSubmitNormalAck(currentTime, &submittedAck));
+
+            if (gotStreamData && !inspectedFirstBody && retrievedSize >= 4) {
+                inspectedFirstBody = TRUE;
+                *pFirstBodyHadHeader = beginsWithEbmlHeader(pMockConsumer->mDataBuffer, retrievedSize);
+            }
+
+            incrementTestTimeVal(HUNDREDS_OF_NANOS_IN_A_SECOND);
+        }
+
+        EXPECT_TRUE(inspectedFirstBody) << "the stream never transmitted before the outage";
+
+        return activeUploadHandle();
+    }
+
+    //
+    // Holds the link down for the given number of seconds, spread across count reconnect attempts. Frames keep
+    // arriving at the camera's rate throughout, because a camera does not stop when the network does. Each attempt
+    // is never asked for data and dies with the transport timeout an outage produces.
+    //
+    void holdOutage(MockProducer& mockProducer, UINT32 count, UINT64 seconds, PKinesisVideoStream pKinesisVideoStream, BOOL assertPreserved)
+    {
+        MockConsumer* pMockConsumer = NULL;
+        UPLOAD_HANDLE idleHandle;
+        UINT64 gapPerAttempt = (seconds * HUNDREDS_OF_NANOS_IN_A_SECOND) / count;
+        UINT64 framesPerAttempt = gapPerAttempt * mMockProducerConfig.mFps / HUNDREDS_OF_NANOS_IN_A_SECOND;
+
+        for (UINT32 i = 0; i < count; i++) {
+            // Frames before the lookup: with an empty view, PIC only starts the next attempt once there is
+            // something to send.
+            for (UINT64 frame = 0; frame < framesPerAttempt; frame++) {
+                EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
+            }
+
+            incrementTestTimeVal(gapPerAttempt);
+
+            idleHandle = activeUploadHandle();
+            ASSERT_TRUE(IS_VALID_UPLOAD_HANDLE(idleHandle)) << "no reconnect attempt was spawned during the outage, iteration " << i;
+
+            pMockConsumer = mStreamingSession.getConsumer(idleHandle);
+            ASSERT_TRUE(pMockConsumer != NULL);
+
+            // Deliberately no getStreamData call: this attempt never transmits a byte.
+            EXPECT_EQ(STATUS_SUCCESS, pMockConsumer->submitConnectionError(SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT));
+
+            if (assertPreserved) {
+                EXPECT_EQ(UPLOAD_CONNECTION_STATE_IN_USE, pKinesisVideoStream->connectionState)
+                    << "reconnect attempt " << i << " (handle " << idleHandle << ") transmitted nothing, so it must not discard the "
+                    << "header fix-up owed by the session that died at the start of the outage";
+            }
+        }
+    }
+
+    //
+    // Steps for driving the outage, shared by the outage tests and the control. The session keeps up with the camera
+    // for longer than the replay window, the link is cut while video is still queued, and five reconnect attempts
+    // die across outageSeconds without sending a byte. Returns the session that transmitted before the outage.
+    //
+    void driveOutage(MockProducer& mockProducer, PKinesisVideoStream pKinesisVideoStream, BOOL assertPreserved, UINT64 outageSeconds,
+                     PUPLOAD_HANDLE pPreOutageHandle)
+    {
+        MockConsumer* pMockConsumer = NULL;
+        BOOL firstBodyHadHeader = FALSE;
+
+        // 1. Steady state, run past the replay window so the rollback lands on a mid-stream key frame, rather than on the stream's first item.
+        *pPreOutageHandle =
+            streamForSeconds(mockProducer, mStreamInfo.streamCaps.replayDuration / HUNDREDS_OF_NANOS_IN_A_SECOND + 2, &firstBodyHadHeader);
+        ASSERT_TRUE(IS_VALID_UPLOAD_HANDLE(*pPreOutageHandle)) << "no session transmitted before the outage";
+        EXPECT_TRUE(firstBodyHadHeader) << "the first body of the stream must begin with an EBML header";
+        ASSERT_GT(pKinesisVideoStream->curViewItem.viewItem.ackTimestamp, mStreamInfo.streamCaps.replayDuration)
+            << "the session did not get past the replay window, so the recovery would replay from the stream's first item";
+
+        // The camera keeps producing as the link fails, so the session dies with video it never sent. Had the view
+        // been empty, the timeout would make the next key frame start a new stream with its own header, hiding
+        // whether the fix-up supplied one (condition under test).
+        for (UINT32 i = 0; i < mMockProducerConfig.mFps; i++) {
+            EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
+        }
+
+        incrementTestTimeVal(HUNDREDS_OF_NANOS_IN_A_SECOND);
+
+        // 2. The link is cut on the transmitting session, so a rollback and a header fix-up are now owed to
+        //    whichever session transmits next.
+        pMockConsumer = mStreamingSession.getConsumer(*pPreOutageHandle);
+        ASSERT_TRUE(pMockConsumer != NULL);
+        EXPECT_EQ(STATUS_SUCCESS, pMockConsumer->submitConnectionError(SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT));
+        ASSERT_EQ(UPLOAD_CONNECTION_STATE_IN_USE, pKinesisVideoStream->connectionState)
+            << "a session that transmitted and then died must leave a rollback and header fix-up pending";
+
+        // 3. The outage, spread across five attempts. Attempts are spawned and die having sent nothing, and none
+        //    may discard what the pre-outage session left owed.
+        holdOutage(mockProducer, 5, outageSeconds, pKinesisVideoStream, assertPreserved);
+    }
+
+    //
+    // Step 4: the link returns. Puts one more second of video and reads the first body of the session PIC now
+    // serves, which must not be the one that died before the outage. The read goes straight to PIC rather than
+    // through the mock consumer, whose ACK bookkeeping expects every session to begin at a stream start, which
+    // the control deliberately breaks.
+    //
+    void readRecoveryBody(MockProducer& mockProducer, UPLOAD_HANDLE preOutageHandle, MockConsumer** ppMockConsumer, PUINT32 pRetrievedSize)
+    {
+        UPLOAD_HANDLE recoveryHandle;
+        STATUS retStatus;
+
+        for (UINT32 i = 0; i < mMockProducerConfig.mFps; i++) {
+            EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
+        }
+
+        recoveryHandle = activeUploadHandle();
+        ASSERT_TRUE(IS_VALID_UPLOAD_HANDLE(recoveryHandle)) << "no session available once the link returned";
+        ASSERT_NE(preOutageHandle, recoveryHandle) << "the outage did not replace the session";
+
+        *ppMockConsumer = mStreamingSession.getConsumer(recoveryHandle);
+        ASSERT_TRUE(*ppMockConsumer != NULL);
+
+        // A session that reaches a stream start, such as one a token rotation adds, ends there and still returns
+        // what it read up to it.
+        *pRetrievedSize = 0;
+        retStatus = getKinesisVideoStreamData(mStreamHandle, recoveryHandle, (*ppMockConsumer)->mDataBuffer, (*ppMockConsumer)->mDataBufferSize,
+                                              pRetrievedSize);
+        ASSERT_TRUE(retStatus == STATUS_SUCCESS || retStatus == STATUS_NO_MORE_DATA_AVAILABLE || retStatus == STATUS_AWAITING_PERSISTED_ACK ||
+                    retStatus == STATUS_END_OF_STREAM)
+            << "reading from the session after the outage failed with 0x" << std::hex << retStatus;
+        ASSERT_GE(*pRetrievedSize, 4u) << "the session after the outage sent nothing";
+    }
+
+    // Terminates count successive handles, none of which ever calls getStreamData.
+    void dropHandlesWithoutTransmitting(UINT32 count, PKinesisVideoStream pKinesisVideoStream, BOOL assertPreserved)
+    {
+        std::vector<UPLOAD_HANDLE> uploadHandles;
+        MockConsumer* pMockConsumer = NULL;
+
+        for (UINT32 i = 0; i < count; i++) {
+            mStreamingSession.getActiveUploadHandles(uploadHandles);
+            ASSERT_FALSE(uploadHandles.empty()) << "no successor handle was spawned after termination " << i;
+            pMockConsumer = mStreamingSession.getConsumer(uploadHandles.back());
+            ASSERT_TRUE(pMockConsumer != NULL);
+
+            EXPECT_EQ(STATUS_SUCCESS, pMockConsumer->submitConnectionError(SERVICE_CALL_RESULT_OK));
+
+            if (assertPreserved) {
+                EXPECT_EQ(UPLOAD_CONNECTION_STATE_IN_USE, pKinesisVideoStream->connectionState)
+                    << "handle " << i << " never transmitted but cleared the pending rollback";
+            }
+        }
+    }
 };
 #ifdef ALIGNED_MEMORY_MODEL
 TEST_P(StreamRecoveryFunctionalityTest, CreateStreamThenStreamResetConnectionEnsureRecovery)
@@ -1339,6 +1592,340 @@ TEST_P(StreamRecoveryFunctionalityTest, EventMetadataStartStreamFailRecovery)
     EXPECT_EQ(storedRetrievedSize, retrievedSize);
 
     EXPECT_EQ(0, MEMCMP(dataBuf, storedDataBuf, storedRetrievedSize));
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
+}
+
+//
+// A session that transmitted and then lost the link leaves a rollback and header fix-up owed to whoever
+// transmits next. Reconnect attempts that die before sending a byte must not discard it.
+//
+TEST_P(StreamRecoveryFunctionalityTest, ConnectionResetThenIdleHandlesPreservePendingHeaderFixup)
+{
+    PKinesisVideoStream pKinesisVideoStream;
+
+    CreateScenarioTestClient();
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+
+    CreateStreamSync();
+    MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
+    pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+
+    transmitThenDropFirstHandle(mockProducer);
+    EXPECT_EQ(UPLOAD_CONNECTION_STATE_IN_USE, pKinesisVideoStream->connectionState)
+        << "a handle that transmitted must leave a pending rollback behind";
+
+    // Handles created while the link is still down fail before sending anything. None of them may clear
+    // the rollback owed by the handle that transmitted before the outage.
+    dropHandlesWithoutTransmitting(5, pKinesisVideoStream, TRUE);
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
+}
+
+//
+// The consequence of the above: once the link returns, the first session to transmit must run
+// streamStartFixupOnReconnect, so its body must begin with an EBML header rather than mid-Cluster.
+//
+TEST_P(StreamRecoveryFunctionalityTest, SessionAfterConnectionResetBeginsWithMkvHeader)
+{
+    std::vector<UPLOAD_HANDLE> uploadHandles;
+    MockConsumer* pMockConsumer = NULL;
+    PKinesisVideoStream pKinesisVideoStream;
+    UINT32 retrievedSize = 0;
+    BOOL gotStreamData = FALSE;
+    UINT64 currentTime;
+
+    CreateScenarioTestClient();
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+
+    CreateStreamSync();
+
+    MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
+    pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+
+    transmitThenDropFirstHandle(mockProducer);
+    dropHandlesWithoutTransmitting(5, pKinesisVideoStream, FALSE);
+
+    // The link is back. Keep producing so the surviving session has something to send.
+    for (UINT32 i = 0; i < mMockProducerConfig.mKeyFrameInterval; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
+    }
+
+    mStreamingSession.getActiveUploadHandles(uploadHandles);
+    ASSERT_FALSE(uploadHandles.empty()) << "no session available after the reset";
+    pMockConsumer = mStreamingSession.getConsumer(uploadHandles.back());
+    ASSERT_TRUE(pMockConsumer != NULL);
+
+    currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
+    EXPECT_EQ(STATUS_SUCCESS, pMockConsumer->timedGetStreamData(currentTime, &gotStreamData, &retrievedSize));
+    ASSERT_TRUE(gotStreamData);
+    ASSERT_GE(retrievedSize, 4u) << "first session after the reset sent nothing";
+
+    // EBML header magic. Its absence is the headerless body the service rejects with INVALID_MKV_DATA.
+    EXPECT_EQ(0x1A, pMockConsumer->mDataBuffer[0]) << "body does not begin with an EBML header";
+    EXPECT_EQ(0x45, pMockConsumer->mDataBuffer[1]) << "body does not begin with an EBML header";
+    EXPECT_EQ(0xDF, pMockConsumer->mDataBuffer[2]) << "body does not begin with an EBML header";
+    EXPECT_EQ(0xA3, pMockConsumer->mDataBuffer[3]) << "body does not begin with an EBML header";
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
+}
+
+//
+// Simulate a whole outage rather than using individual calls: a session transmits, the link is cut, several
+// reconnect attempts die before sending a byte, and the link returns. The session that transmits next must
+// begin its body with an EBML header, or the service rejects the fragment with INVALID_MKV_DATA.
+//
+// The session runs past the replay window before the cut, so the recovery replays from a mid-stream key frame,
+// rather than from the stream's first item.
+//
+TEST_P(StreamRecoveryFunctionalityTest, OutageWithIdleReconnectsStillYieldsMkvHeaderOnRecovery)
+{
+    PKinesisVideoStream pKinesisVideoStream;
+    MockConsumer* pMockConsumer = NULL;
+    UPLOAD_HANDLE preOutageHandle = INVALID_UPLOAD_HANDLE_VALUE;
+    UINT32 retrievedSize = 0;
+
+    CreateScenarioTestClient();
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+
+    // Small frames, so one read drains a second of video. Set after CreateScenarioTestClient, which resets the
+    // producer defaults.
+    mMockProducerConfig.mFrameSizeByte = 500;
+
+    CreateStreamSync();
+    MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
+    pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+
+    ASSERT_NO_FATAL_FAILURE(driveOutage(mockProducer, pKinesisVideoStream, TRUE, 5, &preOutageHandle));
+
+    // The link returns and the next session transmits. A headerless body here is the reported failure.
+    ASSERT_NO_FATAL_FAILURE(readRecoveryBody(mockProducer, preOutageHandle, &pMockConsumer, &retrievedSize));
+
+    EXPECT_TRUE(beginsWithEbmlHeader(pMockConsumer->mDataBuffer, retrievedSize))
+        << "body after the outage does not begin with an EBML header; first bytes are " << std::hex << (UINT32) pMockConsumer->mDataBuffer[0] << " "
+        << (UINT32) pMockConsumer->mDataBuffer[1] << " " << (UINT32) pMockConsumer->mDataBuffer[2] << " " << (UINT32) pMockConsumer->mDataBuffer[3];
+
+    // The fix-up has been consumed by the session that transmitted, so nothing is left owed.
+    EXPECT_FALSE(CHECK_UPLOAD_CONNECTION_STATE_IN_USE(pKinesisVideoStream->connectionState))
+        << "the header fix-up was not consumed by the session that transmitted";
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
+}
+
+//
+// Guards the byte check in the test above against passing vacuously. Same flow, except the pending fix-up is
+// cleared by hand before the recovery session transmits, which is what the defect did. The session then resumes
+// after the last item it sent and its body carries no header.
+//
+TEST_P(StreamRecoveryFunctionalityTest, DiscardingThePendingFixupLeavesTheRecoveryBodyHeaderless)
+{
+    PKinesisVideoStream pKinesisVideoStream;
+    MockConsumer* pMockConsumer = NULL;
+    UPLOAD_HANDLE preOutageHandle = INVALID_UPLOAD_HANDLE_VALUE;
+    UINT32 retrievedSize = 0;
+
+    CreateScenarioTestClient();
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+
+    mMockProducerConfig.mFrameSizeByte = 500;
+
+    CreateStreamSync();
+    MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
+    pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+
+    ASSERT_NO_FATAL_FAILURE(driveOutage(mockProducer, pKinesisVideoStream, FALSE, 5, &preOutageHandle));
+
+    // Emulate the defect: the pending fix-up is thrown away by a handle that never transmitted.
+    pKinesisVideoStream->connectionState = UPLOAD_CONNECTION_STATE_NOT_IN_USE;
+
+    ASSERT_NO_FATAL_FAILURE(readRecoveryBody(mockProducer, preOutageHandle, &pMockConsumer, &retrievedSize));
+
+    EXPECT_FALSE(beginsWithEbmlHeader(pMockConsumer->mDataBuffer, retrievedSize))
+        << "clearing the pending fix-up should have produced a headerless body; if a header still appears, the check in the "
+        << "test above is not exercising the fix-up";
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
+}
+
+//
+// Targets the alignment the fix-up has to honour. getStreamData begins a session at a fragment boundary, so the
+// header the fix-up inserts has to go on that item or it is never sent and the body starts at a Cluster instead.
+// The current item is not always on a boundary: with no replay window the rollback is skipped entirely, so the
+// send pointer stays wherever the dropped session stopped, which is mid-fragment unless the cut happened to land
+// on a key frame.
+//
+TEST_P(StreamRecoveryFunctionalityTest, RecoveryStartsSessionOnFragmentBoundaryCarryingTheHeader)
+{
+    PKinesisVideoStream pKinesisVideoStream;
+    MockConsumer* pMockConsumer = NULL;
+    UINT32 retrievedSize = 0;
+
+    CreateScenarioTestClient();
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+
+    // No replay window, so the rollback does not run and the send pointer is left where the drop found it.
+    mStreamInfo.streamCaps.replayDuration = 0;
+
+    CreateStreamSync();
+    MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
+    pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+
+    transmitThenDropFirstHandle(mockProducer);
+    ASSERT_EQ(UPLOAD_CONNECTION_STATE_IN_USE, pKinesisVideoStream->connectionState)
+        << "a handle that transmitted must leave a pending rollback behind";
+    ASSERT_FALSE(CHECK_ITEM_FRAGMENT_START(pKinesisVideoStream->curViewItem.viewItem.flags))
+        << "the send pointer is already on a fragment boundary, so this run would not exercise the alignment";
+
+    // PIC spawns the successor as part of the drop, so there is no earlier handle to exclude here.
+    ASSERT_NO_FATAL_FAILURE(readRecoveryBody(mockProducer, INVALID_UPLOAD_HANDLE_VALUE, &pMockConsumer, &retrievedSize));
+
+    EXPECT_TRUE(beginsWithEbmlHeader(pMockConsumer->mDataBuffer, retrievedSize))
+        << "recovery body does not begin with an EBML header; first bytes are " << std::hex << (UINT32) pMockConsumer->mDataBuffer[0] << " "
+        << (UINT32) pMockConsumer->mDataBuffer[1] << " " << (UINT32) pMockConsumer->mDataBuffer[2] << " " << (UINT32) pMockConsumer->mDataBuffer[3];
+
+    // And it reached the wire because the fix-up staged it on a boundary rather than on the item the drop happened
+    // to stop on, which getStreamData would have skipped over.
+    EXPECT_EQ(INVALID_VIEW_INDEX_VALUE, findUndeliverableHeaderItem())
+        << "item " << findUndeliverableHeaderItem() << " carries a header on a non-boundary item, so it is never sent";
+
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
+}
+
+//
+// The outage above, held long enough that the content view evicts the content the rollback would have replayed.
+// Under CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM the view drops a frame at a time, so the tail can stop
+// mid-fragment, and the rollback is then left with no fragment start between the tail and the send pointer to
+// land on. The recovery body still has to carry a header.
+//
+// Realtime only. An offline putFrame blocks for buffer space once the view is full, and nothing drains the view
+// while the link is down, so the outage cannot be driven past the buffer duration here.
+//
+TEST_P(StreamRecoveryFunctionalityTest, OutageLongEnoughToEvictViewStillYieldsMkvHeaderOnRecovery)
+{
+    PKinesisVideoStream pKinesisVideoStream;
+    MockConsumer* pMockConsumer = NULL;
+    PViewItem pTailItem = NULL;
+    UPLOAD_HANDLE preOutageHandle = INVALID_UPLOAD_HANDLE_VALUE;
+    UINT32 retrievedSize = 0;
+
+    CreateScenarioTestClient();
+    PASS_TEST_FOR_OFFLINE();
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+
+    mMockProducerConfig.mFrameSizeByte = 500;
+    ASSERT_EQ(CONTENT_VIEW_OVERFLOW_POLICY_DROP_TAIL_VIEW_ITEM, mStreamInfo.streamCaps.viewOverflowPolicy)
+        << "this test covers the frame-at-a-time eviction policy";
+
+    CreateStreamSync();
+    MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
+    pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+
+    // Longer than the buffer duration, so the view has to evict while the link is down.
+    ASSERT_NO_FATAL_FAILURE(driveOutage(mockProducer, pKinesisVideoStream, TRUE,
+                                        mStreamInfo.streamCaps.bufferDuration / HUNDREDS_OF_NANOS_IN_A_SECOND + 20, &preOutageHandle));
+
+    ASSERT_EQ(STATUS_SUCCESS, contentViewGetTail(pKinesisVideoStream->pView, &pTailItem));
+    ASSERT_GT(pTailItem->index, 0u) << "the outage evicted nothing, so the eviction path is not covered";
+
+    ASSERT_NO_FATAL_FAILURE(readRecoveryBody(mockProducer, preOutageHandle, &pMockConsumer, &retrievedSize));
+
+    EXPECT_TRUE(beginsWithEbmlHeader(pMockConsumer->mDataBuffer, retrievedSize))
+        << "body after the outage does not begin with an EBML header; first bytes are " << std::hex << (UINT32) pMockConsumer->mDataBuffer[0] << " "
+        << (UINT32) pMockConsumer->mDataBuffer[1] << " " << (UINT32) pMockConsumer->mDataBuffer[2] << " " << (UINT32) pMockConsumer->mDataBuffer[3];
+
+    EXPECT_EQ(INVALID_VIEW_INDEX_VALUE, findUndeliverableHeaderItem())
+        << "item " << findUndeliverableHeaderItem() << " carries a header on a non-boundary item, so it is never sent";
+
+    // Deliberately no assertion on connectionState here. An outage this long outlives the streaming token, and the
+    // session the rotation brings up arms a fresh fix-up of its own, so the flag says nothing about the header.
+    EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
+}
+
+//
+// A realtime stream dropped mid-fragment with no replay window has nothing to start the recovery session from
+// until the next key frame: the view holds only the tail of a fragment. The fix-up must hold the pending state
+// instead of staging the header on an item the send path would skip, and emit it on the key frame once it
+// arrives. Until then the session transmits nothing and the rollback stays owed.
+//
+TEST_P(StreamRecoveryFunctionalityTest, RecoveryWithNoFragmentBoundaryYetDefersTheHeaderUntilAKeyFrameArrives)
+{
+    PKinesisVideoStream pKinesisVideoStream;
+    MockConsumer* pMockConsumer = NULL;
+    UPLOAD_HANDLE uploadHandle;
+    UINT32 retrievedSize = 0;
+    BOOL gotStreamData = FALSE;
+    UINT64 currentTime;
+    STATUS retStatus;
+
+    CreateScenarioTestClient();
+
+    // Realtime only. An offline stream rewinds to the tail, which is a fragment start, so it always has a
+    // boundary to start from and never reaches this path.
+    PASS_TEST_FOR_OFFLINE();
+    PASS_TEST_FOR_ZERO_RETENTION_AND_OFFLINE();
+
+    // No replay window, so the send pointer stays where the drop leaves it.
+    mStreamInfo.streamCaps.replayDuration = 0;
+
+    CreateStreamSync();
+    MockProducer mockProducer(mMockProducerConfig, mStreamHandle);
+    pKinesisVideoStream = FROM_STREAM_HANDLE(mStreamHandle);
+
+    // Exactly one fragment, so the only key frame in the view is its first item. Transmitting past that item
+    // leaves the send pointer inside the fragment with no boundary at or after it.
+    for (UINT32 i = 0; i < mMockProducerConfig.mKeyFrameInterval; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
+    }
+
+    uploadHandle = activeUploadHandle();
+    ASSERT_TRUE(IS_VALID_UPLOAD_HANDLE(uploadHandle));
+    pMockConsumer = mStreamingSession.getConsumer(uploadHandle);
+    ASSERT_TRUE(pMockConsumer != NULL);
+    currentTime = mClientCallbacks.getCurrentTimeFn((UINT64) this);
+    EXPECT_EQ(STATUS_SUCCESS, pMockConsumer->timedGetStreamData(currentTime, &gotStreamData, &retrievedSize));
+    ASSERT_TRUE(gotStreamData) << "nothing was transmitted, so no rollback would be owed";
+
+    EXPECT_EQ(STATUS_SUCCESS, pMockConsumer->submitConnectionError(SERVICE_CALL_NETWORK_CONNECTION_TIMEOUT));
+    ASSERT_EQ(UPLOAD_CONNECTION_STATE_IN_USE, pKinesisVideoStream->connectionState);
+
+    // The recovery session has no boundary to start from, so it must report no data and keep the fix-up owed.
+    uploadHandle = activeUploadHandle();
+    ASSERT_TRUE(IS_VALID_UPLOAD_HANDLE(uploadHandle));
+    pMockConsumer = mStreamingSession.getConsumer(uploadHandle);
+    ASSERT_TRUE(pMockConsumer != NULL);
+    retrievedSize = 0;
+    retStatus = getKinesisVideoStreamData(mStreamHandle, uploadHandle, pMockConsumer->mDataBuffer, pMockConsumer->mDataBufferSize, &retrievedSize);
+    EXPECT_EQ(STATUS_NO_MORE_DATA_AVAILABLE, retStatus) << "a session with no fragment boundary must report no data";
+    EXPECT_EQ(0u, retrievedSize) << "nothing may be sent before the header has a boundary to sit on";
+    EXPECT_EQ(UPLOAD_CONNECTION_STATE_IN_USE, pKinesisVideoStream->connectionState)
+        << "the fix-up has not been applied yet, so it must still be owed";
+    EXPECT_EQ(INVALID_VIEW_INDEX_VALUE, findUndeliverableHeaderItem()) << "a header was staged on an item that can never be sent";
+
+    // Read again before anything new arrives, as a caller retrying a zero-byte read does. The header stays owed.
+    retrievedSize = 0;
+    retStatus = getKinesisVideoStreamData(mStreamHandle, uploadHandle, pMockConsumer->mDataBuffer, pMockConsumer->mDataBufferSize, &retrievedSize);
+    EXPECT_EQ(STATUS_NO_MORE_DATA_AVAILABLE, retStatus);
+    EXPECT_EQ(UPLOAD_CONNECTION_STATE_IN_USE, pKinesisVideoStream->connectionState) << "a read that found nothing new discarded the owed header";
+
+    // A key frame arrives, so now there is a boundary and the deferred header has somewhere to go.
+    for (UINT32 i = 0; i < mMockProducerConfig.mKeyFrameInterval; i++) {
+        EXPECT_EQ(STATUS_SUCCESS, mockProducer.putFrame(FALSE));
+    }
+
+    uploadHandle = activeUploadHandle();
+    ASSERT_TRUE(IS_VALID_UPLOAD_HANDLE(uploadHandle));
+    pMockConsumer = mStreamingSession.getConsumer(uploadHandle);
+    ASSERT_TRUE(pMockConsumer != NULL);
+    retrievedSize = 0;
+    retStatus = getKinesisVideoStreamData(mStreamHandle, uploadHandle, pMockConsumer->mDataBuffer, pMockConsumer->mDataBufferSize, &retrievedSize);
+    ASSERT_TRUE(retStatus == STATUS_SUCCESS || retStatus == STATUS_NO_MORE_DATA_AVAILABLE || retStatus == STATUS_AWAITING_PERSISTED_ACK)
+        << "reading after the key frame arrived failed with 0x" << std::hex << retStatus;
+    ASSERT_GE(retrievedSize, 4u) << "the session sent nothing once a boundary was available";
+
+    EXPECT_TRUE(beginsWithEbmlHeader(pMockConsumer->mDataBuffer, retrievedSize))
+        << "the deferred header never reached the wire; first bytes are " << std::hex << (UINT32) pMockConsumer->mDataBuffer[0] << " "
+        << (UINT32) pMockConsumer->mDataBuffer[1] << " " << (UINT32) pMockConsumer->mDataBuffer[2] << " " << (UINT32) pMockConsumer->mDataBuffer[3];
+    EXPECT_EQ(INVALID_VIEW_INDEX_VALUE, findUndeliverableHeaderItem()) << "a header was staged on an item that can never be sent";
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoStream(&mStreamHandle));
 }
