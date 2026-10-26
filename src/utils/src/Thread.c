@@ -1,3 +1,10 @@
+// pthread_getname_np is a GNU extension. glibc reads the feature macros once, at the first system
+// header, so _GNU_SOURCE must come before any include. It is set here rather than in the public
+// CommonDefs.h so that applications including the KVS headers are not affected.
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE
+#endif
+
 #include "Include_i.h"
 
 #if defined _WIN32 || defined _WIN64 || defined __CYGWIN__

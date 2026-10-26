@@ -379,3 +379,38 @@ TEST_F(ThreadFunctionalityTest, GetThreadIdIsUniquePerLiveThread)
 
     MUTEX_FREE(gTidProbeMutex);
 }
+
+// The Windows getter is a stub that returns STATUS_SUCCESS for any input
+#if !(defined _WIN32 || defined _WIN64 || defined __CYGWIN__)
+TEST_F(ThreadFunctionalityTest, GetThreadNameRejectsNullAndShortBuffer)
+{
+    CHAR threadName[MAX_THREAD_NAME];
+
+    EXPECT_EQ(STATUS_NULL_ARG, GETTNAME(GETTID(), NULL, MAX_THREAD_NAME));
+    EXPECT_EQ(STATUS_INVALID_ARG, GETTNAME(GETTID(), threadName, MAX_THREAD_NAME - 1));
+}
+#endif
+
+#if defined __APPLE__ || defined __linux__
+TEST_F(ThreadFunctionalityTest, GetThreadNameReadsBackNameSetOnCurrentThread)
+{
+    CHAR originalName[MAX_THREAD_NAME + 1], threadName[MAX_THREAD_NAME + 1];
+    MEMSET(originalName, 0x00, SIZEOF(originalName));
+    MEMSET(threadName, 0x00, SIZEOF(threadName));
+
+    // The original name may legitimately be empty, e.g. the main thread on macOS
+    EXPECT_EQ(STATUS_SUCCESS, GETTNAME(GETTID(), originalName, MAX_THREAD_NAME));
+#if defined __APPLE__
+    pthread_setname_np("kvspicGetTName");
+#else
+    pthread_setname_np(pthread_self(), "kvspicGetTName");
+#endif
+    EXPECT_EQ(STATUS_SUCCESS, GETTNAME(GETTID(), threadName, MAX_THREAD_NAME));
+    EXPECT_STREQ("kvspicGetTName", threadName);
+#if defined __APPLE__
+    pthread_setname_np(originalName);
+#else
+    pthread_setname_np(pthread_self(), originalName);
+#endif
+}
+#endif
