@@ -203,6 +203,9 @@ jobs:
     runs-on: ubuntu-latest
     container: public.ecr.aws/docker/library/gcc:14
 
+    permissions:
+      contents: read
+
     env:
       DEBIAN_FRONTEND: noninteractive
 
