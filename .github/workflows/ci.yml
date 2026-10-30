@@ -188,6 +188,48 @@ jobs:
         run: |
           timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="${{ env.TEST_FILTER }}"
 
+  # GCC 14 turns implicit function declarations into errors; this job catches headers that
+  # define feature macros (e.g. _GNU_SOURCE) too late for glibc to honour them.
+  linux-gcc-14:
+    strategy:
+      matrix:
+        config:
+          - name: Default Build
+            cmake_flags: "-DBUILD_TEST=TRUE"
+          - name: Aligned Memory Model Build
+            cmake_flags: "-DBUILD_TEST=TRUE -DALIGNED_MEMORY_MODEL=TRUE -DFIXUP_ANNEX_B_TRAILING_NALU_ZERO=TRUE"
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+    container: public.ecr.aws/docker/library/gcc:14
+
+    permissions:
+      contents: read
+
+    env:
+      DEBIAN_FRONTEND: noninteractive
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          apt-get -q update
+          apt-get install -y cmake git
+          gcc --version | head -1
+
+      - name: Build repository
+        run: |
+          mkdir build && cd build
+          cmake .. ${{ matrix.config.cmake_flags }}
+          make -j
+
+      - name: Run tests
+        working-directory: ./build
+        run: |
+          timeout --signal=SIGABRT 40m ./tst/kvspic_test --gtest_filter="${{ env.TEST_FILTER }}"
+
   al2:
     strategy:
       matrix:
