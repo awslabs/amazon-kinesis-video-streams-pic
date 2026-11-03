@@ -60,9 +60,14 @@ typedef struct {
 } HybridFileHeap, *PHybridFileHeap;
 
 /**
- * Hybrid heap internal functions
+ * Creates and initializes the hybrid file heap
  */
-STATUS hybridFileCreateHeap(PHeap, UINT32, PCHAR, PHybridFileHeap*);
+PUBLIC_API STATUS hybridFileCreateHeap(PHeap, UINT32, PCHAR, PHybridFileHeap*);
+
+/**
+ * Creates and initializes the hybrid file heap with a starting file index
+ */
+PUBLIC_API STATUS hybridFileCreateHeapFileIndex(PHeap, UINT32, PCHAR, UINT32, PHybridFileHeap*);
 
 /**
  * Allocate a buffer from the heap
