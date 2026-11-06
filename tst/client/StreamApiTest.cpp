@@ -830,3 +830,140 @@ TEST_F(StreamApiTest, kinesisVideoStreamCreateSync_Valid_Timeout)
 
     EXPECT_EQ(STATUS_SUCCESS, freeKinesisVideoClient(&clientHandle));
 }
+
+#define FRAGMENT_RATE_WARNING_TEXT "Check the key frame cadence"
+
+static volatile SIZE_T gFragmentRateWarningCount = 0;
+static CHAR gLastFragmentRateWarning[2048];
+static logPrintFunc gStoredLogPrintFn = NULL;
+
+static VOID fragmentRateWarningCountingLogPrint(UINT32 level, PCHAR tag, PCHAR fmt, ...)
+{
+    CHAR buffer[2048];
+    va_list valist;
+
+    va_start(valist, fmt);
+    vsnprintf(buffer, SIZEOF(buffer), fmt, valist);
+    va_end(valist);
+
+    if (level == LOG_LEVEL_WARN && STRSTR(buffer, FRAGMENT_RATE_WARNING_TEXT) != NULL) {
+        ATOMIC_INCREMENT(&gFragmentRateWarningCount);
+        STRCPY(gLastFragmentRateWarning, buffer);
+    }
+
+    gStoredLogPrintFn(level, tag, (PCHAR) "%s", buffer);
+}
+
+// Puts key frames spaced keyFrameInterval apart from startTimestamp covering streamDuration and returns the number of fragment rate warnings.
+static SIZE_T putKeyFramesAndCountFragmentRateWarnings(STREAM_HANDLE streamHandle, UINT64 keyFrameInterval, UINT64 startTimestamp,
+                                                       UINT64 streamDuration)
+{
+    BYTE tempBuffer[100];
+    UINT64 timestamp;
+    UINT32 i;
+    Frame frame;
+
+    MEMSET(tempBuffer, 0x55, SIZEOF(tempBuffer));
+    frame.duration = keyFrameInterval;
+    frame.size = SIZEOF(tempBuffer);
+    frame.frameData = tempBuffer;
+    frame.trackId = TEST_TRACKID;
+    frame.flags = FRAME_FLAG_KEY_FRAME;
+
+    ATOMIC_STORE(&gFragmentRateWarningCount, 0);
+    gLastFragmentRateWarning[0] = '\0';
+    gStoredLogPrintFn = globalCustomLogPrintFn;
+    globalCustomLogPrintFn = fragmentRateWarningCountingLogPrint;
+
+    for (i = 0, timestamp = startTimestamp; timestamp <= startTimestamp + streamDuration; timestamp += keyFrameInterval, i++) {
+        frame.index = i;
+        frame.decodingTs = timestamp;
+        frame.presentationTs = timestamp;
+        EXPECT_EQ(STATUS_SUCCESS, putKinesisVideoFrame(streamHandle, &frame));
+    }
+
+    globalCustomLogPrintFn = gStoredLogPrintFn;
+
+    return ATOMIC_LOAD(&gFragmentRateWarningCount);
+}
+
+TEST_F(StreamApiTest, putFrame_FragmentRateWarningOnFrequentKeyFrames)
+{
+    mStreamInfo.streamCaps.keyFrameFragmentation = TRUE;
+    ReadyStream();
+
+    // A key frame every 100 ms is 10 fragments/s. 5 s of frames close 5 windows over the threshold,
+    // but the test runs well within the throttle interval so the warning fires once.
+    EXPECT_EQ(
+        1, putKeyFramesAndCountFragmentRateWarnings(mStreamHandle, 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, 0, 5 * HUNDREDS_OF_NANOS_IN_A_SECOND));
+
+    // The warning names the stream, the measured rate and the PutMedia limit
+    EXPECT_NE(nullptr, STRSTR(gLastFragmentRateWarning, TEST_STREAM_NAME));
+    EXPECT_NE(nullptr, STRSTR(gLastFragmentRateWarning, "Fragment rate of 10 fragments/s"));
+    EXPECT_NE(nullptr, STRSTR(gLastFragmentRateWarning, "at most 5 fragments/s"));
+}
+
+TEST_F(StreamApiTest, putFrame_FragmentRateWarningFiresAgainAfterThrottleInterval)
+{
+    mStreamInfo.streamCaps.keyFrameFragmentation = TRUE;
+    ReadyStream();
+
+    EXPECT_EQ(
+        1, putKeyFramesAndCountFragmentRateWarnings(mStreamHandle, 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, 0, 2 * HUNDREDS_OF_NANOS_IN_A_SECOND));
+
+    // Simulate 9 s of the 10 s throttle interval passing - no new warning
+    FROM_STREAM_HANDLE(mStreamHandle)->diagnostics.nextFragmentRateWarningTime -= 9 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    EXPECT_EQ(0,
+              putKeyFramesAndCountFragmentRateWarnings(mStreamHandle, 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, 3 * HUNDREDS_OF_NANOS_IN_A_SECOND,
+                                                       2 * HUNDREDS_OF_NANOS_IN_A_SECOND));
+
+    // Simulate the last 1 s of the throttle interval passing - warns again
+    FROM_STREAM_HANDLE(mStreamHandle)->diagnostics.nextFragmentRateWarningTime -= 1 * HUNDREDS_OF_NANOS_IN_A_SECOND;
+    EXPECT_EQ(1,
+              putKeyFramesAndCountFragmentRateWarnings(mStreamHandle, 100 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, 6 * HUNDREDS_OF_NANOS_IN_A_SECOND,
+                                                       2 * HUNDREDS_OF_NANOS_IN_A_SECOND));
+}
+
+TEST_F(StreamApiTest, putFrame_NoFragmentRateWarningOnLongFragments)
+{
+    mStreamInfo.streamCaps.keyFrameFragmentation = TRUE;
+    ReadyStream();
+
+    // 2 s fragments are 0.5 fragments/s
+    EXPECT_EQ(0, putKeyFramesAndCountFragmentRateWarnings(mStreamHandle, 2 * HUNDREDS_OF_NANOS_IN_A_SECOND, 0, 20 * HUNDREDS_OF_NANOS_IN_A_SECOND));
+}
+
+TEST_F(StreamApiTest, putFrame_NoFragmentRateWarningAtThreshold)
+{
+    mStreamInfo.streamCaps.keyFrameFragmentation = TRUE;
+    ReadyStream();
+
+    // 250 ms fragments are exactly 4 fragments/s, which is not over the threshold
+    EXPECT_EQ(
+        0, putKeyFramesAndCountFragmentRateWarnings(mStreamHandle, 250 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, 0, 10 * HUNDREDS_OF_NANOS_IN_A_SECOND));
+}
+
+TEST_F(StreamApiTest, putFrame_FragmentRateWarningAtServiceLimit)
+{
+    mStreamInfo.streamCaps.keyFrameFragmentation = TRUE;
+    ReadyStream();
+
+    // 200 ms fragments are 5 fragments/s. PutMedia still accepts that rate, but it is over the threshold of 4, so it warns.
+    EXPECT_EQ(
+        1, putKeyFramesAndCountFragmentRateWarnings(mStreamHandle, 200 * HUNDREDS_OF_NANOS_IN_A_MILLISECOND, 0, 5 * HUNDREDS_OF_NANOS_IN_A_SECOND));
+}
+
+TEST_F(StreamApiTest, putFrame_NoFragmentRateWarningAfterResetWithEarlierTimestamps)
+{
+    mStreamInfo.streamCaps.keyFrameFragmentation = TRUE;
+    ReadyStream();
+
+    EXPECT_EQ(0,
+              putKeyFramesAndCountFragmentRateWarnings(mStreamHandle, 2 * HUNDREDS_OF_NANOS_IN_A_SECOND, 10 * HUNDREDS_OF_NANOS_IN_A_SECOND,
+                                                       2 * HUNDREDS_OF_NANOS_IN_A_SECOND));
+
+    // After a reset the application restarts its timestamps at 0, still with 2 s fragments. The reset status is not
+    // checked: its last step runs the stream state machine, which fails here because no service call result is set.
+    kinesisVideoStreamResetStream(mStreamHandle);
+    EXPECT_EQ(0, putKeyFramesAndCountFragmentRateWarnings(mStreamHandle, 2 * HUNDREDS_OF_NANOS_IN_A_SECOND, 0, 14 * HUNDREDS_OF_NANOS_IN_A_SECOND));
+}
