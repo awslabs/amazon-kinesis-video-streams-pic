@@ -79,6 +79,21 @@ extern "C" {
 #define MAX_BLOCKING_PUT_WAIT 15 * HUNDREDS_OF_NANOS_IN_A_SECOND
 
 /**
+ * PutMedia accepts at most this many fragments per second per stream.
+ */
+#define FRAGMENT_RATE_SERVICE_LIMIT 5
+
+/**
+ * Log a warning when a stream starts more than this many fragments in 1 second of fragment time.
+ */
+#define FRAGMENT_RATE_WARNING_THRESHOLD 4
+
+/**
+ * Minimum time between two fragment rate warnings for the same stream.
+ */
+#define FRAGMENT_RATE_WARNING_INTERVAL (10 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+
+/**
  * Valid status codes from get stream data
  */
 #define IS_VALID_GET_STREAM_DATA_STATUS(s)                                                                                                           \
@@ -181,6 +196,13 @@ struct __KinesisVideoStreamDiagnostics {
 
     // Tracking when next time we should log the metrics
     UINT64 nextLoggingTime;
+
+    // Fragment rate measurement: start timestamp of the current 1 second window and the fragments started in it
+    UINT64 fragmentRateWindowStart;
+    UINT32 fragmentRateWindowCount;
+
+    // Earliest time the next fragment rate warning can be logged
+    UINT64 nextFragmentRateWarningTime;
 };
 typedef struct __KinesisVideoStreamDiagnostics* PKinesisVideoStreamDiagnostics;
 

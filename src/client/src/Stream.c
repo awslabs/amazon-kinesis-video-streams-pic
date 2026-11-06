@@ -1010,6 +1010,29 @@ STATUS putFrame(PKinesisVideoStream pKinesisVideoStream, PFrame pFrame)
             break;
     }
 
+    // Count fragment starts per 1 second of fragment time. The rate is measured on the fragment timestamps,
+    // which the application controls through its key frame cadence. When a window closes with too many
+    // fragments, warn so the application can see that it is near or over the PutMedia limit. The warning is rate limited.
+    if (CHECK_ITEM_FRAGMENT_START(itemFlags)) {
+        if (pKinesisVideoStream->diagnostics.fragmentRateWindowCount != 0 &&
+            encodedFrameInfo.clusterDts >= pKinesisVideoStream->diagnostics.fragmentRateWindowStart &&
+            encodedFrameInfo.clusterDts < pKinesisVideoStream->diagnostics.fragmentRateWindowStart + HUNDREDS_OF_NANOS_IN_A_SECOND) {
+            pKinesisVideoStream->diagnostics.fragmentRateWindowCount++;
+        } else {
+            if (pKinesisVideoStream->diagnostics.fragmentRateWindowCount > FRAGMENT_RATE_WARNING_THRESHOLD &&
+                currentTime >= pKinesisVideoStream->diagnostics.nextFragmentRateWarningTime) {
+                DLOGW("[%s] Fragment rate of %u fragments/s is over the warning threshold of %u fragments/s. PutMedia accepts at most %u "
+                      "fragments/s per stream. Check the key frame cadence, keyFrameFragmentation and fragmentDuration.",
+                      pKinesisVideoStream->streamInfo.name, pKinesisVideoStream->diagnostics.fragmentRateWindowCount, FRAGMENT_RATE_WARNING_THRESHOLD,
+                      FRAGMENT_RATE_SERVICE_LIMIT);
+                pKinesisVideoStream->diagnostics.nextFragmentRateWarningTime = currentTime + FRAGMENT_RATE_WARNING_INTERVAL;
+            }
+
+            pKinesisVideoStream->diagnostics.fragmentRateWindowStart = encodedFrameInfo.clusterDts;
+            pKinesisVideoStream->diagnostics.fragmentRateWindowCount = 1;
+        }
+    }
+
     if (CHECK_ITEM_FRAGMENT_START(itemFlags) && pKinesisVideoClient->deviceInfo.clientInfo.logMetric) {
         currentTime = IS_VALID_TIMESTAMP(currentTime)
             ? currentTime
