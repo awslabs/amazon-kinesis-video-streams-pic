@@ -98,7 +98,7 @@ CleanUp:
     return retStatus;
 }
 
-STATUS setupDefaultKvsRetryStrategyParameters(PKinesisVideoClient pKinesisVideoClient)
+static STATUS setupDefaultKvsRetryStrategyParameters(PKinesisVideoClient pKinesisVideoClient)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
@@ -119,7 +119,7 @@ CleanUp:
     return retStatus;
 }
 
-STATUS configureClientWithRetryStrategy(PKinesisVideoClient pKinesisVideoClient)
+static STATUS configureClientWithRetryStrategy(PKinesisVideoClient pKinesisVideoClient)
 {
     ENTERS();
     PRetryStrategy pRetryStrategy = NULL;
@@ -146,7 +146,7 @@ CleanUp:
     return retStatus;
 }
 
-STATUS freeClientRetryStrategy(PKinesisVideoClient pKinesisVideoClient)
+static STATUS freeClientRetryStrategy(PKinesisVideoClient pKinesisVideoClient)
 {
     ENTERS();
     STATUS retStatus = STATUS_SUCCESS;
